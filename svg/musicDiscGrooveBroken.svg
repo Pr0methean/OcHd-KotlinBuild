@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="32"
+   height="32"
+   viewBox="0 0 8.4666666 8.4666668"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.2 (dc2aeda, 2022-05-15)"
+   sodipodi:docname="musicDiscGrooveBroken.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:cc="http://creativecommons.org/ns#">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#111111"
+     borderopacity="1"
+     inkscape:pageshadow="0"
+     inkscape:pageopacity="0"
+     inkscape:pagecheckerboard="1"
+     inkscape:document-units="mm"
+     showgrid="true"
+     width="32mm"
+     units="px"
+     objecttolerance="10000"
+     guidetolerance="10000"
+     inkscape:snap-perpendicular="true"
+     inkscape:snap-tangential="true"
+     inkscape:zoom="34.90625"
+     inkscape:cx="5.385855"
+     inkscape:cy="13.951656"
+     inkscape:window-width="2560"
+     inkscape:window-height="1412"
+     inkscape:window-x="0"
+     inkscape:window-y="28"
+     inkscape:window-maximized="0"
+     inkscape:current-layer="layer1"
+     inkscape:showpageshadow="0"
+     inkscape:deskcolor="#d1d1d1">
+    <inkscape:grid
+       type="xygrid"
+       id="grid9"
+       units="px"
+       empspacing="2" />
+  </sodipodi:namedview>
+  <defs
+     id="defs2" />
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <path
+       id="path20393"
+       style="fill:#000000;stroke-width:0"
+       d="M 4.2333333 2.6458333 A 3.1750002 1.5875 0 0 0 1.0583333 4.2333333 L 1.5875 4.2333333 A 2.6458333 1.0583333 0 0 1 4.2333333 3.175 L 4.2333333 2.6458333 z " />
+    <path
+       id="path21231"
+       style="fill:#000000;stroke-width:0"
+       d="m 4.2333329,5.8208331 a 3.1750002,1.5875 0 0 0 3.175,-1.5875 H 6.8791662 A 2.6458333,1.0583333 0 0 1 4.2333329,5.2916664 Z" />
+    <path
+       id="path21233"
+       style="fill:#000000;stroke-width:0"
+       d="m 4.7624995,2.1166667 a 3.1750002,1.5875 0 0 1 3.175,1.5875 H 7.4083328 A 2.6458333,1.0583333 0 0 0 4.7624995,2.6458334 Z" />
+    <path
+       id="path21235"
+       style="fill:#000000;stroke-width:0"
+       d="m 3.7041667,6.3499997 a 3.1750002,1.5875 0 0 1 -3.17500006,-1.5875 H 1.0583334 A 2.6458333,1.0583333 0 0 0 3.7041667,5.820833 Z" />
+  </g>
+  <metadata
+     id="metadata33">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <cc:license
+           rdf:resource="http://creativecommons.org/licenses/by-sa/4.0/" />
+      </cc:Work>
+      <cc:License
+         rdf:about="http://creativecommons.org/licenses/by-sa/4.0/">
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#Reproduction" />
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#Distribution" />
+        <cc:requires
+           rdf:resource="http://creativecommons.org/ns#Notice" />
+        <cc:requires
+           rdf:resource="http://creativecommons.org/ns#Attribution" />
+        <cc:permits
+           rdf:resource="http://creativecommons.org/ns#DerivativeWorks" />
+        <cc:requires
+           rdf:resource="http://creativecommons.org/ns#ShareAlike" />
+      </cc:License>
+    </rdf:RDF>
+  </metadata>
+</svg>
