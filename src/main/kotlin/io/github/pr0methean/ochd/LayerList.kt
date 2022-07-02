@@ -1,9 +1,7 @@
 package io.github.pr0methean.ochd
 
-import io.github.pr0methean.ochd.color.SingleTextureMaterial
 import io.github.pr0methean.ochd.tasks.ImageStackingTask
 import io.github.pr0methean.ochd.tasks.TextureTask
-import io.github.pr0methean.ochd.tasks.TransparencyTask
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 
@@ -27,7 +25,9 @@ class LayerList(val ctx: ImageProcessingContext) : ArrayList<TextureTask>() {
     fun copy(source: LayerList) {
         if (source.background != Color.TRANSPARENT) {
             if (background == Color.TRANSPARENT && isEmpty()) {
-               background = source.background
+                if (source.size <= 1) {
+                    background = source.background
+                }
             } else {
                 throw IllegalStateException("Source's background would overwrite the existing layers")
             }
@@ -38,9 +38,6 @@ class LayerList(val ctx: ImageProcessingContext) : ArrayList<TextureTask>() {
             addAll(source)
         }
     }
-    override fun add(element: TextureTask) = super.add(ctx.deduplicate(element))
+    override fun add(element:TextureTask) = super.add(ctx.deduplicate(element))
     override fun addAll(elements: Collection<TextureTask>) = super.addAll(elements.map(ctx::deduplicate))
-    fun copy(source: SingleTextureMaterial) = add(source.texture(ctx))
-    fun copy(source: SingleTextureMaterial, alpha: Double)
-            = add(TransparencyTask(source.texture(ctx), ctx.tileSize, alpha, ctx.scope))
 }

@@ -11,18 +11,20 @@ import kotlinx.coroutines.CoroutineScope
 
 data class RepaintTask(
     private val paint: Paint, private val base: TextureTask, private val size: Int, val alpha: Double = 1.0,
-    private val scope: CoroutineScope
+    override val scope: CoroutineScope
 )
-    : TextureTask(scope) {
+    : JfxTextureTask<Image>(scope) {
 
-    override suspend fun computeBitmap(): Image {
+    override suspend fun computeInput(): Image = base.getBitmap()
+
+    override fun doBlockingJfx(input: Image): Image {
         val colorLayer = ColorInput()
         colorLayer.paint = paint
         val blend = Blend()
         blend.mode = BlendMode.SRC_ATOP
         blend.opacity = alpha
         blend.topInput = colorLayer
-        val view = ImageView(base.getBitmap())
+        val view = ImageView(input)
         view.isSmooth = true
         view.effect = blend
         val output = WritableImage(size, size)

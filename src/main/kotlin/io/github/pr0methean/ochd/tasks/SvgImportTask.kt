@@ -1,22 +1,32 @@
 package io.github.pr0methean.ochd.tasks
 
+import com.kitfox.svg.SVGUniverse
+import com.kitfox.svg.app.beans.SVGIcon
+import com.kitfox.svg.app.beans.SVGPanel.AUTOSIZE_STRETCH
+import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
 import kotlinx.coroutines.CoroutineScope
-import org.apache.batik.transcoder.TranscoderInput
-import org.apache.batik.transcoder.TranscoderOutput
-import org.apache.batik.transcoder.image.ImageTranscoder
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
+import java.awt.Dimension
+import java.awt.image.BufferedImage
 import java.io.File
 
-data class SvgImportTask(private val filename: File, private val transcoder: ImageTranscoder, private val scope: CoroutineScope)
-    : TextureTask(scope) {
-    override suspend fun computeBitmap(): Image {
-        val svgURI: String = filename.toURI().toURL().toString()
-        val input = TranscoderInput(svgURI)
-        return ByteArrayOutputStream().use { stream ->
-            transcoder.transcode(input, TranscoderOutput(stream))
-            ByteArrayInputStream(stream.toByteArray()).use { Image(it) }
-        }
+/**
+ * No within-process method seems to work across multiple threads, so shell out to Inkscape
+ */
+/*
+inkscape -w "$SIZE" -h "$SIZE" "$SVG_DIRECTORY/$1.svg" -o "$PNG_DIRECTORY/$1.png" -y 0.0
+ */
+data class SvgImportTask(private val filename: File, private val svg: SVGUniverse, private val tileSize: Int, override val scope: CoroutineScope)
+    : JfxTextureTask<BufferedImage>(scope) {
+
+    override suspend fun computeInput(): BufferedImage {
+        val icon = SVGIcon()
+        icon.svgURI = svg.loadSVG(filename.toURL())
+        icon.preferredSize = Dimension(tileSize, tileSize)
+        icon.antiAlias = true
+        icon.autosize = AUTOSIZE_STRETCH
+        return icon.image as BufferedImage
     }
+
+    override fun doBlockingJfx(input: BufferedImage): Image = SwingFXUtils.toFXImage(input, null)
 }

@@ -1,4 +1,4 @@
-package io.github.pr0methean.ochd.color
+package io.github.pr0methean.ochd.texturebase
 
 import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.tasks.OutputTask

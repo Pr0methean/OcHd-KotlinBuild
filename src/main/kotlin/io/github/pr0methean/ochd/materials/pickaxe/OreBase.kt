@@ -1,8 +1,8 @@
-package io.github.pr0methean.ochd.pickaxe
+package io.github.pr0methean.ochd.materials.pickaxe
 
 import io.github.pr0methean.ochd.LayerList
 import io.github.pr0methean.ochd.c
-import io.github.pr0methean.ochd.color.SingleTextureMaterial
+import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
 import javafx.scene.paint.Color
 
 enum class OreBase(
@@ -16,7 +16,10 @@ enum class OreBase(
         background(STONE.shadow)
         layer("checksLarge", STONE.highlight)
         layer("borderDotted", STONE.color)
-    }),
+    }) {
+        val extremeHighlight = c(0xb5b5b5)
+        val extremeShadow = c(0x525252)
+    },
     DEEPSLATE(c(0x515151), c(0x2f2f37), c(0x797979), "deepslate_", {
         layer("diagonalChecksBottomLeftTopRight", DEEPSLATE.highlight)
         layer("diagonalChecksTopLeftBottomRight", DEEPSLATE.shadow)
@@ -25,8 +28,4 @@ enum class OreBase(
         layer("diagonalOutlineChecksTopLeftBottomRight", NETHERRACK.shadow)
         layer("diagonalOutlineChecksBottomLeftTopRight", NETHERRACK.highlight)
     });
-    companion object {
-        val STONE_EXTREME_HIGHLIGHT = c(0xb5b5b5)
-        val STONE_EXTREME_SHADOW = c(0x525252)
-    }
 }

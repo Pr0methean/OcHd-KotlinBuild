@@ -1,4 +1,4 @@
-package io.github.pr0methean.ochd.color
+package io.github.pr0methean.ochd.texturebase
 
 import javafx.scene.paint.Color
 

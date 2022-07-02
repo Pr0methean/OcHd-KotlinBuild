@@ -1,25 +1,27 @@
-package io.github.pr0methean.ochd.axe
+package io.github.pr0methean.ochd.materials.axe
 
 import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.LayerList
 import io.github.pr0methean.ochd.c
-import io.github.pr0methean.ochd.color.Material
-import io.github.pr0methean.ochd.color.ShadowHighlightMaterial
-import io.github.pr0methean.ochd.pickaxe.OreBase.STONE
+import io.github.pr0methean.ochd.materials.pickaxe.OreBase.STONE
 import io.github.pr0methean.ochd.tasks.OutputTask
+import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Color
 
 sealed interface Wood: ShadowHighlightMaterial {
+    companion object {
+        fun allOutputTasks(ctx: ImageProcessingContext)
+            = OverworldWood.values().toList().plus(Fungus.values()).flatMap {it.outputTasks(ctx)}
+    }
     val barkColor: Color
     val barkHighlight: Color
     val barkShadow: Color
     val logSynonym: String
-    fun LayerList.bark(): Unit
-    fun LayerList.strippedLogSide(): Unit
-    fun LayerList.logTop(): Unit
-    fun LayerList.strippedLogTop(): Unit
-    fun LayerList.planks(): Unit
-    fun LayerList.trapdoor(): Unit
+    fun LayerList.bark()
+    fun LayerList.strippedLogSide()
+    fun LayerList.logTop()
+    fun LayerList.strippedLogTop()
+    fun LayerList.trapdoor()
 
     override fun outputTasks(ctx: ImageProcessingContext): Iterable<OutputTask> = listOf(
         ctx.out("block/${name}_${logSynonym}", ctx.stack { bark() }),
@@ -29,6 +31,13 @@ sealed interface Wood: ShadowHighlightMaterial {
         ctx.out("block/${name}_planks", ctx.stack { planks() }),
         ctx.out("block/${name}_trapdoor", ctx.stack { trapdoor() })
     )
+
+    fun LayerList.planks() {
+        background(color)
+        layer("waves", highlight)
+        layer("planksTopBorder", shadow)
+        layer("borderShortDashes", highlight)
+    }
 }
 
 enum class OverworldWood(
@@ -116,6 +125,40 @@ enum class OverworldWood(
             layer("trapdoorHingesBig", STONE.highlight)
             layer("trapdoorHinges", STONE.shadow)
         }
+    },
+    OAK(
+        color = c(0xaf8f55),
+        highlight = c(0xc29d62),
+        shadow = c(0x7e6237),
+        barkColor = c(0x745a36),
+        barkHighlight = c(0x987849),
+        barkShadow = c(0x4c3d26)
+    ) {
+        override fun LayerList.trapdoor() {
+            layer("cross", color)
+            layer("borderSolidThick", color)
+            layer("borderSolid", shadow)
+            layer("borderLongDashes", highlight)
+            layer("trapdoorHingesBig", STONE.color)
+            layer("trapdoorHinges", STONE.highlight)
+        }
+    },
+    SPRUCE(
+        color = c(0x70522e),
+        highlight = c(0x886539),
+        shadow = c(0x5a4424),
+        barkColor = c(0x3b2700),
+        barkHighlight = c(0x553a1f),
+        barkShadow = c(0x2e1c00)
+    ) {
+        override fun LayerList.trapdoor() {
+            background(shadow)
+            layer("planksTopVertical", color)
+            layer("borderSolidThick", shadow)
+            layer("borderLongDashes", highlight)
+            layer("trapdoorHingesBig", STONE.color)
+            layer("trapdoorHinges", STONE.shadow)
+        }
     };
 
 
@@ -145,13 +188,6 @@ enum class OverworldWood(
         layer("rings", shadow)
     }
 
-    override fun LayerList.planks() {
-        background(color)
-        layer("waves", highlight)
-        layer("planksTopBorder", shadow)
-        layer("borderShortDashes", highlight)
-    }
-
     override val logSynonym = "log"
 }
 enum class Fungus(
@@ -162,35 +198,64 @@ enum class Fungus(
         override val barkHighlight: Color,
         override val barkShadow: Color)
     : Wood {
-        CRIMSON, WARPED;
+        CRIMSON(
+            color = c(0x6a344b),
+            shadow = c(0x4b2737),
+            highlight = c(0x863e5a),
+            barkColor = c(0x4b2737),
+            barkShadow = c(0x442131),
+            barkHighlight = c(0xb10000)
+        ) {
+            override fun LayerList.trapdoor() {
+                layer("zigzagSolid2", highlight)
+                layer("zigzagSolid", shadow)
+                layer("borderSolidThick", color)
+                layer("borderSolid", shadow)
+                layer("borderShortDashes", highlight)
+                layer("trapdoorHingesBig", STONE.highlight)
+                layer("trapdoorHinges", STONE.shadow)
+            }
+        }, WARPED(
+            color = c(0x287067),
+            shadow = c(0x1e4340),
+            highlight = c(0x3a8e8c),
+            barkColor = c(0x562c3e),
+            barkShadow = c(0x442131),
+            barkHighlight = c(0x00956f)
+        ) {
+        override fun LayerList.trapdoor() {
+            layer("waves", color)
+            layer("borderSolidThick", color)
+            layer("borderSolid", highlight)
+            layer("borderShortDashes", shadow)
+            layer("trapdoorHingesBig", STONE.shadow)
+            layer("trapdoorHinges", STONE.highlight)
+        }
+    };
+
+    override fun LayerList.bark() {
+        background(barkColor)
+        layer("borderSolid", barkShadow)
+        layer("waves", barkHighlight)
+    }
+
+    override fun LayerList.strippedLogSide() {
+        background(color)
+        layer("borderSolid", shadow)
+        layer("borderDotted", highlight)
+    }
+
+    override fun LayerList.logTop() {
+        copy {strippedLogTop()}
+        layer("borderSolid", barkColor)
+        layer("borderDotted", barkShadow)
+    }
+
+    override fun LayerList.strippedLogTop() {
+        copy {strippedLogSide()}
+        layer("ringsCentralBullseye", shadow)
+        layer("rings2", highlight)
+    }
 
     override val logSynonym = "stem"
 }
-/*
-wood_crimson_h='863e5a'
-wood_crimson='6a344b'
-wood_crimson_s='4b2737'
-
-
-wood_oak_h='c29d62'
-wood_oak='af8f55'
-wood_oak_s='7e6237'
-wood_spruce_h='886539'
-wood_spruce='70522e'
-wood_spruce_s='5a4424'
-wood_warped_h='3a8e8c'
-wood_warped='287067'
-wood_warped_s='1e4340'
-bark_crimson_h='b10000'
-bark_crimson='4b2737'
-bark_crimson_s='442131'
-bark_oak_h='987849'
-bark_oak='745a36'
-bark_oak_s='4c3d26'
-bark_spruce_h='553a1f'
-bark_spruce='3b2700'
-bark_spruce_s='2e1c00'
-bark_warped_h='00956f'
-bark_warped='562c3e'
-bark_warped_s='442131'
-*/

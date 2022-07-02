@@ -8,6 +8,7 @@ import javax.imageio.ImageIO
 data class BasicOutputTask(private val producer: TextureTask, override val file: File, val scope: CoroutineScope)
         : OutputTask(scope, file) {
     override suspend fun invoke() {
+        file.parentFile.mkdirs()
         ImageIO.write(SwingFXUtils.fromFXImage(producer.getBitmap(), null), "png", file)
     }
 }
