@@ -4,15 +4,16 @@ import javafx.concurrent.Task
 import javafx.scene.image.Image
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
+import java.lang.invoke.MethodHandle
 import java.lang.invoke.MethodHandles
 
 class MyClassLoader(): ClassLoader()
-val threadLocalClassLoader = ThreadLocal.withInitial {
+val threadLocalClassLoader: ThreadLocal<MyClassLoader> = ThreadLocal.withInitial {
     val classLoader = MyClassLoader()
     classLoader.loadClass("javafx.embed.swing.JFXPanel").getConstructor().newInstance()
     return@withInitial classLoader
 }
-val threadLocalRunLater = ThreadLocal.withInitial {
+val threadLocalRunLater: ThreadLocal<MethodHandle> = ThreadLocal.withInitial {
     return@withInitial MethodHandles.lookup().unreflect(
         threadLocalClassLoader.get().loadClass("javafx.application.Platform").getMethod("runLater", Runnable::class.java))
 }
