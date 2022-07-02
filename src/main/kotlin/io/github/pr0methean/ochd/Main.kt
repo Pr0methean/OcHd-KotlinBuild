@@ -12,6 +12,8 @@ suspend fun main(args:Array<String>) {
         println("Usage: main <size>")
         return
     }
+    // For some reason, it's faster if we run this line than not, even though JfxTextureTask's ThreadLocal instances
+    // already initialize it on the coroutine threads.
     JFXPanel() // Needed to ensure JFX is initialized
 
     val tileSize = args[0].toInt()

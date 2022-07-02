@@ -8,6 +8,9 @@ import java.lang.invoke.MethodHandle
 import java.lang.invoke.MethodHandles
 
 class MyClassLoader(): ClassLoader()
+// JavaFX insists on having only one "UI" thread that can do any image processing, which is stored in a static variable.
+// To fool it into using more than one UI thread in parallel, we need more than one copy of the static variable, hence
+// this ugly but effective workaround.
 val threadLocalClassLoader: ThreadLocal<MyClassLoader> = ThreadLocal.withInitial {
     val classLoader = MyClassLoader()
     classLoader.loadClass("javafx.embed.swing.JFXPanel").getConstructor().newInstance()
