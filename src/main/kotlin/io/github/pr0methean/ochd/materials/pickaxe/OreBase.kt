@@ -1,5 +1,6 @@
 package io.github.pr0methean.ochd.materials.pickaxe
 
+import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.LayerList
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
@@ -28,4 +29,8 @@ enum class OreBase(
         layer("diagonalOutlineChecksTopLeftBottomRight", NETHERRACK.shadow)
         layer("diagonalOutlineChecksBottomLeftTopRight", NETHERRACK.highlight)
     });
+
+    companion object {
+        fun allOutputTasks(ctx: ImageProcessingContext) = values().map {it.outputTask(ctx)}
+    }
 }

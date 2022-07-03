@@ -18,7 +18,7 @@ class ImageProcessingContext(
     val tileSize: Int,
     val scope: CoroutineScope,
     val svgDirectory: File,
-    val outDirectory: File,
+    val outTextureRoot: File,
     val pngDirectory: File
 ) {
 
@@ -60,15 +60,19 @@ class ImageProcessingContext(
     }
 
     fun out(name: String, source: TextureTask) = outputTaskMap.computeIfAbsent(name)
-            {BasicOutputTask(source, outDirectory.resolve(name.lowercase(Locale.ENGLISH)), scope)}
+            {BasicOutputTask(source, outTextureRoot.resolve(name.lowercase(Locale.ENGLISH) + ".png"), scope)}
+
+    fun out(name: String, source: LayerList.() -> Unit) = outputTaskMap.computeIfAbsent(name)
+            {BasicOutputTask(stack {source()}, outTextureRoot.resolve(name.lowercase(Locale.ENGLISH) + ".png"), scope)}
+
 
     fun rename(oldName: String, newName: String): OutputTask {
-        val renameTask = RenameOutputTask(outputTaskMap.get(oldName)!!, outDirectory.resolve(newName), scope)
+        val renameTask = RenameOutputTask(outputTaskMap.get(oldName)!!, outTextureRoot.resolve(newName), scope)
         return outputTaskMap.computeIfAbsent(newName) {renameTask}
     }
 
     fun copy(oldName: String, newName: String): OutputTask {
-        val renameTask = CopyOutputTask(outputTaskMap.get(oldName)!!, outDirectory.resolve(newName), scope)
+        val renameTask = CopyOutputTask(outputTaskMap.get(oldName)!!, outTextureRoot.resolve(newName), scope)
         return outputTaskMap.computeIfAbsent(newName) {renameTask}
     }
 }

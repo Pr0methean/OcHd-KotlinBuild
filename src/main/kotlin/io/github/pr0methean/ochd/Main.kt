@@ -1,9 +1,12 @@
 package io.github.pr0methean.ochd
 
 import io.github.pr0methean.ochd.materials.axe.Wood
+import io.github.pr0methean.ochd.materials.pickaxe.Ore
+import io.github.pr0methean.ochd.materials.pickaxe.OreBase
 import javafx.embed.swing.JFXPanel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.nio.file.Paths
 
@@ -13,23 +16,27 @@ suspend fun main(args:Array<String>) {
         return
     }
     // For some reason, it's faster if we run this line than not, even though JfxTextureTask's ThreadLocal instances
-    // already initialize it on the coroutine threads.
+    // already initialize JavaFX on the coroutine threads.
     JFXPanel() // Needed to ensure JFX is initialized
 
     val tileSize = args[0].toInt()
     if (tileSize <= 0) throw IllegalArgumentException("tileSize shouldn't be zero or negative but was ${args[0]}")
     val scope = CoroutineScope(Dispatchers.IO)
     val svgDirectory = Paths.get("svg").toAbsolutePath().toFile()
+    val metadataDirectory = Paths.get("metadata").toAbsolutePath().toFile()
     println("SVG directory is ${svgDirectory}")
-    val outDirectory = Paths.get("out").toAbsolutePath().toFile()
-    outDirectory.mkdirs()
+    val out = Paths.get("out").toAbsolutePath().toFile()
+    val outTextureRoot = out.resolve("assets").resolve("minecraft").resolve("textures")
+    out.deleteRecursively()
+    outTextureRoot.mkdirs()
     val pngDirectory = Paths.get("png").toAbsolutePath().toFile()
+    pngDirectory.deleteRecursively()
     pngDirectory.mkdirs()
     val ctx = ImageProcessingContext(
         tileSize = tileSize,
         scope = scope,
         svgDirectory = svgDirectory,
-        outDirectory = outDirectory,
+        outTextureRoot = outTextureRoot,
         pngDirectory = pngDirectory
     )
 
@@ -44,6 +51,18 @@ suspend fun main(args:Array<String>) {
     val OXIDATION_STATES = listOf("exposed", "weathered", "oxidized")
      */
     runBlocking(Dispatchers.IO) {
+        // Copy over all metadata files
+        scope.launch {
+            metadataDirectory.walkTopDown().forEach {
+                if (it.isDirectory) {
+                    out.resolve(it.relativeTo(metadataDirectory)).mkdirs()
+                } else {
+                    it.copyTo(out.resolve(it.relativeTo(metadataDirectory)))
+                }
+            }
+        }
         Wood.allOutputTasks(ctx).forEach {it.run()}
+        OreBase.allOutputTasks(ctx).forEach {it.run()}
+        Ore.allOutputTasks(ctx).forEach {it.run()}
     }
 }
