@@ -1,5 +1,6 @@
 package io.github.pr0methean.ochd.tasks
 
+import io.github.pr0methean.ochd.DEFAULT_SNAPSHOT_PARAMS
 import io.github.pr0methean.ochd.LayerList
 import javafx.scene.canvas.Canvas
 import javafx.scene.image.Image
@@ -16,7 +17,7 @@ data class AnimationColumnTask(private val frames: LayerList,
             canvasCtx.drawImage(frame, 0.0, (size * index).toDouble())
         }
         val out = WritableImage(size, size * frames.size)
-        canvas.snapshot(null, out)
+        canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, out)
         return out
     }
 }

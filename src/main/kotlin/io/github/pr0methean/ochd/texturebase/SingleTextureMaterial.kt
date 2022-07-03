@@ -5,8 +5,9 @@ import io.github.pr0methean.ochd.LayerList
 import io.github.pr0methean.ochd.tasks.OutputTask
 
 interface SingleTextureMaterial: ShadowHighlightMaterial {
+    val nameOverride: String?
     val getTextureLayers: LayerList.() -> Unit
     override fun outputTasks(ctx: ImageProcessingContext): Iterable<OutputTask> = listOf(outputTask(ctx))
 
-    fun outputTask(ctx: ImageProcessingContext) = ctx.out(name, ctx.stack {getTextureLayers()})
+    fun outputTask(ctx: ImageProcessingContext) = ctx.out(nameOverride ?: name, ctx.stack {getTextureLayers()})
 }

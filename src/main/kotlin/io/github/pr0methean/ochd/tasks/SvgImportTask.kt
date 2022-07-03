@@ -21,6 +21,7 @@ data class SvgImportTask(private val filename: File, private val svg: SVGUnivers
 
     override suspend fun computeInput(): BufferedImage {
         val icon = SVGIcon()
+        icon.svgUniverse = svg
         icon.svgURI = svg.loadSVG(filename.toURL())
         icon.preferredSize = Dimension(tileSize, tileSize)
         icon.antiAlias = true

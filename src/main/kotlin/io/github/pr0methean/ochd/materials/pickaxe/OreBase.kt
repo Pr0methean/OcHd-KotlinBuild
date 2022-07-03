@@ -30,6 +30,7 @@ enum class OreBase(
         layer("diagonalOutlineChecksBottomLeftTopRight", NETHERRACK.highlight)
     });
 
+    override val nameOverride = "block/$name"
     companion object {
         fun allOutputTasks(ctx: ImageProcessingContext) = values().map {it.outputTask(ctx)}
     }

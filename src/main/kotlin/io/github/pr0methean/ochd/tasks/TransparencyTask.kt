@@ -1,5 +1,6 @@
 package io.github.pr0methean.ochd.tasks
 
+import io.github.pr0methean.ochd.DEFAULT_SNAPSHOT_PARAMS
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.image.WritableImage
@@ -13,7 +14,7 @@ data class TransparencyTask(val base: io.github.pr0methean.ochd.tasks.JfxTexture
         val view = ImageView()
         view.opacity = alpha
         val output = WritableImage(size, size)
-        view.snapshot(null, output)
+        view.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
         return output
     }
 
