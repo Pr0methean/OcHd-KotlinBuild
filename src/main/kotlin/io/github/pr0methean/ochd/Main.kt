@@ -1,8 +1,7 @@
 package io.github.pr0methean.ochd
 
 import io.github.pr0methean.ochd.materials.axe.Wood
-import io.github.pr0methean.ochd.materials.pickaxe.Ore
-import io.github.pr0methean.ochd.materials.pickaxe.OreBase
+import io.github.pr0methean.ochd.materials.pickaxe.allPickaxeOutputTasks
 import javafx.embed.swing.JFXPanel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -62,7 +61,6 @@ suspend fun main(args:Array<String>) {
             }
         }
         Wood.allOutputTasks(ctx).forEach {it.run()}
-        OreBase.allOutputTasks(ctx).forEach {it.run()}
-        Ore.allOutputTasks(ctx).forEach {it.run()}
+        allPickaxeOutputTasks(ctx).forEach {it.run()}
     }
 }
