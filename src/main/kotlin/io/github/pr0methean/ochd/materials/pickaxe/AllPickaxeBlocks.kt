@@ -7,6 +7,7 @@ fun allPickaxeOutputTasks(ctx: ImageProcessingContext): List<OutputTask> {
     val output = mutableListOf<OutputTask>()
     output.addAll(OreBase.allOutputTasks(ctx))
     output.addAll(Ore.allOutputTasks(ctx))
+    output.addAll(CopperOxide.allOutputTasks(ctx))
     output.add(CutCopper.outputTask(ctx))
     return output
 }
