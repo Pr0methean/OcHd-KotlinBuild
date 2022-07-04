@@ -6,15 +6,17 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.nio.file.Paths
+import kotlin.system.measureNanoTime
 
 suspend fun main(args:Array<String>) {
-    lateinit var statsCtx: ImageProcessingContext
     if (args.isEmpty()) {
         println("Usage: main <size>")
         return
     }
-    // For some reason, it's faster if we run this line than not, even though JfxTextureTask's ThreadLocal instances
-    // already initialize JavaFX on the coroutine threads.
+    System.setProperty("glass.platform","Monocle")
+    System.setProperty("monocle.platform","Headless")
+    // For some reason, it's faster if we run this line than not, even though we also initialize JavaFX in a ClassLoader
+    // for each coroutine worker thread.
     JFXPanel() // Needed to ensure JFX is initialized
 
     val tileSize = args[0].toInt()
@@ -47,19 +49,23 @@ val NORMAL_MUSIC_DISCS = listOf("far", "wait", "strad", "mall", "cat", "pigstep"
 val DISC_LABEL_COLORS = listOf(DYES.values).subList(1, DYES.values.size - 1)
 val OXIDATION_STATES = listOf("exposed", "weathered", "oxidized")
  */
-    runBlocking(Dispatchers.IO) {
-        // Copy over all metadata files
-        scope.launch {
-            metadataDirectory.walkTopDown().forEach {
-                if (it.isDirectory) {
-                    out.resolve(it.relativeTo(metadataDirectory)).mkdirs()
-                } else {
-                    it.copyTo(out.resolve(it.relativeTo(metadataDirectory)))
+    val time = measureNanoTime {
+        runBlocking(Dispatchers.IO) {
+            // Copy over all metadata files
+            scope.launch {
+                metadataDirectory.walkTopDown().forEach {
+                    if (it.isDirectory) {
+                        out.resolve(it.relativeTo(metadataDirectory)).mkdirs()
+                    } else {
+                        it.copyTo(out.resolve(it.relativeTo(metadataDirectory)))
+                    }
                 }
             }
-        }
 
-        ALL_MATERIALS.outputTasks(ctx).forEach { it.run() }
+            ALL_MATERIALS.outputTasks(ctx).forEach { it.run() }
+        }
     }
+    println()
+    println("All tasks finished after $time ns")
     ctx.printStats()
 }
