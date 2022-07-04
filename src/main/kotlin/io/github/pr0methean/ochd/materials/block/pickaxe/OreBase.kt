@@ -25,12 +25,14 @@ enum class OreBase(
     },
     DEEPSLATE(c(0x515151), c(0x2f2f37), c(0x797979), "deepslate_") {
         override fun LayerList.createTextureLayers() {
+            background(color)
             layer("diagonalChecksBottomLeftTopRight", DEEPSLATE.highlight)
             layer("diagonalChecksTopLeftBottomRight", DEEPSLATE.shadow)
         }
     },
     NETHERRACK(c(0x723232), c(0x411616), c(0x854242), "nether_") {
         override fun LayerList.createTextureLayers() {
+            background(color)
             layer("diagonalOutlineChecksTopLeftBottomRight", NETHERRACK.shadow)
             layer("diagonalOutlineChecksBottomLeftTopRight", NETHERRACK.highlight)
         }

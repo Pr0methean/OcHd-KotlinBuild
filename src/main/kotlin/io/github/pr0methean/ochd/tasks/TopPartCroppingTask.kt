@@ -14,7 +14,7 @@ data class TopPartCroppingTask(
 )
         : JfxTextureTask<PixelReader>(ctx) {
     private val height = (width * TOP_PORTION).toInt()
-    override suspend fun computeInput(): PixelReader = base.getBitmap().pixelReader
+    override suspend fun computeInput(): PixelReader = base.getImage().pixelReader
 
     override fun doBlockingJfx(input: PixelReader): Image {
         val writableImage = WritableImage(width, width)

@@ -2,15 +2,15 @@ package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.LayerList
-import javafx.scene.image.Image
+import io.github.pr0methean.ochd.packedimage.PackedImage
 
 abstract class ImageCombiningTask(
     private val layers: LayerList, open val size: Int,
     ctx: ImageProcessingContext
-) : JfxTextureTask<List<Image>>(ctx) {
-    override suspend fun computeInput(): List<Image> {
-        val output = ArrayList<Image>(layers.size)
-        layers.forEach {output.add(it.getBitmap())}
+) : JfxTextureTask<List<PackedImage>>(ctx) {
+    override suspend fun computeInput(): List<PackedImage> {
+        val output = ArrayList<PackedImage>(layers.layers.size)
+        layers.layers.forEach {output.add(it.getPackedImage())}
         return output
     }
 }

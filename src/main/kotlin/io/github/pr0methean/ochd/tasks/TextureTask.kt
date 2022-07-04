@@ -1,6 +1,7 @@
 package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.ImageProcessingContext
+import io.github.pr0methean.ochd.packedimage.PackedImage
 import javafx.scene.image.Image
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.async
@@ -16,5 +17,7 @@ abstract class TextureTask(ctx: ImageProcessingContext) {
 
     abstract suspend fun computeBitmap(): Image
 
-    suspend fun getBitmap(): Image = coroutine.await()()
+    suspend fun getPackedImage(): PackedImage = coroutine.await()
+
+    suspend fun getImage(): Image = getPackedImage().unpack()
 }

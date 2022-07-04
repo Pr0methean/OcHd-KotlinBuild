@@ -2,18 +2,17 @@ package io.github.pr0methean.ochd
 
 import com.google.common.collect.ConcurrentHashMultiset
 import com.kitfox.svg.SVGUniverse
+import io.github.pr0methean.ochd.packedimage.PackedImage
+import io.github.pr0methean.ochd.packedimage.PngImage
+import io.github.pr0methean.ochd.packedimage.UncompressedImage
 import io.github.pr0methean.ochd.tasks.*
-import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import java.io.ByteArrayInputStream
-import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
-import javax.imageio.ImageIO
 
 fun color(web: String) = Color.web(web)
 
@@ -64,14 +63,8 @@ class ImageProcessingContext(
     /**
      * Encapsulates the given image in a form small enough to fit on the heap.
      */
-    fun packImage(input: Image): () -> Image {
-        if (tileSize <= MAX_UNCOMPRESSED_TILESIZE) return { input }
-        val compressed = ByteArrayOutputStream().use {
-            ImageIO.write(SwingFXUtils.fromFXImage(input, null), "PNG", it)
-            return@use it.toByteArray()
-        }
-        return {ByteArrayInputStream(compressed).use {Image(it)}}
-    }
+    fun packImage(input: Image): PackedImage =
+            if (tileSize <= MAX_UNCOMPRESSED_TILESIZE) UncompressedImage(input) else PngImage(input)
 
     fun deduplicate(task: TextureTask): TextureTask {
         val className = task::class.simpleName
@@ -93,8 +86,8 @@ class ImageProcessingContext(
         val layerTasks = LayerList(this)
         layerTasks.init()
         return deduplicate(
-            if (layerTasks.size == 1 && layerTasks.background == Color.TRANSPARENT)
-                layerTasks[0]
+            if (layerTasks.layers.size == 1 && layerTasks.background == Color.TRANSPARENT)
+                layerTasks.layers[0]
             else
                 ImageStackingTask(layerTasks, tileSize, this))
     }

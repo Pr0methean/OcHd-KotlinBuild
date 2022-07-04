@@ -1,9 +1,7 @@
 package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.ImageProcessingContext
-import javafx.embed.swing.SwingFXUtils
 import kotlinx.coroutines.withContext
-import javax.imageio.ImageIO
 
 
 data class BasicOutputTask(
@@ -15,7 +13,7 @@ data class BasicOutputTask(
     override suspend fun invoke() {
         file.parentFile.mkdirs()
         withContext(ctx.ioDispatcher) {
-            ImageIO.write(SwingFXUtils.fromFXImage(producer.getBitmap(), null), "png", file)
+            producer.getPackedImage().writePng(file)
         }
     }
 }

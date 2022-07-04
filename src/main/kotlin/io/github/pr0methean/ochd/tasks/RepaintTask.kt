@@ -17,7 +17,7 @@ data class RepaintTask(
 )
     : JfxTextureTask<Image>(ctx) {
 
-    override suspend fun computeInput(): Image = base.getBitmap()
+    override suspend fun computeInput(): Image = base.getImage()
 
     override fun doBlockingJfx(input: Image): Image {
         val view = ImageView(input)

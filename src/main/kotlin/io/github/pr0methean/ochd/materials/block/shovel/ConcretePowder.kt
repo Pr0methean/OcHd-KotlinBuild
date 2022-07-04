@@ -9,8 +9,8 @@ object ConcretePowder: Material {
 
     override fun outputTasks(ctx: ImageProcessingContext): Iterable<OutputTask> {
         val sharedLayersTask = ctx.stack {
-            layer("checksSmall", DYES["gray"], 0.25)
-            layer("checksSmall", DYES["light_gray"], 0.25)
+            layer("checksSmall", DYES["gray"], 0.5)
+            layer("checksSmall", DYES["light_gray"], 0.5)
         }
         return DYES.map {
             val name = it.key
