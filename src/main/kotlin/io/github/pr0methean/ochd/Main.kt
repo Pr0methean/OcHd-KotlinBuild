@@ -15,9 +15,6 @@ suspend fun main(args:Array<String>) {
     }
     System.setProperty("glass.platform","Monocle")
     System.setProperty("monocle.platform","Headless")
-    // For some reason, it's faster if we run this line than not, even though we also initialize JavaFX in a ClassLoader
-    // for each coroutine worker thread.
-    JFXPanel() // Needed to ensure JFX is initialized
 
     val tileSize = args[0].toInt()
     if (tileSize <= 0) throw IllegalArgumentException("tileSize shouldn't be zero or negative but was ${args[0]}")
