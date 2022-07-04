@@ -82,25 +82,25 @@ class ImageProcessingContext(
                 else deduplicate(RepaintTask(paint, importTask, tileSize, alpha, this))
     }
 
-    fun stack(init: LayerList.() -> Unit): TextureTask {
-        val layerTasks = LayerList(this)
+    fun stack(init: LayerListBuilder.() -> Unit): TextureTask {
+        val layerTasks = LayerListBuilder(this)
         layerTasks.init()
         return deduplicate(
             if (layerTasks.layers.size == 1 && layerTasks.background == Color.TRANSPARENT)
                 layerTasks.layers[0]
             else
-                ImageStackingTask(layerTasks, tileSize, this))
+                ImageStackingTask(layerTasks.build(), tileSize, this))
     }
 
-    fun animate(init: LayerList.() -> Unit): TextureTask {
-        val frames = LayerList(this)
+    fun animate(init: LayerListBuilder.() -> Unit): TextureTask {
+        val frames = LayerListBuilder(this)
         frames.init()
-        return deduplicate(AnimationColumnTask(frames, tileSize, this))
+        return deduplicate(AnimationColumnTask(frames.build(), tileSize, this))
     }
 
     fun out(name: String, source: TextureTask) 
             = BasicOutputTask(source, name, this)
 
-    fun out(name: String, source: LayerList.() -> Unit) = BasicOutputTask(
+    fun out(name: String, source: LayerListBuilder.() -> Unit) = BasicOutputTask(
             stack {source()}, name, this)
 }

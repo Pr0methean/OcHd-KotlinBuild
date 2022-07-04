@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd.materials.block.pickaxe
 
 import io.github.pr0methean.ochd.ImageProcessingContext
-import io.github.pr0methean.ochd.LayerList
+import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
@@ -42,7 +42,7 @@ enum class Ore(
         shadow=c(0xca0000),
         highlight = c(0xff5e5e)
     ) {
-        override fun LayerList.itemForOutput() {
+        override fun LayerListBuilder.itemForOutput() {
             rawOre()
         }
     },
@@ -84,13 +84,13 @@ enum class Ore(
         highlight = c(0x6995ff),
         itemNameOverride = "lapis_lazuli"
     ) {
-        override fun LayerList.item() {
+        override fun LayerListBuilder.item() {
             layer("lapis", color)
             layer("lapisHighlight", highlight)
             layer("lapisShadow", shadow)
         }
 
-        override fun LayerList.block() {
+        override fun LayerListBuilder.block() {
             background(highlight)
             layer("checksLarge", shadow)
             layer("checksSmall", color)
@@ -104,12 +104,12 @@ enum class Ore(
         highlight=c(0x77e7d1)
     ) {
         val extremeHighlight = c(0xd5ffff)
-        override fun LayerList.item() {
+        override fun LayerListBuilder.item() {
             layer("diamond1", extremeHighlight)
             layer("diamond2", shadow)
         }
 
-        override fun LayerList.block() {
+        override fun LayerListBuilder.block() {
             background(color)
             layer("streaks", highlight)
             copy {item()}
@@ -123,12 +123,12 @@ enum class Ore(
         highlight=c(0x1cdd62)
     ) {
         val extremeHighlight = c(0xd9ffeb)
-        override fun LayerList.item() {
+        override fun LayerListBuilder.item() {
             layer("emeraldTopLeft", highlight)
             layer("emeraldBottomRight", shadow)
         }
 
-        override fun LayerList.block() {
+        override fun LayerListBuilder.block() {
             background(highlight)
             layer("emeraldTopLeft", extremeHighlight)
             layer("emeraldBottomRight", shadow)
@@ -137,34 +137,34 @@ enum class Ore(
         }
     };
     private val svgName = name.lowercase(Locale.ENGLISH)
-    open fun LayerList.item() {
+    open fun LayerListBuilder.item() {
         layer(svgName, color)
     }
 
-    open fun LayerList.block() {
+    open fun LayerListBuilder.block() {
         background(color)
         layer("streaks", highlight)
         copy {item()}
         layer("borderSolidTopLeft", highlight)
         layer("borderSolidBottomRight", shadow)
     }
-    open fun LayerList.ingot() {
+    open fun LayerListBuilder.ingot() {
         layer("ingotMask", color)
         layer("ingotBorder", shadow)
         layer("ingotBorderTopLeft", highlight)
         layer(svgName, shadow)
     }
-    open fun LayerList.rawOre() {
+    open fun LayerListBuilder.rawOre() {
         layer("bigCircle", shadow)
         layer(svgName, highlight)
     }
-    open fun LayerList.rawBlock() {
+    open fun LayerListBuilder.rawBlock() {
         background(color)
         layer("checksSmall", highlight)
         layer(svgName, shadow)
     }
 
-    open fun LayerList.itemForOutput() {
+    open fun LayerListBuilder.itemForOutput() {
         item()
     }
 

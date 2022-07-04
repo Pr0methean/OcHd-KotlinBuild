@@ -28,7 +28,7 @@ val threadLocalRunLater: ThreadLocal<MethodHandle> = ThreadLocal.withInitial {
 private val OUT_OF_MEMORY_DELAY = 5.seconds
 private val TASK_POLL_INTERVAL = 10.milliseconds
 
-abstract class JfxTextureTask<TJfxInput>(val ctx: ImageProcessingContext) : TextureTask(ctx) {
+abstract class JfxTextureTask<TJfxInput>(open val ctx: ImageProcessingContext) : TextureTask(ctx) {
     inner class JfxTask(val input: TJfxInput): Task<Image>() {
         override fun call(): Image {
             val out = doBlockingJfx(input)

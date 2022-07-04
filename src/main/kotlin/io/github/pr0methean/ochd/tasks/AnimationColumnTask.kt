@@ -11,7 +11,7 @@ import javafx.scene.image.WritableImage
 data class AnimationColumnTask(
     private val frames: LayerList,
     override val size: Int,
-    val ctx: ImageProcessingContext
+    override val ctx: ImageProcessingContext
 ): ImageCombiningTask(frames, size, ctx) {
     override fun doBlockingJfx(input: List<PackedImage>): Image {
         val canvas = Canvas(size.toDouble(), (size * input.size).toDouble())

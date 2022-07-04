@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd.materials.block.axe
 
 import io.github.pr0methean.ochd.ImageProcessingContext
-import io.github.pr0methean.ochd.LayerList
+import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.STONE
 import io.github.pr0methean.ochd.tasks.OutputTask
@@ -23,11 +23,11 @@ sealed interface Wood: ShadowHighlightMaterial {
     val barkShadow: Color
     val logSynonym: String
     val name: String
-    fun LayerList.bark()
-    fun LayerList.strippedLogSide()
-    fun LayerList.logTop()
-    fun LayerList.strippedLogTop()
-    fun LayerList.trapdoor()
+    fun LayerListBuilder.bark()
+    fun LayerListBuilder.strippedLogSide()
+    fun LayerListBuilder.logTop()
+    fun LayerListBuilder.strippedLogTop()
+    fun LayerListBuilder.trapdoor()
 
     override fun outputTasks(ctx: ImageProcessingContext): Iterable<OutputTask> = listOf(
         ctx.out("block/${name}_${logSynonym}", ctx.stack { bark() }),
@@ -38,7 +38,7 @@ sealed interface Wood: ShadowHighlightMaterial {
         ctx.out("block/${name}_trapdoor", ctx.stack { trapdoor() })
     )
 
-    fun LayerList.planks() {
+    fun LayerListBuilder.planks() {
         background(color)
         layer("waves", highlight)
         layer("planksTopBorder", shadow)
@@ -63,7 +63,7 @@ enum class OverworldWood(
         barkHighlight = c(0x8d8477),
         barkShadow = c(0x504b40),
     ) {
-        override fun LayerList.trapdoor() {
+        override fun LayerListBuilder.trapdoor() {
             layer("bigDiamond", color)
             layer("borderSolidThick", color)
             layer("borderSolid", highlight)
@@ -79,7 +79,7 @@ enum class OverworldWood(
         barkHighlight = Color.WHITE,
         barkShadow = c(0x605e54)
     ) {
-        override fun LayerList.trapdoor() {
+        override fun LayerListBuilder.trapdoor() {
             layer("trapdoor1", color)
             layer("borderSolid", shadow)
             layer("trapdoorHingesBig", STONE.shadow)
@@ -93,7 +93,7 @@ enum class OverworldWood(
         barkShadow = c(0x292000),
         barkHighlight = c(0x584428)
     ) {
-        override fun LayerList.trapdoor() {
+        override fun LayerListBuilder.trapdoor() {
             background(color)
             layer("2x2BottomRight", highlight)
             layer("2x2TopLeft", shadow)
@@ -109,7 +109,7 @@ enum class OverworldWood(
         barkShadow = c(0x3e3000),
         barkHighlight = c(0x7d5d26)
     ) {
-        override fun LayerList.trapdoor() {
+        override fun LayerListBuilder.trapdoor() {
             layer("trapdoor2", color)
             layer("borderSolid", shadow)
             layer("borderShortDashes", highlight)
@@ -125,7 +125,7 @@ enum class OverworldWood(
         barkHighlight = c(0x675230),
         barkShadow = c(0x443522)
     ) {
-        override fun LayerList.trapdoor() {
+        override fun LayerListBuilder.trapdoor() {
             layer("ringsHole", color)
             layer("rings2", shadow)
             layer("borderDotted", highlight)
@@ -141,7 +141,7 @@ enum class OverworldWood(
         barkHighlight = c(0x987849),
         barkShadow = c(0x4c3d26)
     ) {
-        override fun LayerList.trapdoor() {
+        override fun LayerListBuilder.trapdoor() {
             layer("cross", color)
             layer("borderSolidThick", color)
             layer("borderSolid", shadow)
@@ -158,7 +158,7 @@ enum class OverworldWood(
         barkHighlight = c(0x553a1f),
         barkShadow = c(0x2e1c00)
     ) {
-        override fun LayerList.trapdoor() {
+        override fun LayerListBuilder.trapdoor() {
             background(shadow)
             layer("planksTopVertical", color)
             layer("borderSolidThick", shadow)
@@ -169,7 +169,7 @@ enum class OverworldWood(
     };
 
 
-    override fun LayerList.bark() {
+    override fun LayerListBuilder.bark() {
         background(barkColor)
         layer("borderSolid", barkShadow)
         layer("borderDotted", barkHighlight)
@@ -177,19 +177,19 @@ enum class OverworldWood(
         layer("zigzagSolid2", barkHighlight)
     }
 
-    override fun LayerList.strippedLogSide() {
+    override fun LayerListBuilder.strippedLogSide() {
         background(color)
         layer("borderSolid", shadow)
         layer("borderShortDashes", highlight)
     }
 
-    override fun LayerList.logTop() {
+    override fun LayerListBuilder.logTop() {
         copy {strippedLogTop()}
         layer("borderSolid", barkColor)
         layer("borderDotted", barkShadow)
     }
 
-    override fun LayerList.strippedLogTop() {
+    override fun LayerListBuilder.strippedLogTop() {
         copy { strippedLogSide() }
         layer("ringsCentralBullseye", highlight)
         layer("rings", shadow)
@@ -213,7 +213,7 @@ enum class Fungus(
             barkShadow = c(0x442131),
             barkHighlight = c(0xb10000)
         ) {
-            override fun LayerList.trapdoor() {
+            override fun LayerListBuilder.trapdoor() {
                 layer("zigzagSolid2", highlight)
                 layer("zigzagSolid", shadow)
                 layer("borderSolidThick", color)
@@ -230,7 +230,7 @@ enum class Fungus(
             barkShadow = c(0x442131),
             barkHighlight = c(0x00956f)
         ) {
-        override fun LayerList.trapdoor() {
+        override fun LayerListBuilder.trapdoor() {
             layer("waves", color)
             layer("borderSolidThick", color)
             layer("borderSolid", highlight)
@@ -240,25 +240,25 @@ enum class Fungus(
         }
     };
 
-    override fun LayerList.bark() {
+    override fun LayerListBuilder.bark() {
         background(barkColor)
         layer("borderSolid", barkShadow)
         layer("waves", barkHighlight)
     }
 
-    override fun LayerList.strippedLogSide() {
+    override fun LayerListBuilder.strippedLogSide() {
         background(color)
         layer("borderSolid", shadow)
         layer("borderDotted", highlight)
     }
 
-    override fun LayerList.logTop() {
+    override fun LayerListBuilder.logTop() {
         copy {strippedLogTop()}
         layer("borderSolid", barkColor)
         layer("borderDotted", barkShadow)
     }
 
-    override fun LayerList.strippedLogTop() {
+    override fun LayerListBuilder.strippedLogTop() {
         copy {strippedLogSide()}
         layer("ringsCentralBullseye", shadow)
         layer("rings2", highlight)

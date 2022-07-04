@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd.materials.block.pickaxe
 
 import io.github.pr0methean.ochd.ImageProcessingContext
-import io.github.pr0methean.ochd.LayerList
+import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
@@ -28,17 +28,17 @@ enum class CopperOxide(
         shadow = c(0x3b5c5c),
         highlight = c(0x6ec59f)
     );
-    fun LayerList.commonLayers() {
+    fun LayerListBuilder.commonLayers() {
         background(color)
         layer("streaks", highlight)
         layer("borderSolidTopLeft", highlight)
         layer("borderSolidBottomRight", shadow)
     }
-    fun LayerList.uncut() {
+    fun LayerListBuilder.uncut() {
         copy {commonLayers()}
         layer("copper2oxide", shadow)
     }
-    fun LayerList.cut() {
+    fun LayerListBuilder.cut() {
         copy {commonLayers()}
         layer("cutInQuarters1", shadow)
         layer("cutInQuarters2", highlight)

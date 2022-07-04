@@ -14,7 +14,7 @@ import javafx.scene.layout.StackPane
 data class ImageStackingTask(
     val layers: LayerList,
     override val size: Int,
-    val ctx: ImageProcessingContext
+    override val ctx: ImageProcessingContext
 ): ImageCombiningTask(layers, size, ctx) {
 
     override fun doBlockingJfx(input: List<PackedImage>): Image {

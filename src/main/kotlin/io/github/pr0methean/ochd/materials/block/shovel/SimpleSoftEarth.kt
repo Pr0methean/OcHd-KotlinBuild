@@ -1,6 +1,6 @@
 package io.github.pr0methean.ochd.materials.block.shovel
 
-import io.github.pr0methean.ochd.LayerList
+import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase
 import io.github.pr0methean.ochd.texturebase.Block
@@ -16,7 +16,7 @@ enum class SimpleSoftEarth(
     override val highlight: Color,
 ) : ShadowHighlightMaterial, Block {
     DIRT(c(0x966c4a), c(0x593d29), c(0xb9855c)) {
-        override fun LayerList.createTextureLayers() {
+        override fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("dots3", shadow)
             layer("dots2", highlight)
@@ -24,28 +24,28 @@ enum class SimpleSoftEarth(
         }
     },
     SAND(c(0xdfd5aa), c(0xd1ba8a), c(0xedebcb)) {
-        override fun LayerList.createTextureLayers() {
+        override fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("checksSmall", shadow)
             layer("checksSmallOutline", highlight)
         }
     },
     GRAVEL(c(0x7f7f7f), c(0x5f5f5f), c(0xaeaeae)) {
-        override fun LayerList.createTextureLayers() {
+        override fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("checksLarge", shadow)
             layer("checksLargeOutline", highlight)
         }
     },
     RED_SAND(c(0xbf6721), c(0xac5700), c(0xd97b30)) {
-        override fun LayerList.createTextureLayers() {
+        override fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("checksSmall", highlight)
             layer("checksSmallOutline", shadow)
         }
     },
     CLAY(c(0x9aa3b3), c(0x9499a4), c(0xafb9d6)) {
-        override fun LayerList.createTextureLayers() {
+        override fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("diagonalChecksTopLeftBottomRight", shadow)
             layer("diagonalChecksBottomLeftTopRight", highlight)
@@ -54,7 +54,7 @@ enum class SimpleSoftEarth(
         }
     },
     MUD(c(0x3a3a3a), c(0x333333), c(0x494949)) {
-        override fun LayerList.createTextureLayers() {
+        override fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("strokeTopLeftBottomRight2", highlight)
             layer("strokeBottomLeftTopRight2", shadow)
@@ -63,7 +63,7 @@ enum class SimpleSoftEarth(
         }
     },
     PACKED_MUD(c(0x8c674f),c(0x5e4841),c(0xab8661)) {
-        override fun LayerList.createTextureLayers() {
+        override fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("strokeTopLeftBottomRight2", highlight)
             layer("strokeBottomLeftTopRight2", shadow)
@@ -71,7 +71,7 @@ enum class SimpleSoftEarth(
         }
     },
     MOSS_BLOCK(c(0x647233),c(0x42552d),c(0x70922d)) {
-        override fun LayerList.createTextureLayers() {
+        override fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("strokeTopLeftBottomRight4", highlight)
             layer("strokeBottomLeftTopRight4", shadow)
@@ -80,14 +80,14 @@ enum class SimpleSoftEarth(
         }
     },
     FARMLAND(c(0x966c4a),c(0x593d29),c(0xb9855c)) {
-        override fun LayerList.createTextureLayers() {
+        override fun LayerListBuilder.createTextureLayers() {
             background(highlight)
             layer("bambooThick", color)
             layer("bambooThinMinusBorder", shadow)
         }
     },
     FARMLAND_MOIST(c(0x552e00),c(0x341900),c(0x6e3c15)) {
-        override fun LayerList.createTextureLayers() {
+        override fun LayerListBuilder.createTextureLayers() {
             background(highlight)
             layer("bambooThick", color)
             layer("bambooThinMinusBorder", shadow)
@@ -95,7 +95,7 @@ enum class SimpleSoftEarth(
         }
     },
     SOUL_SAND(c(0x5b4538), c(0x352922), c(0x796152)) {
-        override fun LayerList.createTextureLayers() {
+        override fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("borderSolid", shadow)
             layer("checksSmall", highlight)
@@ -105,7 +105,7 @@ enum class SimpleSoftEarth(
         }
     },
     SOUL_SOIL(c(0x49372c), c(0x352922), c(0x6a5244)) {
-        override fun LayerList.createTextureLayers() {
+        override fun LayerListBuilder.createTextureLayers() {
             background(shadow)
             layer("borderSolid", color)
             layer("strokeBottomLeftTopRight4", highlight)
@@ -115,7 +115,7 @@ enum class SimpleSoftEarth(
         }
     },
     GRASS_BLOCK_SIDE(c(0x83b253),c(0x64a43a),c(0x9ccb6c)) {
-        override fun LayerList.createTextureLayers() {
+        override fun LayerListBuilder.createTextureLayers() {
             copy(DIRT)
             layer("topPart", highlight)
             layer("veesTop", shadow)

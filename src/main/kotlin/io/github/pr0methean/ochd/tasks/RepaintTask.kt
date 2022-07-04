@@ -13,7 +13,7 @@ import javafx.scene.paint.Paint
 
 data class RepaintTask(
     private val paint: Paint?, private val base: TextureTask, private val size: Int, val alpha: Double = 1.0,
-    val ctx: ImageProcessingContext
+    override val ctx: ImageProcessingContext
 )
     : JfxTextureTask<Image>(ctx) {
 

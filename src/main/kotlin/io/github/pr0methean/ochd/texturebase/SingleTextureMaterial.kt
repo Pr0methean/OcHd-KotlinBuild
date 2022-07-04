@@ -1,10 +1,10 @@
 package io.github.pr0methean.ochd.texturebase
 
 import io.github.pr0methean.ochd.ImageProcessingContext
-import io.github.pr0methean.ochd.LayerList
+import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.tasks.OutputTask
 
-fun LayerList.copy(source: SingleTextureMaterial) {
+fun LayerListBuilder.copy(source: SingleTextureMaterial) {
     source.copyTo(this)
 }
 interface SingleTextureMaterial: Material {
@@ -12,10 +12,10 @@ interface SingleTextureMaterial: Material {
 
     val name: String
 
-    fun LayerList.createTextureLayers()
+    fun LayerListBuilder.createTextureLayers()
 
-    fun copyTo(dest: LayerList) {
-        dest.copy(LayerList(dest.ctx).apply {createTextureLayers()})
+    fun copyTo(dest: LayerListBuilder) {
+        dest.copy(LayerListBuilder(dest.ctx).apply {createTextureLayers()}.build())
     }
     override fun outputTasks(ctx: ImageProcessingContext): Iterable<OutputTask> = listOf(
         ctx.out("$directory/$name", ctx.stack { createTextureLayers() })

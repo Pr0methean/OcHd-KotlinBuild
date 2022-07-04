@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd.texturebase
 
 import io.github.pr0methean.ochd.ImageProcessingContext
-import io.github.pr0methean.ochd.LayerList
+import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.tasks.OutputTask
 
 interface GroundCoverBlock: Material {
@@ -12,10 +12,10 @@ interface GroundCoverBlock: Material {
     val nameOverrideSide: String?
             get() = null
 
-    fun LayerList.createCoverSideLayers() {
+    fun LayerListBuilder.createCoverSideLayers() {
         copyTopOf {createTopLayers()}
     }
-    fun LayerList.createTopLayers()
+    fun LayerListBuilder.createTopLayers()
 
     override fun outputTasks(ctx: ImageProcessingContext): Iterable<OutputTask> = listOf(
         ctx.out("block/${nameOverrideTop ?: "${name}_top"}", ctx.stack { createTopLayers() }),

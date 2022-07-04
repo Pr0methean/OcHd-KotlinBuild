@@ -10,7 +10,7 @@ const val TOP_PORTION = 11.0/32
 data class TopPartCroppingTask(
     val base: TextureTask,
     val width: Int,
-    val ctx: ImageProcessingContext
+    override val ctx: ImageProcessingContext
 )
         : JfxTextureTask<PixelReader>(ctx) {
     private val height = (width * TOP_PORTION).toInt()

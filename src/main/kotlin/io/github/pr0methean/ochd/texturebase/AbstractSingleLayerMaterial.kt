@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd.texturebase
 
 import io.github.pr0methean.ochd.ImageProcessingContext
-import io.github.pr0methean.ochd.LayerList
+import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.tasks.OutputTask
 import javafx.scene.paint.Paint
 
@@ -16,7 +16,7 @@ abstract class AbstractSingleLayerMaterial(
     override val name: String
         get() = nameOverride ?: this::class.simpleName!!
 
-    override fun LayerList.createTextureLayers() {
+    override fun LayerListBuilder.createTextureLayers() {
         layer(sourceFileName, color, alpha)
     }
 
