@@ -137,7 +137,7 @@ enum class Ore(
         }
     };
     open fun LayerList.item() {
-        layer(name, color)
+        layer(name.lowercase(Locale.ENGLISH), color)
     }
 
     open fun LayerList.block() {
