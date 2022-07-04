@@ -7,6 +7,7 @@ import kotlinx.coroutines.delay
 import java.lang.Thread.sleep
 import java.lang.invoke.MethodHandle
 import java.lang.invoke.MethodHandles
+import java.util.concurrent.ExecutionException
 import java.util.concurrent.ThreadLocalRandom
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
@@ -52,12 +53,23 @@ abstract class JfxTextureTask<TJfxInput>(ctx: ImageProcessingContext) : TextureT
             try {
                 return block()
             } catch (e: OutOfMemoryError) {
-                val delay = getOutOfMemoryDelay()
-                println("Sleeping for $delay after OutOfMemoryError in $this")
-                sleep(delay.inWholeMilliseconds)
+                waitToRetryBlocking()
+            } catch (e: ExecutionException) {
+                if (e.cause is OutOfMemoryError) {
+                    waitToRetryBlocking()
+                } else {
+                    throw e
+                }
             }
         }
     }
+
+    private fun waitToRetryBlocking() {
+        val delay = getOutOfMemoryDelay()
+        println("Sleeping for $delay after OutOfMemoryError in $this")
+        sleep(delay.inWholeMilliseconds)
+    }
+
     override suspend fun computeBitmap(): Image {
         val task = retryOnOom { JfxTask( retryOnOom(::computeInput)) }
         val runLater: MethodHandle = threadLocalRunLater.get()
