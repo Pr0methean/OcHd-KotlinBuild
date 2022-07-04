@@ -60,7 +60,7 @@ jobs:
       with:
         name: OcHD-App
     - name: Make Textures
-      run: java -jar build/libs/OcHD-KotlinBuild-1.0-SNAPSHOT.jar ${{ matrix.size }}
+      run: java -jar OcHD-KotlinBuild-1.0-SNAPSHOT.jar ${{ matrix.size }}
     - name: Zip Texture Pack
       run: cd out && zip OcHD-${{ matrix.size}}x${{ matrix.size}}.zip .
     - name: Publish Texture Pack
