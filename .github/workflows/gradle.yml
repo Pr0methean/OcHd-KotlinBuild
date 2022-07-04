@@ -59,6 +59,8 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: OcHD-App
+    - name: List Directory
+      run: ls -R
     - name: Make Textures
       run: java -jar OcHD-KotlinBuild-1.0-SNAPSHOT.jar ${{ matrix.size }}
     - name: Zip Texture Pack
