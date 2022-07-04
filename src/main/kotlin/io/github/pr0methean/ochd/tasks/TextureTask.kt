@@ -9,7 +9,7 @@ import kotlinx.coroutines.async
 abstract class TextureTask(scope: CoroutineScope, ctx: ImageProcessingContext) {
     private val coroutine = scope.async(start = CoroutineStart.LAZY) {
         println("Starting task ${this@TextureTask}")
-        ctx.taskLaunches.add(this@TextureTask::class)
+        ctx.taskLaunches.add(this@TextureTask::class.simpleName)
         val bitmap = computeBitmap()
         println("Finished task ${this@TextureTask}")
         return@async bitmap
