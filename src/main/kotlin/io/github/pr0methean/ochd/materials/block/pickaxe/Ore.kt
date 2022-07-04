@@ -136,8 +136,9 @@ enum class Ore(
             layer("borderSolidTopLeft", highlight)
         }
     };
+    private val svgName = name.lowercase(Locale.ENGLISH)
     open fun LayerList.item() {
-        layer(name.lowercase(Locale.ENGLISH), color)
+        layer(svgName, color)
     }
 
     open fun LayerList.block() {
@@ -151,16 +152,16 @@ enum class Ore(
         layer("ingotMask", color)
         layer("ingotBorder", shadow)
         layer("ingotBorderTopLeft", highlight)
-        layer(name, shadow)
+        layer(svgName, shadow)
     }
     open fun LayerList.rawOre() {
         layer("bigCircle", shadow)
-        layer(name, highlight)
+        layer(svgName, highlight)
     }
     open fun LayerList.rawBlock() {
         background(color)
         layer("checksSmall", highlight)
-        layer(name, shadow)
+        layer(svgName, shadow)
     }
 
     open fun LayerList.itemForOutput() {
