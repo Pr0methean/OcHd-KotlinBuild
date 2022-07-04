@@ -32,7 +32,7 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.3")
     implementation("guru.nidi.com.kitfox:svgSalamander:1.1.3")
     implementation("com.google.guava:guava:31.1-jre")
-    runtimeOnly("org.testfx:openjfx-monocle:jdk-11+26")
+    implementation("org.testfx:openjfx-monocle:jdk-11+26")
     runtimeOnly(kotlin("reflect"))
 }
 
