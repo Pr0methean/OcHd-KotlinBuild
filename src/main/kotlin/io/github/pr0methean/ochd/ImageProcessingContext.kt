@@ -40,7 +40,9 @@ class ImageProcessingContext(
     val dedupeFailures: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     init {
         svgDirectory.list()!!.forEach { svgFile ->
-            svgTasks[svgFile.removeSuffix(".svg")] = SvgImportTask(
+            val shortName = svgFile.removeSuffix(".svg")
+            svgTasks[shortName] = SvgImportTask(
+                shortName,
                 svgDirectory.resolve(svgFile),
                 svg,
                 tileSize,
@@ -84,11 +86,9 @@ class ImageProcessingContext(
     }
 
     fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): TextureTask {
-        val importTask = SvgImportTask(svgDirectory.resolve("$name.svg"), svg, tileSize, this)
-        val task = if (paint == null) {
-            if (alpha == 1.0) importTask else TransparencyTask(importTask, tileSize, alpha, this)
-        } else RepaintTask(paint, importTask, tileSize, alpha, this)
-        return deduplicate(task)
+        val importTask = svgTasks[name] ?: throw IllegalArgumentException("No SVG task called $name")
+        return if (paint == null && alpha == 1.0) importTask
+                else deduplicate(RepaintTask(paint, importTask, tileSize, alpha, this))
     }
 
     fun stack(init: LayerList.() -> Unit): TextureTask {

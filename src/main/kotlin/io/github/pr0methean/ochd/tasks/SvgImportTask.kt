@@ -18,6 +18,7 @@ import java.io.File
 inkscape -w "$SIZE" -h "$SIZE" "$SVG_DIRECTORY/$1.svg" -o "$PNG_DIRECTORY/$1.png" -y 0.0
  */
 data class SvgImportTask(
+    val shortName: String,
     private val filename: File,
     private val svg: SVGUniverse,
     private val tileSize: Int,

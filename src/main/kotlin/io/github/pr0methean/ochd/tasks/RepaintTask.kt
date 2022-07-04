@@ -12,7 +12,7 @@ import javafx.scene.image.WritableImage
 import javafx.scene.paint.Paint
 
 data class RepaintTask(
-    private val paint: Paint, private val base: TextureTask, private val size: Int, val alpha: Double = 1.0,
+    private val paint: Paint?, private val base: TextureTask, private val size: Int, val alpha: Double = 1.0,
     val ctx: ImageProcessingContext
 )
     : JfxTextureTask<Image>(ctx) {
@@ -20,15 +20,16 @@ data class RepaintTask(
     override suspend fun computeInput(): Image = base.getBitmap()
 
     override fun doBlockingJfx(input: Image): Image {
-        val colorLayer = ColorInput(0.0, 0.0, size.toDouble(), size.toDouble(), paint)
-        val blend = Blend()
-        blend.mode = BlendMode.SRC_ATOP
-        blend.topInput = colorLayer
-        blend.bottomInput = null
         val view = ImageView(input)
+        if (paint != null) {
+            val colorLayer = ColorInput(0.0, 0.0, size.toDouble(), size.toDouble(), paint)
+            val blend = Blend()
+            blend.mode = BlendMode.SRC_ATOP
+            blend.topInput = colorLayer
+            blend.bottomInput = null
+            view.effect = blend
+        }
         view.opacity = alpha
-        view.effect = blend
-        view.cacheProperty().set(true)
         view.cacheHint = CacheHint.QUALITY
         view.isSmooth = true
         val output = WritableImage(size, size)
