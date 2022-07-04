@@ -9,7 +9,6 @@ import kotlinx.coroutines.CoroutineScope
 import java.io.File
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.reflect.KClass
 
 fun color(web: String) = Color.web(web)
 
@@ -25,10 +24,9 @@ class ImageProcessingContext(
     val svg = SVGUniverse()
     val svgTasks = ConcurrentHashMap<String, SvgImportTask>()
     val taskDedupMap = ConcurrentHashMap<TextureTask, TextureTask>()
-    val outputTaskMap = ConcurrentHashMap<String, OutputTask>()
-    val taskLaunches: ConcurrentHashMultiset<KClass<*>> = ConcurrentHashMultiset.create<KClass<*>>()
-    val dedupeSuccesses: ConcurrentHashMultiset<KClass<*>> = ConcurrentHashMultiset.create<KClass<*>>()
-    val dedupeFailures: ConcurrentHashMultiset<KClass<*>> = ConcurrentHashMultiset.create<KClass<*>>()
+    val taskLaunches: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
+    val dedupeSuccesses: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
+    val dedupeFailures: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     init {
         svgDirectory.list()!!.forEach { svgFile ->
             svgTasks[svgFile.removeSuffix(".svg")] = SvgImportTask(
@@ -54,10 +52,11 @@ class ImageProcessingContext(
     }
 
     fun deduplicate(task: TextureTask): TextureTask {
-        dedupeSuccesses.add(task::class)
+        val className = task::class.simpleName
+        dedupeSuccesses.add(className)
         return taskDedupMap.computeIfAbsent(task) {
-            dedupeSuccesses.remove(task::class)
-            dedupeFailures.add(task::class)
+            dedupeSuccesses.remove(className)
+            dedupeFailures.add(className)
             task
         }
     }
@@ -86,20 +85,9 @@ class ImageProcessingContext(
         return deduplicate(AnimationColumnTask(frames, tileSize, scope, this))
     }
 
-    fun out(name: String, source: TextureTask) = outputTaskMap.computeIfAbsent(name)
-            {BasicOutputTask(source, outTextureRoot.resolve(name.lowercase(Locale.ENGLISH) + ".png"), scope, this)}
+    fun out(name: String, source: TextureTask) 
+            = BasicOutputTask(source, outTextureRoot.resolve(name.lowercase(Locale.ENGLISH) + ".png"), scope, this)
 
-    fun out(name: String, source: LayerList.() -> Unit) = outputTaskMap.computeIfAbsent(name)
-            {BasicOutputTask(
-                stack {source()},
-                outTextureRoot.resolve(name.lowercase(Locale.ENGLISH) + ".png"),
-                scope,
-                this
-            )}
-
-
-    fun copy(oldName: String, newName: String): OutputTask {
-        val renameTask = CopyOutputTask(outputTaskMap.get(oldName)!!, outTextureRoot.resolve(newName), scope, this)
-        return outputTaskMap.computeIfAbsent(newName) {renameTask}
-    }
+    fun out(name: String, source: LayerList.() -> Unit) = BasicOutputTask(
+            stack {source()}, outTextureRoot.resolve(name.lowercase(Locale.ENGLISH) + ".png"), scope, this)
 }
