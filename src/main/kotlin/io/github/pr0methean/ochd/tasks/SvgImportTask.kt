@@ -9,7 +9,6 @@ import javafx.scene.image.Image
 import kotlinx.coroutines.withContext
 import java.awt.Dimension
 import java.awt.image.BufferedImage
-import java.io.File
 
 /**
  * No within-process method seems to work across multiple threads, so shell out to Inkscape
@@ -19,17 +18,17 @@ inkscape -w "$SIZE" -h "$SIZE" "$SVG_DIRECTORY/$1.svg" -o "$PNG_DIRECTORY/$1.png
  */
 data class SvgImportTask(
     val shortName: String,
-    private val filename: File,
     private val svg: SVGUniverse,
     private val tileSize: Int,
     val ctx: ImageProcessingContext
 )
     : JfxTextureTask<BufferedImage>(ctx) {
-    override fun toString(): String = "SvgImportTask for $filename"
+    val file = ctx.svgDirectory.resolve("$shortName.svg")
+    override fun toString(): String = "SvgImportTask for $shortName"
 
     override suspend fun computeInput(): BufferedImage {
         @Suppress("DEPRECATION") val svgUri = withContext(ctx.ioDispatcher) {
-            svg.loadSVG(filename.toURL())
+            svg.loadSVG(file.toURL())
         }
         val icon = SVGIcon()
         icon.svgURI = svgUri

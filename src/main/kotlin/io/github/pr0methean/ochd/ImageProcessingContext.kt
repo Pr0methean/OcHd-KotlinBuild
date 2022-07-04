@@ -12,7 +12,6 @@ import kotlinx.coroutines.Dispatchers
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
-import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import javax.imageio.ImageIO
 
@@ -43,7 +42,6 @@ class ImageProcessingContext(
             val shortName = svgFile.removeSuffix(".svg")
             svgTasks[shortName] = SvgImportTask(
                 shortName,
-                svgDirectory.resolve(svgFile),
                 svg,
                 tileSize,
                 this
@@ -108,8 +106,8 @@ class ImageProcessingContext(
     }
 
     fun out(name: String, source: TextureTask) 
-            = BasicOutputTask(source, outTextureRoot.resolve(name.lowercase(Locale.ENGLISH) + ".png"), this)
+            = BasicOutputTask(source, name, this)
 
     fun out(name: String, source: LayerList.() -> Unit) = BasicOutputTask(
-            stack {source()}, outTextureRoot.resolve(name.lowercase(Locale.ENGLISH) + ".png"), this)
+            stack {source()}, name, this)
 }
