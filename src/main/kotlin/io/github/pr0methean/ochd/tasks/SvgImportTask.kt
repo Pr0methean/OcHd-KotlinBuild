@@ -6,7 +6,6 @@ import com.kitfox.svg.app.beans.SVGPanel.AUTOSIZE_STRETCH
 import io.github.pr0methean.ochd.ImageProcessingContext
 import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.withContext
 import java.awt.Dimension
 import java.awt.image.BufferedImage
@@ -22,10 +21,10 @@ data class SvgImportTask(
     private val filename: File,
     private val svg: SVGUniverse,
     private val tileSize: Int,
-    override val scope: CoroutineScope,
     val ctx: ImageProcessingContext
 )
-    : JfxTextureTask<BufferedImage>(scope, ctx) {
+    : JfxTextureTask<BufferedImage>(ctx) {
+    override fun toString(): String = "SvgImportTask for $filename"
 
     override suspend fun computeInput(): BufferedImage {
         @Suppress("DEPRECATION") val svgUri = withContext(ctx.ioDispatcher) {

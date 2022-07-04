@@ -34,13 +34,13 @@ class LayerList(val ctx: ImageProcessingContext) : ArrayList<TextureTask>() {
             }
         }
         if (source.size > 1) {
-            add(ImageStackingTask(source, ctx.tileSize, ctx.scope, ctx))
+            add(ImageStackingTask(source, ctx.tileSize, ctx))
         } else {
             addAll(source)
         }
     }
     fun copyTopOf(source: TextureTask) {
-        add(TopPartCroppingTask(source, ctx.tileSize, ctx.scope, ctx))
+        add(TopPartCroppingTask(source, ctx.tileSize, ctx))
     }
     fun copyTopOf(source: LayerList.() -> Unit) = copyTopOf(ctx.stack(source))
     fun copyTopOf(source: LayerList) = copyTopOf {copy(source)}

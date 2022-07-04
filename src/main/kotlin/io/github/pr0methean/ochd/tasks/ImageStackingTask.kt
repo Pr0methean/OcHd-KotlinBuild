@@ -9,14 +9,12 @@ import javafx.scene.image.WritableImage
 import javafx.scene.layout.Background
 import javafx.scene.layout.BackgroundFill
 import javafx.scene.layout.StackPane
-import kotlinx.coroutines.CoroutineScope
 
 data class ImageStackingTask(
     val layers: LayerList,
     override val size: Int,
-    override val scope: CoroutineScope,
     val ctx: ImageProcessingContext
-): ImageCombiningTask(layers, size, scope, ctx) {
+): ImageCombiningTask(layers, size, ctx) {
 
     override fun doBlockingJfx(input: List<Image>): Image {
         val stackPane = StackPane()
@@ -27,7 +25,7 @@ data class ImageStackingTask(
         val params = SnapshotParameters()
         params.fill = layers.background
         val output = WritableImage(size, size)
-        stackPane.snapshot(params, output)
+        retryOnOomBlocking { stackPane.snapshot(params, output) }
         return output
     }
 

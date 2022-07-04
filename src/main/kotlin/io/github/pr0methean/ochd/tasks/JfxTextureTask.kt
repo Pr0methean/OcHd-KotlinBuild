@@ -3,8 +3,8 @@ package io.github.pr0methean.ochd.tasks
 import io.github.pr0methean.ochd.ImageProcessingContext
 import javafx.concurrent.Task
 import javafx.scene.image.Image
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
+import java.lang.Thread.sleep
 import java.lang.invoke.MethodHandle
 import java.lang.invoke.MethodHandles
 import java.util.concurrent.ThreadLocalRandom
@@ -26,7 +26,7 @@ val threadLocalRunLater: ThreadLocal<MethodHandle> = ThreadLocal.withInitial {
 private val OUT_OF_MEMORY_DELAY = 5.seconds
 private val TASK_POLL_INTERVAL = 10.milliseconds
 
-abstract class JfxTextureTask<TJfxInput>(open val scope: CoroutineScope, ctx: ImageProcessingContext) : TextureTask(scope, ctx) {
+abstract class JfxTextureTask<TJfxInput>(ctx: ImageProcessingContext) : TextureTask(ctx) {
     inner class JfxTask(val input: TJfxInput): Task<Image>() {
         override fun call(): Image {
             val out = doBlockingJfx(input)
@@ -36,7 +36,7 @@ abstract class JfxTextureTask<TJfxInput>(open val scope: CoroutineScope, ctx: Im
     }
 
     private fun getOutOfMemoryDelay() = (2500 + ThreadLocalRandom.current().nextInt(5000)).milliseconds
-    private suspend fun <T> retryOnOom(block: suspend () -> T): T {
+    protected suspend fun <T> retryOnOom(block: suspend () -> T): T {
         while (true) {
             try {
                 return block()
@@ -44,6 +44,17 @@ abstract class JfxTextureTask<TJfxInput>(open val scope: CoroutineScope, ctx: Im
                 val delay = getOutOfMemoryDelay()
                 println("Delaying for $delay after OutOfMemoryError in $this")
                 delay(delay)
+            }
+        }
+    }
+    protected fun <T> retryOnOomBlocking(block: () -> T): T {
+        while (true) {
+            try {
+                return block()
+            } catch (e: OutOfMemoryError) {
+                val delay = getOutOfMemoryDelay()
+                println("Sleeping for $delay after OutOfMemoryError in $this")
+                sleep(delay.inWholeMilliseconds)
             }
         }
     }

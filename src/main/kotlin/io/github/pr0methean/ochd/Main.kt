@@ -29,6 +29,7 @@ suspend fun main(args:Array<String>) {
     pngDirectory.deleteRecursively()
     pngDirectory.mkdirs()
     val ctx = ImageProcessingContext(
+        name = "MainContext",
         tileSize = tileSize,
         scope = scope,
         svgDirectory = svgDirectory,

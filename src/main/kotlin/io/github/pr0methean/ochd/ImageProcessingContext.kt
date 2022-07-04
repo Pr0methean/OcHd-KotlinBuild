@@ -23,11 +23,14 @@ fun color(web: String, alpha: Double) = Color.web(web, alpha)
 private const val MAX_UNCOMPRESSED_TILESIZE = 256
 
 class ImageProcessingContext(
+    val name: String,
     val tileSize: Int,
     val scope: CoroutineScope,
     val svgDirectory: File,
     val outTextureRoot: File
 ) {
+    override fun toString(): String = name
+
     val ioDispatcher = Dispatchers.IO
     val svg = SVGUniverse()
     val svgTasks = ConcurrentHashMap<String, SvgImportTask>()
@@ -41,7 +44,6 @@ class ImageProcessingContext(
                 svgDirectory.resolve(svgFile),
                 svg,
                 tileSize,
-                scope,
                 this
             )
         }
@@ -82,10 +84,10 @@ class ImageProcessingContext(
     }
 
     fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): TextureTask {
-        val importTask = SvgImportTask(svgDirectory.resolve("$name.svg"), svg, tileSize, scope, this)
+        val importTask = SvgImportTask(svgDirectory.resolve("$name.svg"), svg, tileSize, this)
         val task = if (paint == null) {
-            if (alpha == 1.0) importTask else TransparencyTask(importTask, tileSize, alpha, scope, this)
-        } else RepaintTask(paint, importTask, tileSize, alpha, scope, this)
+            if (alpha == 1.0) importTask else TransparencyTask(importTask, tileSize, alpha, this)
+        } else RepaintTask(paint, importTask, tileSize, alpha, this)
         return deduplicate(task)
     }
 
@@ -96,18 +98,18 @@ class ImageProcessingContext(
             if (layerTasks.size == 1 && layerTasks.background == Color.TRANSPARENT)
                 layerTasks[0]
             else
-                ImageStackingTask(layerTasks, tileSize, scope, this))
+                ImageStackingTask(layerTasks, tileSize, this))
     }
 
     fun animate(init: LayerList.() -> Unit): TextureTask {
         val frames = LayerList(this)
         frames.init()
-        return deduplicate(AnimationColumnTask(frames, tileSize, scope, this))
+        return deduplicate(AnimationColumnTask(frames, tileSize, this))
     }
 
     fun out(name: String, source: TextureTask) 
-            = BasicOutputTask(source, outTextureRoot.resolve(name.lowercase(Locale.ENGLISH) + ".png"), scope, this)
+            = BasicOutputTask(source, outTextureRoot.resolve(name.lowercase(Locale.ENGLISH) + ".png"), this)
 
     fun out(name: String, source: LayerList.() -> Unit) = BasicOutputTask(
-            stack {source()}, outTextureRoot.resolve(name.lowercase(Locale.ENGLISH) + ".png"), scope, this)
+            stack {source()}, outTextureRoot.resolve(name.lowercase(Locale.ENGLISH) + ".png"), this)
 }

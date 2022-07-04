@@ -10,14 +10,12 @@ import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.image.WritableImage
 import javafx.scene.paint.Paint
-import kotlinx.coroutines.CoroutineScope
 
 data class RepaintTask(
     private val paint: Paint, private val base: TextureTask, private val size: Int, val alpha: Double = 1.0,
-    override val scope: CoroutineScope,
     val ctx: ImageProcessingContext
 )
-    : JfxTextureTask<Image>(scope, ctx) {
+    : JfxTextureTask<Image>(ctx) {
 
     override suspend fun computeInput(): Image = base.getBitmap()
 
@@ -34,7 +32,7 @@ data class RepaintTask(
         view.cacheHint = CacheHint.QUALITY
         view.isSmooth = true
         val output = WritableImage(size, size)
-        view.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
+        retryOnOomBlocking { view.snapshot(DEFAULT_SNAPSHOT_PARAMS, output) }
         return output
     }
 }

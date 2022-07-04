@@ -5,16 +5,14 @@ import javafx.scene.image.Image
 import javafx.scene.image.PixelReader
 import javafx.scene.image.WritableImage
 import javafx.scene.paint.Color
-import kotlinx.coroutines.CoroutineScope
 
 const val TOP_PORTION = 11.0/32
 data class TopPartCroppingTask(
     val base: TextureTask,
     val width: Int,
-    override val scope: CoroutineScope,
     val ctx: ImageProcessingContext
 )
-        : JfxTextureTask<PixelReader>(scope, ctx) {
+        : JfxTextureTask<PixelReader>(ctx) {
     private val height = (width * TOP_PORTION).toInt()
     override suspend fun computeInput(): PixelReader = base.getBitmap().pixelReader
 
