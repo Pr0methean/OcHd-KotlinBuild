@@ -4,6 +4,7 @@ import io.github.pr0methean.ochd.ImageProcessingContext
 import javafx.concurrent.Task
 import javafx.scene.image.Image
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.withContext
 import java.lang.Thread.sleep
 import java.lang.invoke.MethodHandle
 import java.lang.invoke.MethodHandles
@@ -27,7 +28,7 @@ val threadLocalRunLater: ThreadLocal<MethodHandle> = ThreadLocal.withInitial {
 private val OUT_OF_MEMORY_DELAY = 5.seconds
 private val TASK_POLL_INTERVAL = 10.milliseconds
 
-abstract class JfxTextureTask<TJfxInput>(ctx: ImageProcessingContext) : TextureTask(ctx) {
+abstract class JfxTextureTask<TJfxInput>(val ctx: ImageProcessingContext) : TextureTask(ctx) {
     inner class JfxTask(val input: TJfxInput): Task<Image>() {
         override fun call(): Image {
             val out = doBlockingJfx(input)
@@ -74,10 +75,12 @@ abstract class JfxTextureTask<TJfxInput>(ctx: ImageProcessingContext) : TextureT
         val task = retryOnOom { JfxTask( retryOnOom(::computeInput)) }
         val runLater: MethodHandle = threadLocalRunLater.get()
         runLater.run{ retryOnOom<Unit> {invokeExact(task as Runnable)}}
-        while (!task.isDone) {
-            delay(TASK_POLL_INTERVAL)
+        val image = withContext(ctx.ioDispatcher) {
+            while (!task.isDone) {
+                delay(TASK_POLL_INTERVAL)
+            }
+            task.get()
         }
-        val image = task.get()
         return image!!
     }
     abstract suspend fun computeInput(): TJfxInput
