@@ -7,6 +7,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import java.lang.invoke.MethodHandle
 import java.lang.invoke.MethodHandles
+import java.util.concurrent.ThreadLocalRandom
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -33,12 +34,16 @@ abstract class JfxTextureTask<TJfxInput>(open val scope: CoroutineScope, ctx: Im
             return out
         }
     }
+
+    private fun getOutOfMemoryDelay() = (2500 + ThreadLocalRandom.current().nextInt(5000)).milliseconds
     private suspend fun <T> retryOnOom(block: suspend () -> T): T {
         while (true) {
             try {
                 return block()
             } catch (e: OutOfMemoryError) {
-                delay(OUT_OF_MEMORY_DELAY)
+                val delay = getOutOfMemoryDelay()
+                println("Delaying for $delay after OutOfMemoryError in $this")
+                delay(delay)
             }
         }
     }
