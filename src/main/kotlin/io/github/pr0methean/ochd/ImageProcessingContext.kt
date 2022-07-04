@@ -3,16 +3,23 @@ package io.github.pr0methean.ochd
 import com.google.common.collect.ConcurrentHashMultiset
 import com.kitfox.svg.SVGUniverse
 import io.github.pr0methean.ochd.tasks.*
+import javafx.embed.swing.SwingFXUtils
+import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.CoroutineScope
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import javax.imageio.ImageIO
 
 fun color(web: String) = Color.web(web)
 
 fun color(web: String, alpha: Double) = Color.web(web, alpha)
+
+private const val MAX_UNCOMPRESSED_TILESIZE = 256
 
 class ImageProcessingContext(
     val tileSize: Int,
@@ -49,6 +56,18 @@ class ImageProcessingContext(
         println()
         println("Deduplication failures:")
         dedupeFailures.toSet().forEach {println("$it: ${dedupeFailures.count(it)}")}
+    }
+
+    /**
+     * Encapsulates the given image in a form small enough to fit on the heap.
+     */
+    fun packImage(input: Image): () -> Image {
+        if (tileSize <= MAX_UNCOMPRESSED_TILESIZE) return { input }
+        val compressed = ByteArrayOutputStream().use {
+            ImageIO.write(SwingFXUtils.fromFXImage(input, null), "PNG", it)
+            return@use it.toByteArray()
+        }
+        return {ByteArrayInputStream(compressed).use {Image(it)}}
     }
 
     fun deduplicate(task: TextureTask): TextureTask {

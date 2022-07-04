@@ -12,10 +12,10 @@ abstract class TextureTask(scope: CoroutineScope, ctx: ImageProcessingContext) {
         ctx.taskLaunches.add(this@TextureTask::class.simpleName)
         val bitmap = computeBitmap()
         println("Finished task ${this@TextureTask}")
-        return@async bitmap
+        return@async ctx.packImage(bitmap)
     }
 
     abstract suspend fun computeBitmap(): Image
 
-    suspend fun getBitmap(): Image = coroutine.await()
+    suspend fun getBitmap(): Image = coroutine.await()()
 }
