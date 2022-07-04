@@ -7,6 +7,7 @@ import io.github.pr0methean.ochd.ImageProcessingContext
 import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.withContext
 import java.awt.Dimension
 import java.awt.image.BufferedImage
 import java.io.File
@@ -27,9 +28,12 @@ data class SvgImportTask(
     : JfxTextureTask<BufferedImage>(scope, ctx) {
 
     override suspend fun computeInput(): BufferedImage {
+        @Suppress("DEPRECATION") val svgUri = withContext(ctx.ioDispatcher) {
+            svg.loadSVG(filename.toURL())
+        }
         val icon = SVGIcon()
+        icon.svgURI = svgUri
         icon.svgUniverse = svg
-        icon.svgURI = svg.loadSVG(filename.toURL())
         icon.preferredSize = Dimension(tileSize, tileSize)
         icon.antiAlias = true
         icon.autosize = AUTOSIZE_STRETCH

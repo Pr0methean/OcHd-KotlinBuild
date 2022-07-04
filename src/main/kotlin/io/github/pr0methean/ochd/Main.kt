@@ -34,7 +34,6 @@ suspend fun main(args:Array<String>) {
         svgDirectory = svgDirectory,
         outTextureRoot = outTextureRoot
     )
-
     // List constants
     /*
 val SIMPLE_ORES = listOf("coal", "copper", "iron", "redstone", "gold", "quartz")
