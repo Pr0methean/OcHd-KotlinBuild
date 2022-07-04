@@ -1,11 +1,12 @@
 package io.github.pr0methean.ochd
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.nio.file.Paths
 import kotlin.system.measureNanoTime
 
-private const val PARALLELISM = 16
-@OptIn(ExperimentalCoroutinesApi::class)
 suspend fun main(args:Array<String>) {
     if (args.isEmpty()) {
         println("Usage: main <size>")
@@ -45,7 +46,7 @@ val DISC_LABEL_COLORS = listOf(DYES.values).subList(1, DYES.values.size - 1)
 val OXIDATION_STATES = listOf("exposed", "weathered", "oxidized")
  */
     val time = measureNanoTime {
-        runBlocking(Dispatchers.IO.limitedParallelism(PARALLELISM)) {
+        runBlocking(Dispatchers.Default) {
             // Copy over all metadata files
             scope.launch {
                 metadataDirectory.walkTopDown().forEach {

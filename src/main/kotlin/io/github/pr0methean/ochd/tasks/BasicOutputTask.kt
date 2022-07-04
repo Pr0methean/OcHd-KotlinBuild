@@ -3,9 +3,15 @@ package io.github.pr0methean.ochd.tasks
 import io.github.pr0methean.ochd.ImageProcessingContext
 import javafx.embed.swing.SwingFXUtils
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.withContext
 import java.io.File
 import javax.imageio.ImageIO
 
+private const val IO_PARALLELISM = 8
+
+@OptIn(ExperimentalCoroutinesApi::class)
 data class BasicOutputTask(
     private val producer: TextureTask,
     override val file: File,
@@ -15,6 +21,8 @@ data class BasicOutputTask(
         : OutputTask(scope, file, ctx) {
     override suspend fun invoke() {
         file.parentFile.mkdirs()
-        ImageIO.write(SwingFXUtils.fromFXImage(producer.getBitmap(), null), "png", file)
+        withContext(Dispatchers.IO.limitedParallelism(IO_PARALLELISM)) {
+            ImageIO.write(SwingFXUtils.fromFXImage(producer.getBitmap(), null), "png", file)
+        }
     }
 }
