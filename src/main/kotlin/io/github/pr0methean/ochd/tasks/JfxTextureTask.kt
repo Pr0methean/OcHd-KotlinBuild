@@ -56,7 +56,7 @@ abstract class JfxTextureTask<TJfxInput>(open val ctx: ImageProcessingContext) :
             } catch (e: OutOfMemoryError) {
                 waitToRetryBlocking()
             } catch (e: ExecutionException) {
-                if (e.cause is OutOfMemoryError) {
+                if (e.cause is OutOfMemoryError || e.cause is java.lang.IllegalArgumentException) {
                     waitToRetryBlocking()
                 } else {
                     throw e
