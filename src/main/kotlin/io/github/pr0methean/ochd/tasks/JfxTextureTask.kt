@@ -44,7 +44,8 @@ abstract class JfxTextureTask<TJfxInput>(open val scope: CoroutineScope, ctx: Im
     }
     override suspend fun computeBitmap(): Image {
         val task = retryOnOom { JfxTask( retryOnOom(::computeInput)) }
-        threadLocalRunLater.get().run {retryOnOom { invokeExact(task as Runnable)}}
+        val runLater: MethodHandle = threadLocalRunLater.get()
+        runLater.run{ retryOnOom<Unit> {invokeExact(task as Runnable)}}
         while (!task.isDone) {
             delay(TASK_POLL_INTERVAL)
         }
