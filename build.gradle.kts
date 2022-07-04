@@ -3,14 +3,19 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 plugins {
     kotlin("jvm") version "1.7.0"
     id("org.openjfx.javafxplugin") version "0.0.13"
-    application
 }
 
 group = "org.example"
 version = "1.0-SNAPSHOT"
 
-application {
-    mainClass.set("io.github.pr0methean.ochd.MainKt")
+tasks.jar {
+    manifest {
+        attributes("Main-Class" to "io.github.pr0methean.ochd.MainKt")
+    }
+    duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    from (
+        configurations.runtimeClasspath.get().map { if (it.isDirectory) it else zipTree(it) }
+    )
 }
 
 javafx {
