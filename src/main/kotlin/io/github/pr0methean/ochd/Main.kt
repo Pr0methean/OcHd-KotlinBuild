@@ -47,7 +47,7 @@ val DISC_LABEL_COLORS = listOf(DYES.values).subList(1, DYES.values.size - 1)
 val OXIDATION_STATES = listOf("exposed", "weathered", "oxidized")
  */
     val time = measureNanoTime {
-        runBlocking(Dispatchers.IO) {
+        runBlocking(Dispatchers.IO.limitedParallelism(16)) {
             // Copy over all metadata files
             scope.launch {
                 metadataDirectory.walkTopDown().forEach {
