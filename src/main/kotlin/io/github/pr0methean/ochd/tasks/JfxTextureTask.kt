@@ -1,5 +1,6 @@
 package io.github.pr0methean.ochd.tasks
 
+import io.github.pr0methean.ochd.ImageProcessingContext
 import javafx.concurrent.Task
 import javafx.scene.image.Image
 import kotlinx.coroutines.CoroutineScope
@@ -20,7 +21,7 @@ val threadLocalRunLater: ThreadLocal<MethodHandle> = ThreadLocal.withInitial {
         threadLocalClassLoader.get().loadClass("javafx.application.Platform").getMethod("runLater", Runnable::class.java))
 }
 
-abstract class JfxTextureTask<TJfxInput>(open val scope: CoroutineScope) : TextureTask(scope) {
+abstract class JfxTextureTask<TJfxInput>(open val scope: CoroutineScope, ctx: ImageProcessingContext) : TextureTask(scope, ctx) {
     inner class JfxTask(val input: TJfxInput): Task<Image>() {
         override fun call(): Image {
             val out = doBlockingJfx(input)

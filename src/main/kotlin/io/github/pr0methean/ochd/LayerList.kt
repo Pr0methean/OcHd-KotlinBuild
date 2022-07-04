@@ -2,12 +2,13 @@ package io.github.pr0methean.ochd
 
 import io.github.pr0methean.ochd.tasks.ImageStackingTask
 import io.github.pr0methean.ochd.tasks.TextureTask
+import io.github.pr0methean.ochd.tasks.TopPartCroppingTask
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 
 class LayerList(val ctx: ImageProcessingContext) : ArrayList<TextureTask>() {
     var background: Paint = Color.TRANSPARENT
-    fun background(color: Color) {
+    fun background(color: Paint) {
         background = color
     }
     fun background(red: Int, green: Int, blue: Int) {
@@ -33,11 +34,16 @@ class LayerList(val ctx: ImageProcessingContext) : ArrayList<TextureTask>() {
             }
         }
         if (source.size > 1) {
-            add(ImageStackingTask(source, ctx.tileSize, ctx.scope))
+            add(ImageStackingTask(source, ctx.tileSize, ctx.scope, ctx))
         } else {
             addAll(source)
         }
     }
+    fun copyTopOf(source: TextureTask) {
+        add(TopPartCroppingTask(source, ctx.tileSize, ctx.scope, ctx))
+    }
+    fun copyTopOf(source: LayerList.() -> Unit) = copyTopOf(ctx.stack(source))
+    fun copyTopOf(source: LayerList) = copyTopOf {copy(source)}
     override fun add(element:TextureTask) = super.add(ctx.deduplicate(element))
     override fun addAll(elements: Collection<TextureTask>) = super.addAll(elements.map(ctx::deduplicate))
 }

@@ -7,7 +7,7 @@
    viewBox="0 0 8.4666666 8.4666668"
    version="1.1"
    id="svg5"
-   inkscape:version="1.1.2 (b8e25be8, 2022-02-05)"
+   inkscape:version="1.2 (dc2aeda, 2022-05-15)"
    sodipodi:docname="vees.svg"
    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
@@ -32,14 +32,16 @@
      inkscape:snap-perpendicular="true"
      inkscape:snap-tangential="true"
      inkscape:zoom="34.90625"
-     inkscape:cx="8.6374217"
-     inkscape:cy="17.776186"
+     inkscape:cx="8.6660698"
+     inkscape:cy="9.2390331"
      inkscape:window-width="2560"
      inkscape:window-height="1301"
      inkscape:window-x="0"
      inkscape:window-y="25"
      inkscape:window-maximized="0"
-     inkscape:current-layer="layer1">
+     inkscape:current-layer="g4981"
+     inkscape:showpageshadow="0"
+     inkscape:deskcolor="#d1d1d1">
     <inkscape:grid
        type="xygrid"
        id="grid9"
@@ -86,6 +88,24 @@
          style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
          d="m 4.7625002,2.1166667 h 0.5291667 l 0.79375,0.79375 0.79375,-0.79375 H 7.4083335 L 6.0854169,3.4395834 Z"
          id="path4979" />
+      <path
+         style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         d="M 1.7333333e-7,4.233333 0.79375027,3.439583 H 1.3229169 L 0.52916667,4.2333332 Z"
+         id="path862"
+         sodipodi:nodetypes="ccccc" />
+      <path
+         style="fill:#000000;fill-opacity:1;stroke:none;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         d="M 8.466666,4.233333 7.672916,3.439583 H 7.1437494 l 0.7937501,0.7937502 z"
+         id="path960"
+         sodipodi:nodetypes="ccccc" />
+      <path
+         style="fill:#000000;stroke:none;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         d="M 0,-3.7041669 0.52916666,-4.2333335 H 0 Z"
+         id="path1025" />
+      <path
+         style="fill:#000000;stroke:none;stroke-width:0.264583px;stroke-linecap:butt;stroke-linejoin:miter;stroke-opacity:1"
+         d="M 8.4666657,-3.7041669 7.9374991,-4.2333335 h 0.5291666 z"
+         id="path1027" />
     </g>
   </g>
   <metadata

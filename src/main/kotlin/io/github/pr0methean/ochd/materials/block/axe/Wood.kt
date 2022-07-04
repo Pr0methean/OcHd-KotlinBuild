@@ -1,13 +1,18 @@
-package io.github.pr0methean.ochd.materials.axe
+package io.github.pr0methean.ochd.materials.block.axe
 
 import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.LayerList
 import io.github.pr0methean.ochd.c
-import io.github.pr0methean.ochd.materials.pickaxe.OreBase.STONE
+import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.STONE
 import io.github.pr0methean.ochd.tasks.OutputTask
+import io.github.pr0methean.ochd.texturebase.MaterialGroup
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
+import io.github.pr0methean.ochd.texturebase.group
 import javafx.scene.paint.Color
 
+val OVERWORLD_WOODS = group<OverworldWood>()
+val FUNGUS_WOODS = group<Fungus>()
+val WOODS = MaterialGroup(OVERWORLD_WOODS, FUNGUS_WOODS)
 sealed interface Wood: ShadowHighlightMaterial {
     companion object {
         fun allOutputTasks(ctx: ImageProcessingContext)
@@ -17,6 +22,7 @@ sealed interface Wood: ShadowHighlightMaterial {
     val barkHighlight: Color
     val barkShadow: Color
     val logSynonym: String
+    val name: String
     fun LayerList.bark()
     fun LayerList.strippedLogSide()
     fun LayerList.logTop()
@@ -46,7 +52,8 @@ enum class OverworldWood(
     override val shadow: Color,
     override val barkColor: Color,
     override val barkHighlight: Color,
-    override val barkShadow: Color)
+    override val barkShadow: Color,
+    )
     : Wood {
     ACACIA(
         color = Color.rgb(0xad, 0x5d, 0x32),

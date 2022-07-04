@@ -3,6 +3,7 @@ package io.github.pr0methean.ochd.tasks
 import com.kitfox.svg.SVGUniverse
 import com.kitfox.svg.app.beans.SVGIcon
 import com.kitfox.svg.app.beans.SVGPanel.AUTOSIZE_STRETCH
+import io.github.pr0methean.ochd.ImageProcessingContext
 import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
 import kotlinx.coroutines.CoroutineScope
@@ -16,8 +17,14 @@ import java.io.File
 /*
 inkscape -w "$SIZE" -h "$SIZE" "$SVG_DIRECTORY/$1.svg" -o "$PNG_DIRECTORY/$1.png" -y 0.0
  */
-data class SvgImportTask(private val filename: File, private val svg: SVGUniverse, private val tileSize: Int, override val scope: CoroutineScope)
-    : JfxTextureTask<BufferedImage>(scope) {
+data class SvgImportTask(
+    private val filename: File,
+    private val svg: SVGUniverse,
+    private val tileSize: Int,
+    override val scope: CoroutineScope,
+    val ctx: ImageProcessingContext
+)
+    : JfxTextureTask<BufferedImage>(scope, ctx) {
 
     override suspend fun computeInput(): BufferedImage {
         val icon = SVGIcon()

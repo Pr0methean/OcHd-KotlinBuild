@@ -1,35 +1,26 @@
-package io.github.pr0methean.ochd.materials.pickaxe
+package io.github.pr0methean.ochd.materials.block.pickaxe
 
 import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.LayerList
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
+import io.github.pr0methean.ochd.texturebase.group
 import javafx.scene.paint.Color
 
+val COPPER_OXIDES = group<CopperOxide>()
 enum class CopperOxide(
     override val color: Color,
     override val shadow: Color,
     override val highlight: Color) : ShadowHighlightMaterial {
-    /*
-    exposed_copper_h='ce8d83'
-exposed_copper=''
-exposed_copper_s=''
-weathered_copper_h='7ab799'
-weathered_copper=''
-weathered_copper_s=''
-oxidized_copper_h='6ec59f'
-oxidized_copper=''
-oxidized_copper_s='3b5c5c'
-     */
     EXPOSED(
         color = c(0xa87762),
         shadow = c(0x796454),
-        highlight = c(0xa87762)
+        highlight = c(0xce8d83)
     ),
     WEATHERED(
         color = c(0x64a077),
-        shadow = c(0x6a7147),
+        shadow = c(0x647147),
         highlight = c(0x7ab799)
     ),
     OXIDIZED(

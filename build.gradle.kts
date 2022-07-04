@@ -22,6 +22,8 @@ dependencies {
     implementation("no.tornado:tornadofx:1.7.20")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.3")
     implementation("guru.nidi.com.kitfox:svgSalamander:1.1.3")
+    implementation("com.google.guava:guava:31.1-jre")
+    runtimeOnly(kotlin("reflect"))
 }
 
 tasks.test {

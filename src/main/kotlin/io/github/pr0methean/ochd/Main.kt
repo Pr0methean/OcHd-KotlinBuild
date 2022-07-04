@@ -1,7 +1,5 @@
 package io.github.pr0methean.ochd
-
-import io.github.pr0methean.ochd.materials.axe.Wood
-import io.github.pr0methean.ochd.materials.pickaxe.allPickaxeOutputTasks
+import io.github.pr0methean.ochd.materials.ALL_MATERIALS
 import javafx.embed.swing.JFXPanel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -10,6 +8,7 @@ import kotlinx.coroutines.runBlocking
 import java.nio.file.Paths
 
 suspend fun main(args:Array<String>) {
+    lateinit var statsCtx: ImageProcessingContext
     if (args.isEmpty()) {
         println("Usage: main <size>")
         return
@@ -35,20 +34,19 @@ suspend fun main(args:Array<String>) {
         tileSize = tileSize,
         scope = scope,
         svgDirectory = svgDirectory,
-        outTextureRoot = outTextureRoot,
-        pngDirectory = pngDirectory
+        outTextureRoot = outTextureRoot
     )
 
     // List constants
     /*
-    val SIMPLE_ORES = listOf("coal", "copper", "iron", "redstone", "gold", "quartz")
-    val ORES = listOf(SIMPLE_ORES, listOf("lapis", "diamond", "emerald")).flatten()
-    val COMMAND_BLOCK_TYPES = listOf("command_block", "repeating_command_block", "chain_command_block")
-    val NORMAL_MUSIC_DISCS = listOf("far", "wait", "strad", "mall", "cat", "pigstep", "mellohi", "13", "blocks", "stal",
-            "ward", "5", "otherside", "chirp")
-    val DISC_LABEL_COLORS = listOf(DYES.values).subList(1, DYES.values.size - 1)
-    val OXIDATION_STATES = listOf("exposed", "weathered", "oxidized")
-     */
+val SIMPLE_ORES = listOf("coal", "copper", "iron", "redstone", "gold", "quartz")
+val ORES = listOf(SIMPLE_ORES, listOf("lapis", "diamond", "emerald")).flatten()
+val COMMAND_BLOCK_TYPES = listOf("command_block", "repeating_command_block", "chain_command_block")
+val NORMAL_MUSIC_DISCS = listOf("far", "wait", "strad", "mall", "cat", "pigstep", "mellohi", "13", "blocks", "stal",
+        "ward", "5", "otherside", "chirp")
+val DISC_LABEL_COLORS = listOf(DYES.values).subList(1, DYES.values.size - 1)
+val OXIDATION_STATES = listOf("exposed", "weathered", "oxidized")
+ */
     runBlocking(Dispatchers.IO) {
         // Copy over all metadata files
         scope.launch {
@@ -60,7 +58,8 @@ suspend fun main(args:Array<String>) {
                 }
             }
         }
-        Wood.allOutputTasks(ctx).forEach {it.run()}
-        allPickaxeOutputTasks(ctx).forEach {it.run()}
+
+        ALL_MATERIALS.outputTasks(ctx).forEach { it.run() }
     }
+    ctx.printStats()
 }

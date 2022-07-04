@@ -1,5 +1,6 @@
 package io.github.pr0methean.ochd.tasks
 
+import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.LayerList
 import javafx.scene.SnapshotParameters
 import javafx.scene.image.Image
@@ -12,8 +13,10 @@ import kotlinx.coroutines.CoroutineScope
 
 data class ImageStackingTask(
     val layers: LayerList,
-    val size: Int,
-    override val scope: CoroutineScope): ImageCombiningTask(layers, size, scope) {
+    override val size: Int,
+    override val scope: CoroutineScope,
+    val ctx: ImageProcessingContext
+): ImageCombiningTask(layers, size, scope, ctx) {
 
     override fun doBlockingJfx(input: List<Image>): Image {
         val stackPane = StackPane()

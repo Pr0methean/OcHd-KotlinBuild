@@ -1,6 +1,7 @@
 package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.DEFAULT_SNAPSHOT_PARAMS
+import io.github.pr0methean.ochd.ImageProcessingContext
 import javafx.scene.CacheHint
 import javafx.scene.effect.Blend
 import javafx.scene.effect.BlendMode
@@ -13,9 +14,10 @@ import kotlinx.coroutines.CoroutineScope
 
 data class RepaintTask(
     private val paint: Paint, private val base: TextureTask, private val size: Int, val alpha: Double = 1.0,
-    override val scope: CoroutineScope
+    override val scope: CoroutineScope,
+    val ctx: ImageProcessingContext
 )
-    : JfxTextureTask<Image>(scope) {
+    : JfxTextureTask<Image>(scope, ctx) {
 
     override suspend fun computeInput(): Image = base.getBitmap()
 
@@ -23,10 +25,10 @@ data class RepaintTask(
         val colorLayer = ColorInput(0.0, 0.0, size.toDouble(), size.toDouble(), paint)
         val blend = Blend()
         blend.mode = BlendMode.SRC_ATOP
-        blend.opacity = alpha
         blend.topInput = colorLayer
         blend.bottomInput = null
         val view = ImageView(input)
+        view.opacity = alpha
         view.effect = blend
         view.cacheProperty().set(true)
         view.cacheHint = CacheHint.QUALITY

@@ -1,16 +1,20 @@
-package io.github.pr0methean.ochd.materials.pickaxe
+package io.github.pr0methean.ochd.materials.block.pickaxe
 
 import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.LayerList
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
+import io.github.pr0methean.ochd.texturebase.copy
+import io.github.pr0methean.ochd.texturebase.group
 import javafx.scene.paint.Color
 import java.util.*
 
 private val OVERWORLD = EnumSet.of(OreBase.STONE, OreBase.DEEPSLATE)
 private val NETHER = EnumSet.of(OreBase.NETHERRACK)
 private val BOTH = EnumSet.allOf(OreBase::class.java)
+
+val ORES = group<Ore>()
 enum class Ore(
     override val color: Color,
     override val shadow: Color,
@@ -37,7 +41,11 @@ enum class Ore(
         color=Color.RED,
         shadow=c(0xca0000),
         highlight = c(0xff5e5e)
-    ),
+    ) {
+        override fun LayerList.itemForOutput() {
+            rawOre()
+        }
+    },
     GOLD(
         color=Color.YELLOW,
         shadow=c(0xeb9d00),
@@ -53,13 +61,17 @@ enum class Ore(
     ) {
         override fun outputTasks(ctx: ImageProcessingContext): Iterable<OutputTask> {
             val output = mutableListOf<OutputTask>()
-            output.add(ctx.out("item/${super.name}") { ingot() })
-            super.substrates.forEach { oreBase ->
-                output.add(ctx.out("block/${oreBase.orePrefix}${super.name}_ore", ctx.stack {
-                    copy(oreBase.getTextureLayers)
-                    item()
+            output.add(ctx.out("item/quartz") { ingot() })
+            output.add(ctx.out("block/nether_quartz_ore", ctx.stack {
+                    copy(OreBase.NETHERRACK)
+                    copy {item()}
                 }))
-            }
+            output.add(ctx.out("block/quartz_block_top") {
+                background(color)
+                layer("streaks", highlight)
+                layer("borderSolidTopLeft", highlight)
+                layer("borderSolidBottomRight", shadow)
+            })
             output.add(ctx.out("block/quartz_block_bottom") {rawBlock()})
             output.add(ctx.out("block/quartz_block_side") {block()})
             return output
@@ -115,6 +127,14 @@ enum class Ore(
             layer("emeraldTopLeft", highlight)
             layer("emeraldBottomRight", shadow)
         }
+
+        override fun LayerList.block() {
+            background(highlight)
+            layer("emeraldTopLeft", extremeHighlight)
+            layer("emeraldBottomRight", shadow)
+            layer("borderSolid", color)
+            layer("borderSolidTopLeft", highlight)
+        }
     };
     open fun LayerList.item() {
         layer(name, color)
@@ -134,11 +154,6 @@ enum class Ore(
         layer(name, shadow)
     }
     open fun LayerList.rawOre() {
-        /*
-          push bigCircle "${!shadow}" "${ore}_rawitem1"
-  push "$ore" "${!highlight}" "${ore}_rawitem3"
-  out_stack "item/raw_${ore}"
-         */
         layer("bigCircle", shadow)
         layer(name, highlight)
     }
@@ -148,12 +163,16 @@ enum class Ore(
         layer(name, shadow)
     }
 
+    open fun LayerList.itemForOutput() {
+        item()
+    }
+
     override fun outputTasks(ctx: ImageProcessingContext): Iterable<OutputTask> {
         val output = mutableListOf<OutputTask>()
         substrates.forEach { oreBase ->
             output.add(ctx.out("block/${oreBase.orePrefix}${name}_ore", ctx.stack {
-                copy(oreBase.getTextureLayers)
-                item()
+                copy(oreBase)
+                copy {item()}
             }))
         }
         output.add(ctx.out("block/${name}_block", ctx.stack { block() }))
@@ -162,12 +181,8 @@ enum class Ore(
             output.add(ctx.out("item/raw_${name}", ctx.stack { rawOre() }))
             output.add(ctx.out("item/${name}_ingot", ctx.stack { ingot() }))
         } else {
-            output.add(ctx.out("item/${itemNameOverride ?: name}", ctx.stack {item()}))
+            output.add(ctx.out("item/${itemNameOverride ?: name}", ctx.stack {itemForOutput()}))
         }
         return output
-    }
-
-    companion object {
-        fun allOutputTasks(ctx: ImageProcessingContext) = values().flatMap { it.outputTasks(ctx) }
     }
 }
