@@ -18,7 +18,7 @@ fun color(web: String) = Color.web(web)
 
 fun color(web: String, alpha: Double) = Color.web(web, alpha)
 
-private const val MAX_UNCOMPRESSED_TILESIZE = 256
+private const val MAX_UNCOMPRESSED_TILESIZE = 1024
 
 class ImageProcessingContext(
     val name: String,
@@ -103,4 +103,9 @@ class ImageProcessingContext(
 
     fun out(name: String, source: LayerListBuilder.() -> Unit) = BasicOutputTask(
             stack {source()}, name, this)
+
+    fun onTaskGraphFinished() {
+        svgTasks.clear()
+        taskDedupMap.clear()
+    }
 }
