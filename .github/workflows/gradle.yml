@@ -42,6 +42,7 @@ jobs:
         name: OcHD-App
         path: build/libs/*.jar
   make-texture:
+    needs: build
     strategy:
       matrix:
         size: [ 4096, 2048, 1024, 512, 256, 128, 64, 32 ]
@@ -60,3 +61,10 @@ jobs:
         name: OcHD-App
     - name: Make Textures
       run: java -jar build/libs/*.jar ${{ matrix.size }}
+    - name: Zip Texture Pack
+      run: cd out && zip OcHD-${{ matrix.size}}x${{ matrix.size}}.zip .
+    - name: Publish Texture Pack
+      uses: actions/upload-artifact@v3
+      with:
+        name: OcHD ${{ matrix.size }}x${{ matrix.size }}
+        path: 'out/OcHD-${{ matrix.size}}x${{ matrix.size}}.zip'
