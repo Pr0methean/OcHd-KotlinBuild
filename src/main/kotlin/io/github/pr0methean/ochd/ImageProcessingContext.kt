@@ -8,7 +8,6 @@ import javafx.scene.paint.Paint
 import kotlinx.coroutines.CoroutineScope
 import java.io.File
 import java.util.*
-import java.util.Collections.synchronizedMap
 import java.util.concurrent.ConcurrentHashMap
 
 fun color(web: String) = Color.web(web)
@@ -24,7 +23,7 @@ class ImageProcessingContext(
 
     val svg = SVGUniverse()
     val svgTasks = ConcurrentHashMap<String, SvgImportTask>()
-    val taskDedupMap = synchronizedMap(WeakHashMap<TextureTask, TextureTask>())
+    val taskDedupMap = ConcurrentHashMap<TextureTask, TextureTask>()
     val taskLaunches: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val dedupeSuccesses: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val dedupeFailures: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
@@ -61,6 +60,7 @@ class ImageProcessingContext(
             task
         }
     }
+
     fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): TextureTask {
         val importTask = SvgImportTask(svgDirectory.resolve("$name.svg"), svg, tileSize, scope, this)
         val task = if (paint == null) {
