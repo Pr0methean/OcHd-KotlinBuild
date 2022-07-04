@@ -145,4 +145,34 @@ enum class SimplePickaxeBlock(
 
     constructor(base: ShadowHighlightMaterial, hasOutput: Boolean = false):
             this(base.color, base.shadow, base.highlight, hasOutput)
+    /*
+push bigRingsBottomLeftTopRight ${andesite_h} a1 ${andesite}
+push bigRingsTopLeftBottomRight ${andesite_s} a2
+out_stack block/andesite
+
+push_copy block/andesite ap1
+push borderSolidBottomRight ${andesite_s} ap2
+push borderSolidTopLeft ${andesite_h} ap3
+out_stack block/polished_andesite
+
+push bigRingsBottomLeftTopRight ${diorite_s} d1 ${diorite}
+push bigRingsTopLeftBottomRight ${diorite_h} d2
+out_stack block/diorite
+
+push_copy block/diorite dp1
+push borderSolidBottomRight ${diorite_s} dp2
+push borderSolidTopLeft ${diorite_h} dp3
+out_stack block/polished_diorite
+
+push bigDotsBottomLeftTopRight ${granite_s} g11 ${granite}
+push bigDotsTopLeftBottomRight ${granite_h} g12
+push bigRingsBottomLeftTopRight ${granite_h} g21
+push bigRingsTopLeftBottomRight ${granite_s} g22
+out_stack block/granite
+
+push_copy block/granite gp1
+push borderSolidBottomRight ${granite_s} gp2
+push borderSolidTopLeft ${granite_h} gp3
+out_stack block/polished_granite
+     */
 }
