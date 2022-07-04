@@ -9,7 +9,6 @@ import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -22,16 +21,14 @@ fun color(web: String) = Color.web(web)
 fun color(web: String, alpha: Double) = Color.web(web, alpha)
 
 private const val MAX_UNCOMPRESSED_TILESIZE = 256
-private const val IO_PARALLELISM = 8
 
-@OptIn(ExperimentalCoroutinesApi::class)
 class ImageProcessingContext(
     val tileSize: Int,
     val scope: CoroutineScope,
     val svgDirectory: File,
     val outTextureRoot: File
 ) {
-    val ioDispatcher = Dispatchers.IO.limitedParallelism(IO_PARALLELISM)
+    val ioDispatcher = Dispatchers.IO
     val svg = SVGUniverse()
     val svgTasks = ConcurrentHashMap<String, SvgImportTask>()
     val taskDedupMap = ConcurrentHashMap<TextureTask, TextureTask>()
