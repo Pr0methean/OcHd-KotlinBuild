@@ -4,6 +4,7 @@ import kotlinx.coroutines.*
 import java.nio.file.Paths
 import kotlin.system.measureNanoTime
 
+private const val PARALLELISM = 16
 @OptIn(ExperimentalCoroutinesApi::class)
 suspend fun main(args:Array<String>) {
     if (args.isEmpty()) {
@@ -44,7 +45,7 @@ val DISC_LABEL_COLORS = listOf(DYES.values).subList(1, DYES.values.size - 1)
 val OXIDATION_STATES = listOf("exposed", "weathered", "oxidized")
  */
     val time = measureNanoTime {
-        runBlocking(Dispatchers.IO) {
+        runBlocking(Dispatchers.IO.limitedParallelism(PARALLELISM)) {
             // Copy over all metadata files
             scope.launch {
                 metadataDirectory.walkTopDown().forEach {
