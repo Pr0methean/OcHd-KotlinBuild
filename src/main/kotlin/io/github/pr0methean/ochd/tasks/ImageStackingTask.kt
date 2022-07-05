@@ -26,7 +26,7 @@ data class ImageStackingTask(
         val params = SnapshotParameters()
         params.fill = layers.background
         val output = WritableImage(size, size)
-        retryOnOomBlocking { stackPane.snapshot(params, output) }
+        stackPane.snapshot(params, output)
         return output
     }
 

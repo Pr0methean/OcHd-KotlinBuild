@@ -10,7 +10,6 @@ import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 
@@ -18,7 +17,7 @@ fun color(web: String) = Color.web(web)
 
 fun color(web: String, alpha: Double) = Color.web(web, alpha)
 
-private const val MAX_UNCOMPRESSED_TILESIZE = 4096
+private const val MAX_UNCOMPRESSED_TILESIZE = 1024
 
 class ImageProcessingContext(
     val name: String,
@@ -29,7 +28,6 @@ class ImageProcessingContext(
 ) {
     override fun toString(): String = name
 
-    val ioDispatcher = Dispatchers.IO
     val svg = SVGUniverse()
     val svgTasks = ConcurrentHashMap<String, SvgImportTask>()
     val taskDedupMap = ConcurrentHashMap<TextureTask, TextureTask>()

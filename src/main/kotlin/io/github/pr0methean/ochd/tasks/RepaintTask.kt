@@ -33,7 +33,7 @@ data class RepaintTask(
         view.cacheHint = CacheHint.QUALITY
         view.isSmooth = true
         val output = WritableImage(size, size)
-        retryOnOomBlocking { view.snapshot(DEFAULT_SNAPSHOT_PARAMS, output) }
+        view.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
         return output
     }
 }

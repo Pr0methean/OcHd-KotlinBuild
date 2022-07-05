@@ -3,13 +3,11 @@ package io.github.pr0methean.ochd.tasks
 import io.github.pr0methean.ochd.ImageProcessingContext
 import javafx.concurrent.Task
 import javafx.scene.image.Image
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.withContext
-import java.lang.Thread.sleep
 import java.lang.invoke.MethodHandle
 import java.lang.invoke.MethodHandles
-import java.util.concurrent.ExecutionException
-import java.util.concurrent.ThreadLocalRandom
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
@@ -37,56 +35,18 @@ abstract class JfxTextureTask<TJfxInput>(open val ctx: ImageProcessingContext) :
         }
     }
 
-    private fun getOutOfMemoryDelay() = (2500 + ThreadLocalRandom.current().nextInt(5000)).milliseconds
-    protected suspend fun <T> retryOnOom(block: suspend () -> T): T {
-        while (true) {
-            try {
-                return block()
-            } catch (e: OutOfMemoryError) {
-                waitToRetry()
-            } catch (e: ExecutionException) {
-                waitToRetry()
-            }
-        }
-    }
-
-    private suspend fun waitToRetry() {
-        val delay = getOutOfMemoryDelay()
-        println("Delaying for $delay after OutOfMemoryError in $this")
-        delay(delay)
-    }
-
-    protected fun <T> retryOnOomBlocking(block: () -> T): T {
-        while (true) {
-            try {
-                return block()
-            } catch (e: OutOfMemoryError) {
-                waitToRetryBlocking()
-            } catch (e: ExecutionException) {
-                waitToRetryBlocking()
-            }
-        }
-    }
-
-    private fun waitToRetryBlocking() {
-        val delay = getOutOfMemoryDelay()
-        println("Sleeping for $delay after OutOfMemoryError in $this")
-        sleep(delay.inWholeMilliseconds)
-    }
-
     override suspend fun computeBitmap(): Image {
-        val task = retryOnOom { JfxTask( retryOnOom(::computeInput)) }
+        val task = JfxTask(computeInput())
         val runLater: MethodHandle = threadLocalRunLater.get()
-        val image = runLater.run{ retryOnOom {
+        return runLater.run{
             invokeExact(task as Runnable)
-            return@retryOnOom withContext(ctx.ioDispatcher) {
+            withContext(Dispatchers.IO) {
                 while (!task.isDone) {
                     delay(TASK_POLL_INTERVAL)
                 }
-                task.get()
+                return@withContext task.get()
             }
-        } }
-        return image!!
+        }
     }
     abstract suspend fun computeInput(): TJfxInput
     abstract fun doBlockingJfx(input: TJfxInput): Image

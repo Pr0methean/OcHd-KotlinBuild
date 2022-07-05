@@ -1,6 +1,7 @@
 package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.ImageProcessingContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 
 
@@ -12,7 +13,7 @@ data class BasicOutputTask(
         : OutputTask(name, ctx) {
     override suspend fun invoke() {
         file.parentFile.mkdirs()
-        withContext(ctx.ioDispatcher) {
+        withContext(Dispatchers.IO) {
             producer.getPackedImage().writePng(file)
         }
     }

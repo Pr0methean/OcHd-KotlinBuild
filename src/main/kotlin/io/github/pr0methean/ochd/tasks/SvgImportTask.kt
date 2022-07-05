@@ -6,6 +6,7 @@ import com.kitfox.svg.app.beans.SVGPanel.AUTOSIZE_STRETCH
 import io.github.pr0methean.ochd.ImageProcessingContext
 import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.awt.Dimension
 import java.awt.image.BufferedImage
@@ -27,7 +28,7 @@ data class SvgImportTask(
     override fun toString(): String = "SvgImportTask for $shortName"
 
     override suspend fun computeInput(): BufferedImage {
-        @Suppress("DEPRECATION") val svgUri = withContext(ctx.ioDispatcher) {
+        @Suppress("DEPRECATION") val svgUri = withContext(Dispatchers.IO) {
             svg.loadSVG(file.toURL())
         }
         val icon = SVGIcon()

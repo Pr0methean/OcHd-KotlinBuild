@@ -20,7 +20,7 @@ data class AnimationColumnTask(
             canvasCtx.drawImage(frame.unpack(), 0.0, (size * index).toDouble())
         }
         val out = WritableImage(size, size * input.size)
-        retryOnOomBlocking { canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, out) }
+        canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, out)
         return out
     }
 }
