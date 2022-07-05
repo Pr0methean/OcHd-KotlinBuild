@@ -37,7 +37,9 @@ data class SvgImportTask(
         icon.preferredSize = Dimension(tileSize, tileSize)
         icon.antiAlias = true
         icon.autosize = AUTOSIZE_STRETCH
-        return icon.image as BufferedImage
+        val output = icon.image as BufferedImage
+        svg.removeDocument(svgUri)
+        return output
     }
 
     override fun doBlockingJfx(input: BufferedImage): Image = SwingFXUtils.toFXImage(input, null)
