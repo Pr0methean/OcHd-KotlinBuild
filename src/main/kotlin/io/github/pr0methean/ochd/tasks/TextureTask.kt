@@ -29,7 +29,7 @@ private val TASK_POLL_INTERVAL = 10.milliseconds
 abstract class TextureTask<TJfxInput>(open val ctx: ImageProcessingContext) {
     private val coroutine by lazy {ctx.scope.async(start = CoroutineStart.LAZY) {
         println("Starting task ${this@TextureTask}")
-        ctx.taskLaunches.add(this@TextureTask::class.simpleName)
+        ctx.taskLaunches.add(this@TextureTask::class.simpleName ?: "[unnamed TextureTask subclass]")
         val bitmap = computeBitmap()
         println("Finished task ${this@TextureTask}")
         return@async ctx.packImage(bitmap)

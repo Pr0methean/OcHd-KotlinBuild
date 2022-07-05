@@ -1,6 +1,7 @@
 package io.github.pr0methean.ochd
 
 import com.google.common.collect.ConcurrentHashMultiset
+import com.google.common.collect.HashMultiset
 import com.kitfox.svg.SVGUniverse
 import io.github.pr0methean.ochd.packedimage.PackedImage
 import io.github.pr0methean.ochd.packedimage.PngImage
@@ -11,7 +12,6 @@ import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.CoroutineScope
 import java.io.File
-import java.util.concurrent.ConcurrentHashMap
 
 fun color(web: String) = Color.web(web)
 
@@ -29,11 +29,11 @@ class ImageProcessingContext(
     override fun toString(): String = name
 
     val svg = SVGUniverse()
-    val svgTasks = ConcurrentHashMap<String, SvgImportTask>()
-    val taskDedupMap = ConcurrentHashMap<TextureTask<*>, TextureTask<*>>()
+    val svgTasks = HashMap<String, SvgImportTask>()
+    val taskDedupMap = HashMap<TextureTask<*>, TextureTask<*>>()
     val taskLaunches: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
-    val dedupeSuccesses: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
-    val dedupeFailures: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
+    val dedupeSuccesses: HashMultiset<String> = HashMultiset.create()
+    val dedupeFailures: HashMultiset<String> = HashMultiset.create()
     init {
         svgDirectory.list()!!.forEach { svgFile ->
             val shortName = svgFile.removeSuffix(".svg")
@@ -65,7 +65,7 @@ class ImageProcessingContext(
             if (tileSize <= MAX_UNCOMPRESSED_TILESIZE) UncompressedImage(input) else PngImage(input)
 
     fun deduplicate(task: TextureTask<*>): TextureTask<*> {
-        val className = task::class.simpleName
+        val className = task::class.simpleName ?: "[unnamed class]"
         dedupeSuccesses.add(className)
         return taskDedupMap.computeIfAbsent(task) {
             dedupeSuccesses.remove(className)
