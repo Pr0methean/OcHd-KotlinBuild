@@ -43,12 +43,19 @@ abstract class JfxTextureTask<TJfxInput>(open val ctx: ImageProcessingContext) :
             try {
                 return block()
             } catch (e: OutOfMemoryError) {
-                val delay = getOutOfMemoryDelay()
-                println("Delaying for $delay after OutOfMemoryError in $this")
-                delay(delay)
+                waitToRetry()
+            } catch (e: ExecutionException) {
+                waitToRetry()
             }
         }
     }
+
+    private suspend fun waitToRetry() {
+        val delay = getOutOfMemoryDelay()
+        println("Delaying for $delay after OutOfMemoryError in $this")
+        delay(delay)
+    }
+
     protected fun <T> retryOnOomBlocking(block: () -> T): T {
         while (true) {
             try {
@@ -70,13 +77,15 @@ abstract class JfxTextureTask<TJfxInput>(open val ctx: ImageProcessingContext) :
     override suspend fun computeBitmap(): Image {
         val task = retryOnOom { JfxTask( retryOnOom(::computeInput)) }
         val runLater: MethodHandle = threadLocalRunLater.get()
-        runLater.run{ retryOnOom<Unit> {invokeExact(task as Runnable)}}
-        val image = withContext(ctx.ioDispatcher) {
-            while (!task.isDone) {
-                delay(TASK_POLL_INTERVAL)
+        val image = runLater.run{ retryOnOom {
+            invokeExact(task as Runnable)
+            return@retryOnOom withContext(ctx.ioDispatcher) {
+                while (!task.isDone) {
+                    delay(TASK_POLL_INTERVAL)
+                }
+                task.get()
             }
-            task.get()
-        }
+        } }
         return image!!
     }
     abstract suspend fun computeInput(): TJfxInput
