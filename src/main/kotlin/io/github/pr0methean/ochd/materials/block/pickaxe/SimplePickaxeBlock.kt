@@ -273,7 +273,7 @@ enum class SimplePickaxeBlock(
     TERRACOTTA(c(0x965d43), c(0x945b43), c(0x9b6045)) {
         override fun LayerListBuilder.createTextureLayers() {
             background(shadow)
-            layer("bigRingsTopLeft", highlight)
+            layer("bigRingsTopLeftBottomRight", highlight)
             layer("borderRoundDots", highlight)
         }
     },
