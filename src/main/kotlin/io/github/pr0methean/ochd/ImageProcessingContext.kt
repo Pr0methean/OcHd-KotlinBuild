@@ -72,6 +72,9 @@ class ImageProcessingContext(
     }
 
     fun deduplicate(task: TextureTask<*>): TextureTask<*> {
+        if (task is SvgImportTask) {
+            return task // SvgImportTask duplication is impossible because svgTasks is populated eagerly
+        }
         val className = task::class.simpleName ?: "[unnamed class]"
         dedupeSuccesses.add(className)
         return taskDedupMap.computeIfAbsent(task) {
