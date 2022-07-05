@@ -19,7 +19,7 @@ inkscape -w "$SIZE" -h "$SIZE" "$SVG_DIRECTORY/$1.svg" -o "$PNG_DIRECTORY/$1.png
  */
 data class SvgImportTask(
     val shortName: String,
-    private val svg: SVGUniverse,
+    private val svg: ThreadLocal<SVGUniverse>,
     private val tileSize: Int,
     override val ctx: ImageProcessingContext
 )
@@ -28,18 +28,19 @@ data class SvgImportTask(
     override fun toString(): String = "SvgImportTask for $shortName"
 
     override suspend fun computeInput(): BufferedImage {
-        @Suppress("DEPRECATION") val svgUri = withContext(Dispatchers.IO) {
-            svg.loadSVG(file.toURL())
+        @Suppress("DEPRECATION") return withContext(Dispatchers.IO) {
+            val threadSvg = svg.get()
+            val svgUri = threadSvg.loadSVG(file.toURL())
+            val icon = SVGIcon()
+            icon.svgURI = svgUri
+            icon.svgUniverse = threadSvg
+            icon.preferredSize = Dimension(tileSize, tileSize)
+            icon.antiAlias = true
+            icon.autosize = AUTOSIZE_STRETCH
+            val output = icon.image as BufferedImage
+            threadSvg.removeDocument(svgUri)
+            return@withContext output
         }
-        val icon = SVGIcon()
-        icon.svgURI = svgUri
-        icon.svgUniverse = svg
-        icon.preferredSize = Dimension(tileSize, tileSize)
-        icon.antiAlias = true
-        icon.autosize = AUTOSIZE_STRETCH
-        val output = icon.image as BufferedImage
-        svg.removeDocument(svgUri)
-        return output
     }
 
     override fun doBlockingJfx(input: BufferedImage): Image = SwingFXUtils.toFXImage(input, null)

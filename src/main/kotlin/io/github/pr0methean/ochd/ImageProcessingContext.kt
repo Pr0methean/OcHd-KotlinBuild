@@ -28,7 +28,7 @@ class ImageProcessingContext(
 ) {
     override fun toString(): String = name
 
-    val svg = SVGUniverse()
+    val svg: ThreadLocal<SVGUniverse> = ThreadLocal.withInitial { SVGUniverse() }
     val svgTasks = HashMap<String, SvgImportTask>()
     val taskDedupMap = HashMap<TextureTask<*>, TextureTask<*>>()
     val taskLaunches: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
