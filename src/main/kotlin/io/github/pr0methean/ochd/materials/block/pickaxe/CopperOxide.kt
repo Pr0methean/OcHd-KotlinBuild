@@ -31,8 +31,8 @@ enum class CopperOxide(
     fun LayerListBuilder.commonLayers() {
         background(color)
         layer("streaks", highlight)
+        layer("borderSolid", shadow)
         layer("borderSolidTopLeft", highlight)
-        layer("borderSolidBottomRight", shadow)
     }
     fun LayerListBuilder.uncut() {
         copy {commonLayers()}

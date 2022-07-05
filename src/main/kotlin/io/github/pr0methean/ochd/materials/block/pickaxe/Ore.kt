@@ -69,8 +69,8 @@ enum class Ore(
             output.add(ctx.out("block/quartz_block_top") {
                 background(color)
                 layer("streaks", highlight)
+                layer("borderSolid", shadow)
                 layer("borderSolidTopLeft", highlight)
-                layer("borderSolidBottomRight", shadow)
             })
             output.add(ctx.out("block/quartz_block_bottom") {rawBlock()})
             output.add(ctx.out("block/quartz_block_side") {block()})
@@ -94,8 +94,8 @@ enum class Ore(
             background(highlight)
             layer("checksLarge", shadow)
             layer("checksSmall", color)
+            layer("borderSolid", shadow)
             layer("borderSolidTopLeft", highlight)
-            layer("borderSolidBottomRight", shadow)
         }
     },
     DIAMOND(
@@ -113,8 +113,8 @@ enum class Ore(
             background(color)
             layer("streaks", highlight)
             copy {item()}
+            layer("borderSolid", shadow)
             layer("borderSolidTopLeft", extremeHighlight)
-            layer("borderSolidBottomRight", shadow)
         }
     },
     EMERALD(
@@ -145,8 +145,8 @@ enum class Ore(
         background(color)
         layer("streaks", highlight)
         copy {item()}
+        layer("borderSolid", shadow)
         layer("borderSolidTopLeft", highlight)
-        layer("borderSolidBottomRight", shadow)
     }
     open fun LayerListBuilder.ingot() {
         layer("ingotMask", color)
