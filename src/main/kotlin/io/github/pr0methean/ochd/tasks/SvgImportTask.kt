@@ -23,7 +23,7 @@ data class SvgImportTask(
     private val tileSize: Int,
     override val ctx: ImageProcessingContext
 )
-    : JfxTextureTask<BufferedImage>(ctx) {
+    : TextureTask<BufferedImage>(ctx) {
     val file = ctx.svgDirectory.resolve("$shortName.svg")
     override fun toString(): String = "SvgImportTask for $shortName"
 

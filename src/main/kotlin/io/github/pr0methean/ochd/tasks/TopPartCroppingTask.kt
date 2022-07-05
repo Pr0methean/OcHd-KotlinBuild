@@ -8,11 +8,10 @@ import javafx.scene.paint.Color
 
 const val TOP_PORTION = 11.0/32
 data class TopPartCroppingTask(
-    val base: TextureTask,
+    val base: TextureTask<*>,
     val width: Int,
     override val ctx: ImageProcessingContext
-)
-        : JfxTextureTask<PixelReader>(ctx) {
+): TextureTask<PixelReader>(ctx) {
     private val height = (width * TOP_PORTION).toInt()
     override suspend fun computeInput(): PixelReader = base.getImage().pixelReader
 

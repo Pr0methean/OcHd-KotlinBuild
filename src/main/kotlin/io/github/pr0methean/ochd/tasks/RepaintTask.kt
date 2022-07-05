@@ -12,10 +12,10 @@ import javafx.scene.image.WritableImage
 import javafx.scene.paint.Paint
 
 data class RepaintTask(
-    private val paint: Paint?, private val base: TextureTask, private val size: Int, val alpha: Double = 1.0,
+    private val paint: Paint?, private val base: TextureTask<*>, private val size: Int, val alpha: Double = 1.0,
     override val ctx: ImageProcessingContext
 )
-    : JfxTextureTask<Image>(ctx) {
+    : TextureTask<Image>(ctx) {
 
     override suspend fun computeInput(): Image = base.getImage()
 

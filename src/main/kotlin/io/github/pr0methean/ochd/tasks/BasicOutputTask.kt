@@ -6,7 +6,7 @@ import kotlinx.coroutines.withContext
 
 
 data class BasicOutputTask(
-    private val producer: TextureTask,
+    private val producer: TextureTask<*>,
     override val name: String,
     override val ctx: ImageProcessingContext
 )

@@ -30,7 +30,7 @@ class ImageProcessingContext(
 
     val svg = SVGUniverse()
     val svgTasks = ConcurrentHashMap<String, SvgImportTask>()
-    val taskDedupMap = ConcurrentHashMap<TextureTask, TextureTask>()
+    val taskDedupMap = ConcurrentHashMap<TextureTask<*>, TextureTask<*>>()
     val taskLaunches: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val dedupeSuccesses: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val dedupeFailures: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
@@ -64,7 +64,7 @@ class ImageProcessingContext(
     fun packImage(input: Image): PackedImage =
             if (tileSize <= MAX_UNCOMPRESSED_TILESIZE) UncompressedImage(input) else PngImage(input)
 
-    fun deduplicate(task: TextureTask): TextureTask {
+    fun deduplicate(task: TextureTask<*>): TextureTask<*> {
         val className = task::class.simpleName
         dedupeSuccesses.add(className)
         return taskDedupMap.computeIfAbsent(task) {
@@ -74,13 +74,13 @@ class ImageProcessingContext(
         }
     }
 
-    fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): TextureTask {
+    fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): TextureTask<*> {
         val importTask = svgTasks[name] ?: throw IllegalArgumentException("No SVG task called $name")
         return if (paint == null && alpha == 1.0) importTask
                 else deduplicate(RepaintTask(paint, importTask, tileSize, alpha, this))
     }
 
-    fun stack(init: LayerListBuilder.() -> Unit): TextureTask {
+    fun stack(init: LayerListBuilder.() -> Unit): TextureTask<*> {
         val layerTasks = LayerListBuilder(this)
         layerTasks.init()
         return deduplicate(
@@ -90,13 +90,13 @@ class ImageProcessingContext(
                 ImageStackingTask(layerTasks.build(), tileSize, this))
     }
 
-    fun animate(init: LayerListBuilder.() -> Unit): TextureTask {
+    fun animate(init: LayerListBuilder.() -> Unit): TextureTask<*> {
         val frames = LayerListBuilder(this)
         frames.init()
         return deduplicate(AnimationColumnTask(frames.build(), tileSize, this))
     }
 
-    fun out(name: String, source: TextureTask) 
+    fun out(name: String, source: TextureTask<*>)
             = BasicOutputTask(source, name, this)
 
     fun out(name: String, source: LayerListBuilder.() -> Unit) = BasicOutputTask(
