@@ -27,13 +27,13 @@ private val OUT_OF_MEMORY_DELAY = 5.seconds
 private val TASK_POLL_INTERVAL = 10.milliseconds
 
 abstract class TextureTask<TJfxInput>(open val ctx: ImageProcessingContext) {
-    private val coroutine = ctx.scope.async(start = CoroutineStart.LAZY) {
+    private val coroutine by lazy {ctx.scope.async(start = CoroutineStart.LAZY) {
         println("Starting task ${this@TextureTask}")
         ctx.taskLaunches.add(this@TextureTask::class.simpleName)
         val bitmap = computeBitmap()
         println("Finished task ${this@TextureTask}")
         return@async ctx.packImage(bitmap)
-    }
+    }}
 
     inner class JfxTask(val input: TJfxInput): Task<Image>() {
         override fun call(): Image {
