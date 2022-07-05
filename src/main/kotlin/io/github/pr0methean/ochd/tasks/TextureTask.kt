@@ -32,7 +32,7 @@ abstract class TextureTask<TJfxInput>(open val ctx: ImageProcessingContext) {
         ctx.taskLaunches.add(this@TextureTask::class.simpleName ?: "[unnamed TextureTask subclass]")
         val bitmap = computeBitmap()
         println("Finished task ${this@TextureTask}")
-        return@async ctx.packImage(bitmap)
+        return@async ctx.packImage(bitmap, this@TextureTask)
     }}
 
     inner class JfxTask(val input: TJfxInput): Task<Image>() {

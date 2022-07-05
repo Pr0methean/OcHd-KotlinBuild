@@ -17,7 +17,8 @@ fun color(web: String) = Color.web(web)
 
 fun color(web: String, alpha: Double) = Color.web(web, alpha)
 
-private const val MAX_UNCOMPRESSED_TILESIZE = 1024
+private const val MAX_UNCOMPRESSED_TILESIZE = 4096
+private const val MAX_UNCOMPRESSED_TILESIZE_COMBINING_TASK = 1024
 
 class ImageProcessingContext(
     val name: String,
@@ -61,8 +62,14 @@ class ImageProcessingContext(
     /**
      * Encapsulates the given image in a form small enough to fit on the heap.
      */
-    fun packImage(input: Image): PackedImage =
-            if (tileSize <= MAX_UNCOMPRESSED_TILESIZE) UncompressedImage(input) else PngImage(input)
+    fun packImage(input: Image, task: TextureTask<*>): PackedImage {
+        if (task is ImageCombiningTask) {
+            // Use PNG-compressed images more eagerly in ImageCombiningTask instances, since they're mostly consumed by
+            // PNG output tasks.
+            return if (tileSize <= MAX_UNCOMPRESSED_TILESIZE_COMBINING_TASK) UncompressedImage(input) else PngImage(input)
+        }
+        return if (tileSize <= MAX_UNCOMPRESSED_TILESIZE) UncompressedImage(input) else PngImage(input)
+    }
 
     fun deduplicate(task: TextureTask<*>): TextureTask<*> {
         val className = task::class.simpleName ?: "[unnamed class]"
