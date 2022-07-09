@@ -11,56 +11,45 @@ import java.lang.invoke.MethodHandles
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
-// JavaFX insists on having only one "UI" thread that can do any image processing, which is stored in a static variable.
-// To fool it into using more than one UI thread in parallel, we need more than one copy of the static variable, hence
-// this ugly but effective workaround.
-val threadLocalClassLoader: ThreadLocal<MyClassLoader> = ThreadLocal.withInitial {
-    val classLoader = MyClassLoader()
-    classLoader.loadClass("javafx.embed.swing.JFXPanel").getConstructor().newInstance()
-    return@withInitial classLoader
-}
-val threadLocalRunLater: ThreadLocal<MethodHandle> = ThreadLocal.withInitial {
-    return@withInitial MethodHandles.lookup().unreflect(
-        threadLocalClassLoader.get().loadClass("javafx.application.Platform").getMethod("runLater", Runnable::class.java))
-}
 private val OUT_OF_MEMORY_DELAY = 5.seconds
 private val TASK_POLL_INTERVAL = 10.milliseconds
-
-abstract class TextureTask<TJfxInput>(open val ctx: ImageProcessingContext) {
+private val threadLocalRunLater: ThreadLocal<MethodHandle> = ThreadLocal.withInitial {
+    val classLoader = MyClassLoader()
+    classLoader.loadClass("javafx.embed.swing.JFXPanel").getConstructor().newInstance()
+    val platformClass = classLoader.loadClass("javafx.application.Platform")
+    val lookup = MethodHandles.lookup()
+    lookup.unreflect(platformClass.getMethod("runLater", Runnable::class.java))
+}
+private val onUiThread: ThreadLocal<Boolean> = ThreadLocal.withInitial {false}
+abstract class TextureTask(open val ctx: ImageProcessingContext) {
     private val coroutine by lazy {
         ctx.scope.async(start = CoroutineStart.LAZY) {
             println("Starting task ${this@TextureTask}")
             ctx.taskLaunches.add(this@TextureTask::class.simpleName ?: "[unnamed TextureTask subclass]")
-            val bitmap = computeBitmap()
+            val bitmap = computeImage()
             println("Finished task ${this@TextureTask}")
             return@async ctx.packImage(bitmap, this@TextureTask)
         }
     }
+    // JavaFX insists on having only one "UI" thread that can do any image processing, which is stored in a static variable.
+// To fool it into using more than one UI thread in parallel, we need more than one copy of the static variable, hence
+// this ugly but effective workaround.
 
-    inner class JfxTask(val input: TJfxInput) : Task<Image>() {
-        override fun call(): Image {
-            val out = doBlockingJfx(input)
+    protected suspend fun <T> doJfx(jfxCode: suspend CoroutineScope.() -> T): T {
+        val task = JfxTask(jfxCode)
+        threadLocalRunLater.get().invokeExact(task as Runnable)
+        return withContext(Dispatchers.IO) {task.get()}
+    }
+
+    class JfxTask<T>(private val jfxCode: suspend CoroutineScope.() -> T) : Task<T>() {
+        override fun call(): T {
+            onUiThread.set(true)
+            val out = runBlocking(Dispatchers.Unconfined, jfxCode)
             updateValue(out)
             return out
         }
     }
 
-    suspend fun computeBitmap(): Image {
-        val task = JfxTask(computeInput())
-        val runLater: MethodHandle = threadLocalRunLater.get()
-        return runLater.run {
-            invokeExact(task as Runnable)
-            withContext(Dispatchers.IO) {
-                while (!task.isDone) {
-                    delay(TASK_POLL_INTERVAL)
-                }
-                return@withContext task.get()
-            }
-        }
-    }
-
-    abstract suspend fun computeInput(): TJfxInput
-    abstract fun doBlockingJfx(input: TJfxInput): Image
-    suspend fun getPackedImage(): PackedImage = coroutine.await()
-    suspend fun getImage(): Image = getPackedImage().unpacked
+    abstract suspend fun computeImage(): Image
+    suspend fun getImage(): PackedImage = coroutine.await()
 }

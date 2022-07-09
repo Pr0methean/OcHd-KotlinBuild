@@ -22,23 +22,23 @@ data class SvgImportTask(
     private val tileSize: Int,
     override val ctx: ImageProcessingContext
 )
-    : TextureTask<BufferedImage>(ctx) {
+    : TextureTask(ctx) {
+
     val file = ctx.svgDirectory.resolve("$shortName.svg")
     override fun toString(): String = "SvgImportTask for $shortName"
 
-    override suspend fun computeInput(): BufferedImage {
-        @Suppress("DEPRECATION") return withContext(Dispatchers.IO) {
+    override suspend fun computeImage(): Image {
+        val image = withContext(Dispatchers.IO) {
             val svgUniverse = SVGUniverse()
-            val svgUri = svgUniverse.loadSVG(file.toURL())
+            @Suppress("DEPRECATION") val svgUri = svgUniverse.loadSVG(file.toURL())
             val icon = SVGIcon()
             icon.svgURI = svgUri
             icon.svgUniverse = svgUniverse
             icon.preferredSize = Dimension(tileSize, tileSize)
             icon.antiAlias = true
             icon.autosize = AUTOSIZE_STRETCH
-            return@withContext icon.image as BufferedImage
+            icon.image as BufferedImage
         }
+        return doJfx {SwingFXUtils.toFXImage(image, null)}
     }
-
-    override fun doBlockingJfx(input: BufferedImage): Image = SwingFXUtils.toFXImage(input, null)
 }

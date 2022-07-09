@@ -29,7 +29,7 @@ class ImageProcessingContext(
     override fun toString(): String = name
 
     val svgTasks: Map<String, SvgImportTask>
-    val taskDedupMap = ConcurrentHashMap<TextureTask<*>, TextureTask<*>>()
+    val taskDedupMap = ConcurrentHashMap<TextureTask, TextureTask>()
     val taskLaunches: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val dedupeSuccesses: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val dedupeFailures: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
@@ -61,8 +61,8 @@ class ImageProcessingContext(
     /**
      * Encapsulates the given image in a form small enough to fit on the heap.
      */
-    fun packImage(input: Image, task: TextureTask<*>): PackedImage {
-        if (task is ImageCombiningTask) {
+    fun packImage(input: Image, task: TextureTask): PackedImage {
+        if (task is AnimationColumnTask || task is ImageStackingTask) {
             // Use PNG-compressed images more eagerly in ImageCombiningTask instances, since they're mostly consumed by
             // PNG output tasks.
             return if (tileSize <= MAX_UNCOMPRESSED_TILESIZE_COMBINING_TASK) UncompressedImage(input) else PngImage(input)
@@ -70,7 +70,7 @@ class ImageProcessingContext(
         return if (tileSize <= MAX_UNCOMPRESSED_TILESIZE) UncompressedImage(input) else PngImage(input)
     }
 
-    fun deduplicate(task: TextureTask<*>): TextureTask<*> {
+    fun deduplicate(task: TextureTask): TextureTask {
         if (task is SvgImportTask) {
             return task // SvgImportTask duplication is impossible because svgTasks is populated eagerly
         }
@@ -83,33 +83,31 @@ class ImageProcessingContext(
         }
     }
 
-    fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): TextureTask<*> {
+    fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): TextureTask {
         val importTask = svgTasks[name] ?: throw IllegalArgumentException("No SVG task called $name")
         return if (paint == null && alpha == 1.0) importTask
                 else deduplicate(RepaintTask(paint, importTask, tileSize, alpha, this))
     }
 
-    fun stack(init: LayerListBuilder.() -> Unit): TextureTask<*> {
+    fun stack(init: LayerListBuilder.() -> Unit): TextureTask {
         val layerTasks = LayerListBuilder(this)
         layerTasks.init()
         return deduplicate(
             if (layerTasks.layers.size == 1 && layerTasks.background == Color.TRANSPARENT)
                 layerTasks.layers[0]
             else
-                ImageStackingTask(layerTasks.build(), tileSize, this))
+                ImageStackingTask(layerTasks.build(), this))
     }
 
-    fun animate(init: LayerListBuilder.() -> Unit): TextureTask<*> {
+    fun animate(init: LayerListBuilder.() -> Unit): TextureTask {
         val frames = LayerListBuilder(this)
         frames.init()
-        return deduplicate(AnimationColumnTask(frames.build(), tileSize, this))
+        return deduplicate(AnimationColumnTask(frames.build(), this))
     }
 
-    fun out(name: String, source: TextureTask<*>)
-            = BasicOutputTask(source, name, this)
+    fun out(name: String, source: TextureTask) = BasicOutputTask(source, name, this)
 
-    fun out(name: String, source: LayerListBuilder.() -> Unit) = BasicOutputTask(
-            stack {source()}, name, this)
+    fun out(name: String, source: LayerListBuilder.() -> Unit) = BasicOutputTask(stack {source()}, name, this)
 
     fun onTaskGraphFinished() {
         taskDedupMap.clear()

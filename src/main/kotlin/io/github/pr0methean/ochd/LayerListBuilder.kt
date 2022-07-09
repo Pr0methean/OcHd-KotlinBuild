@@ -7,7 +7,7 @@ import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 
 class LayerListBuilder(val ctx: ImageProcessingContext) {
-    internal val layers = mutableListOf<TextureTask<*>>()
+    internal val layers = mutableListOf<TextureTask>()
     var background: Paint = Color.TRANSPARENT
     fun background(color: Paint) {
         background = color
@@ -18,7 +18,7 @@ class LayerListBuilder(val ctx: ImageProcessingContext) {
     fun background(color: Int) {
         background = c(color)
     }
-    fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): TextureTask<*> {
+    fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): TextureTask {
         val layer = ctx.layer(name, paint, alpha)
         add(layer)
         return layer
@@ -35,16 +35,14 @@ class LayerListBuilder(val ctx: ImageProcessingContext) {
             }
         }
         if (source.layers.size > 1) { // Don't flatten sub-stacks since we want to deduplicate them
-            add(ImageStackingTask(source, ctx.tileSize, ctx))
+            add(ImageStackingTask(source, ctx))
         } else {
             addAll(source.layers)
         }
     }
-    fun copyTopOf(source: TextureTask<*>) {
-        add(TopPartCroppingTask(source, ctx.tileSize, ctx))
-    }
+    fun copyTopOf(source: TextureTask) = add(TopPartCroppingTask(source, ctx.tileSize, ctx))
     fun copyTopOf(source: LayerListBuilder.() -> Unit) = copyTopOf(ctx.stack(source))
-    fun add(element: TextureTask<*>) = layers.add(ctx.deduplicate(element))
-    fun addAll(elements: Collection<TextureTask<*>>) = layers.addAll(elements.map(ctx::deduplicate))
+    fun add(element: TextureTask) = layers.add(ctx.deduplicate(element))
+    fun addAll(elements: Collection<TextureTask>) = layers.addAll(elements.map(ctx::deduplicate))
     fun build() = LayerList(layers.toList(), background, ctx)
 }
