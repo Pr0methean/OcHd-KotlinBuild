@@ -17,11 +17,11 @@ interface GroundCoverBlock: Material {
     }
     fun LayerListBuilder.createTopLayers()
 
-    override fun outputTasks(ctx: ImageProcessingContext): Iterable<OutputTask> = listOf(
-        ctx.out("block/${nameOverrideTop ?: "${name}_top"}", ctx.stack { createTopLayers() }),
-        ctx.out("block/${nameOverrideSide ?: "${name}_side"}", ctx.stack {
+    override fun outputTasks(ctx: ImageProcessingContext): Sequence<OutputTask> = sequence {
+        yield(ctx.out("block/${nameOverrideTop ?: "${name}_top"}", ctx.stack { createTopLayers() }))
+        yield(ctx.out("block/${nameOverrideSide ?: "${name}_side"}", ctx.stack {
             copy(base)
             createCoverSideLayers()
-        })
-    )
+        }))
+    }
 }

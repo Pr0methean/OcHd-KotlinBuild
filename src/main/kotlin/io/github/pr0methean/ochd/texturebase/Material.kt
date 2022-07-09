@@ -4,5 +4,5 @@ import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.tasks.OutputTask
 
 interface Material {
-    fun outputTasks(ctx: ImageProcessingContext): Iterable<OutputTask>
+    fun outputTasks(ctx: ImageProcessingContext): Sequence<OutputTask>
 }

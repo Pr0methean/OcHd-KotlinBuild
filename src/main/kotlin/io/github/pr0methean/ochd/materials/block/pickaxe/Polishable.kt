@@ -55,12 +55,9 @@ push bigRingsTopLeftBottomRight ${andesite_s} a2*/
         layer("borderSolidTopLeft", highlight)
     }
 
-    override fun outputTasks(ctx: ImageProcessingContext): Iterable<OutputTask> {
-        val baseTask = ctx.stack {createTextureLayersBase()}
-        return listOf(
-            ctx.out("block/$name", baseTask),
-            ctx.out("block/polished_$name", ctx.stack(createPolishedTexture()))
-        )
+    override fun outputTasks(ctx: ImageProcessingContext): Sequence<OutputTask> = sequence {
+        yield(ctx.out("block/$name", ctx.stack { createTextureLayersBase() }))
+        yield(ctx.out("block/polished_$name", ctx.stack(createPolishedTexture())))
     }
 
     internal fun createPolishedTexture(): LayerListBuilder.() -> Unit =

@@ -6,7 +6,7 @@ import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.texturebase.Material
 
 object Concrete: Material {
-    override fun outputTasks(ctx: ImageProcessingContext): Iterable<OutputTask> = DYES.map {
+    override fun outputTasks(ctx: ImageProcessingContext): Sequence<OutputTask> = DYES.asSequence().map {
         val name = it.key
         val color = it.value
         ctx.out("block/${name}_concrete", ctx.stack {

@@ -331,8 +331,8 @@ enum class SimplePickaxeBlock(
         }
     };
 
-    override fun outputTasks(ctx: ImageProcessingContext): Iterable<OutputTask> =
-        if (hasOutput) super.outputTasks(ctx) else listOf()
+    override fun outputTasks(ctx: ImageProcessingContext): Sequence<OutputTask> =
+        if (hasOutput) super.outputTasks(ctx) else sequenceOf()
 
     constructor(base: ShadowHighlightMaterial, hasOutput: Boolean = false):
             this(base.color, base.shadow, base.highlight, hasOutput)

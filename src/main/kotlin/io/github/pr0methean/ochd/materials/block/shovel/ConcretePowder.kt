@@ -7,18 +7,18 @@ import io.github.pr0methean.ochd.texturebase.Material
 
 object ConcretePowder: Material {
 
-    override fun outputTasks(ctx: ImageProcessingContext): Iterable<OutputTask> {
+    override fun outputTasks(ctx: ImageProcessingContext): Sequence<OutputTask> = sequence {
         val sharedLayersTask = ctx.stack {
             layer("checksSmall", DYES["gray"], 0.5)
             layer("checksSmall", DYES["light_gray"], 0.5)
         }
-        return DYES.map {
+        DYES.forEach {
             val name = it.key
             val color = it.value
-            return@map ctx.out("block/${name}_concrete_powder", ctx.stack {
+            yield(ctx.out("block/${name}_concrete_powder", ctx.stack {
                 background(color)
                 add(sharedLayersTask)
-            })
+            }))
         }
     }
 

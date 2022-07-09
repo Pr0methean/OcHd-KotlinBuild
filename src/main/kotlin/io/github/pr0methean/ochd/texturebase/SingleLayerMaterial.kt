@@ -5,13 +5,13 @@ import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.tasks.OutputTask
 import javafx.scene.paint.Paint
 
-abstract class AbstractSingleLayerMaterial(
+abstract class SingleLayerMaterial(
     override val directory: String,
-    override val sourceFileName: String,
-    override val nameOverride: String?,
-    override val color: Paint? = null,
-    override val alpha: Double = 1.0
-) : ISingleLayerMaterial {
+    open val sourceFileName: String,
+    open val nameOverride: String?,
+    open val color: Paint? = null,
+    open val alpha: Double = 1.0
+) : SingleTextureMaterial {
 
     override val name: String
         get() = nameOverride ?: this::class.simpleName!!
@@ -20,7 +20,8 @@ abstract class AbstractSingleLayerMaterial(
         layer(sourceFileName, color, alpha)
     }
 
-    override fun outputTasks(ctx: ImageProcessingContext): Iterable<OutputTask> {
-        return listOf(ctx.out(name, ctx.layer(sourceFileName, color, alpha)))
+    override fun outputTasks(ctx: ImageProcessingContext): Sequence<OutputTask> {
+        return sequenceOf(ctx.out(name, ctx.layer(sourceFileName, color, alpha)))
     }
+
 }

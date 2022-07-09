@@ -43,10 +43,10 @@ enum class CopperOxide(
         layer("cutInQuarters1", shadow)
         layer("cutInQuarters2", highlight)
     }
-    override fun outputTasks(ctx: ImageProcessingContext): Iterable<OutputTask> = listOf(
-        ctx.out("block/${name}_copper") {uncut()},
-        ctx.out("block/cut_${name}_copper") {cut()}
-    )
+    override fun outputTasks(ctx: ImageProcessingContext): Sequence<OutputTask> = sequence {
+        yield(ctx.out("block/${name}_copper") { uncut() })
+        yield(ctx.out("block/cut_${name}_copper") { cut() })
+    }
     companion object {
         fun allOutputTasks(ctx: ImageProcessingContext) = values().flatMap { it.outputTasks(ctx) }
     }

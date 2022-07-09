@@ -29,14 +29,14 @@ sealed interface Wood: ShadowHighlightMaterial {
     fun LayerListBuilder.strippedLogTop()
     fun LayerListBuilder.trapdoor()
 
-    override fun outputTasks(ctx: ImageProcessingContext): Iterable<OutputTask> = listOf(
-        ctx.out("block/${name}_${logSynonym}", ctx.stack { bark() }),
-        ctx.out("block/${name}_${logSynonym}_top", ctx.stack { logTop() }),
-        ctx.out("block/stripped_${name}_${logSynonym}", ctx.stack { strippedLogSide() }),
-        ctx.out("block/stripped_${name}_${logSynonym}_top", ctx.stack {strippedLogTop()}),
-        ctx.out("block/${name}_planks", ctx.stack { planks() }),
-        ctx.out("block/${name}_trapdoor", ctx.stack { trapdoor() })
-    )
+    override fun outputTasks(ctx: ImageProcessingContext): Sequence<OutputTask> = sequence {
+        yield(ctx.out("block/${name}_${logSynonym}", ctx.stack { bark() }))
+        yield(ctx.out("block/${name}_${logSynonym}_top", ctx.stack { logTop() }))
+        yield(ctx.out("block/stripped_${name}_${logSynonym}", ctx.stack { strippedLogSide() }))
+        yield(ctx.out("block/stripped_${name}_${logSynonym}_top", ctx.stack { strippedLogTop() }))
+        yield(ctx.out("block/${name}_planks", ctx.stack { planks() }))
+        yield(ctx.out("block/${name}_trapdoor", ctx.stack { trapdoor() }))
+    }
 
     fun LayerListBuilder.planks() {
         background(color)

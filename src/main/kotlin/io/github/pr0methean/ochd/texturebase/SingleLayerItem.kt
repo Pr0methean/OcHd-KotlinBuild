@@ -7,4 +7,4 @@ open class SingleLayerItem(
     override val nameOverride: String?,
     override val color: Paint? = null,
     override val alpha: Double = 1.0
-) : AbstractSingleLayerMaterial("item", sourceFileName, nameOverride, color, alpha)
+) : SingleLayerMaterial("item", sourceFileName, nameOverride, color, alpha)

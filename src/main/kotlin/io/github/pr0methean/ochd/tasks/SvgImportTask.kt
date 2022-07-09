@@ -19,7 +19,6 @@ inkscape -w "$SIZE" -h "$SIZE" "$SVG_DIRECTORY/$1.svg" -o "$PNG_DIRECTORY/$1.png
  */
 data class SvgImportTask(
     val shortName: String,
-    private val svg: ThreadLocal<SVGUniverse>,
     private val tileSize: Int,
     override val ctx: ImageProcessingContext
 )
@@ -29,17 +28,15 @@ data class SvgImportTask(
 
     override suspend fun computeInput(): BufferedImage {
         @Suppress("DEPRECATION") return withContext(Dispatchers.IO) {
-            val threadSvg = svg.get()
-            val svgUri = threadSvg.loadSVG(file.toURL())
+            val svgUniverse = SVGUniverse()
+            val svgUri = svgUniverse.loadSVG(file.toURL())
             val icon = SVGIcon()
             icon.svgURI = svgUri
-            icon.svgUniverse = threadSvg
+            icon.svgUniverse = svgUniverse
             icon.preferredSize = Dimension(tileSize, tileSize)
             icon.antiAlias = true
             icon.autosize = AUTOSIZE_STRETCH
-            val output = icon.image as BufferedImage
-            threadSvg.removeDocument(svgUri)
-            return@withContext output
+            return@withContext icon.image as BufferedImage
         }
     }
 

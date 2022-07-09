@@ -17,7 +17,7 @@ interface SingleTextureMaterial: Material {
     fun copyTo(dest: LayerListBuilder) {
         dest.copy(LayerListBuilder(dest.ctx).apply {createTextureLayers()}.build())
     }
-    override fun outputTasks(ctx: ImageProcessingContext): Iterable<OutputTask> = listOf(
+    override fun outputTasks(ctx: ImageProcessingContext): Sequence<OutputTask> = sequenceOf(
         ctx.out("$directory/$name", ctx.stack { createTextureLayers() })
     )
 }

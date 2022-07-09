@@ -1,8 +1,6 @@
 package io.github.pr0methean.ochd
 
 import com.google.common.collect.ConcurrentHashMultiset
-import com.google.common.collect.HashMultiset
-import com.kitfox.svg.SVGUniverse
 import io.github.pr0methean.ochd.packedimage.PackedImage
 import io.github.pr0methean.ochd.packedimage.PngImage
 import io.github.pr0methean.ochd.packedimage.UncompressedImage
@@ -12,6 +10,7 @@ import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.CoroutineScope
 import java.io.File
+import java.util.concurrent.ConcurrentHashMap
 
 fun color(web: String) = Color.web(web)
 
@@ -29,22 +28,22 @@ class ImageProcessingContext(
 ) {
     override fun toString(): String = name
 
-    val svg: ThreadLocal<SVGUniverse> = ThreadLocal.withInitial { SVGUniverse() }
-    val svgTasks = HashMap<String, SvgImportTask>()
-    val taskDedupMap = HashMap<TextureTask<*>, TextureTask<*>>()
+    val svgTasks: Map<String, SvgImportTask>
+    val taskDedupMap = ConcurrentHashMap<TextureTask<*>, TextureTask<*>>()
     val taskLaunches: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
-    val dedupeSuccesses: HashMultiset<String> = HashMultiset.create()
-    val dedupeFailures: HashMultiset<String> = HashMultiset.create()
+    val dedupeSuccesses: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
+    val dedupeFailures: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     init {
+        val builder = mutableMapOf<String, SvgImportTask>()
         svgDirectory.list()!!.forEach { svgFile ->
             val shortName = svgFile.removeSuffix(".svg")
-            svgTasks[shortName] = SvgImportTask(
+            builder[shortName] = SvgImportTask(
                 shortName,
-                svg,
                 tileSize,
                 this
             )
         }
+        svgTasks = builder.toMap()
     }
 
     fun printStats() {
@@ -113,7 +112,6 @@ class ImageProcessingContext(
             stack {source()}, name, this)
 
     fun onTaskGraphFinished() {
-        svgTasks.clear()
         taskDedupMap.clear()
     }
 }
