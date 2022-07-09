@@ -15,6 +15,8 @@ import io.github.pr0methean.ochd.texturebase.copy
 import io.github.pr0methean.ochd.texturebase.group
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 
 val SIMPLE_PICKAXE_BLOCKS = group<SimplePickaxeBlock>()
 val mortarColor = c(0xa2867d)
@@ -331,8 +333,8 @@ enum class SimplePickaxeBlock(
         }
     };
 
-    override fun outputTasks(ctx: ImageProcessingContext): Sequence<OutputTask> =
-        if (hasOutput) super.outputTasks(ctx) else sequenceOf()
+    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> =
+        if (hasOutput) super.outputTasks(ctx) else flowOf()
 
     constructor(base: ShadowHighlightMaterial, hasOutput: Boolean = false):
             this(base.color, base.shadow, base.highlight, hasOutput)
