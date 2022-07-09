@@ -8,11 +8,10 @@ import kotlinx.coroutines.*
 import java.lang.Runnable
 import java.lang.invoke.MethodHandle
 import java.lang.invoke.MethodHandles
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
 
-private val OUT_OF_MEMORY_DELAY = 5.seconds
-private val TASK_POLL_INTERVAL = 10.milliseconds
+// JavaFX insists on having only one "UI" thread that can do any image processing, which is stored in a static variable.
+// To fool it into using more than one UI thread in parallel, we need more than one copy of the static variable, hence
+// this ugly but effective workaround.
 private val threadLocalRunLater: ThreadLocal<MethodHandle> = ThreadLocal.withInitial {
     val classLoader = MyClassLoader()
     classLoader.loadClass("javafx.embed.swing.JFXPanel").getConstructor().newInstance()
@@ -20,7 +19,6 @@ private val threadLocalRunLater: ThreadLocal<MethodHandle> = ThreadLocal.withIni
     val lookup = MethodHandles.lookup()
     lookup.unreflect(platformClass.getMethod("runLater", Runnable::class.java))
 }
-private val onUiThread: ThreadLocal<Boolean> = ThreadLocal.withInitial {false}
 abstract class TextureTask(open val ctx: ImageProcessingContext) {
     private val coroutine by lazy {
         ctx.scope.async(start = CoroutineStart.LAZY) {
@@ -31,9 +29,6 @@ abstract class TextureTask(open val ctx: ImageProcessingContext) {
             return@async ctx.packImage(bitmap, this@TextureTask)
         }
     }
-    // JavaFX insists on having only one "UI" thread that can do any image processing, which is stored in a static variable.
-// To fool it into using more than one UI thread in parallel, we need more than one copy of the static variable, hence
-// this ugly but effective workaround.
 
     protected suspend fun <T> doJfx(jfxCode: suspend CoroutineScope.() -> T): T {
         val task = JfxTask(jfxCode)
@@ -43,7 +38,6 @@ abstract class TextureTask(open val ctx: ImageProcessingContext) {
 
     class JfxTask<T>(private val jfxCode: suspend CoroutineScope.() -> T) : Task<T>() {
         override fun call(): T {
-            onUiThread.set(true)
             val out = runBlocking(Dispatchers.Unconfined, jfxCode)
             updateValue(out)
             return out
