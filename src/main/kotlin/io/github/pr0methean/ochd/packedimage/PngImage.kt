@@ -13,6 +13,7 @@ class PngImage(input: Image): PackedImage {
     }
     override suspend fun unpacked() = unpacked.get()
     private val packed = ByteArrayOutputStream().use {
+        println("Compressing an uncompressed image to PNG for heap storage")
         ImageIO.write(SwingFXUtils.fromFXImage(input, null), "PNG", it)
         return@use it.toByteArray()
     }
