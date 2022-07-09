@@ -20,7 +20,8 @@ data class ImageStackingTask(
     override fun doBlockingJfx(input: List<PackedImage>): Image {
         val stackPane = StackPane()
         stackPane.background = Background(BackgroundFill(layers.background, null, null))
-        stackPane.children.addAll(input.map {ImageView(it.unpack()).also {
+        stackPane.children.addAll(input.map {
+            ImageView(it.unpacked).also {
             it.isSmooth = true
         }})
         val params = SnapshotParameters()

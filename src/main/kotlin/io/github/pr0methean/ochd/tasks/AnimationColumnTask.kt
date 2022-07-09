@@ -17,7 +17,7 @@ data class AnimationColumnTask(
         val canvas = Canvas(size.toDouble(), (size * input.size).toDouble())
         val canvasCtx = canvas.graphicsContext2D
         for ((index, frame) in input.withIndex()) {
-            canvasCtx.drawImage(frame.unpack(), 0.0, (size * index).toDouble())
+            canvasCtx.drawImage(frame.unpacked, 0.0, (size * index).toDouble())
         }
         val out = WritableImage(size, size * input.size)
         canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, out)

@@ -27,15 +27,17 @@ private val OUT_OF_MEMORY_DELAY = 5.seconds
 private val TASK_POLL_INTERVAL = 10.milliseconds
 
 abstract class TextureTask<TJfxInput>(open val ctx: ImageProcessingContext) {
-    private val coroutine by lazy {ctx.scope.async(start = CoroutineStart.LAZY) {
-        println("Starting task ${this@TextureTask}")
-        ctx.taskLaunches.add(this@TextureTask::class.simpleName ?: "[unnamed TextureTask subclass]")
-        val bitmap = computeBitmap()
-        println("Finished task ${this@TextureTask}")
-        return@async ctx.packImage(bitmap, this@TextureTask)
-    }}
+    private val coroutine by lazy {
+        ctx.scope.async(start = CoroutineStart.LAZY) {
+            println("Starting task ${this@TextureTask}")
+            ctx.taskLaunches.add(this@TextureTask::class.simpleName ?: "[unnamed TextureTask subclass]")
+            val bitmap = computeBitmap()
+            println("Finished task ${this@TextureTask}")
+            return@async ctx.packImage(bitmap, this@TextureTask)
+        }
+    }
 
-    inner class JfxTask(val input: TJfxInput): Task<Image>() {
+    inner class JfxTask(val input: TJfxInput) : Task<Image>() {
         override fun call(): Image {
             val out = doBlockingJfx(input)
             updateValue(out)
@@ -46,7 +48,7 @@ abstract class TextureTask<TJfxInput>(open val ctx: ImageProcessingContext) {
     suspend fun computeBitmap(): Image {
         val task = JfxTask(computeInput())
         val runLater: MethodHandle = threadLocalRunLater.get()
-        return runLater.run{
+        return runLater.run {
             invokeExact(task as Runnable)
             withContext(Dispatchers.IO) {
                 while (!task.isDone) {
@@ -56,8 +58,9 @@ abstract class TextureTask<TJfxInput>(open val ctx: ImageProcessingContext) {
             }
         }
     }
+
     abstract suspend fun computeInput(): TJfxInput
     abstract fun doBlockingJfx(input: TJfxInput): Image
     suspend fun getPackedImage(): PackedImage = coroutine.await()
-    suspend fun getImage(): Image = getPackedImage().unpack()
+    suspend fun getImage(): Image = getPackedImage().unpacked
 }
