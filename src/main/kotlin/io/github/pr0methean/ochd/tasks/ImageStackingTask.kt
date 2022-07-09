@@ -5,7 +5,6 @@ import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.LayerList
 import javafx.scene.canvas.Canvas
 import javafx.scene.image.Image
-import javafx.scene.image.WritableImage
 import javafx.scene.paint.Color
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
@@ -26,9 +25,7 @@ data class ImageStackingTask(
                 canvasCtx.fillRect(0.0, 0.0, canvas.width, canvas.height)
             }
             layerImages.forEach {canvasCtx.drawImage(it.unpacked(), 0.0, 0.0)}
-            val out = WritableImage(size, size)
-            canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, out)
-            return@doJfx out
+            return@doJfx canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, null)
         }
     }
 }
