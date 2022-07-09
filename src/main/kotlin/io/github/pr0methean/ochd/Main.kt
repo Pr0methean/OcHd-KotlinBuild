@@ -61,8 +61,7 @@ val OXIDATION_STATES = listOf("exposed", "weathered", "oxidized")
                     }
                 }
             }
-
-            outputTasks.forEach { it.run() }
+            outputTasks.forEach { it.await() }
         }
     }
     println()

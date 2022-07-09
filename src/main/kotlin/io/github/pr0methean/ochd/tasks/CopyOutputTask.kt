@@ -9,7 +9,7 @@ data class CopyOutputTask(
 )
         : OutputTask(name, ctx) {
     override suspend fun invoke() {
-        baseTask.run()
+        baseTask.await()
         baseTask.file.copyTo(file)
     }
 }

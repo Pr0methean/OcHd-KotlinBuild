@@ -9,6 +9,7 @@ import javax.imageio.ImageIO
 
 class PngImage(input: Image): PackedImage {
     private val unpacked = SoftAsyncLazy(input) {
+        println("Decompressing a PNG image")
         ByteArrayInputStream(packed).use { Image(it) }
     }
     override suspend fun unpacked() = unpacked.get()
