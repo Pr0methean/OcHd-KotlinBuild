@@ -8,7 +8,7 @@ import javax.imageio.ImageIO
 
 class UncompressedImage(private val unpacked: Image): PackedImage {
     private val packed = SoftAsyncLazy {
-        println("Compressing an uncompressed image")
+        println("Compressing an uncompressed image to PNG on demand")
         ByteArrayOutputStream().use {
             ImageIO.write(SwingFXUtils.fromFXImage(unpacked, null), "png", it)
             it.toByteArray()
