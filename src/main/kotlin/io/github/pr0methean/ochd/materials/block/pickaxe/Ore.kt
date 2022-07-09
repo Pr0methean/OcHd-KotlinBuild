@@ -8,6 +8,8 @@ import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import io.github.pr0methean.ochd.texturebase.copy
 import io.github.pr0methean.ochd.texturebase.group
 import javafx.scene.paint.Color
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import java.util.*
 
 private val OVERWORLD = EnumSet.of(OreBase.STONE, OreBase.DEEPSLATE)
@@ -59,20 +61,20 @@ enum class Ore(
         highlight = Color.WHITE,
         substrates = NETHER
     ) {
-        override fun outputTasks(ctx: ImageProcessingContext): Sequence<OutputTask> = sequence {
-            yield(ctx.out("item/quartz") { ingot() })
-            yield(ctx.out("block/nether_quartz_ore", ctx.stack {
+        override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+            emit(ctx.out("item/quartz") { ingot() })
+            emit(ctx.out("block/nether_quartz_ore", ctx.stack {
                     copy(OreBase.NETHERRACK)
                     copy {item()}
                 }))
-            yield(ctx.out("block/quartz_block_top") {
+            emit(ctx.out("block/quartz_block_top") {
                 background(color)
                 layer("streaks", highlight)
                 layer("borderSolid", shadow)
                 layer("borderSolidTopLeft", highlight)
             })
-            yield(ctx.out("block/quartz_block_bottom") {rawBlock()})
-            yield(ctx.out("block/quartz_block_side") {block()})
+            emit(ctx.out("block/quartz_block_bottom") {rawBlock()})
+            emit(ctx.out("block/quartz_block_side") {block()})
         }
 
     },
@@ -166,20 +168,20 @@ enum class Ore(
         item()
     }
 
-    override fun outputTasks(ctx: ImageProcessingContext): Sequence<OutputTask> = sequence {
+    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
         substrates.forEach { oreBase ->
-            yield(ctx.out("block/${oreBase.orePrefix}${name}_ore", ctx.stack {
+            emit(ctx.out("block/${oreBase.orePrefix}${name}_ore", ctx.stack {
                 copy(oreBase)
                 copy {item()}
             }))
         }
-        yield(ctx.out("block/${name}_block", ctx.stack { block() }))
+        emit(ctx.out("block/${name}_block", ctx.stack { block() }))
         if (needsRefining) {
-            yield(ctx.out("block/raw_${name}_block", ctx.stack { rawBlock() }))
-            yield(ctx.out("item/raw_${name}", ctx.stack { rawOre() }))
-            yield(ctx.out("item/${name}_ingot", ctx.stack { ingot() }))
+            emit(ctx.out("block/raw_${name}_block", ctx.stack { rawBlock() }))
+            emit(ctx.out("item/raw_${name}", ctx.stack { rawOre() }))
+            emit(ctx.out("item/${name}_ingot", ctx.stack { ingot() }))
         } else {
-            yield(ctx.out("item/${itemNameOverride ?: name}", ctx.stack {itemForOutput()}))
+            emit(ctx.out("item/${itemNameOverride ?: name}", ctx.stack {itemForOutput()}))
         }
     }
 }

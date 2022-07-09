@@ -1,7 +1,10 @@
 package io.github.pr0methean.ochd
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
+import io.github.pr0methean.ochd.tasks.OutputTask
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.emitAll
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.nio.file.Paths
@@ -45,8 +48,8 @@ val NORMAL_MUSIC_DISCS = listOf("far", "wait", "strad", "mall", "cat", "pigstep"
 val DISC_LABEL_COLORS = listOf(DYES.values).subList(1, DYES.values.size - 1)
 val OXIDATION_STATES = listOf("exposed", "weathered", "oxidized")
  */
-    val outputTasks = sequence {
-        yieldAll(ALL_MATERIALS.outputTasks(ctx))
+    val outputTasks = flow<OutputTask> {
+        emitAll(ALL_MATERIALS.outputTasks(ctx))
         ctx.onTaskGraphFinished()
     }
     val time = measureNanoTime {
@@ -54,14 +57,15 @@ val OXIDATION_STATES = listOf("exposed", "weathered", "oxidized")
             // Copy over all metadata files
             scope.launch {
                 metadataDirectory.walkTopDown().forEach {
+                    val outputPath = out.resolve(it.relativeTo(metadataDirectory))
                     if (it.isDirectory) {
-                        out.resolve(it.relativeTo(metadataDirectory)).mkdirs()
+                        outputPath.mkdirs()
                     } else {
-                        it.copyTo(out.resolve(it.relativeTo(metadataDirectory)))
+                        it.copyTo(outputPath)
                     }
                 }
             }
-            outputTasks.forEach { it.await() }
+            outputTasks.collect { it.await() }
         }
     }
     println()
