@@ -1,15 +1,17 @@
 package io.github.pr0methean.ochd
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
 import io.github.pr0methean.ochd.tasks.OutputTask
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.flow.retryWhen
 import java.nio.file.Paths
 import kotlin.system.measureNanoTime
+import kotlin.time.Duration.Companion.seconds
+import kotlin.time.ExperimentalTime
 
+@OptIn(ExperimentalTime::class)
+private val OOME_RETRY_DELAY = 10.seconds
 suspend fun main(args:Array<String>) {
     if (args.isEmpty()) {
         println("Usage: main <size>")
@@ -51,6 +53,17 @@ val OXIDATION_STATES = listOf("exposed", "weathered", "oxidized")
     val outputTasks = flow<OutputTask> {
         emitAll(ALL_MATERIALS.outputTasks(ctx))
         ctx.onTaskGraphFinished()
+    }.retryWhen { cause, attempt ->
+        var rootCause: Throwable? = cause
+        while (!(rootCause is OutOfMemoryError)) {
+            if (rootCause == null) {
+                return@retryWhen false
+            } else {
+                rootCause = rootCause.cause
+            }
+        }
+        delay(OOME_RETRY_DELAY)
+        return@retryWhen true
     }
     val time = measureNanoTime {
         runBlocking(Dispatchers.Default) {
