@@ -6,7 +6,7 @@ import java.lang.ref.SoftReference
 
 class SoftAsyncLazy<T>(
     initialValue: T? = null,
-    val supplier: () -> T
+    val supplier: suspend () -> T
 ) {
     private val mutex = Mutex()
     @Volatile
