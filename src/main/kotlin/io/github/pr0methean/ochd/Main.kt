@@ -6,12 +6,14 @@ import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.retryWhen
 import java.nio.file.Paths
+import java.util.concurrent.ThreadLocalRandom
 import kotlin.system.measureNanoTime
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
-import kotlin.time.ExperimentalTime
 
-@OptIn(ExperimentalTime::class)
-private val OOME_RETRY_DELAY = 10.seconds
+private fun getOomeDelay() = 5.seconds.plus(ThreadLocalRandom.current().nextInt(5000).milliseconds)
+private val MAX_RETRIES = 100
+
 suspend fun main(args:Array<String>) {
     if (args.isEmpty()) {
         println("Usage: main <size>")
@@ -54,15 +56,12 @@ val OXIDATION_STATES = listOf("exposed", "weathered", "oxidized")
         emitAll(ALL_MATERIALS.outputTasks(ctx))
         ctx.onTaskGraphFinished()
     }.retryWhen { cause, attempt ->
-        var rootCause: Throwable? = cause
-        while (!(rootCause is OutOfMemoryError)) {
-            if (rootCause == null) {
-                return@retryWhen false
-            } else {
-                rootCause = rootCause.cause
-            }
+        if (attempt > MAX_RETRIES) {
+            return@retryWhen false
         }
-        delay(OOME_RETRY_DELAY)
+        val delay = getOomeDelay()
+        println("Retrying a task due to $cause. This is attempt $attempt")
+        delay(delay)
         return@retryWhen true
     }
     val time = measureNanoTime {
