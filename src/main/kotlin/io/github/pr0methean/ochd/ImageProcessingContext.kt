@@ -74,6 +74,12 @@ class ImageProcessingContext(
         if (task is SvgImportTask) {
             return task // SvgImportTask duplication is impossible because svgTasks is populated eagerly
         }
+        if (task is RepaintTask && task.paint == null && task.alpha == 1.0) {
+            return deduplicate(task.base)
+        }
+        if (task is ImageStackingTask && task.layers.layers.size == 1 && task.layers.background == Color.TRANSPARENT) {
+            return deduplicate(task.layers.layers[0])
+        }
         val className = task::class.simpleName ?: "[unnamed class]"
         dedupeSuccesses.add(className)
         return taskDedupMap.computeIfAbsent(task) {
@@ -85,18 +91,13 @@ class ImageProcessingContext(
 
     fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): TextureTask {
         val importTask = svgTasks[name] ?: throw IllegalArgumentException("No SVG task called $name")
-        return if (paint == null && alpha == 1.0) importTask
-                else deduplicate(RepaintTask(paint, importTask, tileSize, alpha, this))
+        return deduplicate(RepaintTask(paint, importTask, tileSize, alpha, this))
     }
 
     fun stack(init: LayerListBuilder.() -> Unit): TextureTask {
         val layerTasks = LayerListBuilder(this)
         layerTasks.init()
-        return deduplicate(
-            if (layerTasks.layers.size == 1 && layerTasks.background == Color.TRANSPARENT)
-                layerTasks.layers[0]
-            else
-                ImageStackingTask(layerTasks.build(), this))
+        return deduplicate(ImageStackingTask(layerTasks.build(), this))
     }
 
     fun animate(init: LayerListBuilder.() -> Unit): TextureTask {
