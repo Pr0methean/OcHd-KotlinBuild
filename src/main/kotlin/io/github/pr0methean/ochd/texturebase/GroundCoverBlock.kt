@@ -3,8 +3,6 @@ package io.github.pr0methean.ochd.texturebase
 import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.tasks.OutputTask
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 
 interface GroundCoverBlock: Material {
     val base: SingleTextureMaterial
@@ -19,9 +17,9 @@ interface GroundCoverBlock: Material {
     }
     fun LayerListBuilder.createTopLayers()
 
-    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
-        emit(ctx.out("block/${nameOverrideTop ?: "${name}_top"}", ctx.stack { createTopLayers() }))
-        emit(ctx.out("block/${nameOverrideSide ?: "${name}_side"}", ctx.stack {
+    override fun outputTasks(ctx: ImageProcessingContext): Sequence<OutputTask> = sequence {
+        yield(ctx.out("block/${nameOverrideTop ?: "${name}_top"}", ctx.stack { createTopLayers() }))
+        yield(ctx.out("block/${nameOverrideSide ?: "${name}_side"}", ctx.stack {
             copy(base)
             createCoverSideLayers()
         }))
