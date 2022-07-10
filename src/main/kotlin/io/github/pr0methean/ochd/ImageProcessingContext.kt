@@ -17,7 +17,7 @@ fun color(web: String) = Color.web(web)
 fun color(web: String, alpha: Double) = Color.web(web, alpha)
 
 private const val MAX_UNCOMPRESSED_TILESIZE = 1024
-private const val MAX_UNCOMPRESSED_TILESIZE_COMBINING_TASK = 1024
+private const val MAX_UNCOMPRESSED_TILESIZE_COMBINING_TASK = 512
 
 class ImageProcessingContext(
     val name: String,
