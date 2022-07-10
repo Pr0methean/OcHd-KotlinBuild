@@ -39,6 +39,6 @@ data class SvgImportTask(
             icon.autosize = AUTOSIZE_STRETCH
             icon.image as BufferedImage
         }
-        return doJfx {SwingFXUtils.toFXImage(image, null)}
+        return SwingFXUtils.toFXImage(image, null)
     }
 }
