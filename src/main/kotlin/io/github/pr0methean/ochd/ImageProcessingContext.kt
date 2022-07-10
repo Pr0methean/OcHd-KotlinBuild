@@ -9,9 +9,11 @@ import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.retryWhen
+import kotlinx.coroutines.withContext
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ThreadLocalRandom
@@ -47,7 +49,9 @@ class ImageProcessingContext(
         }
         val delay = getOomeDelay()
         println("Retrying a task due to $cause. This is attempt $attempt")
-        delay(delay)
+        withContext(Dispatchers.IO) {
+            delay(delay)
+        }
         return true
     }
     fun <T> decorateFlow(flow: Flow<T>): Flow<T> = flow.retryWhen {cause, attempt -> shouldRetry(cause, attempt)}
