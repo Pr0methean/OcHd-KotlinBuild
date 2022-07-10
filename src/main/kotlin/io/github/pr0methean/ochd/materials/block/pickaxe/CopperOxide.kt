@@ -45,7 +45,7 @@ enum class CopperOxide(
         layer("cutInQuarters1", shadow)
         layer("cutInQuarters2", highlight)
     }
-    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+    override fun rawOutputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
         emit(ctx.out("block/${name}_copper") { uncut() })
         emit(ctx.out("block/cut_${name}_copper") { cut() })
     }

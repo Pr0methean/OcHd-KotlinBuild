@@ -1,18 +1,16 @@
 package io.github.pr0methean.ochd
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
 import io.github.pr0methean.ochd.tasks.OutputTask
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.retryWhen
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import java.nio.file.Paths
-import java.util.concurrent.ThreadLocalRandom
 import kotlin.system.measureNanoTime
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
 
-private fun getOomeDelay() = 5.seconds.plus(ThreadLocalRandom.current().nextInt(5000).milliseconds)
-private val MAX_RETRIES = 100
+
 
 suspend fun main(args:Array<String>) {
     if (args.isEmpty()) {
@@ -52,18 +50,10 @@ val NORMAL_MUSIC_DISCS = listOf("far", "wait", "strad", "mall", "cat", "pigstep"
 val DISC_LABEL_COLORS = listOf(DYES.values).subList(1, DYES.values.size - 1)
 val OXIDATION_STATES = listOf("exposed", "weathered", "oxidized")
  */
-    val outputTasks = flow<OutputTask> {
+    val outputTasks = ctx.decorateFlow(flow<OutputTask> {
         emitAll(ALL_MATERIALS.outputTasks(ctx))
         ctx.onTaskGraphFinished()
-    }.retryWhen { cause, attempt ->
-        if (attempt > MAX_RETRIES) {
-            return@retryWhen false
-        }
-        val delay = getOomeDelay()
-        println("Retrying a task due to $cause. This is attempt $attempt")
-        delay(delay)
-        return@retryWhen true
-    }
+    })
     val time = measureNanoTime {
         runBlocking(Dispatchers.Default) {
             // Copy over all metadata files
@@ -84,3 +74,5 @@ val OXIDATION_STATES = listOf("exposed", "weathered", "oxidized")
     println("All tasks finished after $time ns")
     ctx.printStats()
 }
+
+

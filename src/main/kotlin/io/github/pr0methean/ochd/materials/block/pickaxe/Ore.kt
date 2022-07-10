@@ -61,7 +61,7 @@ enum class Ore(
         highlight = Color.WHITE,
         substrates = NETHER
     ) {
-        override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+        override fun rawOutputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
             emit(ctx.out("item/quartz") { ingot() })
             emit(ctx.out("block/nether_quartz_ore", ctx.stack {
                     copy(OreBase.NETHERRACK)
@@ -168,7 +168,7 @@ enum class Ore(
         item()
     }
 
-    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+    override fun rawOutputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
         substrates.forEach { oreBase ->
             emit(ctx.out("block/${oreBase.orePrefix}${name}_ore", ctx.stack {
                 copy(oreBase)

@@ -22,8 +22,8 @@ abstract class SingleLayerMaterial(
         layer(sourceFileName, color, alpha)
     }
 
-    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> {
-        return flowOf(ctx.out(name, ctx.layer(sourceFileName, color, alpha)))
+    override fun rawOutputTasks(ctx: ImageProcessingContext): Flow<OutputTask> {
+        return ctx.decorateFlow(flowOf(ctx.out(name, ctx.layer(sourceFileName, color, alpha))))
     }
 
 }

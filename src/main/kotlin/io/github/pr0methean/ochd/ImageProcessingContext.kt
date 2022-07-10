@@ -9,8 +9,14 @@ import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.retryWhen
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ThreadLocalRandom
+import kotlin.time.Duration.Companion.milliseconds
+import kotlin.time.Duration.Companion.seconds
 
 fun color(web: String) = Color.web(web)
 
@@ -18,6 +24,8 @@ fun color(web: String, alpha: Double) = Color.web(web, alpha)
 
 private const val MAX_UNCOMPRESSED_TILESIZE = 4096
 private const val MAX_UNCOMPRESSED_TILESIZE_COMBINING_TASK = 1024
+private fun getOomeDelay() = 5.seconds.plus(ThreadLocalRandom.current().nextInt(5000).milliseconds)
+private val MAX_RETRIES = 100
 
 class ImageProcessingContext(
     val name: String,
@@ -33,6 +41,16 @@ class ImageProcessingContext(
     val taskLaunches: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val dedupeSuccesses: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val dedupeFailures: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
+    suspend fun shouldRetry(cause: Throwable, attempt: Long): Boolean {
+        if (attempt > MAX_RETRIES) {
+            return false
+        }
+        val delay = getOomeDelay()
+        println("Retrying a task due to $cause. This is attempt $attempt")
+        delay(delay)
+        return true
+    }
+    fun <T> decorateFlow(flow: Flow<T>): Flow<T> = flow.retryWhen {cause, attempt -> shouldRetry(cause, attempt)}
     init {
         val builder = mutableMapOf<String, SvgImportTask>()
         svgDirectory.list()!!.forEach { svgFile ->

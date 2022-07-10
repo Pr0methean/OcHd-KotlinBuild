@@ -57,7 +57,7 @@ push bigRingsTopLeftBottomRight ${andesite_s} a2*/
         layer("borderSolidTopLeft", highlight)
     }
 
-    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+    override fun rawOutputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
         emit(ctx.out("block/$name", ctx.stack { createTextureLayersBase() }))
         emit(ctx.out("block/polished_$name", ctx.stack(createPolishedTexture())))
     }

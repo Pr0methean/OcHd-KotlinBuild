@@ -333,8 +333,8 @@ enum class SimplePickaxeBlock(
         }
     };
 
-    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> =
-        if (hasOutput) super.outputTasks(ctx) else flowOf()
+    override fun rawOutputTasks(ctx: ImageProcessingContext): Flow<OutputTask> =
+        if (hasOutput) super.rawOutputTasks(ctx) else flowOf()
 
     constructor(base: ShadowHighlightMaterial, hasOutput: Boolean = false):
             this(base.color, base.shadow, base.highlight, hasOutput)

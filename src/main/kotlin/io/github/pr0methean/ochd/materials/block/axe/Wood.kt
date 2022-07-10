@@ -34,7 +34,7 @@ sealed interface Wood: ShadowHighlightMaterial {
     fun LayerListBuilder.strippedLogTop()
     fun LayerListBuilder.trapdoor()
 
-    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+    override fun rawOutputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
         emit(ctx.out("block/${name}_${logSynonym}", ctx.stack { bark() }))
         emit(ctx.out("block/${name}_${logSynonym}_top", ctx.stack { logTop() }))
         emit(ctx.out("block/stripped_${name}_${logSynonym}", ctx.stack { strippedLogSide() }))

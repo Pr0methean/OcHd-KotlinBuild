@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.flow
 
 object Glass: Material {
 
-    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+    override fun rawOutputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
         DYES.forEach {
             val name = it.key
             val color = it.value

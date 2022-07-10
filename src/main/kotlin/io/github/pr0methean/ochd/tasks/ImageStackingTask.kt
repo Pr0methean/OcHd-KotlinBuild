@@ -18,7 +18,7 @@ data class ImageStackingTask(
     override suspend fun computeImage(): Image {
         val canvas = Canvas(size.toDouble(), size.toDouble())
         val canvasCtx = canvas.graphicsContext2D
-        val layerImages = layers.layers.asFlow().map(TextureTask::getImage).toList()
+        val layerImages = ctx.decorateFlow(layers.layers.asFlow().map(TextureTask::getImage)).toList()
         return doJfx {
             if (layers.background != Color.TRANSPARENT) {
                 canvasCtx.fill = layers.background
