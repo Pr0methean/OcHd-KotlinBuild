@@ -65,7 +65,7 @@ enum class Ore(
             emit(ctx.out("item/quartz") { ingot() })
             emit(ctx.out("block/nether_quartz_ore", ctx.stack {
                     copy(OreBase.NETHERRACK)
-                    copy {item()}
+                copy {item()}
                 }))
             emit(ctx.out("block/quartz_block_top") {
                 background(color)

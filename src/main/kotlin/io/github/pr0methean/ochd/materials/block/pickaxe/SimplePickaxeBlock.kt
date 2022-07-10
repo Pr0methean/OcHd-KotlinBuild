@@ -9,10 +9,7 @@ import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.DEEPSLATE
 import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.STONE
 import io.github.pr0methean.ochd.materials.block.shovel.SimpleSoftEarth
 import io.github.pr0methean.ochd.tasks.OutputTask
-import io.github.pr0methean.ochd.texturebase.Block
-import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
-import io.github.pr0methean.ochd.texturebase.copy
-import io.github.pr0methean.ochd.texturebase.group
+import io.github.pr0methean.ochd.texturebase.*
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.flow.Flow
@@ -25,7 +22,7 @@ enum class SimplePickaxeBlock(
     override val shadow: Paint,
     override val highlight: Paint,
     val hasOutput: Boolean = true
-): ShadowHighlightMaterial, Block {
+): SingleTextureMaterial, ShadowHighlightMaterial, Block {
     SMOOTH_STONE(STONE) {
         override fun LayerListBuilder.createTextureLayers() {
             background(color)
@@ -334,7 +331,7 @@ enum class SimplePickaxeBlock(
     };
 
     override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> =
-        if (hasOutput) super.outputTasks(ctx) else flowOf()
+        if (hasOutput) super<SingleTextureMaterial>.outputTasks(ctx) else flowOf()
 
     constructor(base: ShadowHighlightMaterial, hasOutput: Boolean = false):
             this(base.color, base.shadow, base.highlight, hasOutput)

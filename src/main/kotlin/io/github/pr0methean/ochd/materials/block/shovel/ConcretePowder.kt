@@ -19,7 +19,7 @@ object ConcretePowder: Material {
             val color = it.value
             emit(ctx.out("block/${name}_concrete_powder", ctx.stack {
                 background(color)
-                add(sharedLayersTask)
+                copy(sharedLayersTask)
             }))
         }
     }
