@@ -8,32 +8,47 @@ import kotlinx.coroutines.*
 import java.lang.Runnable
 import java.lang.invoke.MethodHandle
 import java.lang.invoke.MethodHandles
+import java.util.concurrent.ExecutionException
 
 // JavaFX insists on having only one "UI" thread that can do any image processing, which is stored in a static variable.
 // To fool it into using more than one UI thread in parallel, we need more than one copy of the static variable, hence
 // this ugly but effective workaround.
-private val threadLocalRunLater: ThreadLocal<MethodHandle> = ThreadLocal.withInitial {
+private val platformClass: ThreadLocal<Class<*>> = ThreadLocal.withInitial {
     val classLoader = MyClassLoader()
     classLoader.loadClass("javafx.embed.swing.JFXPanel").getConstructor().newInstance()
-    val platformClass = classLoader.loadClass("javafx.application.Platform")
+    return@withInitial classLoader.loadClass("javafx.application.Platform")
+}
+private val threadLocalRunLater: ThreadLocal<MethodHandle> = ThreadLocal.withInitial {
     val lookup = MethodHandles.lookup()
-    lookup.unreflect(platformClass.getMethod("runLater", Runnable::class.java))
+    lookup.unreflect(platformClass.get().getMethod("runLater", Runnable::class.java))
 }
 abstract class TextureTask(open val ctx: ImageProcessingContext) {
     private val coroutine by lazy {
         ctx.scope.async(start = CoroutineStart.LAZY) {
-            println("Starting task ${this@TextureTask}")
             ctx.taskLaunches.add(this@TextureTask::class.simpleName ?: "[unnamed TextureTask subclass]")
-            val bitmap = computeImage()
+            println("Starting task ${this@TextureTask}")
+            var bitmap: Image? = null
+            var attempt = 1L
+            while (bitmap == null) {
+                try {
+                    bitmap = computeImage()
+                } catch (t: Throwable) {
+                    if (!ctx.shouldRetry(t, attempt)) {
+                        throw ExecutionException(t)
+                    } else {
+                        attempt++
+                    }
+                }
+            }
             println("Finished task ${this@TextureTask}")
-            return@async ctx.packImage(bitmap, this@TextureTask)
+            return@async ctx.packImage(bitmap!!, this@TextureTask)
         }
     }
 
     protected suspend fun <T> doJfx(jfxCode: suspend CoroutineScope.() -> T): T {
         val task = JfxTask(jfxCode)
         threadLocalRunLater.get().invokeExact(task as Runnable)
-        return withContext(Dispatchers.IO) {task.get()}
+        return withContext(Dispatchers.IO) { task.get() }
     }
 
     class JfxTask<T>(private val jfxCode: suspend CoroutineScope.() -> T) : Task<T>() {
