@@ -35,6 +35,7 @@ abstract class TextureTask(open val ctx: ImageProcessingContext) {
                 } catch (t: Throwable) {
                     if (!ctx.shouldRetry(t, attempt)) {
                         throw ExecutionException(t)
+                    }
                 }
             }
             println("Finished task ${this@TextureTask}")
@@ -45,12 +46,12 @@ abstract class TextureTask(open val ctx: ImageProcessingContext) {
     protected suspend fun <T> doJfx(jfxCode: suspend CoroutineScope.() -> T): T {
         val task = JfxTask(jfxCode)
         var out: T? = null
+        var attempts = 1L
         while (out == null) {
-            var attempts = 1L
             try {
                 threadLocalRunLater.get().invokeExact(task as Runnable)
                 out = withContext(Dispatchers.IO) { task.get() }
-            } catch (Throwable t) {
+            } catch (t: Throwable) {
                 if (!ctx.shouldRetry(t, attempts)) {
                     throw ExecutionException(t)
                 } else {
@@ -58,6 +59,7 @@ abstract class TextureTask(open val ctx: ImageProcessingContext) {
                 }
             }
         }
+        return out
     }
 
     class JfxTask<T>(private val jfxCode: suspend CoroutineScope.() -> T) : Task<T>() {
