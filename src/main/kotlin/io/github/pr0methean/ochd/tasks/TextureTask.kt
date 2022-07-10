@@ -22,25 +22,23 @@ private val threadLocalRunLater: ThreadLocal<MethodHandle> = ThreadLocal.withIni
     val lookup = MethodHandles.lookup()
     lookup.unreflect(platformClass.get().getMethod("runLater", Runnable::class.java))
 }
-abstract class TextureTask(open val ctx: ImageProcessingContext) {
-    private val coroutine by lazy {
-        ctx.scope.async(start = CoroutineStart.LAZY) {
-            ctx.taskLaunches.add(this@TextureTask::class.simpleName ?: "[unnamed TextureTask subclass]")
-            println("Starting task ${this@TextureTask}")
-            var bitmap: Image? = null
-            var attempt = 1L
-            while (bitmap == null) {
-                try {
-                    bitmap = computeImage()
-                } catch (t: Throwable) {
-                    if (!ctx.shouldRetry(t, attempt)) {
-                        throw ExecutionException(t)
-                    }
+abstract class TextureTask(ctx: ImageProcessingContext): RetryableTask<PackedImage>(ctx) {
+    override fun createCoroutineAsync() = ctx.scope.async(start = CoroutineStart.LAZY) {
+        ctx.taskLaunches.add(this@TextureTask::class.simpleName ?: "[unnamed TextureTask subclass]")
+        println("Starting task ${this@TextureTask}")
+        var bitmap: Image? = null
+        var attempt = 1L
+        while (bitmap == null) {
+            try {
+                bitmap = computeImage()
+            } catch (t: Throwable) {
+                if (!ctx.shouldRetry(t, attempt)) {
+                    throw ExecutionException(t)
                 }
             }
-            println("Finished task ${this@TextureTask}")
-            return@async ctx.packImage(bitmap!!, this@TextureTask)
         }
+        println("Finished task ${this@TextureTask}")
+        return@async ctx.packImage(bitmap, this@TextureTask)
     }
 
     protected suspend fun <T> doJfx(jfxCode: suspend CoroutineScope.() -> T): T {
@@ -71,5 +69,4 @@ abstract class TextureTask(open val ctx: ImageProcessingContext) {
     }
 
     abstract suspend fun computeImage(): Image
-    suspend fun getImage(): PackedImage = coroutine.await()
 }

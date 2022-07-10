@@ -21,7 +21,7 @@ data class AnimationColumnTask(
         val canvas = Canvas(size.toDouble(), height.toDouble())
         val canvasCtx = canvas.graphicsContext2D
         ctx.decorateFlow(frames.layers.asFlow()
-                .map(TextureTask::getImage)
+                .map(TextureTask::await)
                 .map(PackedImage::unpacked)
                 .withIndex())
                 .collect {

@@ -16,7 +16,7 @@ data class RepaintTask(
     override val ctx: ImageProcessingContext
 ) : TextureTask(ctx) {
     override suspend fun computeImage(): Image {
-        val view = ImageView(base.getImage().unpacked())
+        val view = ImageView(base.await().unpacked())
         if (paint != null) {
             val colorLayer = ColorInput(0.0, 0.0, size.toDouble(), size.toDouble(), paint)
             val blend = Blend()

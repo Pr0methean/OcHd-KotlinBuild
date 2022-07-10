@@ -11,6 +11,6 @@ data class BasicOutputTask(
         : OutputTask(name, ctx) {
     override suspend fun invoke() {
         file.parentFile.mkdirs()
-        producer.getImage().writePng(file)
+        producer.await().writePng(file)
     }
 }

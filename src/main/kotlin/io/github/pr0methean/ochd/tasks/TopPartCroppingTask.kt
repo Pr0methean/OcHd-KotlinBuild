@@ -12,7 +12,7 @@ data class TopPartCroppingTask(
 ): TextureTask(ctx) {
     private val height = (width * TOP_PORTION).toInt()
     override suspend fun computeImage(): Image {
-        val pixelReader = base.getImage().unpacked().pixelReader
+        val pixelReader = base.await().unpacked().pixelReader
         return WritableImage(pixelReader, width, height)
     }
 }
