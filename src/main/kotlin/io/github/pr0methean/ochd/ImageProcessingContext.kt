@@ -27,7 +27,7 @@ fun color(web: String, alpha: Double) = Color.web(web, alpha)
 private const val MAX_UNCOMPRESSED_TILESIZE = 4096
 private const val MAX_UNCOMPRESSED_TILESIZE_COMBINING_TASK = 1024
 private fun getOomeDelay() = 5.seconds.plus(ThreadLocalRandom.current().nextInt(5000).milliseconds)
-private val MAX_RETRIES = 100
+private val MAX_RETRIES = 10
 
 class ImageProcessingContext(
     val name: String,
@@ -51,6 +51,7 @@ class ImageProcessingContext(
         println("Retrying a task due to $cause. This is attempt $attempt")
         withContext(Dispatchers.IO) {
             delay(delay)
+            System.gc()
         }
         return true
     }
