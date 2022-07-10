@@ -1,16 +1,11 @@
 package io.github.pr0methean.ochd
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
-import io.github.pr0methean.ochd.tasks.OutputTask
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.emitAll
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import java.nio.file.Paths
 import kotlin.system.measureNanoTime
-
-
 
 suspend fun main(args:Array<String>) {
     if (args.isEmpty()) {
@@ -50,29 +45,27 @@ val NORMAL_MUSIC_DISCS = listOf("far", "wait", "strad", "mall", "cat", "pigstep"
 val DISC_LABEL_COLORS = listOf(DYES.values).subList(1, DYES.values.size - 1)
 val OXIDATION_STATES = listOf("exposed", "weathered", "oxidized")
  */
-    val outputTasks = ctx.decorateFlow(flow<OutputTask> {
-        emitAll(ALL_MATERIALS.outputTasks(ctx))
+    val outputTasks = sequence {
+        yieldAll(ALL_MATERIALS.outputTasks(ctx))
         ctx.onTaskGraphFinished()
-    })
+    }
     val time = measureNanoTime {
         runBlocking(Dispatchers.Default) {
             // Copy over all metadata files
             scope.launch {
                 metadataDirectory.walkTopDown().forEach {
-                    val outputPath = out.resolve(it.relativeTo(metadataDirectory))
                     if (it.isDirectory) {
-                        outputPath.mkdirs()
+                        out.resolve(it.relativeTo(metadataDirectory)).mkdirs()
                     } else {
-                        it.copyTo(outputPath)
+                        it.copyTo(out.resolve(it.relativeTo(metadataDirectory)))
                     }
                 }
             }
-            outputTasks.collect { it.await() }
+
+            outputTasks.forEach { it.run() }
         }
     }
     println()
     println("All tasks finished after $time ns")
     ctx.printStats()
 }
-
-

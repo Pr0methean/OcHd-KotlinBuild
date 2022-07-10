@@ -8,56 +8,32 @@ import kotlinx.coroutines.*
 import java.lang.Runnable
 import java.lang.invoke.MethodHandle
 import java.lang.invoke.MethodHandles
-import java.util.concurrent.ExecutionException
 
 // JavaFX insists on having only one "UI" thread that can do any image processing, which is stored in a static variable.
 // To fool it into using more than one UI thread in parallel, we need more than one copy of the static variable, hence
 // this ugly but effective workaround.
-private val platformClass: ThreadLocal<Class<*>> = ThreadLocal.withInitial {
+private val threadLocalRunLater: ThreadLocal<MethodHandle> = ThreadLocal.withInitial {
     val classLoader = MyClassLoader()
     classLoader.loadClass("javafx.embed.swing.JFXPanel").getConstructor().newInstance()
-    return@withInitial classLoader.loadClass("javafx.application.Platform")
-}
-private val threadLocalRunLater: ThreadLocal<MethodHandle> = ThreadLocal.withInitial {
+    val platformClass = classLoader.loadClass("javafx.application.Platform")
     val lookup = MethodHandles.lookup()
-    lookup.unreflect(platformClass.get().getMethod("runLater", Runnable::class.java))
+    lookup.unreflect(platformClass.getMethod("runLater", Runnable::class.java))
 }
-abstract class TextureTask(ctx: ImageProcessingContext): RetryableTask<PackedImage>(ctx) {
-    override fun createCoroutineAsync() = ctx.scope.async(start = CoroutineStart.LAZY) {
-        ctx.taskLaunches.add(this@TextureTask::class.simpleName ?: "[unnamed TextureTask subclass]")
-        println("Starting task ${this@TextureTask}")
-        var bitmap: Image? = null
-        var attempt = 1L
-        while (bitmap == null) {
-            try {
-                bitmap = computeImage()
-            } catch (t: Throwable) {
-                if (!ctx.shouldRetry(t, attempt)) {
-                    throw ExecutionException(t)
-                }
-            }
+abstract class TextureTask(open val ctx: ImageProcessingContext) {
+    private val coroutine by lazy {
+        ctx.scope.async(start = CoroutineStart.LAZY) {
+            println("Starting task ${this@TextureTask}")
+            ctx.taskLaunches.add(this@TextureTask::class.simpleName ?: "[unnamed TextureTask subclass]")
+            val bitmap = computeImage()
+            println("Finished task ${this@TextureTask}")
+            return@async ctx.packImage(bitmap, this@TextureTask)
         }
-        println("Finished task ${this@TextureTask}")
-        return@async ctx.packImage(bitmap, this@TextureTask)
     }
 
     protected suspend fun <T> doJfx(jfxCode: suspend CoroutineScope.() -> T): T {
         val task = JfxTask(jfxCode)
-        var out: T? = null
-        var attempts = 1L
-        while (out == null) {
-            try {
-                threadLocalRunLater.get().invokeExact(task as Runnable)
-                out = withContext(Dispatchers.IO) { task.get() }
-            } catch (t: Throwable) {
-                if (!ctx.shouldRetry(t, attempts)) {
-                    throw ExecutionException(t)
-                } else {
-                    attempts++
-                }
-            }
-        }
-        return out
+        threadLocalRunLater.get().invokeExact(task as Runnable)
+        return withContext(Dispatchers.IO) {task.get()}
     }
 
     class JfxTask<T>(private val jfxCode: suspend CoroutineScope.() -> T) : Task<T>() {
@@ -69,4 +45,5 @@ abstract class TextureTask(ctx: ImageProcessingContext): RetryableTask<PackedIma
     }
 
     abstract suspend fun computeImage(): Image
+    suspend fun getImage(): PackedImage = coroutine.await()
 }

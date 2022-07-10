@@ -9,19 +9,14 @@ import io.github.pr0methean.ochd.texturebase.MaterialGroup
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import io.github.pr0methean.ochd.texturebase.group
 import javafx.scene.paint.Color
-import kotlinx.coroutines.FlowPreview
-import kotlinx.coroutines.flow.*
 
 val OVERWORLD_WOODS = group<OverworldWood>()
 val FUNGUS_WOODS = group<Fungus>()
 val WOODS = MaterialGroup(OVERWORLD_WOODS, FUNGUS_WOODS)
 sealed interface Wood: ShadowHighlightMaterial {
     companion object {
-        @OptIn(FlowPreview::class)
-        fun allOutputTasks(ctx: ImageProcessingContext) = flowOf(
-            OverworldWood.values().asFlow().map {it.outputTasks(ctx)},
-            Fungus.values().asFlow().map {it.outputTasks(ctx)}
-        ).flattenMerge()
+        fun allOutputTasks(ctx: ImageProcessingContext)
+            = OverworldWood.values().toList().plus(Fungus.values()).flatMap {it.outputTasks(ctx)}
     }
     val barkColor: Color
     val barkHighlight: Color
@@ -34,13 +29,13 @@ sealed interface Wood: ShadowHighlightMaterial {
     fun LayerListBuilder.strippedLogTop()
     fun LayerListBuilder.trapdoor()
 
-    override fun rawOutputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
-        emit(ctx.out("block/${name}_${logSynonym}", ctx.stack { bark() }))
-        emit(ctx.out("block/${name}_${logSynonym}_top", ctx.stack { logTop() }))
-        emit(ctx.out("block/stripped_${name}_${logSynonym}", ctx.stack { strippedLogSide() }))
-        emit(ctx.out("block/stripped_${name}_${logSynonym}_top", ctx.stack { strippedLogTop() }))
-        emit(ctx.out("block/${name}_planks", ctx.stack { planks() }))
-        emit(ctx.out("block/${name}_trapdoor", ctx.stack { trapdoor() }))
+    override fun outputTasks(ctx: ImageProcessingContext): Sequence<OutputTask> = sequence {
+        yield(ctx.out("block/${name}_${logSynonym}", ctx.stack { bark() }))
+        yield(ctx.out("block/${name}_${logSynonym}_top", ctx.stack { logTop() }))
+        yield(ctx.out("block/stripped_${name}_${logSynonym}", ctx.stack { strippedLogSide() }))
+        yield(ctx.out("block/stripped_${name}_${logSynonym}_top", ctx.stack { strippedLogTop() }))
+        yield(ctx.out("block/${name}_planks", ctx.stack { planks() }))
+        yield(ctx.out("block/${name}_trapdoor", ctx.stack { trapdoor() }))
     }
 
     fun LayerListBuilder.planks() {

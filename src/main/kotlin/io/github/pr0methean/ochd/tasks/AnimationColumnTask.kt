@@ -20,10 +20,10 @@ data class AnimationColumnTask(
         val height = size * frames.layers.size
         val canvas = Canvas(size.toDouble(), height.toDouble())
         val canvasCtx = canvas.graphicsContext2D
-        ctx.decorateFlow(frames.layers.asFlow()
-                .map(TextureTask::await)
+        frames.layers.asFlow()
+                .map(TextureTask::getImage)
                 .map(PackedImage::unpacked)
-                .withIndex())
+                .withIndex()
                 .collect {
             doJfx {canvasCtx.drawImage(it.value, 0.0, (size * it.index).toDouble())}
         }

@@ -8,8 +8,6 @@ import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import io.github.pr0methean.ochd.texturebase.group
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 
 val POLISHABLES = group<Polishable>()
 
@@ -57,9 +55,9 @@ push bigRingsTopLeftBottomRight ${andesite_s} a2*/
         layer("borderSolidTopLeft", highlight)
     }
 
-    override fun rawOutputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
-        emit(ctx.out("block/$name", ctx.stack { createTextureLayersBase() }))
-        emit(ctx.out("block/polished_$name", ctx.stack(createPolishedTexture())))
+    override fun outputTasks(ctx: ImageProcessingContext): Sequence<OutputTask> = sequence {
+        yield(ctx.out("block/$name", ctx.stack { createTextureLayersBase() }))
+        yield(ctx.out("block/polished_$name", ctx.stack(createPolishedTexture())))
     }
 
     internal fun createPolishedTexture(): LayerListBuilder.() -> Unit =
