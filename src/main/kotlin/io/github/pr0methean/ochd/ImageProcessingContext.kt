@@ -135,7 +135,8 @@ class ImageProcessingContext(
     }
 
     fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): TextureTask {
-        val importTask = svgTasks[name] ?: throw IllegalArgumentException("No SVG task called $name")
+        val importTask = (svgTasks ?: throw IllegalStateException("SVG tasks are already cleared"))[name]
+                ?: throw IllegalArgumentException("No SVG task called $name")
         // NB: This means we can't create a black version of a precolored layer except by making it a separate SVG!
         if ((paint == Color.BLACK || paint == null) && alpha == 1.0) {
             return importTask
@@ -168,6 +169,7 @@ class ImageProcessingContext(
     }
 
     fun onTaskGraphFinished() {
+        println("All tasks launched")
         taskDedupMap.clear()
     }
 }
