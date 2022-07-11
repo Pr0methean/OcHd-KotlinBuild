@@ -8,7 +8,6 @@ import javafx.scene.effect.BlendMode
 import javafx.scene.effect.ColorInput
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
-import javafx.scene.image.WritableImage
 import javafx.scene.paint.Paint
 
 data class RepaintTask(
@@ -28,8 +27,6 @@ data class RepaintTask(
         view.opacity = alpha
         view.cacheHint = CacheHint.QUALITY
         view.isSmooth = true
-        val output = WritableImage(size, size)
-        doJfx {view.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)}
-        return output
+        return doJfx {view.snapshot(DEFAULT_SNAPSHOT_PARAMS, null)}
     }
 }
