@@ -10,9 +10,9 @@ abstract class OutputTask(open val name: String, open val ctx: ImageProcessingCo
     // Lazy init is needed to work around an NPE bug
     val file by lazy {ctx.outTextureRoot.resolve(name.lowercase(Locale.ENGLISH) + ".png")}
     protected abstract suspend fun invoke()
-    suspend fun run() {
-        ctx.onTaskLaunched(this)
-        withContext(Dispatchers.IO) {invoke()}
-        ctx.onTaskCompleted(this)
+    suspend fun run() = withContext(Dispatchers.IO) {
+        ctx.onTaskLaunched(this@OutputTask)
+        invoke()
+        ctx.onTaskCompleted(this@OutputTask)
     }
 }

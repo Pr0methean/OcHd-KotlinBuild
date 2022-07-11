@@ -17,7 +17,7 @@ suspend fun main(args:Array<String>) {
 
     val tileSize = args[0].toInt()
     if (tileSize <= 0) throw IllegalArgumentException("tileSize shouldn't be zero or negative but was ${args[0]}")
-    val scope = CoroutineScope(Dispatchers.IO.limitedParallelism(16))
+    val scope = CoroutineScope(Dispatchers.Default)
     val svgDirectory = Paths.get("svg").toAbsolutePath().toFile()
     val metadataDirectory = Paths.get("metadata").toAbsolutePath().toFile()
     println("SVG directory is ${svgDirectory}")
