@@ -56,7 +56,7 @@ val OXIDATION_STATES = listOf("exposed", "weathered", "oxidized")
                 }
             }
         }.join()
-        ALL_MATERIALS.outputTasks(ctx).map { scope.async { it.run() } }.toList().joinAll()
+        ALL_MATERIALS.outputTasks(ctx).map { scope.async { it.run() } }.toList().awaitAll()
     }
     println()
     println("All tasks finished after $time ns")
