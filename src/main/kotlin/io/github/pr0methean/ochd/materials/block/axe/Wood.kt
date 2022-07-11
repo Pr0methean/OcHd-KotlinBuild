@@ -4,11 +4,13 @@ import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.STONE
+import io.github.pr0methean.ochd.materials.block.shovel.DirtGroundCover
 import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.texturebase.MaterialGroup
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import io.github.pr0methean.ochd.texturebase.group
 import javafx.scene.paint.Color
+import javafx.scene.paint.Paint
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 
@@ -23,10 +25,15 @@ sealed interface Wood: ShadowHighlightMaterial {
             Fungus.values().asFlow().map {it.outputTasks(ctx)}
         ).flattenMerge()
     }
-    val barkColor: Color
-    val barkHighlight: Color
-    val barkShadow: Color
+    val barkColor: Paint
+    val barkHighlight: Paint
+    val barkShadow: Paint
+    val leavesColor: Paint
+    val leavesHighlight: Paint
+    val leavesShadow: Paint
     val logSynonym: String
+    val leavesSynonym: String
+    val saplingSynonym: String
     val name: String
     fun LayerListBuilder.bark()
     fun LayerListBuilder.strippedLogSide()
@@ -34,11 +41,16 @@ sealed interface Wood: ShadowHighlightMaterial {
     fun LayerListBuilder.strippedLogTop()
     fun LayerListBuilder.trapdoor()
 
+    fun LayerListBuilder.leaves()
+    fun LayerListBuilder.sapling()
+
     override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
         emit(ctx.out("block/${name}_${logSynonym}", ctx.stack { bark() }))
         emit(ctx.out("block/${name}_${logSynonym}_top", ctx.stack { logTop() }))
         emit(ctx.out("block/stripped_${name}_${logSynonym}", ctx.stack { strippedLogSide() }))
         emit(ctx.out("block/stripped_${name}_${logSynonym}_top", ctx.stack { strippedLogTop() }))
+        emit(ctx.out("block/${name}_${leavesSynonym}", ctx.stack { leaves() }))
+        emit(ctx.out("block/${name}_${saplingSynonym}", ctx.stack { sapling() }))
         emit(ctx.out("block/${name}_planks", ctx.stack { planks() }))
         emit(ctx.out("block/${name}_trapdoor", ctx.stack { trapdoor() }))
     }
@@ -52,12 +64,12 @@ sealed interface Wood: ShadowHighlightMaterial {
 }
 
 enum class OverworldWood(
-    override val color: Color,
-    override val highlight: Color,
-    override val shadow: Color,
-    override val barkColor: Color,
-    override val barkHighlight: Color,
-    override val barkShadow: Color,
+    override val color: Paint,
+    override val highlight: Paint,
+    override val shadow: Paint,
+    override val barkColor: Paint,
+    override val barkHighlight: Paint,
+    override val barkShadow: Paint,
     )
     : Wood {
     ACACIA(
@@ -75,6 +87,15 @@ enum class OverworldWood(
             layer("trapdoorHingesBig", STONE.shadow)
             layer("trapdoorHinges", STONE.highlight)
         }
+
+        override fun LayerListBuilder.leaves() {
+            layer("leaves1", leavesShadow)
+            layer("leaves1a", leavesHighlight)
+        }
+
+        override fun LayerListBuilder.sapling() {
+            // TODO
+        }
     },
     BIRCH(
         color = c(0xc8b77a),
@@ -88,6 +109,15 @@ enum class OverworldWood(
             layer("trapdoor1", color)
             layer("borderSolid", shadow)
             layer("trapdoorHingesBig", STONE.shadow)
+        }
+
+        override fun LayerListBuilder.leaves() {
+            layer("leaves2", leavesHighlight)
+            layer("leaves2a", leavesShadow)
+        }
+
+        override fun LayerListBuilder.sapling() {
+            // TODO
         }
     },
     DARK_OAK(
@@ -105,6 +135,15 @@ enum class OverworldWood(
             layer("borderShortDashes", color)
             layer("trapdoorHingesBig", STONE.highlight)
         }
+
+        override fun LayerListBuilder.leaves() {
+            layer("leaves3", leavesShadow)
+            layer("leaves3a", leavesHighlight)
+        }
+
+        override fun LayerListBuilder.sapling() {
+            // TODO
+        }
     },
     JUNGLE(
         color = c(0x9f714a),
@@ -121,6 +160,15 @@ enum class OverworldWood(
             layer("trapdoorHingesBig", STONE.shadow)
             layer("trapdoorHinges", STONE.color)
         }
+
+        override fun LayerListBuilder.leaves() {
+            layer("leaves6", leavesHighlight)
+            layer("leaves6a", leavesShadow)
+        }
+
+        override fun LayerListBuilder.sapling() {
+            // TODO
+        }
     },
     MANGROVE(
         color = c(0x773934),
@@ -136,6 +184,16 @@ enum class OverworldWood(
             layer("borderDotted", highlight)
             layer("trapdoorHingesBig", STONE.highlight)
             layer("trapdoorHinges", STONE.shadow)
+        }
+
+        override fun LayerListBuilder.leaves() {
+            layer("leaves5", leavesHighlight)
+            layer("leaves5a", leavesColor)
+            layer("leaves5b", leavesShadow)
+        }
+
+        override fun LayerListBuilder.sapling() {
+            // TODO
         }
     },
     OAK(
@@ -154,6 +212,15 @@ enum class OverworldWood(
             layer("trapdoorHingesBig", STONE.color)
             layer("trapdoorHinges", STONE.highlight)
         }
+
+        override fun LayerListBuilder.leaves() {
+            layer("leaves4", leavesShadow)
+            layer("leaves4a", leavesHighlight)
+        }
+
+        override fun LayerListBuilder.sapling() {
+            // TODO
+        }
     },
     SPRUCE(
         color = c(0x70522e),
@@ -170,6 +237,15 @@ enum class OverworldWood(
             layer("borderLongDashes", highlight)
             layer("trapdoorHingesBig", STONE.color)
             layer("trapdoorHinges", STONE.shadow)
+        }
+
+        override fun LayerListBuilder.leaves() {
+            layer("leaves3", leavesHighlight)
+            layer("leaves3b", leavesShadow)
+        }
+
+        override fun LayerListBuilder.sapling() {
+            // TODO
         }
     };
 
@@ -201,14 +277,26 @@ enum class OverworldWood(
     }
 
     override val logSynonym = "log"
+    override val leavesSynonym = "leaves"
+    override val saplingSynonym = "sapling"
+
+    // Like grass, leaves are stored as gray and colorized in real time based on the biome
+    override val leavesColor = DirtGroundCover.GRASS.color
+    override val leavesHighlight = DirtGroundCover.GRASS.highlight
+    override val leavesShadow = DirtGroundCover.GRASS.shadow
 }
+
+private val fungusSpotColor = c(0xff6500)
 enum class Fungus(
-        override val color: Color,
-        override val highlight: Color,
-        override val shadow: Color,
-        override val barkColor: Color,
-        override val barkHighlight: Color,
-        override val barkShadow: Color)
+        override val color: Paint,
+        override val highlight: Paint,
+        override val shadow: Paint,
+        override val barkColor: Paint,
+        override val barkHighlight: Paint,
+        override val barkShadow: Paint,
+        override val leavesColor: Paint,
+        override val leavesHighlight: Paint,
+        override val leavesShadow: Paint)
     : Wood {
         CRIMSON(
             color = c(0x6a344b),
@@ -216,7 +304,10 @@ enum class Fungus(
             highlight = c(0x863e5a),
             barkColor = c(0x4b2737),
             barkShadow = c(0x442131),
-            barkHighlight = c(0xb10000)
+            barkHighlight = c(0xb10000),
+            leavesColor = c(0x7b0000),
+            leavesShadow = c(0x5a0000),
+            leavesHighlight = c(0xac2020),
         ) {
             override fun LayerListBuilder.trapdoor() {
                 layer("zigzagSolid2", highlight)
@@ -227,13 +318,27 @@ enum class Fungus(
                 layer("trapdoorHingesBig", STONE.highlight)
                 layer("trapdoorHinges", STONE.shadow)
             }
+            override fun LayerListBuilder.leaves() {
+                background(leavesColor)
+                layer("leaves6", leavesShadow)
+                layer("leaves6a", leavesHighlight)
+                layer("borderRoundDots", leavesHighlight)
+            }
+            override fun LayerListBuilder.sapling() {
+                layer("mushroomStem", barkShadow)
+                layer("mushroomCapRed", leavesColor)
+                layer("crimsonFungusSpots", fungusSpotColor)
+            }
         }, WARPED(
             color = c(0x287067),
             shadow = c(0x1e4340),
             highlight = c(0x3a8e8c),
             barkColor = c(0x562c3e),
             barkShadow = c(0x442131),
-            barkHighlight = c(0x00956f)
+            barkHighlight = c(0x00956f),
+            leavesColor = c(0x008282),
+            leavesHighlight = c(0x00b485),
+            leavesShadow = c(0x006565),
         ) {
         override fun LayerListBuilder.trapdoor() {
             layer("waves", color)
@@ -242,6 +347,21 @@ enum class Fungus(
             layer("borderShortDashes", shadow)
             layer("trapdoorHingesBig", STONE.shadow)
             layer("trapdoorHinges", STONE.highlight)
+        }
+
+        override fun LayerListBuilder.leaves() {
+            background(leavesColor)
+            layer("leaves3", leavesShadow)
+            layer("leaves3a", leavesHighlight)
+            layer("leaves3b", leavesHighlight)
+            layer("borderSolid", leavesShadow)
+            layer("borderShortDashes", leavesHighlight)
+        }
+
+        override fun LayerListBuilder.sapling() {
+            layer("mushroomStem", barkShadow)
+            layer("warpedFungusCap", leavesColor)
+            layer("warpedFungusSpots", fungusSpotColor)
         }
     };
 
@@ -270,4 +390,6 @@ enum class Fungus(
     }
 
     override val logSynonym = "stem"
+    override val leavesSynonym = "wart_block"
+    override val saplingSynonym = "fungus"
 }

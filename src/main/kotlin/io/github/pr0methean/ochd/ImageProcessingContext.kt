@@ -91,6 +91,10 @@ class ImageProcessingContext(
 
     fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): TextureTask {
         val importTask = svgTasks[name] ?: throw IllegalArgumentException("No SVG task called $name")
+        // NB: This means we can't create a black version of a precolored layer except by making it a separate SVG!
+        if ((paint == Color.BLACK || paint == null) && alpha == 1.0) {
+            return importTask
+        }
         return deduplicate(RepaintTask(paint, importTask, tileSize, alpha, this))
     }
 
@@ -100,10 +104,8 @@ class ImageProcessingContext(
         return deduplicate(ImageStackingTask(layerTasks.build(), this))
     }
 
-    fun animate(init: LayerListBuilder.() -> Unit): TextureTask {
-        val frames = LayerListBuilder(this)
-        frames.init()
-        return deduplicate(AnimationColumnTask(frames.build(), this))
+    fun animate(frames: List<TextureTask>): TextureTask {
+        return deduplicate(AnimationColumnTask(frames, this))
     }
 
     fun out(name: String, source: TextureTask) = BasicOutputTask(source, name, this)

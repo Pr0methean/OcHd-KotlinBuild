@@ -10,18 +10,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
 object Glass: Material {
-
     override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
-        DYES.forEach {
-            val name = it.key
-            val color = it.value
-            emit(ctx.out("block/${name}_stained_glass", ctx.stack {
-                background(Color(color.red, color.green, color.blue, 0.25))
-                layer("borderSolid", color)
-                layer("streaks", color)
-            }))
-            emit(ctx.out("block/${name}_stained_glass_pane_top", ctx.layer("paneTop", color)))
-        }
         emit(ctx.out("block/glass_pane_top", ctx.layer("paneTop", c(0xa8d0d9))))
         emit(ctx.out("block/glass", ctx.stack {
             layer("borderSolid", Color.WHITE)

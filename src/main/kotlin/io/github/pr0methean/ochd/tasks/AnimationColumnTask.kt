@@ -2,7 +2,6 @@ package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.DEFAULT_SNAPSHOT_PARAMS
 import io.github.pr0methean.ochd.ImageProcessingContext
-import io.github.pr0methean.ochd.LayerList
 import io.github.pr0methean.ochd.packedimage.PackedImage
 import javafx.scene.canvas.Canvas
 import javafx.scene.image.Image
@@ -12,15 +11,15 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.withIndex
 
 data class AnimationColumnTask(
-    private val frames: LayerList,
+    private val frames: List<TextureTask>,
     override val ctx: ImageProcessingContext
 ): TextureTask(ctx) {
     override suspend fun computeImage(): Image {
         val size = ctx.tileSize
-        val height = size * frames.layers.size
+        val height = size * frames.size
         val canvas = Canvas(size.toDouble(), height.toDouble())
         val canvasCtx = canvas.graphicsContext2D
-        frames.layers.asFlow()
+        frames.asFlow()
                 .map(TextureTask::getImage)
                 .map(PackedImage::unpacked)
                 .withIndex()

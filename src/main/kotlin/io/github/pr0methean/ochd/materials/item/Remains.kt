@@ -1,6 +1,6 @@
 @file:Suppress("ClassName")
 
-package io.github.pr0methean.ochd.materials.items
+package io.github.pr0methean.ochd.materials.item
 
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.texturebase.MaterialGroup

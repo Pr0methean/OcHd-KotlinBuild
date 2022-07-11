@@ -3,6 +3,7 @@ package io.github.pr0methean.ochd
 import io.github.pr0methean.ochd.tasks.ImageStackingTask
 import io.github.pr0methean.ochd.tasks.TextureTask
 import io.github.pr0methean.ochd.tasks.TopPartCroppingTask
+import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 
@@ -42,6 +43,8 @@ class LayerListBuilder(val ctx: ImageProcessingContext) {
             addAll(source.layers)
         }
     }
+    fun copy(source: SingleTextureMaterial) 
+            = copy(LayerListBuilder(ctx).also {source.run {createTextureLayers()}}.build())
     fun copyTopOf(source: TextureTask) = copy(TopPartCroppingTask(source, ctx.tileSize, ctx))
     fun copyTopOf(source: LayerListBuilder.() -> Unit) = copyTopOf(ctx.stack(source))
     fun copy(element: TextureTask) = layers.add(ctx.deduplicate(element))

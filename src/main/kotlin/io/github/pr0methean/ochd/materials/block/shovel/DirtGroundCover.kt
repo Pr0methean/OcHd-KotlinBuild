@@ -1,13 +1,25 @@
 package io.github.pr0methean.ochd.materials.block.shovel
 
+import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.c
+import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.texturebase.GroundCoverBlock
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import io.github.pr0methean.ochd.texturebase.group
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
-
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.merge
+/*
+grass_item_h='9ccb6c'
+grass_item='83b253'
+grass_item_s='64a43a'
+ */
+private val grassItemColor = c(0x83b253)
+private val grassItemShadow = c(0x64a43a)
+private val grassItemHighlight = c(0x9ccb6c)
 val DIRT_GROUND_COVERS = group<DirtGroundCover>()
 enum class DirtGroundCover(
     override val color: Paint,
@@ -19,19 +31,25 @@ enum class DirtGroundCover(
     /**
      * Grass is a gray texture, modified by a colormap according to the biome.
      */
-    GRASS(c(0x9d9d9d), c(0x828282), c(0xbababa), nameOverrideSide = "grass_block_side_overlay") {
+    GRASS(c(0x9d9d9d), c(0x828282), c(0xbababa)) {
         val extremeShadow = c(0x757575)
         val extremeHighlight = c(0xc3c3c3)
-        override fun LayerListBuilder.createCoverSideLayers() {
-            layer("topPart", highlight)
-            layer("veesTop", shadow)
-        }
-
         override fun LayerListBuilder.createTopLayers() {
             background(highlight)
             layer("borderShortDashes", color)
             layer("vees", shadow)
         }
+
+        override fun LayerListBuilder.createCoverSideLayers() {
+            layer("topPart", grassItemColor)
+            layer("vees", grassItemShadow)
+        }
+
+        override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask>
+                = merge(super.outputTasks(ctx), flowOf(ctx.out("block/grass_block_side_overlay", ctx.stack {
+            layer("topPart", color)
+            layer("vees", shadow)
+        })))
     },
     PODZOL(c(0x6a4418),c(0x4a3018),c(0x8b5920)) {
         override fun LayerListBuilder.createCoverSideLayers() {

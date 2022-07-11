@@ -11,6 +11,10 @@ data class BasicOutputTask(
         : OutputTask(name, ctx) {
     override suspend fun invoke() {
         file.parentFile.mkdirs()
-        producer.getImage().writePng(file)
+        try {
+            producer.getImage().writePng(file)
+        } catch (e: NotImplementedError) {
+            println("Skipping $name because it's not implemented yet")
+        }
     }
 }
