@@ -5,7 +5,6 @@ import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.packedimage.PackedImage
 import javafx.scene.canvas.Canvas
 import javafx.scene.image.Image
-import javafx.scene.image.WritableImage
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.withIndex
@@ -26,8 +25,6 @@ data class AnimationColumnTask(
                 .collect {
             doJfx {canvasCtx.drawImage(it.value, 0.0, (size * it.index).toDouble())}
         }
-        val out = WritableImage(size, height)
-        doJfx {canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, out)}
-        return out
+        return doJfx {canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, null)}
     }
 }
