@@ -5,14 +5,26 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.util.*
 
-abstract class OutputTask(open val name: String, open val ctx: ImageProcessingContext) {
+data class OutputTask(private val producer: TextureTask,
+                      val name: String,
+                      val ctx: ImageProcessingContext
+) {
 
     // Lazy init is needed to work around an NPE bug
     val file by lazy {ctx.outTextureRoot.resolve(name.lowercase(Locale.ENGLISH) + ".png")}
-    protected abstract suspend fun invoke()
+    suspend fun invoke() {
+        try {
+            producer.getImage().writePng(file)
+        } catch (e: NotImplementedError) {
+            println("Skipping $name because it's not implemented yet")
+        }
+    }
     suspend fun run() = withContext(Dispatchers.IO) {
         ctx.onTaskLaunched(this@OutputTask)
+        file.parentFile.mkdirs()
         ctx.retrying(name) {invoke()}
         ctx.onTaskCompleted(this@OutputTask)
     }
+
+    override fun toString(): String = "OutputTask for $name"
 }

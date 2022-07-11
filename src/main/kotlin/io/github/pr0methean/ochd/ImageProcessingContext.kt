@@ -153,9 +153,9 @@ class ImageProcessingContext(
         return deduplicate(AnimationColumnTask(frames, this))
     }
 
-    fun out(name: String, source: TextureTask) = BasicOutputTask(source, name, this)
+    fun out(name: String, source: TextureTask) = OutputTask(source, name, this)
 
-    fun out(name: String, source: LayerListBuilder.() -> Unit) = BasicOutputTask(stack {source()}, name, this)
+    fun out(name: String, source: LayerListBuilder.() -> Unit) = OutputTask(stack {source()}, name, this)
 
     fun onTaskLaunched(task: Any) {
         println("Launched: $task")
