@@ -8,6 +8,7 @@ data class CopyOutputTask(
     override val ctx: ImageProcessingContext
 )
         : OutputTask(name, ctx) {
+    override fun toString(): String = "CopyOutputTask copying ${baseTask.name} to $name"
     override suspend fun invoke() {
         baseTask.run()
         baseTask.file.copyTo(file)

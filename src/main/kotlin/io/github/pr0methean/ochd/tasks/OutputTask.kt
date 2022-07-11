@@ -6,7 +6,6 @@ import kotlinx.coroutines.withContext
 import java.util.*
 
 abstract class OutputTask(open val name: String, open val ctx: ImageProcessingContext) {
-    override fun toString(): String = "OutputTask for $name"
 
     // Lazy init is needed to work around an NPE bug
     val file by lazy {ctx.outTextureRoot.resolve(name.lowercase(Locale.ENGLISH) + ".png")}
