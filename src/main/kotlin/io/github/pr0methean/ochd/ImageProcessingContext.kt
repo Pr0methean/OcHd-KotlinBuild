@@ -12,6 +12,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import java.io.File
+import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ThreadLocalRandom
 import kotlin.time.Duration
@@ -71,12 +72,12 @@ class ImageProcessingContext(
         return result!!
     }
 
-    fun monitorStats() {
+    fun startMonitoringStats() {
         scope.async {
             while(true) {
                 delay(REPORTING_INTERVAL)
                 println()
-                println("Task completions:")
+                println("[${Instant.now()}] Task completions:")
                 taskCompletions.toSet().forEach {println("$it: ${taskCompletions.count(it)}")}
             }
         }
