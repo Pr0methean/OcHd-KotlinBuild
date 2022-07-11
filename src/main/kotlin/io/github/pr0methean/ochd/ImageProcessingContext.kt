@@ -13,8 +13,11 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ThreadLocalRandom
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 fun color(web: String) = Color.web(web)
 
@@ -23,6 +26,7 @@ fun color(web: String, alpha: Double) = Color.web(web, alpha)
 private const val MAX_UNCOMPRESSED_TILESIZE = 1024
 private const val MAX_UNCOMPRESSED_TILESIZE_COMBINING_TASK = 512
 private val REPORTING_INTERVAL: Duration = 1.minutes
+private fun getRetryDelay() = 10.seconds.plus(ThreadLocalRandom.current().nextInt(10_000).milliseconds)
 class ImageProcessingContext(
     val name: String,
     val tileSize: Int,
@@ -48,6 +52,23 @@ class ImageProcessingContext(
             )
         }
         svgTasks = builder.toMap()
+    }
+
+    suspend fun <T> retrying(task: suspend () -> T): T {
+        var completed = false
+        var result: T? = null
+        while (!completed) {
+            try {
+                result = task()
+                completed = true
+            } catch (t: Throwable) {
+                val delay = getRetryDelay()
+                println("Retrying after $delay. Caught $t")
+                delay(delay)
+                System.gc()
+            }
+        }
+        return result!!
     }
 
     fun monitorStats() {
@@ -80,9 +101,12 @@ class ImageProcessingContext(
         if (task is AnimationColumnTask || task is ImageStackingTask) {
             // Use PNG-compressed images more eagerly in ImageCombiningTask instances, since they're mostly consumed by
             // PNG output tasks.
-            return if (tileSize <= MAX_UNCOMPRESSED_TILESIZE_COMBINING_TASK) UncompressedImage(input) else PngImage(input)
+            return if (tileSize <= MAX_UNCOMPRESSED_TILESIZE_COMBINING_TASK) UncompressedImage(input) else PngImage(
+                input,
+                this
+            )
         }
-        return if (tileSize <= MAX_UNCOMPRESSED_TILESIZE) UncompressedImage(input) else PngImage(input)
+        return if (tileSize <= MAX_UNCOMPRESSED_TILESIZE) UncompressedImage(input) else PngImage(input, this)
     }
 
     fun deduplicate(task: TextureTask): TextureTask {
