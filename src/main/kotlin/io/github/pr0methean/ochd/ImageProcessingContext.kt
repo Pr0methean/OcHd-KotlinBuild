@@ -53,7 +53,7 @@ class ImageProcessingContext(
         svgTasks = builder.toMap()
     }
 
-    suspend fun <T> retrying(task: suspend () -> T): T {
+    suspend fun <T> retrying(name: String, task: suspend () -> T): T {
         var completed = false
         var result: T? = null
         while (!completed) {
@@ -63,8 +63,9 @@ class ImageProcessingContext(
             } catch (t: CancellationException) {
                 throw t
             } catch (t: Throwable) {
-                println("Caught $t; yielding and retrying")
+                println("Yielding before retrying: caught $t in $name")
                 yield()
+                println("Retrying: $name")
             }
         }
         return result!!

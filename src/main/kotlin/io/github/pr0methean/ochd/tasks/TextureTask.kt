@@ -28,12 +28,14 @@ abstract class TextureTask(open val ctx: ImageProcessingContext) {
 
     protected fun asyncInScope(coroutineScope: CoroutineScope) = coroutineScope.async(start = CoroutineStart.LAZY) {
         ctx.onTaskLaunched(this@TextureTask)
-        val result = ctx.retrying { ctx.packImage(computeImage(), this@TextureTask, this@TextureTask.toString()) }
+        val result = ctx.retrying (this@TextureTask.toString()) {
+            ctx.packImage(computeImage(), this@TextureTask, this@TextureTask.toString()) }
         ctx.onTaskCompleted(this@TextureTask)
         return@async result
     }
 
-    protected suspend fun <T> doJfx(jfxCode: suspend CoroutineScope.() -> T): T = ctx.retrying {
+    protected suspend fun <T> doJfx(jfxCode: suspend CoroutineScope.() -> T): T
+            = ctx.retrying(this@TextureTask.toString()) {
         val task = JfxTask(jfxCode)
         threadLocalRunLater.get().invokeExact(task as Runnable)
         return@retrying withContext(Dispatchers.IO) { task.get() }

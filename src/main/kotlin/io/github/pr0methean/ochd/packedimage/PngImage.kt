@@ -11,7 +11,7 @@ import javax.imageio.ImageIO
 class PngImage(input: Image, val ctx: ImageProcessingContext, val name: String): PackedImage {
     private val unpacked = SoftAsyncLazy(input) {
         println("Decompressing from PNG: $name")
-        ctx.retrying {ByteArrayInputStream(packed).use { Image(it) }}
+        ctx.retrying("Decompression of $name") {ByteArrayInputStream(packed).use { Image(it) }}
     }
     override suspend fun unpacked() = unpacked.get()
     private val packed = ByteArrayOutputStream().use {
