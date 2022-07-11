@@ -168,8 +168,4 @@ class ImageProcessingContext(
         taskCompletions.add(task::class.simpleName ?: "[unnamed class]")
     }
 
-    fun onTaskGraphFinished() {
-        println("All tasks launched")
-        taskDedupMap.clear()
-    }
 }

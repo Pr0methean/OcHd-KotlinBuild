@@ -6,7 +6,7 @@ import com.kitfox.svg.app.beans.SVGPanel.AUTOSIZE_STRETCH
 import io.github.pr0methean.ochd.ImageProcessingContext
 import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.newSingleThreadContext
 import kotlinx.coroutines.withContext
 import java.awt.Dimension
 import java.awt.image.BufferedImage
@@ -17,6 +17,8 @@ import java.awt.image.BufferedImage
 /*
 inkscape -w "$SIZE" -h "$SIZE" "$SVG_DIRECTORY/$1.svg" -o "$PNG_DIRECTORY/$1.png" -y 0.0
  */
+// svgSalamander doesn't seem to be thread-safe even when loaded in a ThreadLocal<ClassLoader>
+val svgLoaderContext = newSingleThreadContext("SVG importer thread")
 data class SvgImportTask(
     val shortName: String,
     private val tileSize: Int,
@@ -28,7 +30,7 @@ data class SvgImportTask(
     override fun toString(): String = "SvgImportTask for $shortName"
 
     override suspend fun computeImage(): Image {
-        val image = withContext(Dispatchers.IO) {
+        val image = withContext(svgLoaderContext) {
             val svgUniverse = SVGUniverse()
             @Suppress("DEPRECATION") val svgUri = ctx.retrying {svgUniverse.loadSVG(file.toURL())}
             val icon = SVGIcon()
