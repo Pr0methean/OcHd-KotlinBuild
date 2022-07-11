@@ -63,7 +63,7 @@ class ImageProcessingContext(
             } catch (t: CancellationException) {
                 throw t
             } catch (t: Throwable) {
-                println("Caught $t; yielding")
+                println("Caught $t; yielding and retrying")
                 yield()
             }
         }
