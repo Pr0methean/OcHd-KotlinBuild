@@ -60,7 +60,7 @@ jobs:
       with:
         name: OcHD-App
     - name: Make Textures
-      run: java -Xms6G -Xmx6G -XX:SoftRefLRUPolicyMSPerMB=60000 -verbose:gc -XX:+PrintGCDetails -XX:+UseParallelGC -jar OcHd-KotlinBuild-1.0-SNAPSHOT.jar ${{ matrix.size }}
+      run: java -Xms6G -Xmx6G -XX:SoftRefLRUPolicyMSPerMB=60000 -verbose:gc '-Xlog:gc*' -XX:+UseParallelGC -jar OcHd-KotlinBuild-1.0-SNAPSHOT.jar ${{ matrix.size }}
     - name: Zip Texture Pack
       run: cd out && zip -r OcHD-${{ matrix.size}}x${{ matrix.size}}.zip *
     - name: Publish Texture Pack
