@@ -22,10 +22,9 @@ private val threadLocalRunLater: ThreadLocal<MethodHandle> = ThreadLocal.withIni
 abstract class TextureTask(open val ctx: ImageProcessingContext) {
     private val coroutine by lazy {
         ctx.scope.async(start = CoroutineStart.LAZY) {
-            println("Starting task ${this@TextureTask}")
-            ctx.taskLaunches.add(this@TextureTask::class.simpleName ?: "[unnamed TextureTask subclass]")
+            ctx.onTaskLaunched(this@TextureTask)
             val bitmap = computeImage()
-            println("Finished task ${this@TextureTask}")
+            ctx.onTaskCompleted(this@TextureTask)
             return@async ctx.packImage(bitmap, this@TextureTask)
         }
     }

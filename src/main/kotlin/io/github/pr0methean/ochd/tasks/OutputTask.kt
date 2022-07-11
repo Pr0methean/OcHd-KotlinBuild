@@ -10,9 +10,8 @@ abstract class OutputTask(open val name: String, open val ctx: ImageProcessingCo
     val file by lazy {ctx.outTextureRoot.resolve(name.lowercase(Locale.ENGLISH) + ".png")}
     protected abstract suspend fun invoke()
     suspend fun run() {
-        ctx.taskLaunches.add(this::class.simpleName ?: "[unnamed OutputTask subclass]")
-        println("Starting output task for $name")
+        ctx.onTaskLaunched(this)
         withContext(Dispatchers.IO) {invoke()}
-        println("Finished output task for $name")
+        ctx.onTaskCompleted(this)
     }
 }
