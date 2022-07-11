@@ -34,7 +34,7 @@ data class SvgImportTask(
     val file = ctx.svgDirectory.resolve("$shortName.svg")
     override fun toString(): String = "SvgImportTask for $shortName"
 
-    override suspend fun computeImage(): Image = ctx.retrying {
+    override suspend fun computeImage(): Image {
         val svgUniverse = SVGUniverse()
         @Suppress("DEPRECATION") val svgUri = svgUniverse.loadSVG(file.toURL())
         val icon = SVGIcon()
@@ -43,6 +43,6 @@ data class SvgImportTask(
         icon.preferredSize = Dimension(tileSize, tileSize)
         icon.antiAlias = true
         icon.autosize = AUTOSIZE_STRETCH
-        SwingFXUtils.toFXImage(icon.image as BufferedImage, null)
+        return SwingFXUtils.toFXImage(icon.image as BufferedImage, null)
     }
 }

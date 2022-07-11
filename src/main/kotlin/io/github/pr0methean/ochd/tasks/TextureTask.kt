@@ -28,7 +28,7 @@ abstract class TextureTask(open val ctx: ImageProcessingContext) {
 
     protected fun asyncInScope(coroutineScope: CoroutineScope) = coroutineScope.async(start = CoroutineStart.LAZY) {
         ctx.onTaskLaunched(this@TextureTask)
-        val bitmap = computeImage()
+        val bitmap = ctx.retrying {computeImage()}
         ctx.onTaskCompleted(this@TextureTask)
         return@async ctx.packImage(bitmap, this@TextureTask, this@TextureTask.toString())
     }
