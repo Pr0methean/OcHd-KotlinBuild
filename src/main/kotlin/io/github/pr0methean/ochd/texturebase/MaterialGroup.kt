@@ -18,4 +18,4 @@ open class MaterialGroup(val elements: Flow<Material>): Material {
 
 @Suppress("UNCHECKED_CAST")
 inline fun <reified E : Enum<out Material>> group()
-        = MaterialGroup(E::class.java.enumConstants.asFlow() as Flow<Material>)
+        = MaterialGroup(E::class.java.enumConstants.asSequence().asFlow() as Flow<Material>)
