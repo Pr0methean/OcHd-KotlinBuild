@@ -74,7 +74,7 @@ class ImageProcessingContext(
         if (task is SvgImportTask) {
             return task // SvgImportTask duplication is impossible because svgTasks is populated eagerly
         }
-        if (task is RepaintTask && task.paint == null && task.alpha == 1.0) {
+        if (task is RepaintTask && (task.paint == null || task.paint == Color.BLACK) && task.alpha == 1.0) {
             return deduplicate(task.base)
         }
         if (task is ImageStackingTask && task.layers.layers.size == 1 && task.layers.background == Color.TRANSPARENT) {
