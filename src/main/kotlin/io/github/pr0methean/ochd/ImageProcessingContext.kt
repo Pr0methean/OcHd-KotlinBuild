@@ -12,6 +12,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import java.io.File
+import java.lang.management.ManagementFactory
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ThreadLocalRandom
@@ -28,6 +29,7 @@ private const val MAX_UNCOMPRESSED_TILESIZE = 1024
 private const val MAX_UNCOMPRESSED_TILESIZE_COMBINING_TASK = 512
 private const val RETRIES_PER_GC = 10
 private val REPORTING_INTERVAL: Duration = 1.minutes
+private val threadMxBean = ManagementFactory.getThreadMXBean()
 private fun getRetryDelay() = 10.seconds.plus(ThreadLocalRandom.current().nextInt(10_000).milliseconds)
 class ImageProcessingContext(
     val name: String,
@@ -82,6 +84,14 @@ class ImageProcessingContext(
                 println()
                 println("[${Instant.now()}] Task completions:")
                 taskCompletions.toSet().forEach {println("$it: ${taskCompletions.count(it)}")}
+                val deadlocked = threadMxBean.findDeadlockedThreads()
+                val threadsOfInterest = if (deadlocked.isNotEmpty()) deadlocked.also {println("Deadlock detected!")}
+                        else threadMxBean.allThreadIds
+                threadMxBean.getThreadInfo(threadsOfInterest).forEach {
+                    println(it.threadName)
+                    it.stackTrace.forEach(::println)
+                    println()
+                }
             }
         }
     }
