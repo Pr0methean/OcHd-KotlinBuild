@@ -30,7 +30,7 @@ data class SvgImportTask(
     override suspend fun computeImage(): Image {
         val image = withContext(Dispatchers.IO) {
             val svgUniverse = SVGUniverse()
-            @Suppress("DEPRECATION") val svgUri = svgUniverse.loadSVG(file.toURL())
+            @Suppress("DEPRECATION") val svgUri = ctx.retrying {svgUniverse.loadSVG(file.toURL())}
             val icon = SVGIcon()
             icon.svgURI = svgUri
             icon.svgUniverse = svgUniverse
