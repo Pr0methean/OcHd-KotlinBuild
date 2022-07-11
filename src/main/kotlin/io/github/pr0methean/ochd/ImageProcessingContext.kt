@@ -9,8 +9,12 @@ import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.minutes
 
 fun color(web: String) = Color.web(web)
 
@@ -18,7 +22,7 @@ fun color(web: String, alpha: Double) = Color.web(web, alpha)
 
 private const val MAX_UNCOMPRESSED_TILESIZE = 1024
 private const val MAX_UNCOMPRESSED_TILESIZE_COMBINING_TASK = 512
-
+private val REPORTING_INTERVAL: Duration = 1.minutes
 class ImageProcessingContext(
     val name: String,
     val tileSize: Int,
@@ -27,10 +31,10 @@ class ImageProcessingContext(
     val outTextureRoot: File
 ) {
     override fun toString(): String = name
-
     val svgTasks: Map<String, SvgImportTask>
     val taskDedupMap = ConcurrentHashMap<TextureTask, TextureTask>()
     val taskLaunches: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
+    val taskCompletions: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val dedupeSuccesses: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val dedupeFailures: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     init {
@@ -44,6 +48,17 @@ class ImageProcessingContext(
             )
         }
         svgTasks = builder.toMap()
+    }
+
+    fun monitorStats() {
+        scope.async {
+            while(true) {
+                delay(REPORTING_INTERVAL)
+                println()
+                println("Task completions:")
+                taskCompletions.toSet().forEach {println("$it: ${taskCompletions.count(it)}")}
+            }
+        }
     }
 
     fun printStats() {
@@ -111,6 +126,16 @@ class ImageProcessingContext(
     fun out(name: String, source: TextureTask) = BasicOutputTask(source, name, this)
 
     fun out(name: String, source: LayerListBuilder.() -> Unit) = BasicOutputTask(stack {source()}, name, this)
+
+    fun onTaskLaunched(task: Any) {
+        println("Launched: $task")
+        taskLaunches.add(task::class.simpleName ?: "[unnamed class]")
+    }
+
+    fun onTaskCompleted(task: Any) {
+        println("Completed: $task")
+        taskCompletions.add(task::class.simpleName ?: "[unnamed class]")
+    }
 
     fun onTaskGraphFinished() {
         taskDedupMap.clear()
