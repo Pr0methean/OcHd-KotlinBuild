@@ -100,16 +100,19 @@ class ImageProcessingContext(
     /**
      * Encapsulates the given image in a form small enough to fit on the heap.
      */
-    fun packImage(input: Image, task: TextureTask): PackedImage {
-        if (task is AnimationColumnTask || task is ImageStackingTask) {
-            // Use PNG-compressed images more eagerly in ImageCombiningTask instances, since they're mostly consumed by
-            // PNG output tasks.
-            return if (tileSize <= MAX_UNCOMPRESSED_TILESIZE_COMBINING_TASK) UncompressedImage(input) else PngImage(
-                input,
-                this
-            )
+    fun packImage(input: Image, task: TextureTask, name: String): PackedImage {
+        // Use PNG-compressed images more eagerly in ImageCombiningTask instances, since they're mostly consumed by
+        // PNG output tasks.
+        val maxUncompressedSize = if (task is AnimationColumnTask || task is ImageStackingTask) {
+            MAX_UNCOMPRESSED_TILESIZE_COMBINING_TASK
+        } else {
+            MAX_UNCOMPRESSED_TILESIZE
         }
-        return if (tileSize <= MAX_UNCOMPRESSED_TILESIZE) UncompressedImage(input) else PngImage(input, this)
+        return if (tileSize <= maxUncompressedSize) {
+            UncompressedImage(input, name)
+        } else {
+            PngImage(input, this, name)
+        }
     }
 
     fun deduplicate(task: TextureTask): TextureTask {

@@ -8,14 +8,14 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
 
-class PngImage(input: Image, val ctx: ImageProcessingContext): PackedImage {
+class PngImage(input: Image, val ctx: ImageProcessingContext, val name: String): PackedImage {
     private val unpacked = SoftAsyncLazy(input) {
-        println("Decompressing a PNG-compressed image on demand")
+        println("Decompressing from PNG: $name")
         ctx.retrying {ByteArrayInputStream(packed).use { Image(it) }}
     }
     override suspend fun unpacked() = unpacked.get()
     private val packed = ByteArrayOutputStream().use {
-        println("Compressing an uncompressed image to PNG for heap storage")
+        println("Compressing to PNG: $name")
         ImageIO.write(SwingFXUtils.fromFXImage(input, null), "PNG", it)
         return@use it.toByteArray()
     }

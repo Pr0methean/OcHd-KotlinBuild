@@ -26,7 +26,7 @@ abstract class TextureTask(open val ctx: ImageProcessingContext) {
             ctx.onTaskLaunched(this@TextureTask)
             val bitmap = computeImage()
             ctx.onTaskCompleted(this@TextureTask)
-            return@async ctx.packImage(bitmap, this@TextureTask)
+            return@async ctx.packImage(bitmap, this@TextureTask, this@TextureTask.toString())
         }
     }
 
