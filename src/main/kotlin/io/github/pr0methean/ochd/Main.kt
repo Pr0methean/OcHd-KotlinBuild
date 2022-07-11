@@ -52,7 +52,6 @@ val OXIDATION_STATES = listOf("exposed", "weathered", "oxidized")
         emitAll(ALL_MATERIALS.outputTasks(ctx))
         ctx.onTaskGraphFinished()
     }
-    ctx.startMonitoringStats()
     val time = measureNanoTime {
         runBlocking(Dispatchers.Default) {
             // Copy over all metadata files

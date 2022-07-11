@@ -9,17 +9,8 @@ import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
 import java.io.File
-import java.lang.management.ManagementFactory
-import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ThreadLocalRandom
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.minutes
-import kotlin.time.Duration.Companion.seconds
 
 fun color(web: String) = Color.web(web)
 
@@ -27,10 +18,7 @@ fun color(web: String, alpha: Double) = Color.web(web, alpha)
 
 private const val MAX_UNCOMPRESSED_TILESIZE = 1024
 private const val MAX_UNCOMPRESSED_TILESIZE_COMBINING_TASK = 512
-private const val RETRIES_PER_GC = 10
-private val REPORTING_INTERVAL: Duration = 1.minutes
-private val threadMxBean = ManagementFactory.getThreadMXBean()
-private fun getRetryDelay() = 10.seconds.plus(ThreadLocalRandom.current().nextInt(10_000).milliseconds)
+
 class ImageProcessingContext(
     val name: String,
     val tileSize: Int,
@@ -39,10 +27,10 @@ class ImageProcessingContext(
     val outTextureRoot: File
 ) {
     override fun toString(): String = name
+
     val svgTasks: Map<String, SvgImportTask>
     val taskDedupMap = ConcurrentHashMap<TextureTask, TextureTask>()
     val taskLaunches: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
-    val taskCompletions: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val dedupeSuccesses: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val dedupeFailures: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     init {
@@ -56,44 +44,6 @@ class ImageProcessingContext(
             )
         }
         svgTasks = builder.toMap()
-    }
-
-    suspend fun <T> retrying(task: suspend () -> T): T {
-        var completed = false
-        var result: T? = null
-        while (!completed) {
-            try {
-                result = task()
-                completed = true
-            } catch (t: Throwable) {
-                val delay = getRetryDelay()
-                println("Retrying after $delay. Caught $t")
-                delay(delay)
-                if (ThreadLocalRandom.current().nextInt(RETRIES_PER_GC) == 0) {
-                    System.gc()
-                }
-            }
-        }
-        return result!!
-    }
-
-    fun startMonitoringStats() {
-        scope.async {
-            while(true) {
-                delay(REPORTING_INTERVAL)
-                println()
-                println("[${Instant.now()}] Task completions:")
-                taskCompletions.toSet().forEach {println("$it: ${taskCompletions.count(it)}")}
-                val deadlocked = threadMxBean.findDeadlockedThreads()
-                val threadsOfInterest = if (deadlocked.isNotEmpty()) deadlocked.also {println("Deadlock detected!")}
-                        else threadMxBean.allThreadIds
-                threadMxBean.getThreadInfo(threadsOfInterest).forEach {
-                    println(it.threadName)
-                    it.stackTrace.forEach(::println)
-                    println()
-                }
-            }
-        }
     }
 
     fun printStats() {
@@ -115,12 +65,9 @@ class ImageProcessingContext(
         if (task is AnimationColumnTask || task is ImageStackingTask) {
             // Use PNG-compressed images more eagerly in ImageCombiningTask instances, since they're mostly consumed by
             // PNG output tasks.
-            return if (tileSize <= MAX_UNCOMPRESSED_TILESIZE_COMBINING_TASK) UncompressedImage(input) else PngImage(
-                input,
-                this
-            )
+            return if (tileSize <= MAX_UNCOMPRESSED_TILESIZE_COMBINING_TASK) UncompressedImage(input) else PngImage(input)
         }
-        return if (tileSize <= MAX_UNCOMPRESSED_TILESIZE) UncompressedImage(input) else PngImage(input, this)
+        return if (tileSize <= MAX_UNCOMPRESSED_TILESIZE) UncompressedImage(input) else PngImage(input)
     }
 
     fun deduplicate(task: TextureTask): TextureTask {
@@ -164,16 +111,6 @@ class ImageProcessingContext(
     fun out(name: String, source: TextureTask) = BasicOutputTask(source, name, this)
 
     fun out(name: String, source: LayerListBuilder.() -> Unit) = BasicOutputTask(stack {source()}, name, this)
-
-    fun onTaskLaunched(task: Any) {
-        println("Launched: $task")
-        taskLaunches.add(task::class.simpleName ?: "[unnamed class]")
-    }
-
-    fun onTaskCompleted(task: Any) {
-        println("Completed: $task")
-        taskCompletions.add(task::class.simpleName ?: "[unnamed class]")
-    }
 
     fun onTaskGraphFinished() {
         taskDedupMap.clear()

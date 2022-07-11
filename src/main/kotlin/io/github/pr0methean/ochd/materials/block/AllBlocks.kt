@@ -9,15 +9,6 @@ import io.github.pr0methean.ochd.materials.block.pickaxe.PICKAXE_BLOCKS
 import io.github.pr0methean.ochd.materials.block.shears.SHEAR_BLOCKS
 import io.github.pr0methean.ochd.materials.block.shovel.SHOVEL_BLOCKS
 import io.github.pr0methean.ochd.texturebase.MaterialGroup
-import kotlinx.coroutines.flow.flow
 
-val BLOCKS = MaterialGroup(flow {
-        emit(PICKAXE_BLOCKS)
-        emit(AXE_BLOCKS)
-        emit(SHOVEL_BLOCKS)
-        emit(SHEAR_BLOCKS)
-        emit(LIQUID_BLOCKS)
-        emit(BARE_HAND_BLOCKS)
-        emit(INDESTRUCTIBLE_BLOCKS)
-        emit(HOE_BLOCKS)
-})
+val BLOCKS = MaterialGroup(AXE_BLOCKS, PICKAXE_BLOCKS, SHOVEL_BLOCKS, HOE_BLOCKS, SHEAR_BLOCKS, LIQUID_BLOCKS,
+        BARE_HAND_BLOCKS, INDESTRUCTIBLE_BLOCKS)

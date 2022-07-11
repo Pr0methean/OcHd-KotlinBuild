@@ -9,7 +9,6 @@ data class BasicOutputTask(
     override val ctx: ImageProcessingContext
 )
         : OutputTask(name, ctx) {
-    override fun toString(): String = "BasicOutputTask for $name"
     override suspend fun invoke() {
         file.parentFile.mkdirs()
         try {
