@@ -8,6 +8,7 @@ import io.github.pr0methean.ochd.tasks.*
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -62,6 +63,8 @@ class ImageProcessingContext(
             try {
                 result = task()
                 completed = true
+            } catch (t: CancellationException) {
+                throw t
             } catch (t: Throwable) {
                 val delay = getRetryDelay()
                 println("Retrying after $delay. Caught $t")

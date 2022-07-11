@@ -12,7 +12,7 @@ abstract class OutputTask(open val name: String, open val ctx: ImageProcessingCo
     protected abstract suspend fun invoke()
     suspend fun run() = withContext(Dispatchers.IO) {
         ctx.onTaskLaunched(this@OutputTask)
-        invoke()
+        ctx.retrying {invoke()}
         ctx.onTaskCompleted(this@OutputTask)
     }
 }
