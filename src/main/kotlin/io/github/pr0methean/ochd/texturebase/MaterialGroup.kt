@@ -17,5 +17,8 @@ open class MaterialGroup(val elements: Flow<Material>): Material {
 }
 
 @Suppress("UNCHECKED_CAST")
-inline fun <reified E : Enum<out Material>> group(): MaterialGroup
-        = MaterialGroup(E::class.java.enumConstants.asFlow() as Flow<Material>)
+inline fun <reified E : Enum<out Material>> group(): MaterialGroup {
+    val constants = E::class.java.enumConstants.asList() // Make sure these are loaded
+    println("Loaded constants $constants from class ${E::class.java.simpleName}")
+    return MaterialGroup(constants.asFlow() as Flow<Material>)
+}
