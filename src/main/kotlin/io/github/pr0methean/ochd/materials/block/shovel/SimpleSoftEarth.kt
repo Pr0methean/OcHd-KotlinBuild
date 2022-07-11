@@ -5,7 +5,6 @@ import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase
 import io.github.pr0methean.ochd.texturebase.Block
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
-import io.github.pr0methean.ochd.texturebase.copy
 import io.github.pr0methean.ochd.texturebase.group
 import javafx.scene.paint.Color
 

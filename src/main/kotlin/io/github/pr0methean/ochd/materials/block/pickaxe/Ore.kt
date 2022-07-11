@@ -5,7 +5,6 @@ import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
-import io.github.pr0methean.ochd.texturebase.copy
 import io.github.pr0methean.ochd.texturebase.group
 import javafx.scene.paint.Color
 import kotlinx.coroutines.flow.Flow
