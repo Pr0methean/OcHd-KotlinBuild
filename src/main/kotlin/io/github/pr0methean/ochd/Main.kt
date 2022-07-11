@@ -47,7 +47,8 @@ val OXIDATION_STATES = listOf("exposed", "weathered", "oxidized")
  */
     ctx.startMonitoringStats()
     val time = measureNanoTime {
-        scope.launch {
+        val tasks = mutableListOf<Deferred<Unit>>(
+        scope.async { withContext(Dispatchers.IO) {
             metadataDirectory.walkTopDown().forEach {
                 val outputPath = out.resolve(it.relativeTo(metadataDirectory))
                 if (it.isDirectory) {
@@ -56,8 +57,9 @@ val OXIDATION_STATES = listOf("exposed", "weathered", "oxidized")
                     it.copyTo(outputPath)
                 }
             }
-        }.join()
-        ALL_MATERIALS.outputTasks(ctx).map { scope.async { it.run() } }.toList().awaitAll()
+        }})
+        ALL_MATERIALS.outputTasks(ctx).map { scope.async { it.run() } }.toList(tasks)
+        tasks.awaitAll()
     }
     println()
     println("All tasks finished after $time ns")
