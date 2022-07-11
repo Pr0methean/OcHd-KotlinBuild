@@ -36,9 +36,9 @@ abstract class TextureTask(open val ctx: ImageProcessingContext) {
     }
 
     protected suspend fun <T> doJfx(jfxCode: suspend CoroutineScope.() -> T): T {
-        val task = JfxTask(jfxCode)
         var result: T? = null
         while (result == null) {
+            val task = JfxTask(jfxCode)
             threadLocalRunLater.get().invokeExact(task as Runnable)
             try {
                 result = withContext(Dispatchers.IO) { task.get() }
