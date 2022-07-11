@@ -8,10 +8,7 @@ import io.github.pr0methean.ochd.tasks.*
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import java.io.File
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
@@ -66,10 +63,7 @@ class ImageProcessingContext(
             } catch (t: CancellationException) {
                 throw t
             } catch (t: Throwable) {
-                val delay = getRetryDelay()
-                println("Retrying after $delay. Caught $t")
-                delay(delay)
-                System.gc()
+                yield()
             }
         }
         return result!!
