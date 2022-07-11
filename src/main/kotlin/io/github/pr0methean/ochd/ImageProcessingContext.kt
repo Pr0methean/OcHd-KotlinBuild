@@ -26,6 +26,7 @@ fun color(web: String, alpha: Double) = Color.web(web, alpha)
 
 private const val MAX_UNCOMPRESSED_TILESIZE = 1024
 private const val MAX_UNCOMPRESSED_TILESIZE_COMBINING_TASK = 512
+private const val RETRIES_PER_GC = 10
 private val REPORTING_INTERVAL: Duration = 1.minutes
 private fun getRetryDelay() = 10.seconds.plus(ThreadLocalRandom.current().nextInt(10_000).milliseconds)
 class ImageProcessingContext(
@@ -66,7 +67,9 @@ class ImageProcessingContext(
                 val delay = getRetryDelay()
                 println("Retrying after $delay. Caught $t")
                 delay(delay)
-                System.gc()
+                if (ThreadLocalRandom.current().nextInt(RETRIES_PER_GC) == 0) {
+                    System.gc()
+                }
             }
         }
         return result!!
