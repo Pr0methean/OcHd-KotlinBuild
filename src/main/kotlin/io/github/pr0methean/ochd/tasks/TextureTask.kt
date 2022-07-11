@@ -46,6 +46,7 @@ abstract class TextureTask(open val ctx: ImageProcessingContext) {
                 val delay = getRetryDelay()
                 println("Retrying after $delay. Caught $t")
                 delay(delay)
+                System.gc()
             }
         }
         return result
