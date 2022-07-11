@@ -72,6 +72,7 @@ class ImageProcessingContext(
         return result!!
     }
 
+    @Suppress("DeferredResultUnused")
     fun startMonitoringStats() {
         scope.async {
             while(true) {
@@ -79,6 +80,7 @@ class ImageProcessingContext(
                 println()
                 println("[${Instant.now()}] Task completions:")
                 taskCompletions.toSet().forEach {println("$it: ${taskCompletions.count(it)}")}
+                println()
             }
         }
     }
