@@ -14,4 +14,5 @@ class SoftAsyncLazy<T>(
     suspend fun get(): T = currentValue.get() ?: mutex.withLock {
         currentValue.get() ?: supplier().also { currentValue = SoftReference(it) }
     }
+    fun isCompleted() = currentValue.get() != null
 }
