@@ -10,12 +10,10 @@ import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
 import java.io.File
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ThreadLocalRandom
-import java.util.concurrent.locks.ReentrantLock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
@@ -30,7 +28,6 @@ private const val MAX_UNCOMPRESSED_TILESIZE_COMBINING_TASK = 512
 private val REPORTING_INTERVAL: Duration = 1.minutes
 private fun getRetryDelay() = 10.seconds.plus(ThreadLocalRandom.current().nextInt(10_000).milliseconds)
 private val MIN_LIMIT_TO_SKIP_MULTI_SUBTASK_SEMAPHORE = 64
-private val MAX_LIMIT_FOR_REENTRANT_LOCK = 8
 class ImageProcessingContext(
     val name: String,
     val tileSize: Int,
@@ -38,7 +35,7 @@ class ImageProcessingContext(
     val svgDirectory: File,
     val outTextureRoot: File
 ) {
-    val tasksWithMultipleSubtasksLimit = 1.shl(25) / (tileSize * tileSize)
+    val tasksWithMultipleSubtasksLimit = 1.shl(24) / (tileSize * tileSize)
     override fun toString(): String = name
     val svgTasks: Map<String, SvgImportTask>
     val taskDedupMap = ConcurrentHashMap<TextureTask, TextureTask>()
@@ -46,8 +43,7 @@ class ImageProcessingContext(
     val taskCompletions: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val dedupeSuccesses: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val dedupeFailures: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
-    val multipleSubtaskSemaphore = Semaphore(tasksWithMultipleSubtasksLimit)
-    val multipleSubtaskMutex = ReentrantLock()
+    val tasksWithMultipleSubtasksSemaphore = Semaphore(tasksWithMultipleSubtasksLimit)
     init {
         val builder = mutableMapOf<String, SvgImportTask>()
         svgDirectory.list()!!.forEach { svgFile ->
@@ -64,15 +60,8 @@ class ImageProcessingContext(
     suspend fun <T> withMultipleSubtasks(block: suspend() -> T): T =
         if (tasksWithMultipleSubtasksLimit >= MIN_LIMIT_TO_SKIP_MULTI_SUBTASK_SEMAPHORE) {
             block()
-        } else if (tasksWithMultipleSubtasksLimit <= MAX_LIMIT_FOR_REENTRANT_LOCK) {
-            multipleSubtaskMutex.lock()
-            try {
-                block()
-            } finally {
-                multipleSubtaskMutex.unlock()
-            }
         } else {
-            multipleSubtaskSemaphore.withPermit {block()}
+            tasksWithMultipleSubtasksSemaphore.withReentrantPermit(block)
         }
 
     suspend fun <T> retrying(name: String, task: suspend () -> T): T {
