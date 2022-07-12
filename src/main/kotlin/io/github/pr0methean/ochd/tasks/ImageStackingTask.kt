@@ -10,14 +10,12 @@ import javafx.scene.paint.Color
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.sync.withPermit
 
 data class ImageStackingTask(
     val layers: LayerList,
     override val ctx: ImageProcessingContext
 ): TextureTask(ctx) {
-    override suspend fun runTask(): PackedImage =
-        ctx.multipleSubtaskSemaphore.withPermit { super.runTask() }
+    override suspend fun runTask(): PackedImage = ctx.withMultipleSubtasks { super.runTask() }
 
     val size = ctx.tileSize
     override suspend fun computeImage(): Image {

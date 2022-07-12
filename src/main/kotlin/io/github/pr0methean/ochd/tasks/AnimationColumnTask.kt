@@ -8,14 +8,12 @@ import javafx.scene.image.Image
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.withIndex
-import kotlinx.coroutines.sync.withPermit
 
 data class AnimationColumnTask(
     private val frames: List<TextureTask>,
     override val ctx: ImageProcessingContext
 ): TextureTask(ctx) {
-    override suspend fun runTask(): PackedImage =
-            ctx.multipleSubtaskSemaphore.withPermit { super.runTask() }
+    override suspend fun runTask(): PackedImage = ctx.withMultipleSubtasks { super.runTask() }
 
     override suspend fun computeImage(): Image {
         val size = ctx.tileSize
