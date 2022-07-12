@@ -23,15 +23,20 @@ private val threadLocalRunLater: ThreadLocal<MethodHandle> = ThreadLocal.withIni
 
 abstract class TextureTask(open val ctx: ImageProcessingContext) {
     open val coroutine by lazy {
-        asyncInScope(ctx.scope)
+        runTaskAsync(ctx.scope)
     }
 
-    protected fun asyncInScope(coroutineScope: CoroutineScope) = coroutineScope.async(start = CoroutineStart.LAZY) {
+    protected fun runTaskAsync(coroutineScope: CoroutineScope)
+            = coroutineScope.async(start = CoroutineStart.LAZY) { runTask() }
+
+    protected open suspend fun runTask(): PackedImage
+    {
         ctx.onTaskLaunched(this@TextureTask)
-        val result = ctx.retrying (this@TextureTask.toString()) {
-            ctx.packImage(computeImage(), this@TextureTask, this@TextureTask.toString()) }
+        val result = ctx.retrying(this@TextureTask.toString()) {
+            ctx.packImage(computeImage(), this@TextureTask, this@TextureTask.toString())
+        }
         ctx.onTaskCompleted(this@TextureTask)
-        return@async result
+        return result
     }
 
     protected suspend fun <T> doJfx(jfxCode: suspend CoroutineScope.() -> T): T
