@@ -9,6 +9,8 @@ import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import java.io.File
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
@@ -26,6 +28,7 @@ private const val MAX_UNCOMPRESSED_TILESIZE = 512
 private const val MAX_UNCOMPRESSED_TILESIZE_COMBINING_TASK = 512
 private val REPORTING_INTERVAL: Duration = 1.minutes
 private fun getRetryDelay() = 10.seconds.plus(ThreadLocalRandom.current().nextInt(10_000).milliseconds)
+private val MEMORY_CONTENDING_TASKS_LIMIT = 4
 class ImageProcessingContext(
     val name: String,
     val tileSize: Int,
@@ -40,6 +43,7 @@ class ImageProcessingContext(
     val taskCompletions: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val dedupeSuccesses: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val dedupeFailures: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
+    val memoryContentionSemaphore = Semaphore(MEMORY_CONTENDING_TASKS_LIMIT)
     init {
         val builder = mutableMapOf<String, SvgImportTask>()
         svgDirectory.list()!!.forEach { svgFile ->
@@ -56,18 +60,33 @@ class ImageProcessingContext(
     suspend fun <T> retrying(name: String, task: suspend () -> T): T {
         var completed = false
         var result: T? = null
-        while (!completed) {
-            try {
-                result = task()
-                completed = true
-            } catch (t: CancellationException) {
-                throw t
-            } catch (t: Throwable) {
-                println("Yielding before retrying: caught $t in $name")
-                yield()
-                println("Retrying: $name")
+        var failedAttempts = 0
+        try {
+            result = task()
+        } catch (t: CancellationException) {
+            throw t
+        } catch (t: Throwable) {
+            failedAttempts = 1
+            println("Yielding before retrying ($failedAttempts failed attempts): caught $t in $name")
+            yield()
+            println("Retrying: $name")
+            memoryContentionSemaphore.withPermit {
+                while (!completed) {
+                    try {
+                        result = task()
+                        completed = true
+                    } catch (t: CancellationException) {
+                        throw t
+                    } catch (t: Throwable) {
+                        failedAttempts++
+                        println("Yielding before retrying ($failedAttempts failed attempts): caught $t in $name")
+                        yield()
+                        println("Retrying: $name")
+                    }
+                }
             }
         }
+
         return result!!
     }
 
