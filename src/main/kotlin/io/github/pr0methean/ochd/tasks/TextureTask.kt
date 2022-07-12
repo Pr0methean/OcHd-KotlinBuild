@@ -26,6 +26,8 @@ abstract class TextureTask(open val ctx: ImageProcessingContext) {
         runTaskAsync(ctx.scope)
     }
 
+    fun isComplete() = coroutine.isCompleted
+
     protected fun runTaskAsync(coroutineScope: CoroutineScope)
             = coroutineScope.async(start = CoroutineStart.LAZY) {
         ctx.onTaskLaunched(this@TextureTask)
