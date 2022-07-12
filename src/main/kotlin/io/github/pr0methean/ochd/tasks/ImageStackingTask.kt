@@ -14,7 +14,7 @@ import kotlinx.coroutines.runBlocking
 data class ImageStackingTask(
     val layers: LayerList,
     override val ctx: ImageProcessingContext
-): TextureTask(ctx) {
+): AbstractTextureTask(ctx) {
 
     val size = ctx.tileSize
     override suspend fun computeImage(): Image {

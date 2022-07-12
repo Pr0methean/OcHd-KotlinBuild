@@ -1,50 +1,52 @@
 package io.github.pr0methean.ochd.tasks
 
-import com.kitfox.svg.SVGUniverse
-import com.kitfox.svg.app.beans.SVGIcon
-import com.kitfox.svg.app.beans.SVGPanel.AUTOSIZE_STRETCH
 import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.packedimage.PackedImage
-import javafx.embed.swing.SwingFXUtils
-import javafx.scene.image.Image
-import kotlinx.coroutines.CoroutineScope
+import io.github.pr0methean.ochd.packedimage.PngImage
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.newSingleThreadContext
-import java.awt.Dimension
-import java.awt.image.BufferedImage
+import kotlinx.coroutines.async
+import org.apache.batik.transcoder.SVGAbstractTranscoder.KEY_HEIGHT
+import org.apache.batik.transcoder.SVGAbstractTranscoder.KEY_WIDTH
+import org.apache.batik.transcoder.TranscoderInput
+import org.apache.batik.transcoder.TranscoderOutput
+import org.apache.batik.transcoder.image.PNGTranscoder
+import java.io.ByteArrayOutputStream
+import java.io.FileInputStream
 
-/**
- * No within-process method seems to work across multiple threads, so shell out to Inkscape
- */
-/*
-inkscape -w "$SIZE" -h "$SIZE" "$SVG_DIRECTORY/$1.svg" -o "$PNG_DIRECTORY/$1.png" -y 0.0
- */
 // svgSalamander doesn't seem to be thread-safe even when loaded in a ThreadLocal<ClassLoader>
-val svgLoaderScope = CoroutineScope(newSingleThreadContext("SVG importer thread"))
+val batikTranscoder = PNGTranscoder()
+
 data class SvgImportTask(
     val shortName: String,
     private val tileSize: Int,
-    override val ctx: ImageProcessingContext
-)
-    : TextureTask(ctx) {
-    override val coroutine: Deferred<PackedImage> by lazy {
-        runTaskAsync(svgLoaderScope)
+    val ctx: ImageProcessingContext
+): TextureTask {
+    val coroutine: Deferred<PackedImage> by lazy {
+        ctx.scope.async {
+            val transcoder = PNGTranscoder()
+            transcoder.setTranscodingHints(
+                mapOf(
+                    KEY_WIDTH to ctx.tileSize.toFloat(),
+                    KEY_HEIGHT to ctx.tileSize.toFloat()
+                )
+            )
+            ByteArrayOutputStream().use { outStream ->
+                val output = TranscoderOutput(outStream)
+                FileInputStream(file).use {
+                    val input = TranscoderInput(it)
+                    batikTranscoder.transcode(input, output)
+                    return@async PngImage(outStream.toByteArray(), ctx, shortName)
+                }
+            }
+        }
     }
 
     val file = ctx.svgDirectory.resolve("$shortName.svg")
-    override fun toString(): String = "SvgImportTask for $shortName"
+    override fun isComplete(): Boolean = coroutine.isCompleted
 
-    override suspend fun computeImage(): Image {
-        val svgUniverse = SVGUniverse()
-        @Suppress("DEPRECATION") val svgUri = svgUniverse.loadSVG(file.toURL())
-        val icon = SVGIcon()
-        icon.svgURI = svgUri
-        icon.svgUniverse = svgUniverse
-        icon.preferredSize = Dimension(tileSize, tileSize)
-        icon.antiAlias = true
-        icon.autosize = AUTOSIZE_STRETCH
-        val bufferedImage = icon.image as BufferedImage
-        isAllocated = true
-        return SwingFXUtils.toFXImage(bufferedImage, null)
-    }
+    override fun willExpandHeap(): Boolean = !isComplete()
+
+    override suspend fun getImage(): PackedImage = coroutine.await()
+
+    override fun toString(): String = "SvgImportTask for $shortName"
 }

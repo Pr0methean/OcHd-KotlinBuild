@@ -13,7 +13,7 @@ import kotlinx.coroutines.runBlocking
 data class AnimationColumnTask(
     private val frames: List<TextureTask>,
     override val ctx: ImageProcessingContext
-): TextureTask(ctx) {
+): AbstractTextureTask(ctx) {
     override suspend fun computeImage(): Image {
         val size = ctx.tileSize
         val height = size * frames.size

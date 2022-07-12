@@ -14,7 +14,7 @@ import kotlinx.coroutines.runBlocking
 data class RepaintTask(
     val paint: Paint?, val base: TextureTask, private val size: Int, val alpha: Double = 1.0,
     override val ctx: ImageProcessingContext
-) : TextureTask(ctx) {
+) : AbstractTextureTask(ctx) {
     override suspend fun computeImage(): Image {
         val view = ImageView(base.getImage().unpacked())
         isAllocated = true
