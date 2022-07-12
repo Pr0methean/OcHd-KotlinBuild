@@ -33,7 +33,7 @@ data class SvgImportTask(
             ByteArrayOutputStream().use { outStream ->
                 val output = TranscoderOutput(outStream)
                 FileInputStream(file).use {
-                    val input = TranscoderInput(it)
+                    val input = TranscoderInput(file.toURI().toString())
                     batikTranscoder.transcode(input, output)
                     return@async PngImage(outStream.toByteArray(), ctx, shortName)
                 }
