@@ -10,7 +10,6 @@ import javafx.scene.image.Image
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.newSingleThreadContext
-import kotlinx.coroutines.sync.withPermit
 import java.awt.Dimension
 import java.awt.image.BufferedImage
 
@@ -31,9 +30,6 @@ data class SvgImportTask(
     override val coroutine: Deferred<PackedImage> by lazy {
         runTaskAsync(svgLoaderScope)
     }
-
-    override suspend fun runTask(): PackedImage
-            = ctx.memoryContentionSemaphore.withPermit {super.runTask()}
 
     val file = ctx.svgDirectory.resolve("$shortName.svg")
     override fun toString(): String = "SvgImportTask for $shortName"

@@ -15,7 +15,7 @@ data class AnimationColumnTask(
     override val ctx: ImageProcessingContext
 ): TextureTask(ctx) {
     override suspend fun runTask(): PackedImage =
-            ctx.memoryContentionSemaphore.withPermit { super.runTask() }
+            ctx.multipleSubtaskSemaphore.withPermit { super.runTask() }
 
     override suspend fun computeImage(): Image {
         val size = ctx.tileSize

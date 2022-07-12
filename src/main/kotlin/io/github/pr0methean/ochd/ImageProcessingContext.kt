@@ -43,7 +43,7 @@ class ImageProcessingContext(
     val taskCompletions: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val dedupeSuccesses: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val dedupeFailures: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
-    val memoryContentionSemaphore = Semaphore(MEMORY_CONTENDING_TASKS_LIMIT)
+    val multipleSubtaskSemaphore = Semaphore(MEMORY_CONTENDING_TASKS_LIMIT)
     init {
         val builder = mutableMapOf<String, SvgImportTask>()
         svgDirectory.list()!!.forEach { svgFile ->
@@ -70,7 +70,7 @@ class ImageProcessingContext(
             println("Yielding before retrying ($failedAttempts failed attempts): caught $t in $name")
             yield()
             println("Retrying: $name")
-            memoryContentionSemaphore.withPermit {
+            multipleSubtaskSemaphore.withPermit {
                 while (!completed) {
                     try {
                         result = task()
