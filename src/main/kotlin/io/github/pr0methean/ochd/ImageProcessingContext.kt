@@ -36,6 +36,7 @@ class ImageProcessingContext(
     val outTextureRoot: File
 ) {
     val tasksWithMultipleSubtasksLimit = 1.shl(24) / (tileSize * tileSize)
+    val needSemaphore = tasksWithMultipleSubtasksLimit < MIN_LIMIT_TO_SKIP_MULTI_SUBTASK_SEMAPHORE
     override fun toString(): String = name
     val svgTasks: Map<String, SvgImportTask>
     val taskDedupMap = ConcurrentHashMap<TextureTask, TextureTask>()
@@ -57,12 +58,6 @@ class ImageProcessingContext(
         svgTasks = builder.toMap()
     }
 
-    suspend fun <T> withMultipleSubtasks(block: suspend() -> T): T =
-        if (tasksWithMultipleSubtasksLimit >= MIN_LIMIT_TO_SKIP_MULTI_SUBTASK_SEMAPHORE) {
-            block()
-        } else {
-            tasksWithMultipleSubtasksSemaphore.withReentrantPermit(block)
-        }
 
     suspend fun <T> retrying(name: String, task: suspend () -> T): T {
         var completed = false

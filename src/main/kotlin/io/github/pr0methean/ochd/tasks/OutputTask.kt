@@ -2,6 +2,7 @@ package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.ImageProcessingContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import java.util.*
 
@@ -14,7 +15,12 @@ data class OutputTask(private val producer: TextureTask,
     val file by lazy {ctx.outTextureRoot.resolve(name.lowercase(Locale.ENGLISH) + ".png")}
     suspend fun invoke() {
         try {
-            producer.getImage().writePng(file)
+            val image = if (ctx.needSemaphore && (producer is ImageStackingTask || producer is AnimationColumnTask)) {
+                ctx.tasksWithMultipleSubtasksSemaphore.withPermit {producer.getImage()}
+            } else {
+                producer.getImage()
+            }
+            image.writePng(file)
         } catch (e: NotImplementedError) {
             println("Skipping $name because it's not implemented yet")
         }
