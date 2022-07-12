@@ -2,6 +2,7 @@ package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.ImageProcessingContext
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import java.util.*
@@ -15,8 +16,8 @@ data class OutputTask(private val producer: TextureTask,
     val file by lazy {ctx.outTextureRoot.resolve(name.lowercase(Locale.ENGLISH) + ".png")}
     suspend fun invoke() {
         try {
-            val image = if (ctx.needSemaphore &&
-                    (!(producer.isComplete()) || !(producer.getImage().isAlreadyPacked()))) {
+            val image = if (ctx.needSemaphore && (producer.willExpandHeap()
+                        || producer.isComplete() && !runBlocking{producer.getImage()}.isAlreadyPacked())) {
                 ctx.newTasksSemaphore.withPermit {producer.getImage()}
             } else {
                 producer.getImage()

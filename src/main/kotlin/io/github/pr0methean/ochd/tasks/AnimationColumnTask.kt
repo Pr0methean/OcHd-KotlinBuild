@@ -8,6 +8,7 @@ import javafx.scene.image.Image
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.withIndex
+import kotlinx.coroutines.runBlocking
 
 data class AnimationColumnTask(
     private val frames: List<TextureTask>,
@@ -18,6 +19,7 @@ data class AnimationColumnTask(
         val height = size * frames.size
         val canvas = Canvas(size.toDouble(), height.toDouble())
         val canvasCtx = canvas.graphicsContext2D
+        isAllocated = true
         frames.asFlow()
                 .map(TextureTask::getImage)
                 .map(PackedImage::unpacked)
@@ -27,4 +29,7 @@ data class AnimationColumnTask(
         }
         return doJfx {canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, null)}
     }
+
+    override fun willExpandHeap(): Boolean = super.willExpandHeap() || frames.any {
+            it.willExpandHeap() || it.isComplete() && !runBlocking {it.getImage()}.isAlreadyUnpacked() }
 }

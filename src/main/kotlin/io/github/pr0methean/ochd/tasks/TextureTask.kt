@@ -25,8 +25,12 @@ abstract class TextureTask(open val ctx: ImageProcessingContext) {
     open val coroutine by lazy {
         runTaskAsync(ctx.scope)
     }
+    @Volatile
+    var isAllocated: Boolean = false
 
     fun isComplete() = coroutine.isCompleted
+
+    open fun willExpandHeap() = !isComplete() && !isAllocated
 
     protected fun runTaskAsync(coroutineScope: CoroutineScope)
             = coroutineScope.async(start = CoroutineStart.LAZY) {

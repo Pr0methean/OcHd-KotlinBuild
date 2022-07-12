@@ -43,6 +43,8 @@ data class SvgImportTask(
         icon.preferredSize = Dimension(tileSize, tileSize)
         icon.antiAlias = true
         icon.autosize = AUTOSIZE_STRETCH
-        return SwingFXUtils.toFXImage(icon.image as BufferedImage, null)
+        val bufferedImage = icon.image as BufferedImage
+        isAllocated = true
+        return SwingFXUtils.toFXImage(bufferedImage, null)
     }
 }

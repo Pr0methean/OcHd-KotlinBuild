@@ -9,6 +9,7 @@ import javafx.scene.paint.Color
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.runBlocking
 
 data class ImageStackingTask(
     val layers: LayerList,
@@ -20,6 +21,7 @@ data class ImageStackingTask(
         val canvas = Canvas(size.toDouble(), size.toDouble())
         val canvasCtx = canvas.graphicsContext2D
         val layerImages = layers.layers.asFlow().map(TextureTask::getImage).toList()
+        isAllocated = true
         return doJfx {
             if (layers.background != Color.TRANSPARENT) {
                 canvasCtx.fill = layers.background
@@ -29,4 +31,7 @@ data class ImageStackingTask(
             return@doJfx canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, null)
         }
     }
+
+    override fun willExpandHeap(): Boolean = super.willExpandHeap() || layers.layers.any {
+        it.willExpandHeap() || it.isComplete() && !runBlocking {it.getImage()}.isAlreadyUnpacked() }
 }
