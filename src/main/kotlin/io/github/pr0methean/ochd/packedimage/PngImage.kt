@@ -16,12 +16,12 @@ class PngImage(input: Image, val ctx: ImageProcessingContext, val name: String):
     }
     override suspend fun unpacked() = unpacked.get()
     private val packingTask = ctx.scope.async {
-        ByteArrayOutputStream().use {
+        ByteArrayOutputStream().use { ctx.retrying("Compression of $name") {
             println("Compressing to PNG: $name")
             ImageIO.write(SwingFXUtils.fromFXImage(input, null), "PNG", it)
             println("Done compressing to PNG: $name")
-            return@async it.toByteArray()
-        }
+            return@retrying it.toByteArray()
+        }}
     }
 
     override suspend fun packed(): ByteArray = packingTask.await()
