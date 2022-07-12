@@ -18,4 +18,5 @@ class UncompressedImage(private val unpacked: Image, val name: String): PackedIm
     override suspend fun unpacked(): Image = unpacked
 
     override suspend fun packed(): ByteArray = packed.get()
+    override fun isAlreadyUnpacked(): Boolean = true
 }

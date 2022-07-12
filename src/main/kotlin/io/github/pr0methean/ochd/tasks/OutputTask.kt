@@ -15,9 +15,9 @@ data class OutputTask(private val producer: TextureTask,
     val file by lazy {ctx.outTextureRoot.resolve(name.lowercase(Locale.ENGLISH) + ".png")}
     suspend fun invoke() {
         try {
-            val image = if (ctx.needSemaphore && !producer.isComplete()
-                    && (producer is ImageStackingTask || producer is AnimationColumnTask)) {
-                ctx.tasksWithMultipleSubtasksSemaphore.withPermit {producer.getImage()}
+            val image = if (ctx.needSemaphore &&
+                    (!(producer.isComplete()) || !(producer.getImage().isAlreadyUnpacked()))) {
+                ctx.newTasksSemaphore.withPermit {producer.getImage()}
             } else {
                 producer.getImage()
             }

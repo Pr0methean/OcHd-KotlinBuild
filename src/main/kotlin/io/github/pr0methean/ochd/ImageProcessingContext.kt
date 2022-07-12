@@ -35,7 +35,7 @@ class ImageProcessingContext(
     val svgDirectory: File,
     val outTextureRoot: File
 ) {
-    val tasksWithMultipleSubtasksLimit = 1.shl(24) / (tileSize * tileSize)
+    val tasksWithMultipleSubtasksLimit = 1.shl(25) / (tileSize * tileSize)
     val needSemaphore = tasksWithMultipleSubtasksLimit < MIN_LIMIT_TO_SKIP_MULTI_SUBTASK_SEMAPHORE
     override fun toString(): String = name
     val svgTasks: Map<String, SvgImportTask>
@@ -44,7 +44,7 @@ class ImageProcessingContext(
     val taskCompletions: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val dedupeSuccesses: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val dedupeFailures: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
-    val tasksWithMultipleSubtasksSemaphore = Semaphore(tasksWithMultipleSubtasksLimit)
+    val newTasksSemaphore = Semaphore(tasksWithMultipleSubtasksLimit)
     init {
         val builder = mutableMapOf<String, SvgImportTask>()
         svgDirectory.list()!!.forEach { svgFile ->

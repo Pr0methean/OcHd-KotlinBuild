@@ -25,4 +25,7 @@ class PngImage(input: Image, val ctx: ImageProcessingContext, val name: String):
     }
 
     override suspend fun packed(): ByteArray = packingTask.await()
+    override fun isAlreadyUnpacked(): Boolean {
+        return unpacked.isCompleted()
+    }
 }
