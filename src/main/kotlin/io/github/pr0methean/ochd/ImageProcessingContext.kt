@@ -10,7 +10,6 @@ import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
 import java.io.File
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
@@ -61,29 +60,17 @@ class ImageProcessingContext(
         var completed = false
         var result: T? = null
         var failedAttempts = 0
-        try {
-            result = task()
-        } catch (t: CancellationException) {
-            throw t
-        } catch (t: Throwable) {
-            failedAttempts = 1
-            println("Yielding before retrying ($failedAttempts failed attempts): caught $t in $name")
-            yield()
-            println("Retrying: $name")
-            multipleSubtaskSemaphore.withPermit {
-                while (!completed) {
-                    try {
-                        result = task()
-                        completed = true
-                    } catch (t: CancellationException) {
-                        throw t
-                    } catch (t: Throwable) {
-                        failedAttempts++
-                        println("Yielding before retrying ($failedAttempts failed attempts): caught $t in $name")
-                        yield()
-                        println("Retrying: $name")
-                    }
-                }
+        while (!completed) {
+            try {
+                result = task()
+                completed = true
+            } catch (t: CancellationException) {
+                throw t
+            } catch (t: Throwable) {
+                failedAttempts++
+                println("Yielding before retrying ($failedAttempts failed attempts): caught $t in $name")
+                yield()
+                println("Retrying: $name")
             }
         }
 
