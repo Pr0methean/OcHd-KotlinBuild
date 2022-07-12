@@ -14,8 +14,6 @@ data class RepaintTask(
     val paint: Paint?, val base: TextureTask, private val size: Int, val alpha: Double = 1.0,
     override val ctx: ImageProcessingContext
 ) : TextureTask(ctx) {
-    override fun isComposite(): Boolean = base.isComposite()
-
     override suspend fun computeImage(): Image {
         val view = ImageView(base.getImage().unpacked())
         if (paint != null) {

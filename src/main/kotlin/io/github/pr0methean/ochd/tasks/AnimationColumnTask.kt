@@ -13,8 +13,6 @@ data class AnimationColumnTask(
     private val frames: List<TextureTask>,
     override val ctx: ImageProcessingContext
 ): TextureTask(ctx) {
-    override fun isComposite(): Boolean = true
-
     override suspend fun computeImage(): Image {
         val size = ctx.tileSize
         val height = size * frames.size

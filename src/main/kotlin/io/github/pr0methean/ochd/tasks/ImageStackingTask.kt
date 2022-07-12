@@ -16,8 +16,6 @@ data class ImageStackingTask(
 ): TextureTask(ctx) {
 
     val size = ctx.tileSize
-    override fun isComposite(): Boolean = true
-
     override suspend fun computeImage(): Image {
         val canvas = Canvas(size.toDouble(), size.toDouble())
         val canvasCtx = canvas.graphicsContext2D

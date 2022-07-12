@@ -53,8 +53,6 @@ abstract class TextureTask(open val ctx: ImageProcessingContext) {
         }
     }
 
-    abstract fun isComposite(): Boolean
-
     abstract suspend fun computeImage(): Image
     suspend fun getImage(): PackedImage = coroutine.await()
 }
