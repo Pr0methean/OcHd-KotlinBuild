@@ -13,6 +13,7 @@ interface PackedImage {
     suspend fun writePng(destination: File) = withContext(Dispatchers.IO) {
         FileOutputStream(destination).use { it.write(packed()) }
     }
-    
+
     fun isAlreadyUnpacked(): Boolean
+    fun isAlreadyPacked(): Boolean
 }

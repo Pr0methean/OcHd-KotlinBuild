@@ -16,7 +16,7 @@ data class OutputTask(private val producer: TextureTask,
     suspend fun invoke() {
         try {
             val image = if (ctx.needSemaphore &&
-                    (!(producer.isComplete()) || !(producer.getImage().isAlreadyUnpacked()))) {
+                    (!(producer.isComplete()) || !(producer.getImage().isAlreadyPacked()))) {
                 ctx.newTasksSemaphore.withPermit {producer.getImage()}
             } else {
                 producer.getImage()
