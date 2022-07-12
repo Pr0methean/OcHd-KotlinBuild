@@ -27,16 +27,13 @@ abstract class TextureTask(open val ctx: ImageProcessingContext) {
     }
 
     protected fun runTaskAsync(coroutineScope: CoroutineScope)
-            = coroutineScope.async(start = CoroutineStart.LAZY) { runTask() }
-
-    protected open suspend fun runTask(): PackedImage
-    {
+            = coroutineScope.async(start = CoroutineStart.LAZY) {
         ctx.onTaskLaunched(this@TextureTask)
         val result = ctx.retrying(this@TextureTask.toString()) {
             ctx.packImage(computeImage(), this@TextureTask, this@TextureTask.toString())
         }
         ctx.onTaskCompleted(this@TextureTask)
-        return result
+        result
     }
 
     protected suspend fun <T> doJfx(jfxCode: suspend CoroutineScope.() -> T): T
