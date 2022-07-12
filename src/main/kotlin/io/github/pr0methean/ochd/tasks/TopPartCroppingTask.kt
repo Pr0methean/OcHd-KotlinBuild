@@ -11,6 +11,8 @@ data class TopPartCroppingTask(
     override val ctx: ImageProcessingContext
 ): TextureTask(ctx) {
     private val height = (width * TOP_PORTION).toInt()
+    override fun isComposite(): Boolean = base.isComposite()
+
     override suspend fun computeImage(): Image {
         val pixelReader = base.getImage().unpacked().pixelReader
         return WritableImage(pixelReader, width, height)

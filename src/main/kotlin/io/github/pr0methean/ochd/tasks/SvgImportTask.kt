@@ -31,6 +31,8 @@ data class SvgImportTask(
         runTaskAsync(svgLoaderScope)
     }
 
+    override fun isComposite(): Boolean = false
+
     val file = ctx.svgDirectory.resolve("$shortName.svg")
     override fun toString(): String = "SvgImportTask for $shortName"
 
