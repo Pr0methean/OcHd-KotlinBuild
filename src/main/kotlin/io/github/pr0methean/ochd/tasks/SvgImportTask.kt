@@ -25,6 +25,7 @@ data class SvgImportTask(
 ): TextureTask {
     val coroutine: Deferred<PackedImage> by lazy {
         ctx.scope.plus(batikTranscoder.asContextElement()).async { ctx.retrying(shortName) {
+            ctx.onTaskLaunched(this@SvgImportTask)
             val transcoder = batikTranscoder.get()
             transcoder.setTranscodingHints(
                 mapOf(
@@ -40,7 +41,7 @@ data class SvgImportTask(
                     return@retrying PngImage(outStream.toByteArray(), ctx, shortName)
                 }
             }
-        }}
+        }}.also { ctx.onTaskCompleted(this@SvgImportTask) }
     }
 
     val file = ctx.svgDirectory.resolve("$shortName.svg")
