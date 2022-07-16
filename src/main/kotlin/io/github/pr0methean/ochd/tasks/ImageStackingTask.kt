@@ -9,7 +9,6 @@ import javafx.scene.paint.Color
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.runBlocking
 
 data class ImageStackingTask(
     val layers: LayerList,
@@ -35,5 +34,5 @@ data class ImageStackingTask(
     override fun toString(): String = layers.toString()
 
     override fun willExpandHeap(): Boolean = super.willExpandHeap() || layers.layers.any {
-        it.willExpandHeap() || it.isComplete() && !runBlocking {it.getImage()}.isAlreadyUnpacked() }
+        it.willExpandHeap() || it.getImageNow()?.isAlreadyUnpacked() != true }
 }

@@ -9,7 +9,6 @@ import javafx.scene.effect.ColorInput
 import javafx.scene.image.Image
 import javafx.scene.image.ImageView
 import javafx.scene.paint.Paint
-import kotlinx.coroutines.runBlocking
 
 data class RepaintTask(
     val paint: Paint?, val base: TextureTask, private val size: Int, val alpha: Double = 1.0,
@@ -35,7 +34,6 @@ data class RepaintTask(
     override fun toString(): String = "RepaintTask($base,$paint,$alpha)"
 
     override fun willExpandHeap(): Boolean {
-        return super.willExpandHeap() || base.willExpandHeap() ||
-                (base.isComplete() && !runBlocking {base.getImage()}.isAlreadyUnpacked())
+        return super.willExpandHeap() || base.willExpandHeap() || base.getImageNow()?.isAlreadyUnpacked() != true
     }
 }
