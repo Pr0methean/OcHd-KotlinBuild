@@ -4,7 +4,9 @@ import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.packedimage.PackedImage
 import io.github.pr0methean.ochd.packedimage.PngImage
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.asContextElement
 import kotlinx.coroutines.async
+import kotlinx.coroutines.plus
 import org.apache.batik.transcoder.SVGAbstractTranscoder.KEY_HEIGHT
 import org.apache.batik.transcoder.SVGAbstractTranscoder.KEY_WIDTH
 import org.apache.batik.transcoder.TranscoderInput
@@ -14,7 +16,7 @@ import java.io.ByteArrayOutputStream
 import java.io.FileInputStream
 
 // svgSalamander doesn't seem to be thread-safe even when loaded in a ThreadLocal<ClassLoader>
-val batikTranscoder = PNGTranscoder()
+val batikTranscoder = ThreadLocal.withInitial {PNGTranscoder()}
 
 data class SvgImportTask(
     val shortName: String,
@@ -22,8 +24,8 @@ data class SvgImportTask(
     val ctx: ImageProcessingContext
 ): TextureTask {
     val coroutine: Deferred<PackedImage> by lazy {
-        ctx.scope.async {
-            val transcoder = PNGTranscoder()
+        ctx.scope.plus(batikTranscoder.asContextElement()).async {
+            val transcoder = batikTranscoder.get()
             transcoder.setTranscodingHints(
                 mapOf(
                     KEY_WIDTH to ctx.tileSize.toFloat(),
@@ -34,7 +36,7 @@ data class SvgImportTask(
                 val output = TranscoderOutput(outStream)
                 FileInputStream(file).use {
                     val input = TranscoderInput(file.toURI().toString())
-                    batikTranscoder.transcode(input, output)
+                    transcoder.transcode(input, output)
                     return@async PngImage(outStream.toByteArray(), ctx, shortName)
                 }
             }
