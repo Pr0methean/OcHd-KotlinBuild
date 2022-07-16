@@ -11,7 +11,7 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
 
-class PngImage(initialUnpacked: Image?, private val packingTask: Deferred<ByteArray>,
+class PngImage(initialUnpacked: Image?, val packed: Deferred<ByteArray>, private val packingTask: Deferred<ByteArray>,
                val ctx: ImageProcessingContext, val name: String) : PackedImage {
     val unpacked = SoftAsyncLazy(initialUnpacked) {
         ctx.onDecompressPngImage(name)
@@ -21,7 +21,7 @@ class PngImage(initialUnpacked: Image?, private val packingTask: Deferred<ByteAr
 
     constructor(input: Image, name: String, ctx: ImageProcessingContext):
         this(initialUnpacked = input,
-            packingTask = ctx.scope.async {
+            packed = ctx.scope.async {
             ByteArrayOutputStream().use {
                 ctx.retrying("Compression of $name") {
                     ctx.onCompressPngImage(name)
@@ -36,7 +36,7 @@ class PngImage(initialUnpacked: Image?, private val packingTask: Deferred<ByteAr
 
     constructor(pngInput: ByteArray, ctx: ImageProcessingContext, name: String):
         this(initialUnpacked = null,
-            packingTask = CompletableDeferred(pngInput),
+            packed = CompletableDeferred(pngInput),
             ctx = ctx, name = name)
 
     override suspend fun unpacked() = unpacked.get()

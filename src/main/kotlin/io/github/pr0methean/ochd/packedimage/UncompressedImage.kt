@@ -8,7 +8,7 @@ import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
 
 class UncompressedImage(private val unpacked: Image, val name: String, val ctx: ImageProcessingContext): PackedImage {
-    private val packed = SoftAsyncLazy {
+    override val packed = SoftAsyncLazy {
         ctx.onCompressPngImage(name)
         ByteArrayOutputStream().use {
             ImageIO.write(SwingFXUtils.fromFXImage(unpacked, null), "png", it)
@@ -19,7 +19,6 @@ class UncompressedImage(private val unpacked: Image, val name: String, val ctx: 
 
     override suspend fun unpacked(): Image = unpacked
 
-    override suspend fun packed(): ByteArray = packed.get()
     override fun isAlreadyUnpacked(): Boolean = true
     override fun isAlreadyPacked(): Boolean = packed.isCompleted()
 }
