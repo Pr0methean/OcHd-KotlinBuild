@@ -32,6 +32,8 @@ data class ImageStackingTask(
         }
     }
 
+    override fun toString(): String = layers.toString()
+
     override fun willExpandHeap(): Boolean = super.willExpandHeap() || layers.layers.any {
         it.willExpandHeap() || it.isComplete() && !runBlocking {it.getImage()}.isAlreadyUnpacked() }
 }

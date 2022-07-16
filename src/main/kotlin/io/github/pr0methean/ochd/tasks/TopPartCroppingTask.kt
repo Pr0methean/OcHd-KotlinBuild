@@ -15,4 +15,6 @@ data class TopPartCroppingTask(
         val pixelReader = base.getImage().unpacked().pixelReader
         return WritableImage(pixelReader, width, height)
     }
+
+    override fun toString(): String = "Top part of $base"
 }

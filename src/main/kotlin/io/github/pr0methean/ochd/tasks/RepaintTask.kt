@@ -32,6 +32,8 @@ data class RepaintTask(
         return doJfx {view.snapshot(DEFAULT_SNAPSHOT_PARAMS, null)}
     }
 
+    override fun toString(): String = "RepaintTask($base,$paint,$alpha)"
+
     override fun willExpandHeap(): Boolean {
         return super.willExpandHeap() || base.willExpandHeap() ||
                 (base.isComplete() && !runBlocking {base.getImage()}.isAlreadyUnpacked())
