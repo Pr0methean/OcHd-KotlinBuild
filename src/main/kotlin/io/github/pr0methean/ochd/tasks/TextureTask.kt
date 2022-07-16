@@ -8,4 +8,6 @@ interface TextureTask {
     fun willExpandHeap(): Boolean
 
     suspend fun getImage(): PackedImage
+
+    fun getImageNow(): PackedImage?
 }

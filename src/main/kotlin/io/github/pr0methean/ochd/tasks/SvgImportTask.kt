@@ -3,10 +3,7 @@ package io.github.pr0methean.ochd.tasks
 import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.packedimage.PackedImage
 import io.github.pr0methean.ochd.packedimage.PngImage
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.asContextElement
-import kotlinx.coroutines.async
-import kotlinx.coroutines.plus
+import kotlinx.coroutines.*
 import org.apache.batik.transcoder.SVGAbstractTranscoder.KEY_HEIGHT
 import org.apache.batik.transcoder.SVGAbstractTranscoder.KEY_WIDTH
 import org.apache.batik.transcoder.TranscoderInput
@@ -50,6 +47,8 @@ data class SvgImportTask(
     override fun willExpandHeap(): Boolean = !isComplete()
 
     override suspend fun getImage(): PackedImage = coroutine.await()
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override fun getImageNow(): PackedImage? = if (coroutine.isCompleted) coroutine.getCompleted() else null
 
     override fun toString(): String = shortName
 }

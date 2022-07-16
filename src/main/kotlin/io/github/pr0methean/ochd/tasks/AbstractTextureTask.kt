@@ -65,4 +65,6 @@ abstract class AbstractTextureTask(open val ctx: ImageProcessingContext) : Textu
 
     abstract suspend fun computeImage(): Image
     override suspend fun getImage(): PackedImage = coroutine.await()
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override fun getImageNow(): PackedImage? = if (coroutine.isCompleted) coroutine.getCompleted() else null
 }
