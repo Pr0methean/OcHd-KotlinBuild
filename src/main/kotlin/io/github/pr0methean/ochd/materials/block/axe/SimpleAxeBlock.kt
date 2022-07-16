@@ -9,6 +9,7 @@ import io.github.pr0methean.ochd.texturebase.group
 import javafx.scene.paint.Color
 
 val SIMPLE_AXE_BLOCKS = group<SimpleAxeBlock>()
+@Suppress("unused")
 enum class SimpleAxeBlock: SingleTextureMaterial, ShadowHighlightMaterial, Block {
     /*
 out_layer borderSolidThick ${wood_oak} "block/composter_top"
@@ -55,13 +56,27 @@ out_stack "block/composter_bottom"
             layer("bookShelves")
         }
     },
-    COMPOSTER_COMPOST {
-        override fun LayerListBuilder.createTextureLayers() = DirtGroundCover.PODZOL.run {createTopLayers()}
-    },
-    COMPOSTER_READY {
+    JUKEBOX_SIDE {
         override fun LayerListBuilder.createTextureLayers() {
-            copy(COMPOSTER_COMPOST)
-            layer("bonemealSmallNoBorder")
+            background(OverworldWood.DARK_OAK.color)
+            layer("strokeTopLeftBottomRight4", color)
+            layer("strokeBottomLeftTopRight4", shadow)
+            layer("borderSolidThick", highlight)
+            layer("borderDotted", shadow)
+        }
+    },
+    JUKEBOX_TOP {
+        override fun LayerListBuilder.createTextureLayers() {
+            background(color)
+            layer("borderSolidThick", highlight)
+            layer("borderDotted", shadow)
+            layer("thirdRail", Color.BLACK)
+        }
+    },
+    NOTE_BLOCK {
+        override fun LayerListBuilder.createTextureLayers() {
+            copy(JUKEBOX_SIDE)
+            layer("note", shadow)
         }
     },
     COMPOSTER_TOP {
@@ -84,27 +99,13 @@ out_stack "block/composter_bottom"
             layer("borderSolid", color)
         }
     },
-    JUKEBOX_SIDE {
-        override fun LayerListBuilder.createTextureLayers() {
-            background(OverworldWood.DARK_OAK.color)
-            layer("strokeTopLeftBottomRight4", color)
-            layer("strokeBottomLeftTopRight4", shadow)
-            layer("borderSolidThick", highlight)
-            layer("borderDotted", shadow)
-        }
+    COMPOSTER_COMPOST {
+        override fun LayerListBuilder.createTextureLayers() = DirtGroundCover.PODZOL.run {createTopLayers()}
     },
-    JUKEBOX_TOP {
+    COMPOSTER_READY {
         override fun LayerListBuilder.createTextureLayers() {
-            background(color)
-            layer("borderSolidThick", highlight)
-            layer("borderDotted", shadow)
-            layer("thirdRail", Color.BLACK)
-        }
-    },
-    NOTE_BLOCK {
-        override fun LayerListBuilder.createTextureLayers() {
-            copy(JUKEBOX_SIDE)
-            layer("note", shadow)
+            copy(COMPOSTER_COMPOST)
+            layer("bonemealSmallNoBorder")
         }
     }
     /*
