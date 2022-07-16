@@ -14,16 +14,17 @@ import javax.imageio.ImageIO
 class PngImage(initialUnpacked: Image?, private val packingTask: Deferred<ByteArray>,
                val ctx: ImageProcessingContext, val name: String) : PackedImage {
     val unpacked = SoftAsyncLazy(initialUnpacked) {
-        println("Decompressing from PNG: $name")
+        ctx.onDecompressPngImage(name)
         return@SoftAsyncLazy ctx.retrying("Decompression of $name") { ByteArrayInputStream(packed()).use { Image(it) } }
+            .also { println("Done decompressing $name") }
     }
 
-    constructor(input: Image, ctx: ImageProcessingContext, name: String):
+    constructor(input: Image, name: String, ctx: ImageProcessingContext):
         this(initialUnpacked = input,
             packingTask = ctx.scope.async {
             ByteArrayOutputStream().use {
                 ctx.retrying("Compression of $name") {
-                    println("Compressing to PNG: $name")
+                    ctx.onCompressPngImage(name)
                     @Suppress("BlockingMethodInNonBlockingContext")
                     ImageIO.write(SwingFXUtils.fromFXImage(input, null), "PNG", it)
                     println("Done compressing to PNG: $name")

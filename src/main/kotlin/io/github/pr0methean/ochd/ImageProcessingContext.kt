@@ -13,11 +13,9 @@ import kotlinx.coroutines.sync.Semaphore
 import java.io.File
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ThreadLocalRandom
+import java.util.concurrent.atomic.LongAdder
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.minutes
-import kotlin.time.Duration.Companion.seconds
 
 fun color(web: String) = Color.web(web)
 
@@ -26,7 +24,6 @@ fun color(web: String, alpha: Double) = Color.web(web, alpha)
 private const val MAX_UNCOMPRESSED_TILESIZE = 512
 private const val MAX_UNCOMPRESSED_TILESIZE_COMBINING_TASK = 512
 private val REPORTING_INTERVAL: Duration = 1.minutes
-private fun getRetryDelay() = 10.seconds.plus(ThreadLocalRandom.current().nextInt(10_000).milliseconds)
 private val MIN_LIMIT_TO_SKIP_MULTI_SUBTASK_SEMAPHORE = 64
 class ImageProcessingContext(
     val name: String,
@@ -103,6 +100,9 @@ class ImageProcessingContext(
         println()
         println("Deduplication failures:")
         dedupeFailures.toSet().forEach {println("$it: ${dedupeFailures.count(it)}")}
+        println()
+        println("PNG compressions: ${compressions.sum()}")
+        println("PNG decompressions: ${decompressions.sum()}")
     }
 
     /**
@@ -117,9 +117,9 @@ class ImageProcessingContext(
             MAX_UNCOMPRESSED_TILESIZE
         }
         return if (tileSize <= maxUncompressedSize) {
-            UncompressedImage(input, name)
+            UncompressedImage(input, name, this)
         } else {
-            PngImage(input, this, name)
+            PngImage(input, name, this)
         }
     }
 
@@ -143,8 +143,7 @@ class ImageProcessingContext(
     }
 
     fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): TextureTask {
-        val importTask = (svgTasks ?: throw IllegalStateException("SVG tasks are already cleared"))[name]
-                ?: throw IllegalArgumentException("No SVG task called $name")
+        val importTask = svgTasks[name] ?: throw IllegalArgumentException("No SVG task called $name")
         // NB: This means we can't create a black version of a precolored layer except by making it a separate SVG!
         if ((paint == Color.BLACK || paint == null) && alpha == 1.0) {
             return importTask
@@ -176,4 +175,17 @@ class ImageProcessingContext(
         taskCompletions.add(task::class.simpleName ?: "[unnamed class]")
     }
 
+    val compressions = LongAdder()
+    val decompressions = LongAdder()
+
+    fun onDecompressPngImage(name: String) {
+        println("Decompressing $name from PNG")
+        decompressions.increment()
+
+    }
+
+    fun onCompressPngImage(name: String) {
+        println("Compressing $name to PNG on demand")
+        compressions.increment()
+    }
 }
