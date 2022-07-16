@@ -37,11 +37,18 @@ class ImageProcessingContext(
     override fun toString(): String = name
     val svgTasks: Map<String, SvgImportTask>
     val taskDedupMap = ConcurrentHashMap<TextureTask, TextureTask>()
+    val newTasksSemaphore = Semaphore(tasksWithMultipleSubtasksLimit)
+
+    // Statistics
     val taskLaunches: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val taskCompletions: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val dedupeSuccesses: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val dedupeFailures: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
-    val newTasksSemaphore = Semaphore(tasksWithMultipleSubtasksLimit)
+    val compressions = LongAdder()
+    val decompressions = LongAdder()
+    val retries = LongAdder()
+
+
     init {
         val builder = mutableMapOf<String, SvgImportTask>()
         svgDirectory.list()!!.forEach { svgFile ->
@@ -68,6 +75,7 @@ class ImageProcessingContext(
                 throw t
             } catch (t: Throwable) {
                 failedAttempts++
+                retries.increment()
                 println("Yielding before retrying ($failedAttempts failed attempts): caught $t in $name")
                 yield()
                 println("Retrying: $name")
@@ -103,6 +111,7 @@ class ImageProcessingContext(
         println()
         println("PNG compressions: ${compressions.sum()}")
         println("PNG decompressions: ${decompressions.sum()}")
+        println("Failed tasks retried: ${retries.sum()}")
     }
 
     /**
@@ -174,9 +183,6 @@ class ImageProcessingContext(
         println("Completed: $task")
         taskCompletions.add(task::class.simpleName ?: "[unnamed class]")
     }
-
-    val compressions = LongAdder()
-    val decompressions = LongAdder()
 
     fun onDecompressPngImage(name: String) {
         println("Decompressing $name from PNG")
