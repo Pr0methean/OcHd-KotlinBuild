@@ -40,7 +40,10 @@ abstract class AbstractTextureTask(open val ctx: ImageProcessingContext) : Textu
     override fun willExpandHeap() = !isComplete() && !isAllocated
 
     protected fun runTaskAsync(coroutineScope: CoroutineScope)
-            = coroutineScope.async(start = CoroutineStart.LAZY) {
+            = coroutineScope
+                .plus(threadLocalClassLoader.asContextElement())
+                .plus(threadLocalRunLater.asContextElement())
+                .async(start = CoroutineStart.LAZY) {
         ctx.onTaskLaunched(this@AbstractTextureTask)
         val result = ctx.retrying(this@AbstractTextureTask.toString()) {
             ctx.packImage(computeImage(), this@AbstractTextureTask, this@AbstractTextureTask.toString())
