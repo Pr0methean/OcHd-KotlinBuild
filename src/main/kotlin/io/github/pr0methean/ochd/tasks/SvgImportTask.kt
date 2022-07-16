@@ -50,5 +50,5 @@ data class SvgImportTask(
 
     override suspend fun getImage(): PackedImage = coroutine.await()
 
-    override fun toString(): String = "SvgImportTask for $shortName"
+    override fun toString(): String = shortName
 }
