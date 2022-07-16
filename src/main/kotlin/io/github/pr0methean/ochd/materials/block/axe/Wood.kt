@@ -11,20 +11,12 @@ import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import io.github.pr0methean.ochd.texturebase.group
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 
 val OVERWORLD_WOODS = group<OverworldWood>()
 val FUNGUS_WOODS = group<Fungus>()
-val WOODS = MaterialGroup(OVERWORLD_WOODS, FUNGUS_WOODS)
+val WOODS = MaterialGroup(1, OVERWORLD_WOODS, FUNGUS_WOODS)
 sealed interface Wood: ShadowHighlightMaterial {
-    companion object {
-        @OptIn(FlowPreview::class)
-        fun allOutputTasks(ctx: ImageProcessingContext) = flowOf(
-            OverworldWood.values().asFlow().map {it.outputTasks(ctx)},
-            Fungus.values().asFlow().map {it.outputTasks(ctx)}
-        ).flattenMerge()
-    }
     val barkColor: Paint
     val barkHighlight: Paint
     val barkShadow: Paint
@@ -63,6 +55,7 @@ sealed interface Wood: ShadowHighlightMaterial {
     }
 }
 
+@Suppress("unused")
 enum class OverworldWood(
     override val color: Paint,
     override val highlight: Paint,
@@ -287,6 +280,7 @@ enum class OverworldWood(
 }
 
 private val fungusSpotColor = c(0xff6500)
+@Suppress("unused")
 enum class Fungus(
         override val color: Paint,
         override val highlight: Paint,
