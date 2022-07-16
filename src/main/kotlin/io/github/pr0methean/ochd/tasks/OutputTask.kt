@@ -4,7 +4,6 @@ import io.github.pr0methean.ochd.ImageProcessingContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
-import java.util.*
 
 data class OutputTask(private val producer: TextureTask,
                       val name: String,
@@ -12,7 +11,7 @@ data class OutputTask(private val producer: TextureTask,
 ) {
 
     // Lazy init is needed to work around an NPE bug
-    val file by lazy {ctx.outTextureRoot.resolve(name.lowercase(Locale.ENGLISH) + ".png")}
+    val file by lazy {ctx.outTextureRoot.resolve(name + ".png")}
     suspend fun invoke() {
         try {
             val image = producer.getImage()

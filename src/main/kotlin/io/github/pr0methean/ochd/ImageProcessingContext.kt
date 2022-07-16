@@ -12,6 +12,7 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
 import java.io.File
 import java.time.Instant
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.LongAdder
 import kotlin.time.Duration
@@ -170,9 +171,9 @@ class ImageProcessingContext(
         return deduplicate(AnimationColumnTask(frames, this))
     }
 
-    fun out(name: String, source: TextureTask) = OutputTask(source, name, this)
+    fun out(name: String, source: TextureTask) = OutputTask(source, name.lowercase(Locale.ENGLISH), this)
 
-    fun out(name: String, source: LayerListBuilder.() -> Unit) = OutputTask(stack {source()}, name, this)
+    fun out(name: String, source: LayerListBuilder.() -> Unit) = OutputTask(stack {source()}, name.lowercase(Locale.ENGLISH), this)
 
     fun onTaskLaunched(task: Any) {
         println("Launched: $task")
