@@ -6,4 +6,4 @@ val PICKAXE_BLOCKS = MaterialGroup(1,
                 MaterialGroup(ORE_BASES, ORES, NYLIUMS),
                 MaterialGroup(COPPER_OXIDES, CutCopper),
                 MaterialGroup(StainedGlassFront, StainedGlassTop, Glass),
-                SIMPLE_PICKAXE_BLOCKS, POLISHABLES, Concrete, BoneBlock, Furnace, Rails, MiscRedstone)
+                SIMPLE_PICKAXE_BLOCKS, MiscRedstone, POLISHABLES, DyedTerracotta, Concrete, BoneBlock, Furnace, Rails)
