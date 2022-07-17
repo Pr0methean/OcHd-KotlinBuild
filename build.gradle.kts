@@ -33,6 +33,7 @@ dependencies {
     implementation("com.google.guava:guava:31.1-jre")
     implementation("org.testfx:openjfx-monocle:jdk-11+26")
     implementation("org.apache.xmlgraphics:batik-transcoder:1.14")
+    implementation("org.apache.xmlgraphics:batik-codec:1.14")
     runtimeOnly(kotlin("reflect"))
 }
 
