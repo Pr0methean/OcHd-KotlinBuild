@@ -18,7 +18,7 @@ object Glass: Material {
             layer("streaks", Color.WHITE)
         }))
         emit(ctx.out("block/tinted_glass", ctx.stack {
-            background(Color(0.0,0.0,0.0,0.25))
+            background(Color.BLACK,0.25)
             layer("borderSolid", Color.WHITE, 0.25)
             layer("streaks", Color.WHITE, 0.25)
         }))

@@ -17,7 +17,7 @@ object StainedGlassFront: DyedBlock("stained_glass") {
 
     override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> {
         masterTask = ctx.stack {
-            background(Color(0.0, 0.0, 0.0, 0.25))
+            background(Color.BLACK, 0.25)
             layer("borderSolid", Color.BLACK)
             layer("streaks", Color.BLACK)
         }

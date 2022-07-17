@@ -10,8 +10,8 @@ import javafx.scene.paint.Paint
 class LayerListBuilder(val ctx: ImageProcessingContext) {
     internal val layers = mutableListOf<TextureTask>()
     var background: Paint = Color.TRANSPARENT
-    fun background(color: Paint) {
-        background = color
+    fun background(color: Color, opacity: Double = 1.0) {
+        background = if (opacity == 1.0) color else Color(color.red, color.green, color.blue, opacity * color.opacity)
     }
     fun background(red: Int, green: Int, blue: Int) {
         background = Color.rgb(red, green, blue)
@@ -19,6 +19,10 @@ class LayerListBuilder(val ctx: ImageProcessingContext) {
     fun background(color: Int) {
         background = c(color)
     }
+    fun background(paint: Paint) {
+        background = paint
+    }
+
     fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): TextureTask {
         val layer = ctx.layer(name, paint, alpha)
         copy(layer)
