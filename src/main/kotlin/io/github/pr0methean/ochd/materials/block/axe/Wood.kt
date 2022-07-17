@@ -61,15 +61,15 @@ sealed interface Wood: ShadowHighlightMaterial {
 
 private fun LayerListBuilder.doorknobDark() {
     copy {
-        layer("doorknob", STONE.color)
-        layer("doorknobShadow", STONE.shadow)
+        layer("doorKnob", STONE.color)
+        layer("doorKnobShadow", STONE.shadow)
     }
 }
 
 private fun LayerListBuilder.doorknobLight() {
     copy {
-        layer("doorknob", STONE.highlight)
-        layer("doorknobShadow", STONE.color)
+        layer("doorKnob", STONE.highlight)
+        layer("doorKnobShadow", STONE.color)
     }
 }
 
@@ -171,7 +171,7 @@ enum class OverworldWood(
 
         override fun LayerListBuilder.sapling() {
             layer("saplingStem", barkColor)
-            layer("flowerStemBorderBottom", barkShadow)
+            layer("flowerStemBottomBorder", barkShadow)
             layer("saplingLeaves", c(0x6c9e38))
         }
     },
@@ -248,7 +248,7 @@ enum class OverworldWood(
         override fun LayerListBuilder.doorBottom() {
             background(color)
             layer("waves", highlight)
-            layer("planksTopVerticalBorder", shadow)
+            layer("planksTopBorderVertical", shadow)
             layer("borderSolid", color)
             layer("borderShortDashes", highlight)
             copy {
@@ -309,7 +309,7 @@ enum class OverworldWood(
 
         override fun LayerListBuilder.sapling() {
             layer("mangrovePropagule", c(0x4aa54a))
-            layer("flowerStemBorderBottom", c(0x748241))
+            layer("flowerStemBottomBorder", c(0x748241))
         }
     },
     OAK(
