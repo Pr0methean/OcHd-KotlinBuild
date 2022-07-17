@@ -100,7 +100,9 @@ out_stack "block/composter_bottom"
         }
     },
     COMPOSTER_COMPOST {
-        override fun LayerListBuilder.createTextureLayers() = DirtGroundCover.PODZOL.run {createTopLayers()}
+        override fun LayerListBuilder.createTextureLayers() {
+            copy {DirtGroundCover.PODZOL.run {createTopLayers()}}
+        }
     },
     COMPOSTER_READY {
         override fun LayerListBuilder.createTextureLayers() {
