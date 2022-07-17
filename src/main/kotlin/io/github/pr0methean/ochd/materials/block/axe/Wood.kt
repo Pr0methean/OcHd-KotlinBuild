@@ -3,6 +3,8 @@ package io.github.pr0methean.ochd.materials.block.axe
 import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.c
+import io.github.pr0methean.ochd.materials.block.barehand.stemColor
+import io.github.pr0methean.ochd.materials.block.barehand.stemShadow
 import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.STONE
 import io.github.pr0methean.ochd.materials.block.shovel.DirtGroundCover
 import io.github.pr0methean.ochd.tasks.OutputTask
@@ -32,6 +34,8 @@ sealed interface Wood: ShadowHighlightMaterial {
     fun LayerListBuilder.logTop()
     fun LayerListBuilder.strippedLogTop()
     fun LayerListBuilder.trapdoor()
+    fun LayerListBuilder.doorTop()
+    fun LayerListBuilder.doorBottom()
 
     fun LayerListBuilder.leaves()
     fun LayerListBuilder.sapling()
@@ -45,6 +49,8 @@ sealed interface Wood: ShadowHighlightMaterial {
         emit(ctx.out("block/${name}_${saplingSynonym}", ctx.stack { sapling() }))
         emit(ctx.out("block/${name}_planks", ctx.stack { planks() }))
         emit(ctx.out("block/${name}_trapdoor", ctx.stack { trapdoor() }))
+        emit(ctx.out("block/${name}_door_top", ctx.stack { doorTop() }))
+        emit(ctx.out("block/${name}_door_bottom", ctx.stack { doorBottom() }))
     }
 
     fun LayerListBuilder.planks() {
@@ -79,6 +85,14 @@ enum class OverworldWood(
             layer("borderSolid", highlight)
             layer("trapdoorHingesBig", STONE.shadow)
             layer("trapdoorHinges", STONE.highlight)
+        }
+
+        override fun LayerListBuilder.doorTop() {
+            TODO("Not yet implemented")
+        }
+
+        override fun LayerListBuilder.doorBottom() {
+            TODO("Not yet implemented")
         }
 
         override fun LayerListBuilder.leaves() {
@@ -171,6 +185,7 @@ enum class OverworldWood(
         barkHighlight = c(0x675230),
         barkShadow = c(0x443522)
     ) {
+        override val saplingSynonym: String = "propagule"
         override fun LayerListBuilder.trapdoor() {
             layer("ringsHole", color)
             layer("rings2", shadow)
@@ -186,7 +201,8 @@ enum class OverworldWood(
         }
 
         override fun LayerListBuilder.sapling() {
-            // TODO
+            layer("mangrovePropagule", c(0x4aa54a))
+            layer("flowerStemBorderBottom", c(0x748241))
         }
     },
     OAK(
@@ -204,6 +220,21 @@ enum class OverworldWood(
             layer("borderLongDashes", highlight)
             layer("trapdoorHingesBig", STONE.color)
             layer("trapdoorHinges", STONE.highlight)
+        }
+
+        override fun LayerListBuilder.doorTop() {
+            layer("cross", shadow)
+            layer("borderSolidThick", color)
+            layer("craftingSide", shadow)
+            layer("doorknob", STONE.color)
+            layer("doorknobShadow", STONE.shadow)
+        }
+
+        override fun LayerListBuilder.doorBottom() {
+            background(color)
+            layer("waves", highlight)
+            layer("cross", shadow)
+            layer("borderSolid", shadow)
         }
 
         override fun LayerListBuilder.leaves() {
@@ -238,7 +269,9 @@ enum class OverworldWood(
         }
 
         override fun LayerListBuilder.sapling() {
-            // TODO
+            layer("flowerStemShort", color)
+            layer("flowerStemBorderBottom", shadow)
+            layer("spruceSapling", c(0x2e492e))
         }
     };
 
