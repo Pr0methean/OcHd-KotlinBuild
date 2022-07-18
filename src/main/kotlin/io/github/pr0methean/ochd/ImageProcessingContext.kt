@@ -1,7 +1,5 @@
 package io.github.pr0methean.ochd
 
-import com.google.common.collect.ConcurrentHashMultiset
-import com.google.common.collect.Multiset
 import io.github.pr0methean.ochd.packedimage.PackedImage
 import io.github.pr0methean.ochd.packedimage.PngImage
 import io.github.pr0methean.ochd.packedimage.UncompressedImage
@@ -9,16 +7,15 @@ import io.github.pr0methean.ochd.tasks.*
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.yield
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox
 import java.io.File
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.LongAdder
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.minutes
 
 fun color(web: String): Color = Color.web(web)
 
@@ -26,13 +23,8 @@ fun color(web: String, alpha: Double): Color = Color.web(web, alpha)
 
 private const val MAX_UNCOMPRESSED_TILESIZE = 512
 private const val MAX_UNCOMPRESSED_TILESIZE_COMBINING_TASK = 512
-private val REPORTING_INTERVAL: Duration = 1.minutes
 private const val MIN_LIMIT_TO_SKIP_MULTI_SUBTASK_SEMAPHORE = 64
 private val logger = LogManager.getLogger("ImageProcessingContext")
-
-private fun Multiset<*>.log() {
-    toSet().forEach { logger.info("{}: {}", it, count(it)) }
-}
 
 class ImageProcessingContext(
     val name: String,
@@ -47,16 +39,7 @@ class ImageProcessingContext(
     val svgTasks: Map<String, SvgImportTask>
     val taskDedupMap = ConcurrentHashMap<TextureTask, TextureTask>()
     val newTasksSemaphore = Semaphore(tasksWithMultipleSubtasksLimit)
-
-    // Statistics
-    val taskLaunches: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
-    val taskCompletions: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
-    val dedupeSuccesses: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
-    val dedupeFailures: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
-    val compressions = LongAdder()
-    val decompressions = LongAdder()
-    val retries = LongAdder()
-
+    val stats = ImageProcessingStats()
 
     init {
         val builder = mutableMapOf<String, SvgImportTask>()
@@ -84,7 +67,7 @@ class ImageProcessingContext(
                 throw t
             } catch (t: Throwable) {
                 failedAttempts++
-                retries.increment()
+                stats.retries.increment()
                 logger.error("Yielding before retrying {} ({} failed attempts)", name, Unbox.box(failedAttempts), t)
                 yield()
                 logger.info("Retrying: {}", name)
@@ -92,33 +75,6 @@ class ImageProcessingContext(
         }
 
         return result!!
-    }
-
-    @Suppress("DeferredResultUnused")
-    fun startMonitoringStats() {
-        scope.async {
-            while(true) {
-                delay(REPORTING_INTERVAL)
-                logger.info("Completed tasks:")
-                taskCompletions.log()
-            }
-        }
-    }
-
-    fun printStats() {
-        logger.info("")
-        logger.info("Task launches:")
-        taskLaunches.log()
-        logger.info("")
-        logger.info("Deduplicated tasks:")
-        dedupeSuccesses.log()
-        logger.info("")
-        logger.info("Non-deduplicated tasks:")
-        dedupeFailures.log()
-        logger.info("")
-        logger.info("PNG compressions: {}", compressions.sum())
-        logger.info("PNG decompressions: {}", decompressions.sum())
-        logger.info("Retries of failed tasks: {}", retries.sum())
     }
 
     /**
@@ -150,10 +106,10 @@ class ImageProcessingContext(
             return deduplicate(task.layers.layers[0])
         }
         val className = task::class.simpleName ?: "[unnamed class]"
-        dedupeSuccesses.add(className)
+        stats.dedupeSuccesses.add(className)
         return taskDedupMap.computeIfAbsent(task) {
-            dedupeSuccesses.remove(className)
-            dedupeFailures.add(className)
+            stats.dedupeSuccesses.remove(className)
+            stats.dedupeFailures.add(className)
             task
         }
     }
@@ -183,22 +139,22 @@ class ImageProcessingContext(
 
     fun onTaskLaunched(task: Any) {
         logger.info("Launched: {}", task)
-        taskLaunches.add(task::class.simpleName ?: "[unnamed class]")
+        stats.taskLaunches.add(task::class.simpleName ?: "[unnamed class]")
     }
 
     fun onTaskCompleted(task: Any) {
         logger.info("Completed: {}", task)
-        taskCompletions.add(task::class.simpleName ?: "[unnamed class]")
+        stats.taskCompletions.add(task::class.simpleName ?: "[unnamed class]")
     }
 
     fun onDecompressPngImage(name: String) {
         logger.info("Decompressing {} from PNG", name)
-        decompressions.increment()
+        stats.decompressions.increment()
 
     }
 
     fun onCompressPngImage(name: String) {
         logger.info("Compressing {} to PNG", name)
-        compressions.increment()
+        stats.compressions.increment()
     }
 }

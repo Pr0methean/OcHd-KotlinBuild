@@ -1,8 +1,7 @@
 package io.github.pr0methean.ochd
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.flow.*
 import org.apache.logging.log4j.LogManager
 import java.nio.file.Paths
 import kotlin.system.measureNanoTime
@@ -48,10 +47,10 @@ val NORMAL_MUSIC_DISCS = listOf("far", "wait", "strad", "mall", "cat", "pigstep"
 val DISC_LABEL_COLORS = listOf(DYES.values).subList(1, DYES.values.size - 1)
 val OXIDATION_STATES = listOf("exposed", "weathered", "oxidized")
  */
-    ctx.startMonitoringStats()
+    val stats = ctx.stats
+    startMonitoring(stats, scope)
     val time = measureNanoTime {
-        val tasks = mutableListOf(
-        scope.async { withContext(Dispatchers.IO) {
+        val copyMetadata = scope.async { withContext(Dispatchers.IO) {
             metadataDirectory.walkTopDown().forEach {
                 val outputPath = out.resolve(it.relativeTo(metadataDirectory))
                 if (it.isDirectory) {
@@ -60,11 +59,11 @@ val OXIDATION_STATES = listOf("exposed", "weathered", "oxidized")
                     it.copyTo(outputPath)
                 }
             }
-        }})
-        ALL_MATERIALS.outputTasks(ctx).map { scope.async { it.run() } }.toList(tasks)
-        tasks.awaitAll()
+        }}
+        ALL_MATERIALS.outputTasks(ctx).map{scope.async {it.run()}}.map(Deferred<*>::await).collect()
+        copyMetadata.await()
     }
+    stats.log()
     logger.info("")
     logger.info("All tasks finished after $time ns")
-    ctx.printStats()
 }
