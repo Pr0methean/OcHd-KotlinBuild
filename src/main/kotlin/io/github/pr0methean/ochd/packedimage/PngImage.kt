@@ -9,10 +9,10 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
-import java.util.logging.LogManager
+import java.util.logging.Logger
 import javax.imageio.ImageIO
 
-private val logger = LogManager.getLogManager().getLogger("PngImage")
+private val logger = Logger.getLogger("PngImage")
 class PngImage(initialUnpacked: Image?, private val packingTask: Deferred<ByteArray>,
                val ctx: ImageProcessingContext, val name: String) : PackedImage {
     val unpacked = SoftAsyncLazy(initialUnpacked) {

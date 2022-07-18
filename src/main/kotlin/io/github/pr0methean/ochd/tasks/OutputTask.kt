@@ -4,9 +4,9 @@ import io.github.pr0methean.ochd.ImageProcessingContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
-import java.util.logging.LogManager
+import java.util.logging.Logger
 
-private val logger = LogManager.getLogManager().getLogger("OutputTask")
+private val logger = Logger.getLogger("OutputTask")
 data class OutputTask(private val producer: TextureTask,
                       val name: String,
                       val ctx: ImageProcessingContext

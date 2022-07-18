@@ -5,10 +5,10 @@ import io.github.pr0methean.ochd.SoftAsyncLazy
 import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
 import java.io.ByteArrayOutputStream
-import java.util.logging.LogManager
+import java.util.logging.Logger
 import javax.imageio.ImageIO
 
-private val logger = LogManager.getLogManager().getLogger("UncompressedImage")
+private val logger = Logger.getLogger("UncompressedImage")
 class UncompressedImage(private val unpacked: Image, val name: String, val ctx: ImageProcessingContext): PackedImage {
     private val packed = SoftAsyncLazy {
         ctx.onCompressPngImage(name)

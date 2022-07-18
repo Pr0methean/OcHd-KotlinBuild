@@ -4,10 +4,10 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import java.nio.file.Paths
-import java.util.logging.LogManager
+import java.util.logging.Logger
 import kotlin.system.measureNanoTime
 
-private val logger = LogManager.getLogManager().getLogger("main")
+private val logger = Logger.getGlobal()
 @OptIn(ExperimentalCoroutinesApi::class)
 suspend fun main(args:Array<String>) {
     if (args.isEmpty()) {

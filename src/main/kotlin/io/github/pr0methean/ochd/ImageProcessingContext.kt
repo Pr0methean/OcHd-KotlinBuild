@@ -14,7 +14,7 @@ import java.io.File
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.LongAdder
-import java.util.logging.LogManager
+import java.util.logging.Logger
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
@@ -26,7 +26,7 @@ private const val MAX_UNCOMPRESSED_TILESIZE = 512
 private const val MAX_UNCOMPRESSED_TILESIZE_COMBINING_TASK = 512
 private val REPORTING_INTERVAL: Duration = 1.minutes
 private const val MIN_LIMIT_TO_SKIP_MULTI_SUBTASK_SEMAPHORE = 64
-private val logger = LogManager.getLogManager().getLogger("ImageProcessingContext")
+private val logger = Logger.getLogger("ImageProcessingContext")
 class ImageProcessingContext(
     val name: String,
     val tileSize: Int,
