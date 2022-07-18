@@ -37,6 +37,7 @@ dependencies {
     implementation("org.apache.xmlgraphics:batik-transcoder:1.14")
     implementation("org.apache.xmlgraphics:batik-codec:1.14")
     runtimeOnly(kotlin("reflect"))
+    runtimeOnly("org.apache.logging.log4j:log4j-api:$log4jVersion")
     implementation("org.apache.logging.log4j:log4j-core:$log4jVersion")
     runtimeOnly("org.apache.logging.log4j:log4j-jul:$log4jVersion")
     runtimeOnly("org.apache.logging.log4j:log4j-jpl:$log4jVersion")
