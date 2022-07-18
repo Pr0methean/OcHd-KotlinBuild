@@ -181,23 +181,23 @@ class ImageProcessingContext(
     fun out(name: String, source: LayerListBuilder.() -> Unit) = OutputTask(stack {source()}, name.lowercase(Locale.ENGLISH), this)
 
     fun onTaskLaunched(task: Any) {
-        logger.info("Launched: $task")
+        logger.info("Launched: {}", task)
         taskLaunches.add(task::class.simpleName ?: "[unnamed class]")
     }
 
     fun onTaskCompleted(task: Any) {
-        logger.info("Completed: $task")
+        logger.info("Completed: {}", task)
         taskCompletions.add(task::class.simpleName ?: "[unnamed class]")
     }
 
     fun onDecompressPngImage(name: String) {
-        logger.info("Decompressing $name from PNG")
+        logger.info("Decompressing {} from PNG", name)
         decompressions.increment()
 
     }
 
     fun onCompressPngImage(name: String) {
-        logger.info("Compressing $name to PNG")
+        logger.info("Compressing {} to PNG", name)
         compressions.increment()
     }
 }
