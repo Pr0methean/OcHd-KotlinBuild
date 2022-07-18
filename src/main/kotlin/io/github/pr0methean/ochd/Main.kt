@@ -51,6 +51,7 @@ val OXIDATION_STATES = listOf("exposed", "weathered", "oxidized")
     startMonitoring(stats, scope)
     val time = measureNanoTime {
         val copyMetadata = scope.async { withContext(Dispatchers.IO) {
+            stats.onTaskLaunched("Copying metadata files")
             metadataDirectory.walkTopDown().forEach {
                 val outputPath = out.resolve(it.relativeTo(metadataDirectory))
                 if (it.isDirectory) {
@@ -59,8 +60,12 @@ val OXIDATION_STATES = listOf("exposed", "weathered", "oxidized")
                     it.copyTo(outputPath)
                 }
             }
+            stats.onTaskCompleted("Copying metadata files")
         }}
-        ALL_MATERIALS.outputTasks(ctx).toList().map{scope.async {it.run()}}.awaitAll()
+        stats.onTaskLaunched("Building task graph")
+        val tasks = ALL_MATERIALS.outputTasks(ctx).toList()
+        stats.onTaskCompleted("Building task graph")
+        tasks.map{scope.async {it.run()}}.awaitAll()
         copyMetadata.await()
     }
     stats.log()

@@ -64,11 +64,11 @@ class ImageProcessingStats {
 
     fun onTaskLaunched(task: Any) {
         logger.info("Launched: {}", task)
-        taskLaunches.add(task::class.simpleName ?: "[unnamed class]")
+        taskLaunches.add(task as? String ?: task::class.simpleName ?: "[unnamed class]")
     }
 
     fun onTaskCompleted(task: Any) {
         logger.info("Completed: {}", task)
-        taskCompletions.add(task::class.simpleName ?: "[unnamed class]")
+        taskCompletions.add(task as? String ?: task::class.simpleName ?: "[unnamed class]")
     }
 }

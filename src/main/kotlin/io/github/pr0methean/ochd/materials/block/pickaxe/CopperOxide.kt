@@ -7,10 +7,10 @@ import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import io.github.pr0methean.ochd.texturebase.group
 import javafx.scene.paint.Color
-import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 
 val COPPER_OXIDES = group<CopperOxide>()
+@Suppress("unused")
 enum class CopperOxide(
     override val color: Color,
     override val shadow: Color,
@@ -48,9 +48,5 @@ enum class CopperOxide(
     override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
         emit(ctx.out("block/${name}_copper") { uncut() })
         emit(ctx.out("block/cut_${name}_copper") { cut() })
-    }
-    companion object {
-        @OptIn(FlowPreview::class)
-        fun allOutputTasks(ctx: ImageProcessingContext) = values().asFlow().map { it.outputTasks(ctx) }.flattenMerge()
     }
 }
