@@ -18,7 +18,7 @@ tasks.jar {
 }
 
 javafx {
-    version = "17.0.2"
+    version = "18.0.1"
     modules = listOf("javafx.graphics", "javafx.swing")
 }
 
@@ -49,7 +49,7 @@ tasks.test {
 }
 
 tasks.withType<KotlinCompile> {
-    kotlinOptions.jvmTarget = "17"
+    kotlinOptions.jvmTarget = "18"
 }
 
 buildScan {
