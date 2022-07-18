@@ -29,6 +29,10 @@ data class AnimationColumnTask(
         return doJfx {canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, null)}
     }
 
+    override fun toString(): String {
+        return "Animation[${frames.joinToString("; ")}]"
+    }
+
     override fun willExpandHeap(): Boolean = super.willExpandHeap() || frames.any {
             it.willExpandHeap() || it.getImageNow()?.isAlreadyUnpacked() != true }
 }

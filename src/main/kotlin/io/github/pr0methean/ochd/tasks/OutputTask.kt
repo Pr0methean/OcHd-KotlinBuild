@@ -4,20 +4,22 @@ import io.github.pr0methean.ochd.ImageProcessingContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
+import java.util.logging.LogManager
 
+private val logger = LogManager.getLogManager().getLogger("OutputTask")
 data class OutputTask(private val producer: TextureTask,
                       val name: String,
                       val ctx: ImageProcessingContext
 ) {
 
     // Lazy init is needed to work around an NPE bug
-    val file by lazy {ctx.outTextureRoot.resolve(name + ".png")}
+    private val file by lazy {ctx.outTextureRoot.resolve("$name.png")}
     suspend fun invoke() {
         try {
             val image = producer.getImage()
             image.writePng(file)
         } catch (e: NotImplementedError) {
-            println("Skipping $name because it's not implemented yet")
+            logger.warning("Skipping $name because it's not implemented yet")
         }
     }
     suspend fun run() {
@@ -36,5 +38,5 @@ data class OutputTask(private val producer: TextureTask,
         }
     }
 
-    override fun toString(): String = "OutputTask for $name"
+    override fun toString(): String = "Output of $name"
 }

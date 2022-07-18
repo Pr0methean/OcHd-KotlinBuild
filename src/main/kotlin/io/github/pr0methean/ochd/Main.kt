@@ -4,8 +4,10 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import java.nio.file.Paths
+import java.util.logging.LogManager
 import kotlin.system.measureNanoTime
 
+private val logger = LogManager.getLogManager().getLogger("main")
 @OptIn(ExperimentalCoroutinesApi::class)
 suspend fun main(args:Array<String>) {
     if (args.isEmpty()) {
@@ -20,7 +22,6 @@ suspend fun main(args:Array<String>) {
     val scope = CoroutineScope(Dispatchers.Default)
     val svgDirectory = Paths.get("svg").toAbsolutePath().toFile()
     val metadataDirectory = Paths.get("metadata").toAbsolutePath().toFile()
-    println("SVG directory is ${svgDirectory}")
     val out = Paths.get("out").toAbsolutePath().toFile()
     val outTextureRoot = out.resolve("assets").resolve("minecraft").resolve("textures")
     out.deleteRecursively()
@@ -47,7 +48,7 @@ val OXIDATION_STATES = listOf("exposed", "weathered", "oxidized")
  */
     ctx.startMonitoringStats()
     val time = measureNanoTime {
-        val tasks = mutableListOf<Deferred<Unit>>(
+        val tasks = mutableListOf(
         scope.async { withContext(Dispatchers.IO) {
             metadataDirectory.walkTopDown().forEach {
                 val outputPath = out.resolve(it.relativeTo(metadataDirectory))
@@ -61,7 +62,7 @@ val OXIDATION_STATES = listOf("exposed", "weathered", "oxidized")
         ALL_MATERIALS.outputTasks(ctx).map { scope.async { it.run() } }.toList(tasks)
         tasks.awaitAll()
     }
-    println()
-    println("All tasks finished after $time ns")
+    logger.info("")
+    logger.info("All tasks finished after $time ns")
     ctx.printStats()
 }

@@ -9,14 +9,16 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
+import java.util.logging.LogManager
 import javax.imageio.ImageIO
 
+private val logger = LogManager.getLogManager().getLogger("PngImage")
 class PngImage(initialUnpacked: Image?, private val packingTask: Deferred<ByteArray>,
                val ctx: ImageProcessingContext, val name: String) : PackedImage {
     val unpacked = SoftAsyncLazy(initialUnpacked) {
         ctx.onDecompressPngImage(name)
         return@SoftAsyncLazy ctx.retrying("Decompression of $name") { ByteArrayInputStream(packed()).use { Image(it) } }
-            .also { println("Done decompressing $name") }
+            .also { logger.info("Done decompressing $name") }
     }
 
     constructor(input: Image, name: String, ctx: ImageProcessingContext):
@@ -27,7 +29,7 @@ class PngImage(initialUnpacked: Image?, private val packingTask: Deferred<ByteAr
                     ctx.onCompressPngImage(name)
                     @Suppress("BlockingMethodInNonBlockingContext")
                     ImageIO.write(SwingFXUtils.fromFXImage(input, null), "PNG", it)
-                    println("Done compressing to PNG: $name")
+                    logger.info("Done compressing to PNG: $name")
                     return@retrying it.toByteArray()
                 }
             }

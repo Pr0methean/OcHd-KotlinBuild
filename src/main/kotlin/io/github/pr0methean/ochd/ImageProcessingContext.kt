@@ -11,10 +11,10 @@ import javafx.scene.paint.Paint
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
 import java.io.File
-import java.time.Instant
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.LongAdder
+import java.util.logging.LogManager
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
@@ -25,7 +25,8 @@ fun color(web: String, alpha: Double) = Color.web(web, alpha)
 private const val MAX_UNCOMPRESSED_TILESIZE = 512
 private const val MAX_UNCOMPRESSED_TILESIZE_COMBINING_TASK = 512
 private val REPORTING_INTERVAL: Duration = 1.minutes
-private val MIN_LIMIT_TO_SKIP_MULTI_SUBTASK_SEMAPHORE = 64
+private const val MIN_LIMIT_TO_SKIP_MULTI_SUBTASK_SEMAPHORE = 64
+private val logger = LogManager.getLogManager().getLogger("ImageProcessingContext")
 class ImageProcessingContext(
     val name: String,
     val tileSize: Int,
@@ -77,9 +78,9 @@ class ImageProcessingContext(
             } catch (t: Throwable) {
                 failedAttempts++
                 retries.increment()
-                println("Yielding before retrying ($failedAttempts failed attempts): caught $t in $name")
+                logger.severe("Yielding before retrying ($failedAttempts failed attempts): caught $t in $name")
                 yield()
-                println("Retrying: $name")
+                logger.info("Retrying: $name")
             }
         }
 
@@ -91,28 +92,26 @@ class ImageProcessingContext(
         scope.async {
             while(true) {
                 delay(REPORTING_INTERVAL)
-                println()
-                println("[${Instant.now()}] Task completions:")
-                taskCompletions.toSet().forEach {println("$it: ${taskCompletions.count(it)}")}
-                println()
+                logger.info("Task completions:")
+                taskCompletions.toSet().forEach {logger.info("$it: ${taskCompletions.count(it)}")}
             }
         }
     }
 
     fun printStats() {
-        println()
-        println("Task launches:")
-        taskLaunches.toSet().forEach {println("$it: ${taskLaunches.count(it)}")}
-        println()
-        println("Deduplication successes:")
-        dedupeSuccesses.toSet().forEach {println("$it: ${dedupeSuccesses.count(it)}")}
-        println()
-        println("Deduplication failures:")
-        dedupeFailures.toSet().forEach {println("$it: ${dedupeFailures.count(it)}")}
-        println()
-        println("PNG compressions: ${compressions.sum()}")
-        println("PNG decompressions: ${decompressions.sum()}")
-        println("Failed tasks retried: ${retries.sum()}")
+        logger.info("")
+        logger.info("Task launches:")
+        taskLaunches.toSet().forEach {logger.info("$it: ${taskLaunches.count(it)}")}
+        logger.info("")
+        logger.info("Deduplicated tasks:")
+        dedupeSuccesses.toSet().forEach {logger.info("$it: ${dedupeSuccesses.count(it)}")}
+        logger.info("")
+        logger.info("Non-deduplicated tasks:")
+        dedupeFailures.toSet().forEach {logger.info("$it: ${dedupeFailures.count(it)}")}
+        logger.info("")
+        logger.info("PNG compressions: ${compressions.sum()}")
+        logger.info("PNG decompressions: ${decompressions.sum()}")
+        logger.info("Retries of failed tasks: ${retries.sum()}")
     }
 
     /**
@@ -176,23 +175,23 @@ class ImageProcessingContext(
     fun out(name: String, source: LayerListBuilder.() -> Unit) = OutputTask(stack {source()}, name.lowercase(Locale.ENGLISH), this)
 
     fun onTaskLaunched(task: Any) {
-        println("Launched: $task")
+        logger.info("Launched: $task")
         taskLaunches.add(task::class.simpleName ?: "[unnamed class]")
     }
 
     fun onTaskCompleted(task: Any) {
-        println("Completed: $task")
+        logger.info("Completed: $task")
         taskCompletions.add(task::class.simpleName ?: "[unnamed class]")
     }
 
     fun onDecompressPngImage(name: String) {
-        println("Decompressing $name from PNG")
+        logger.info("Decompressing $name from PNG")
         decompressions.increment()
 
     }
 
     fun onCompressPngImage(name: String) {
-        println("Compressing $name to PNG on demand")
+        logger.info("Compressing $name to PNG")
         compressions.increment()
     }
 }
