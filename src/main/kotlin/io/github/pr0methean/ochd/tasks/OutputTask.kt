@@ -25,8 +25,8 @@ class OutputTask(producer: TextureTask,
     suspend fun invoke() {
         try {
             val image = producer!!.getImage()
-            image.writePng(file)
             producer = null
+            image.writePng(file)
         } catch (e: NotImplementedError) {
             logger.warn("Skipping $name because it's not implemented yet")
         }
