@@ -14,10 +14,9 @@ class UncompressedImage(private val unpacked: Image, val name: String, val ctx: 
         ctx.onCompressPngImage(name)
         ByteArrayOutputStream().use {
             ImageIO.write(SwingFXUtils.fromFXImage(unpacked, null), "png", it)
-            logger.info("Done compressing to PNG: {}", name)
             it.toByteArray()
         }
-    }
+    }.also {logger.info("Done compressing to PNG: {}", name)}
 
     override suspend fun unpacked(): Image = unpacked
 

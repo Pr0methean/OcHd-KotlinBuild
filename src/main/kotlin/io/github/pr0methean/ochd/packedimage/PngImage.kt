@@ -29,10 +29,9 @@ class PngImage(initialUnpacked: Image?, private val packingTask: Deferred<ByteAr
                     ctx.onCompressPngImage(name)
                     @Suppress("BlockingMethodInNonBlockingContext")
                     ImageIO.write(SwingFXUtils.fromFXImage(input, null), "PNG", it)
-                    logger.info("Done compressing {}", name)
                     return@retrying it.toByteArray()
                 }
-            }
+            }.also {logger.info("Done compressing {}", name)}
         },
             ctx = ctx, name = name)
 
