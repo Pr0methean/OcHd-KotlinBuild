@@ -4,9 +4,9 @@ import io.github.pr0methean.ochd.ImageProcessingContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
-import java.util.logging.Logger
+import org.apache.logging.log4j.LogManager
 
-private val logger = Logger.getLogger("OutputTask")
+private val logger = LogManager.getLogger(OutputTask::javaClass)
 data class OutputTask(private val producer: TextureTask,
                       val name: String,
                       val ctx: ImageProcessingContext
@@ -19,7 +19,7 @@ data class OutputTask(private val producer: TextureTask,
             val image = producer.getImage()
             image.writePng(file)
         } catch (e: NotImplementedError) {
-            logger.warning("Skipping $name because it's not implemented yet")
+            logger.warn("Skipping $name because it's not implemented yet")
         }
     }
     suspend fun run() {

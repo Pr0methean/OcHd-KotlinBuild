@@ -7,12 +7,12 @@ import javafx.scene.image.Image
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
+import org.apache.logging.log4j.LogManager
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
-import java.util.logging.Logger
 import javax.imageio.ImageIO
 
-private val logger = Logger.getLogger("PngImage")
+private val logger = LogManager.getLogger(PngImage::class.java)
 class PngImage(initialUnpacked: Image?, private val packingTask: Deferred<ByteArray>,
                val ctx: ImageProcessingContext, val name: String) : PackedImage {
     val unpacked = SoftAsyncLazy(initialUnpacked) {

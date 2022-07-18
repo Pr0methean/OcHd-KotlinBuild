@@ -1,6 +1,7 @@
 package io.github.pr0methean.ochd
 
 import com.google.common.collect.ConcurrentHashMultiset
+import com.google.common.collect.Multiset
 import io.github.pr0methean.ochd.packedimage.PackedImage
 import io.github.pr0methean.ochd.packedimage.PngImage
 import io.github.pr0methean.ochd.packedimage.UncompressedImage
@@ -10,11 +11,11 @@ import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
+import org.apache.logging.log4j.LogManager
 import java.io.File
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.LongAdder
-import java.util.logging.Logger
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
@@ -26,7 +27,12 @@ private const val MAX_UNCOMPRESSED_TILESIZE = 512
 private const val MAX_UNCOMPRESSED_TILESIZE_COMBINING_TASK = 512
 private val REPORTING_INTERVAL: Duration = 1.minutes
 private const val MIN_LIMIT_TO_SKIP_MULTI_SUBTASK_SEMAPHORE = 64
-private val logger = Logger.getLogger("ImageProcessingContext")
+private val logger = LogManager.getLogger(ImageProcessingContext::javaClass)
+
+private fun Multiset<*>.log() {
+    toSet().forEach { logger.info("{}: {}", it, count(it)) }
+}
+
 class ImageProcessingContext(
     val name: String,
     val tileSize: Int,
@@ -34,7 +40,7 @@ class ImageProcessingContext(
     val svgDirectory: File,
     val outTextureRoot: File
 ) {
-    val tasksWithMultipleSubtasksLimit = 1.shl(24) / (tileSize * tileSize)
+    private val tasksWithMultipleSubtasksLimit = 1.shl(24) / (tileSize * tileSize)
     val needSemaphore = tasksWithMultipleSubtasksLimit < MIN_LIMIT_TO_SKIP_MULTI_SUBTASK_SEMAPHORE
     override fun toString(): String = name
     val svgTasks: Map<String, SvgImportTask>
@@ -78,9 +84,9 @@ class ImageProcessingContext(
             } catch (t: Throwable) {
                 failedAttempts++
                 retries.increment()
-                logger.severe("Yielding before retrying ($failedAttempts failed attempts): caught $t in $name")
+                logger.error("Yielding before retrying {} ({} failed attempts)", name, failedAttempts, t)
                 yield()
-                logger.info("Retrying: $name")
+                logger.info("Retrying: {}", name)
             }
         }
 
@@ -92,8 +98,8 @@ class ImageProcessingContext(
         scope.async {
             while(true) {
                 delay(REPORTING_INTERVAL)
-                logger.info("Task completions:")
-                taskCompletions.toSet().forEach {logger.info("$it: ${taskCompletions.count(it)}")}
+                logger.info("Completed tasks:")
+                taskCompletions.log()
             }
         }
     }
@@ -101,17 +107,17 @@ class ImageProcessingContext(
     fun printStats() {
         logger.info("")
         logger.info("Task launches:")
-        taskLaunches.toSet().forEach {logger.info("$it: ${taskLaunches.count(it)}")}
+        taskLaunches.log()
         logger.info("")
         logger.info("Deduplicated tasks:")
-        dedupeSuccesses.toSet().forEach {logger.info("$it: ${dedupeSuccesses.count(it)}")}
+        dedupeSuccesses.log()
         logger.info("")
         logger.info("Non-deduplicated tasks:")
-        dedupeFailures.toSet().forEach {logger.info("$it: ${dedupeFailures.count(it)}")}
+        dedupeFailures.log()
         logger.info("")
-        logger.info("PNG compressions: ${compressions.sum()}")
-        logger.info("PNG decompressions: ${decompressions.sum()}")
-        logger.info("Retries of failed tasks: ${retries.sum()}")
+        logger.info("PNG compressions: {}", compressions.sum())
+        logger.info("PNG decompressions: {}", decompressions.sum())
+        logger.info("Retries of failed tasks: {}", retries.sum())
     }
 
     /**

@@ -9,7 +9,6 @@ import org.apache.logging.log4j.core.LoggerContext
 import org.apache.logging.log4j.core.config.Configuration
 import org.apache.logging.log4j.core.config.LoggerConfig
 import java.nio.file.Paths
-import java.util.logging.Logger
 import kotlin.system.measureNanoTime
 
 private val logger = run {
@@ -19,7 +18,7 @@ private val logger = run {
     loggerConfig.level = Level.TRACE
     ctx.updateLoggers()
     System.setProperty("java.util.logging.manager", "org.apache.logging.log4j.jul.LogManager")
-    Logger.getGlobal()
+    LogManager.getRootLogger()
 }
 suspend fun main(args:Array<String>) {
     if (args.isEmpty()) {
