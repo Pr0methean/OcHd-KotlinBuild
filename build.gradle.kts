@@ -18,7 +18,7 @@ tasks.jar {
 }
 
 javafx {
-    version = "11.0.2"
+    version = "17.0.2"
     modules = listOf("javafx.graphics", "javafx.swing")
 }
 
@@ -33,7 +33,7 @@ dependencies {
     implementation("no.tornado:tornadofx:1.7.20")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.3")
     implementation("com.google.guava:guava:31.1-jre")
-    implementation("org.testfx:openjfx-monocle:jdk-11+26")
+    implementation("org.testfx:openjfx-monocle:jdk-12.0.1+2")
     implementation("org.apache.xmlgraphics:batik-transcoder:1.14")
     implementation("org.apache.xmlgraphics:batik-codec:1.14")
     runtimeOnly(kotlin("reflect"))
@@ -49,7 +49,7 @@ tasks.test {
 }
 
 tasks.withType<KotlinCompile> {
-    kotlinOptions.jvmTarget = "11"
+    kotlinOptions.jvmTarget = "17"
 }
 
 buildScan {
