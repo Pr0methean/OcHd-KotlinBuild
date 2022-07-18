@@ -19,7 +19,6 @@ data class RepaintTask(
 ) : AbstractTextureTask(ctx), StringBuilderFormattable {
     override suspend fun computeImage(): Image {
         val view = ImageView(base.getImage().unpacked())
-        isAllocated = true
         if (paint != null) {
             val colorLayer = ColorInput(0.0, 0.0, size.toDouble(), size.toDouble(), paint)
             val blend = Blend()
@@ -37,9 +36,5 @@ data class RepaintTask(
     override fun formatTo(buffer: StringBuilder) {
         buffer.append("RepaintTask(").append(base).append(',').append(paint).append(',')
             .append(Unbox.box(alpha)).append(")")
-    }
-
-    override fun willExpandHeap(): Boolean {
-        return super.willExpandHeap() || base.willExpandHeap() || base.getImageNow()?.isAlreadyUnpacked() != true
     }
 }

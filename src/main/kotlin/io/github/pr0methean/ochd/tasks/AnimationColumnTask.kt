@@ -20,7 +20,6 @@ data class AnimationColumnTask(
         val height = size * frames.size
         val canvas = Canvas(size.toDouble(), height.toDouble())
         val canvasCtx = canvas.graphicsContext2D
-        isAllocated = true
         frames.asFlow()
                 .map(TextureTask::getImage)
                 .map(PackedImage::unpacked)
@@ -34,7 +33,4 @@ data class AnimationColumnTask(
     override fun formatTo(buffer: StringBuilder) {
         buffer.append("Animation [").appendList(frames, "; ").append(']')
     }
-
-    override fun willExpandHeap(): Boolean = super.willExpandHeap() || frames.any {
-            it.willExpandHeap() || it.getImageNow()?.isAlreadyUnpacked() != true }
 }

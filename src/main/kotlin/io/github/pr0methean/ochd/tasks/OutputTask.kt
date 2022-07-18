@@ -27,7 +27,7 @@ data class OutputTask(private val producer: TextureTask,
     suspend fun run() {
         withContext(Dispatchers.IO) {
             file.parentFile.mkdirs()
-            if (ctx.needSemaphore && producer.willExpandHeap()) {
+            if (ctx.needSemaphore && !producer.isStarted()) {
                 ctx.newTasksSemaphore.withPermit {
                     ctx.onTaskLaunched(this@OutputTask)
                     ctx.retrying(name) {invoke()}
