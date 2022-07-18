@@ -37,6 +37,9 @@ data class SvgImportTask(
     private val tileSize: Int,
     val ctx: ImageProcessingContext
 ): TextureTask {
+    @Volatile
+    var isAllocated: Boolean = false
+
     val coroutine: Deferred<PackedImage> by lazy {
         ctx.scope.plus(batikTranscoder.asContextElement()).async { ctx.retrying(shortName) {
             ctx.onTaskLaunched(this@SvgImportTask)
@@ -52,6 +55,7 @@ data class SvgImportTask(
                 FileInputStream(file).use {
                     val input = TranscoderInput(file.toURI().toString())
                     transcoder.transcode(input, output)
+                    isAllocated = true
                     return@retrying PngImage(pngInput = outStream.toByteArray(),
                             initialUnpacked = SwingFXUtils.toFXImage(transcoder.takeLastImage()!!, null),
                             ctx = ctx, name = shortName)
@@ -63,7 +67,7 @@ data class SvgImportTask(
     val file = ctx.svgDirectory.resolve("$shortName.svg")
     override fun isComplete(): Boolean = coroutine.isCompleted
 
-    override fun willExpandHeap(): Boolean = !isComplete()
+    override fun willExpandHeap(): Boolean = isAllocated
 
     override suspend fun getImage(): PackedImage = coroutine.await()
     @OptIn(ExperimentalCoroutinesApi::class)
