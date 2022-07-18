@@ -32,7 +32,6 @@ data class ImageStackingTask(
         }
     }
 
-    override fun toString(): String = layers.toString()
     override fun formatTo(buffer: StringBuilder) {
         layers.formatTo(buffer)
     }

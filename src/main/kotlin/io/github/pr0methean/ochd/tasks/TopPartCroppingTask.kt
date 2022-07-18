@@ -17,7 +17,6 @@ data class TopPartCroppingTask(
         return WritableImage(pixelReader, width, height)
     }
 
-    override fun toString(): String = "Top part of $base"
     override fun formatTo(buffer: StringBuilder) {
         buffer.append("Top part of ")
         base.formatTo(buffer)

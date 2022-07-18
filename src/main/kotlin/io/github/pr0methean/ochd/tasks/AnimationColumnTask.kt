@@ -31,10 +31,6 @@ data class AnimationColumnTask(
         return doJfx {canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, null)}
     }
 
-    override fun toString(): String {
-        return "Animation [${frames.joinToString("; ")}]"
-    }
-
     override fun formatTo(buffer: StringBuilder) {
         buffer.append("Animation [").appendList(frames, "; ").append(']')
     }

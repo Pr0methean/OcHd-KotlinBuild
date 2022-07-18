@@ -34,7 +34,6 @@ data class RepaintTask(
         return doJfx {view.snapshot(DEFAULT_SNAPSHOT_PARAMS, null)}
     }
 
-    override fun toString(): String = "RepaintTask($base,$paint,$alpha)"
     override fun formatTo(buffer: StringBuilder) {
         buffer.append("RepaintTask(").append(base).append(',').append(paint).append(',')
             .append(Unbox.box(alpha)).append(")")
