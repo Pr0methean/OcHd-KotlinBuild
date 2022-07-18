@@ -3,20 +3,11 @@ import io.github.pr0methean.ochd.materials.ALL_MATERIALS
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
-import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
-import org.apache.logging.log4j.core.LoggerContext
-import org.apache.logging.log4j.core.config.Configuration
-import org.apache.logging.log4j.core.config.LoggerConfig
 import java.nio.file.Paths
 import kotlin.system.measureNanoTime
 
 private val logger = run {
-    val ctx: LoggerContext = LogManager.getContext(false) as LoggerContext
-    val config: Configuration = ctx.configuration
-    val loggerConfig: LoggerConfig = config.getLoggerConfig(LogManager.ROOT_LOGGER_NAME)
-    loggerConfig.level = Level.TRACE
-    ctx.updateLoggers()
     System.setProperty("java.util.logging.manager", "org.apache.logging.log4j.jul.LogManager")
     LogManager.getRootLogger()
 }
