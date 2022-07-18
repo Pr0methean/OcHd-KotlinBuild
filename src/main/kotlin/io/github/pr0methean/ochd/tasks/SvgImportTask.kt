@@ -16,10 +16,10 @@ import java.io.FileInputStream
 import java.lang.StringBuilder
 
 // svgSalamander doesn't seem to be thread-safe even when loaded in a ThreadLocal<ClassLoader>
-val batikTranscoder: ThreadLocal<ImageRetainingTranscoder> = ThreadLocal.withInitial {ImageRetainingTranscoder()}
+private val batikTranscoder: ThreadLocal<ImageRetainingTranscoder> = ThreadLocal.withInitial {ImageRetainingTranscoder()}
 
-/** Transcoder that retains the last image it wrote, until it's retrieved with a separate call */
-class ImageRetainingTranscoder: PNGTranscoder() {
+/** SVG-to-PNG transcoder that retains the last image it wrote, until it's retrieved by calling takeLastImage(). */
+private class ImageRetainingTranscoder: PNGTranscoder() {
     private var lastImage: BufferedImage? = null
     override fun writeImage(img: BufferedImage?, output: TranscoderOutput?) {
         lastImage = img
@@ -53,7 +53,7 @@ data class SvgImportTask(
                     val input = TranscoderInput(file.toURI().toString())
                     transcoder.transcode(input, output)
                     return@retrying PngImage(pngInput = outStream.toByteArray(),
-                            initialUnpacked = SwingFXUtils.toFXImage(transcoder.takeLastImage(), null),
+                            initialUnpacked = SwingFXUtils.toFXImage(transcoder.takeLastImage()!!, null),
                             ctx = ctx, name = shortName)
                 }
             }
