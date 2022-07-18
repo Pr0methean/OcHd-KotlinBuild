@@ -26,6 +26,8 @@ repositories {
     mavenCentral()
 }
 
+val log4jVersion = "2.18.0"
+
 dependencies {
     testImplementation(kotlin("test"))
     implementation("no.tornado:tornadofx:1.7.20")
@@ -35,6 +37,10 @@ dependencies {
     implementation("org.apache.xmlgraphics:batik-transcoder:1.14")
     implementation("org.apache.xmlgraphics:batik-codec:1.14")
     runtimeOnly(kotlin("reflect"))
+    implementation("org.apache.logging.log4j:log4j-core:$log4jVersion")
+    runtimeOnly("org.apache.logging.log4j:log4j-jul:$log4jVersion")
+    runtimeOnly("org.apache.logging.log4j:log4j-jpl:$log4jVersion")
+    runtimeOnly("com.lmax:disruptor:3.4.4")
 }
 
 tasks.test {
