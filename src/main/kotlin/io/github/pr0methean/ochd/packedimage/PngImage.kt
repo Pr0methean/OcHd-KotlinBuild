@@ -36,8 +36,8 @@ class PngImage(initialUnpacked: Image?, private val packingTask: Deferred<ByteAr
         },
             ctx = ctx, name = name)
 
-    constructor(pngInput: ByteArray, ctx: ImageProcessingContext, name: String):
-        this(initialUnpacked = null,
+    constructor(pngInput: ByteArray, initialUnpacked: Image? = null, ctx: ImageProcessingContext, name: String):
+        this(initialUnpacked = initialUnpacked,
             packingTask = CompletableDeferred(pngInput),
             ctx = ctx, name = name)
 

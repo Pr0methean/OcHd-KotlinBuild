@@ -3,18 +3,34 @@ package io.github.pr0methean.ochd.tasks
 import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.packedimage.PackedImage
 import io.github.pr0methean.ochd.packedimage.PngImage
+import javafx.embed.swing.SwingFXUtils
 import kotlinx.coroutines.*
 import org.apache.batik.transcoder.SVGAbstractTranscoder.KEY_HEIGHT
 import org.apache.batik.transcoder.SVGAbstractTranscoder.KEY_WIDTH
 import org.apache.batik.transcoder.TranscoderInput
 import org.apache.batik.transcoder.TranscoderOutput
 import org.apache.batik.transcoder.image.PNGTranscoder
+import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import java.io.FileInputStream
 import java.lang.StringBuilder
 
 // svgSalamander doesn't seem to be thread-safe even when loaded in a ThreadLocal<ClassLoader>
-val batikTranscoder = ThreadLocal.withInitial {PNGTranscoder()}
+val batikTranscoder: ThreadLocal<ImageRetainingTranscoder> = ThreadLocal.withInitial {ImageRetainingTranscoder()}
+
+/** Transcoder that retains the last image it wrote, until it's retrieved with a separate call */
+class ImageRetainingTranscoder: PNGTranscoder() {
+    private var lastImage: BufferedImage? = null
+    override fun writeImage(img: BufferedImage?, output: TranscoderOutput?) {
+        lastImage = img
+        super.writeImage(img, output)
+    }
+    fun takeLastImage(): BufferedImage? {
+        val lastImage = this.lastImage
+        this.lastImage = null
+        return lastImage
+    }
+}
 
 data class SvgImportTask(
     val shortName: String,
@@ -36,7 +52,9 @@ data class SvgImportTask(
                 FileInputStream(file).use {
                     val input = TranscoderInput(file.toURI().toString())
                     transcoder.transcode(input, output)
-                    return@retrying PngImage(outStream.toByteArray(), ctx, shortName)
+                    return@retrying PngImage(pngInput = outStream.toByteArray(),
+                            initialUnpacked = SwingFXUtils.toFXImage(transcoder.takeLastImage(), null),
+                            ctx = ctx, name = shortName)
                 }
             }
         }}.also { ctx.onTaskCompleted(this@SvgImportTask) }
