@@ -27,7 +27,7 @@ private const val MAX_UNCOMPRESSED_TILESIZE = 512
 private const val MAX_UNCOMPRESSED_TILESIZE_COMBINING_TASK = 512
 private val REPORTING_INTERVAL: Duration = 1.minutes
 private const val MIN_LIMIT_TO_SKIP_MULTI_SUBTASK_SEMAPHORE = 64
-private val logger = LogManager.getLogger(ImageProcessingContext::javaClass)
+private val logger = LogManager.getLogger("ImageProcessingContext")
 
 private fun Multiset<*>.log() {
     toSet().forEach { logger.info("{}: {}", it, count(it)) }

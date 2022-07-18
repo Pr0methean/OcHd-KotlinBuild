@@ -6,7 +6,7 @@ import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import org.apache.logging.log4j.LogManager
 
-private val logger = LogManager.getLogger(OutputTask::javaClass)
+private val logger = LogManager.getLogger("OutputTask")
 data class OutputTask(private val producer: TextureTask,
                       val name: String,
                       val ctx: ImageProcessingContext

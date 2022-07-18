@@ -12,7 +12,7 @@ import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
 
-private val logger = LogManager.getLogger(PngImage::class.java)
+private val logger = LogManager.getLogger("PngImage")
 class PngImage(initialUnpacked: Image?, private val packingTask: Deferred<ByteArray>,
                val ctx: ImageProcessingContext, val name: String) : PackedImage {
     val unpacked = SoftAsyncLazy(initialUnpacked) {

@@ -8,7 +8,7 @@ import org.apache.logging.log4j.LogManager
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
 
-private val logger = LogManager.getLogger(UncompressedImage::class.java)
+private val logger = LogManager.getLogger("UncompressedImage")
 class UncompressedImage(private val unpacked: Image, val name: String, val ctx: ImageProcessingContext): PackedImage {
     private val packed = SoftAsyncLazy {
         ctx.onCompressPngImage(name)
