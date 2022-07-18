@@ -2,6 +2,7 @@ package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.Retryer
+import io.github.pr0methean.ochd.packedimage.PackedImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
@@ -23,27 +24,28 @@ class OutputTask(producer: TextureTask,
     var producer: TextureTask? = producer
 
     suspend fun invoke() {
+        stats.onTaskLaunched(this@OutputTask)
+        val image: PackedImage
         try {
-            val image = producer!!.getImage()
-            producer = null
-            image.writePng(file)
+            image = retryer.retrying(name) {producer!!.getImage()}
         } catch (e: NotImplementedError) {
             logger.warn("Skipping $name because it's not implemented yet")
+            return
         }
+        producer = null
+        image.writePng(file)
+        stats.onTaskCompleted(this@OutputTask)
     }
     suspend fun run() {
         withContext(Dispatchers.IO) {
             file.parentFile.mkdirs()
             if (semaphore != null && !producer!!.isStarted()) {
                 semaphore.withPermit {
-                    stats.onTaskLaunched(this@OutputTask)
-                    retryer.retrying(name) { invoke() }
+                    invoke()
                 }
             } else {
-                stats.onTaskLaunched(this@OutputTask)
-                retryer.retrying(name) { invoke() }
+                invoke()
             }
-            stats.onTaskCompleted(this@OutputTask)
         }
     }
 
