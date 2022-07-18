@@ -14,11 +14,11 @@ import java.lang.StringBuilder
 
 private val logger = LogManager.getLogger("OutputTask")
 class OutputTask(producer: TextureTask,
-                      val name: String,
-                      val file: File,
-                      val semaphore: Semaphore?,
-                      val stats: ImageProcessingStats,
-                      val retryer: Retryer,
+                 val name: String,
+                 private val file: File,
+                 private val semaphore: Semaphore?,
+                 val stats: ImageProcessingStats,
+                 val retryer: Retryer,
 ): StringBuilderFormattable {
     @Volatile
     var producer: TextureTask? = producer
@@ -27,13 +27,13 @@ class OutputTask(producer: TextureTask,
         stats.onTaskLaunched(this@OutputTask)
         val image: PackedImage
         try {
-            image = retryer.retrying(name) {producer!!.getImage()}
+            image = retryer.retrying(producer!!.toString()) {producer!!.getImage()}
         } catch (e: NotImplementedError) {
             logger.warn("Skipping $name because it's not implemented yet")
             return
         }
         producer = null
-        image.writePng(file)
+        retryer.retrying(name) {image.writePng(file)}
         stats.onTaskCompleted(this@OutputTask)
     }
     suspend fun run() {
