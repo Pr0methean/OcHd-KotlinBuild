@@ -2,6 +2,7 @@ package io.github.pr0methean.ochd
 
 import javafx.scene.SnapshotParameters
 import javafx.scene.paint.Color
+import org.apache.logging.log4j.util.StringBuilderFormattable
 
 fun c(value: Int): Color = Color.rgb(
     value.shr(16).and(0xff),
@@ -10,5 +11,14 @@ fun c(value: Int): Color = Color.rgb(
 
 val DEFAULT_SNAPSHOT_PARAMS = SnapshotParameters().also {
     it.fill = Color.TRANSPARENT
+}
+
+fun StringBuilder.appendList(list: List<StringBuilderFormattable>, delim: String = ", "): StringBuilder {
+    for (item in list) {
+        item.formatTo(this)
+        append(delim)
+    }
+    delete(length - delim.length, length)
+    return this
 }
 

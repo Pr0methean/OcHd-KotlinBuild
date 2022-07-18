@@ -11,6 +11,7 @@ import org.apache.batik.transcoder.TranscoderOutput
 import org.apache.batik.transcoder.image.PNGTranscoder
 import java.io.ByteArrayOutputStream
 import java.io.FileInputStream
+import java.lang.StringBuilder
 
 // svgSalamander doesn't seem to be thread-safe even when loaded in a ThreadLocal<ClassLoader>
 val batikTranscoder = ThreadLocal.withInitial {PNGTranscoder()}
@@ -51,4 +52,7 @@ data class SvgImportTask(
     override fun getImageNow(): PackedImage? = if (coroutine.isCompleted) coroutine.getCompleted() else null
 
     override fun toString(): String = shortName
+    override fun formatTo(buffer: StringBuilder) {
+        buffer.append(shortName)
+    }
 }

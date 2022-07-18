@@ -3,6 +3,7 @@ package io.github.pr0methean.ochd.tasks
 import io.github.pr0methean.ochd.ImageProcessingContext
 import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
+import java.lang.StringBuilder
 
 const val TOP_PORTION = 11.0/32
 data class TopPartCroppingTask(
@@ -17,4 +18,8 @@ data class TopPartCroppingTask(
     }
 
     override fun toString(): String = "Top part of $base"
+    override fun formatTo(buffer: StringBuilder) {
+        buffer.append("Top part of ")
+        base.formatTo(buffer)
+    }
 }

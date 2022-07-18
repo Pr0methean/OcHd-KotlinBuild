@@ -5,12 +5,14 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import org.apache.logging.log4j.LogManager
+import org.apache.logging.log4j.util.StringBuilderFormattable
+import java.lang.StringBuilder
 
 private val logger = LogManager.getLogger("OutputTask")
 data class OutputTask(private val producer: TextureTask,
                       val name: String,
                       val ctx: ImageProcessingContext
-) {
+): StringBuilderFormattable {
 
     // Lazy init is needed to work around an NPE bug
     private val file by lazy {ctx.outTextureRoot.resolve("$name.png")}
@@ -39,4 +41,7 @@ data class OutputTask(private val producer: TextureTask,
     }
 
     override fun toString(): String = "Output of $name"
+    override fun formatTo(buffer: StringBuilder) {
+        buffer.append("Output of ").append(name)
+    }
 }

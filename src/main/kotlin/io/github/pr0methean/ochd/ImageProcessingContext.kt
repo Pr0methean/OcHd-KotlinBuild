@@ -12,6 +12,7 @@ import javafx.scene.paint.Paint
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Semaphore
 import org.apache.logging.log4j.LogManager
+import org.apache.logging.log4j.util.Unbox
 import java.io.File
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -84,7 +85,7 @@ class ImageProcessingContext(
             } catch (t: Throwable) {
                 failedAttempts++
                 retries.increment()
-                logger.error("Yielding before retrying {} ({} failed attempts)", name, failedAttempts, t)
+                logger.error("Yielding before retrying {} ({} failed attempts)", name, Unbox.box(failedAttempts), t)
                 yield()
                 logger.info("Retrying: {}", name)
             }

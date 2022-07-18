@@ -18,7 +18,7 @@ class PngImage(initialUnpacked: Image?, private val packingTask: Deferred<ByteAr
     val unpacked = SoftAsyncLazy(initialUnpacked) {
         ctx.onDecompressPngImage(name)
         return@SoftAsyncLazy ctx.retrying("Decompression of $name") { ByteArrayInputStream(packed()).use { Image(it) } }
-            .also { logger.info("Done decompressing $name") }
+            .also { logger.info("Done decompressing {}", name) }
     }
 
     constructor(input: Image, name: String, ctx: ImageProcessingContext):
@@ -29,7 +29,7 @@ class PngImage(initialUnpacked: Image?, private val packingTask: Deferred<ByteAr
                     ctx.onCompressPngImage(name)
                     @Suppress("BlockingMethodInNonBlockingContext")
                     ImageIO.write(SwingFXUtils.fromFXImage(input, null), "PNG", it)
-                    logger.info("Done compressing to PNG: $name")
+                    logger.info("Done compressing {}", name)
                     return@retrying it.toByteArray()
                 }
             }

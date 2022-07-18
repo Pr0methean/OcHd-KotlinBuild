@@ -2,12 +2,14 @@ package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.DEFAULT_SNAPSHOT_PARAMS
 import io.github.pr0methean.ochd.ImageProcessingContext
+import io.github.pr0methean.ochd.appendList
 import io.github.pr0methean.ochd.packedimage.PackedImage
 import javafx.scene.canvas.Canvas
 import javafx.scene.image.Image
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.withIndex
+import java.lang.StringBuilder
 
 data class AnimationColumnTask(
     private val frames: List<TextureTask>,
@@ -30,7 +32,11 @@ data class AnimationColumnTask(
     }
 
     override fun toString(): String {
-        return "Animation[${frames.joinToString("; ")}]"
+        return "Animation [${frames.joinToString("; ")}]"
+    }
+
+    override fun formatTo(buffer: StringBuilder) {
+        buffer.append("Animation [").appendList(frames, "; ").append(']')
     }
 
     override fun willExpandHeap(): Boolean = super.willExpandHeap() || frames.any {
