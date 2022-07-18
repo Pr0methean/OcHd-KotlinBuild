@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.*
 
 val OVERWORLD_WOODS = group<OverworldWood>()
 val FUNGUS_WOODS = group<Fungus>()
-val WOODS = MaterialGroup(1, OVERWORLD_WOODS, FUNGUS_WOODS)
+val WOODS = MaterialGroup(OVERWORLD_WOODS, FUNGUS_WOODS)
 sealed interface Wood: ShadowHighlightMaterial {
     val barkColor: Paint
     val barkHighlight: Paint

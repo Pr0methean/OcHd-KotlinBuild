@@ -15,7 +15,7 @@ private val OVERWORLD = EnumSet.of(OreBase.STONE, OreBase.DEEPSLATE)
 private val NETHER = EnumSet.of(OreBase.NETHERRACK)
 private val BOTH = EnumSet.allOf(OreBase::class.java)
 
-val ORES = group<Ore>(1)
+val ORES = group<Ore>()
 @Suppress("unused")
 enum class Ore(
     override val color: Color,
