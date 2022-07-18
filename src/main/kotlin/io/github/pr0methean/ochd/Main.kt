@@ -60,7 +60,7 @@ val OXIDATION_STATES = listOf("exposed", "weathered", "oxidized")
                 }
             }
         }}
-        ALL_MATERIALS.outputTasks(ctx).map{scope.async {it.run()}}.map(Deferred<*>::await).collect()
+        ALL_MATERIALS.outputTasks(ctx).toList().map{scope.async {it.run()}}.awaitAll()
         copyMetadata.await()
     }
     stats.log()

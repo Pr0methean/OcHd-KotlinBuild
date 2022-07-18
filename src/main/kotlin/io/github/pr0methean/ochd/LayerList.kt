@@ -6,7 +6,7 @@ import javafx.scene.paint.Paint
 import org.apache.logging.log4j.util.StringBuilderFormattable
 import kotlin.text.StringBuilder
 
-data class LayerList(val layers: List<TextureTask>, val background: Paint, val ctx: ImageProcessingContext):
+data class LayerList(val layers: List<TextureTask>, val background: Paint):
         StringBuilderFormattable {
     override fun toString(): String = StringBuilder().also {formatTo(it)}.toString()
     override fun formatTo(buffer: StringBuilder) {

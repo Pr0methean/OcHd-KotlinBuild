@@ -1,6 +1,7 @@
 package io.github.pr0methean.ochd.tasks
 
-import io.github.pr0methean.ochd.ImageProcessingContext
+import io.github.pr0methean.ochd.ImageProcessingStats
+import io.github.pr0methean.ochd.Retryer
 import io.github.pr0methean.ochd.packedimage.PackedImage
 import io.github.pr0methean.ochd.packedimage.PngImage
 import javafx.embed.swing.SwingFXUtils
@@ -12,6 +13,7 @@ import org.apache.batik.transcoder.TranscoderOutput
 import org.apache.batik.transcoder.image.PNGTranscoder
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
+import java.io.File
 import java.io.FileInputStream
 import java.lang.StringBuilder
 
@@ -35,33 +37,38 @@ private class ImageRetainingTranscoder: PNGTranscoder() {
 data class SvgImportTask(
     val shortName: String,
     private val tileSize: Int,
-    val ctx: ImageProcessingContext
+    val file: File,
+    val scope: CoroutineScope,
+    val retryer: Retryer,
+    val stats: ImageProcessingStats
 ): TextureTask {
 
-    val coroutine: Deferred<PackedImage> by lazy {
-        ctx.scope.plus(batikTranscoder.asContextElement()).async { ctx.retrying(shortName) {
-            ctx.onTaskLaunched(this@SvgImportTask)
-            val transcoder = batikTranscoder.get()
-            transcoder.setTranscodingHints(
-                mapOf(
-                    KEY_WIDTH to ctx.tileSize.toFloat(),
-                    KEY_HEIGHT to ctx.tileSize.toFloat()
+    private val coroutine: Deferred<PackedImage> by lazy {
+        scope.plus(batikTranscoder.asContextElement()).async {
+            retryer.retrying(shortName) {
+                stats.onTaskLaunched(this@SvgImportTask)
+                val transcoder = batikTranscoder.get()
+                transcoder.setTranscodingHints(
+                    mapOf(
+                        KEY_WIDTH to tileSize.toFloat(),
+                        KEY_HEIGHT to tileSize.toFloat()
+                    )
                 )
-            )
-            ByteArrayOutputStream().use { outStream ->
-                val output = TranscoderOutput(outStream)
-                FileInputStream(file).use {
-                    val input = TranscoderInput(file.toURI().toString())
-                    transcoder.transcode(input, output)
-                    return@retrying PngImage(pngInput = outStream.toByteArray(),
+                ByteArrayOutputStream().use { outStream ->
+                    val output = TranscoderOutput(outStream)
+                    FileInputStream(file).use {
+                        val input = TranscoderInput(file.toURI().toString())
+                        transcoder.transcode(input, output)
+                        return@retrying PngImage(
+                            initialPacked = outStream.toByteArray(),
                             initialUnpacked = SwingFXUtils.toFXImage(transcoder.takeLastImage()!!, null),
-                            ctx = ctx, name = shortName)
+                            name = shortName, scope = scope, retryer = retryer, stats = stats
+                        )
+                    }
                 }
             }
-        }}.also { ctx.onTaskCompleted(this@SvgImportTask) }
+        }.also { stats.onTaskCompleted(this@SvgImportTask) }
     }
-
-    val file = ctx.svgDirectory.resolve("$shortName.svg")
     override fun isComplete(): Boolean = coroutine.isCompleted
     override fun isStarted(): Boolean = coroutine.isActive || coroutine.isCompleted
 

@@ -1,6 +1,8 @@
 package io.github.pr0methean.ochd.tasks
 
-import io.github.pr0methean.ochd.ImageProcessingContext
+import io.github.pr0methean.ochd.ImageProcessingStats
+import io.github.pr0methean.ochd.Retryer
+import io.github.pr0methean.ochd.packedimage.ImagePacker
 import io.github.pr0methean.ochd.packedimage.PackedImage
 import javafx.concurrent.Task
 import javafx.scene.image.Image
@@ -21,16 +23,18 @@ private val threadLocalRunLater: ThreadLocal<MethodHandle> = ThreadLocal.withIni
     lookup.unreflect(platformClass.getMethod("runLater", Runnable::class.java))
 }
 
-suspend fun <T> doJfx(name: String, ctx: ImageProcessingContext, jfxCode: suspend CoroutineScope.() -> T): T
-        = ctx.retrying(name) {
+suspend fun <T> doJfx(name: String, retryer: Retryer, jfxCode: suspend CoroutineScope.() -> T): T
+        = retryer.retrying(name) {
     val task = AbstractTextureTask.JfxTask(jfxCode)
     threadLocalRunLater.get().invokeExact(task as Runnable)
     return@retrying withContext(Dispatchers.IO) { task.get() }
 }
 
-abstract class AbstractTextureTask(open val ctx: ImageProcessingContext) : TextureTask {
+abstract class AbstractTextureTask(
+    open val packer: ImagePacker, open val scope: CoroutineScope, open val stats: ImageProcessingStats,
+    open val retryer: Retryer) : TextureTask {
     open val coroutine by lazy {
-        runTaskAsync(ctx.scope)
+        runTaskAsync(scope)
     }
 
     override fun isComplete() = coroutine.isCompleted
@@ -42,16 +46,17 @@ abstract class AbstractTextureTask(open val ctx: ImageProcessingContext) : Textu
                 .plus(threadLocalClassLoader.asContextElement())
                 .plus(threadLocalRunLater.asContextElement())
                 .async(start = CoroutineStart.LAZY) {
-        ctx.onTaskLaunched(this@AbstractTextureTask)
-        val result = ctx.retrying(this@AbstractTextureTask.toString()) {
-            ctx.packImage(computeImage(), this@AbstractTextureTask, this@AbstractTextureTask.toString())
+        stats.onTaskLaunched(this@AbstractTextureTask)
+        val result = retryer.retrying(this@AbstractTextureTask.toString()) {
+            packer.packImage(computeImage(), null, this@AbstractTextureTask,
+                this@AbstractTextureTask.toString())
         }
-        ctx.onTaskCompleted(this@AbstractTextureTask)
+        stats.onTaskCompleted(this@AbstractTextureTask)
         result
     }
 
     protected suspend fun <T> doJfx(jfxCode: suspend CoroutineScope.() -> T): T
-            = doJfx(toString(), ctx, jfxCode)
+            = doJfx(toString(), retryer, jfxCode)
 
     class JfxTask<T>(private val jfxCode: suspend CoroutineScope.() -> T) : Task<T>() {
         override fun call(): T {
@@ -61,10 +66,12 @@ abstract class AbstractTextureTask(open val ctx: ImageProcessingContext) : Textu
         }
     }
 
-    override fun toString(): String = StringBuilder().also { formatTo(it) }.toString()
+    /** Must be final to supercede the generated implementation for data classes */
+    final override fun toString(): String = StringBuilder().also { formatTo(it) }.toString()
 
     abstract suspend fun computeImage(): Image
     override suspend fun getImage(): PackedImage = coroutine.await()
+
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun getImageNow(): PackedImage? = if (coroutine.isCompleted) coroutine.getCompleted() else null
 }

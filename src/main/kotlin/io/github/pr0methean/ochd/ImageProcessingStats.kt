@@ -51,4 +51,24 @@ class ImageProcessingStats {
         logger.info("PNG decompressions: {}", decompressions.sum())
         logger.info("Retries of failed tasks: {}", retries.sum())
     }
+
+    fun onDecompressPngImage(name: String) {
+        logger.info("Decompressing {} from PNG", name)
+        decompressions.increment()
+    }
+
+    fun onCompressPngImage(name: String) {
+        logger.info("Compressing {} to PNG", name)
+        compressions.increment()
+    }
+
+    fun onTaskLaunched(task: Any) {
+        logger.info("Launched: {}", task)
+        taskLaunches.add(task::class.simpleName ?: "[unnamed class]")
+    }
+
+    fun onTaskCompleted(task: Any) {
+        logger.info("Completed: {}", task)
+        taskCompletions.add(task::class.simpleName ?: "[unnamed class]")
+    }
 }

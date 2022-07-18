@@ -29,6 +29,12 @@ class LayerListBuilder(val ctx: ImageProcessingContext) {
         return layer
     }
 
+    fun layer(source: TextureTask, paint: Paint? = null, alpha: Double = 1.0): TextureTask {
+        val layer = ctx.layer(source, paint, alpha)
+        copy(layer)
+        return layer
+    }
+
     fun copy(sourceInit: LayerListBuilder.() -> Unit) =
         copy(LayerListBuilder(ctx).also(sourceInit).build())
     fun copy(source: LayerList) {
@@ -42,16 +48,16 @@ class LayerListBuilder(val ctx: ImageProcessingContext) {
             }
         }
         if (source.layers.size > 1) { // Don't flatten sub-stacks since we want to deduplicate them
-            copy(ImageStackingTask(source, ctx))
+            copy(ImageStackingTask(source, ctx.tileSize, ctx.packer, ctx.scope, ctx.stats, ctx.retryer))
         } else {
             addAll(source.layers)
         }
     }
     fun copy(source: SingleTextureMaterial) 
             = copy(LayerListBuilder(ctx).also {source.run {createTextureLayers()}}.build())
-    fun copyTopOf(source: TextureTask) = copy(TopPartCroppingTask(source, ctx.tileSize, ctx))
+    fun copyTopOf(source: TextureTask) = copy(TopPartCroppingTask(source, ctx.tileSize, ctx.packer, ctx.scope, ctx.stats, ctx.retryer))
     fun copyTopOf(source: LayerListBuilder.() -> Unit) = copyTopOf(ctx.stack(source))
     fun copy(element: TextureTask) = layers.add(ctx.deduplicate(element))
     fun addAll(elements: Collection<TextureTask>) = layers.addAll(elements.map(ctx::deduplicate))
-    fun build() = LayerList(layers.toList(), background, ctx)
+    fun build() = LayerList(layers.toList(), background)
 }

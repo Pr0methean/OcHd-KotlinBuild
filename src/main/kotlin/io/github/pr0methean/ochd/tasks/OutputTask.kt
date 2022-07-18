@@ -1,21 +1,25 @@
 package io.github.pr0methean.ochd.tasks
 
-import io.github.pr0methean.ochd.ImageProcessingContext
+import io.github.pr0methean.ochd.ImageProcessingStats
+import io.github.pr0methean.ochd.Retryer
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.StringBuilderFormattable
+import java.io.File
 import java.lang.StringBuilder
 
 private val logger = LogManager.getLogger("OutputTask")
 data class OutputTask(private val producer: TextureTask,
                       val name: String,
-                      val ctx: ImageProcessingContext
+                      val file: File,
+                      val semaphore: Semaphore?,
+                      val stats: ImageProcessingStats,
+                      val retryer: Retryer,
 ): StringBuilderFormattable {
 
-    // Lazy init is needed to work around an NPE bug
-    private val file by lazy {ctx.outTextureRoot.resolve("$name.png")}
     suspend fun invoke() {
         try {
             val image = producer.getImage()
@@ -27,16 +31,16 @@ data class OutputTask(private val producer: TextureTask,
     suspend fun run() {
         withContext(Dispatchers.IO) {
             file.parentFile.mkdirs()
-            if (ctx.needSemaphore && !producer.isStarted()) {
-                ctx.newTasksSemaphore.withPermit {
-                    ctx.onTaskLaunched(this@OutputTask)
-                    ctx.retrying(name) {invoke()}
+            if (semaphore != null && !producer.isStarted()) {
+                semaphore.withPermit {
+                    stats.onTaskLaunched(this@OutputTask)
+                    retryer.retrying(name) { invoke() }
                 }
             } else {
-                ctx.onTaskLaunched(this@OutputTask)
-                ctx.retrying(name) {invoke()}
+                stats.onTaskLaunched(this@OutputTask)
+                retryer.retrying(name) { invoke() }
             }
-            ctx.onTaskCompleted(this@OutputTask)
+            stats.onTaskCompleted(this@OutputTask)
         }
     }
 
