@@ -18,7 +18,6 @@ import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileInputStream
 import java.lang.StringBuilder
-import java.util.concurrent.atomic.AtomicReference
 
 // svgSalamander doesn't seem to be thread-safe even when loaded in a ThreadLocal<ClassLoader>
 private val batikTranscoder: ThreadLocal<ImageRetainingTranscoder> = ThreadLocal.withInitial {ImageRetainingTranscoder()}
@@ -26,12 +25,17 @@ private val batikTranscoder: ThreadLocal<ImageRetainingTranscoder> = ThreadLocal
 /** SVG-to-PNG transcoder that retains the last image it wrote, until it's retrieved by calling takeLastImage(). */
 private class ImageRetainingTranscoder: PNGTranscoder() {
     val mutex = Mutex()
-    private val lastImage = AtomicReference<BufferedImage?>()
+    @Volatile
+    private var lastImage: BufferedImage? = null
     override fun writeImage(img: BufferedImage?, output: TranscoderOutput?) {
-        lastImage.set(img)
+        lastImage = img
         super.writeImage(img, output)
     }
-    fun takeLastImage(): BufferedImage? = lastImage.getAndSet(null)
+    fun takeLastImage(): BufferedImage? {
+        val lastImage = this.lastImage
+        this.lastImage = null
+        return lastImage
+    }
 }
 
 data class SvgImportTask(
