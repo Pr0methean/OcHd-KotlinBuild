@@ -23,6 +23,9 @@ class CompletionHandler(val scope: CoroutineScope) {
 
     fun onAllAdded() {
         allAdded = true
+        if (remainingTasks.get() == 0) {
+            allFinished.complete(Unit)
+        }
     }
 
     private val allFinished = CompletableDeferred<Unit>()
