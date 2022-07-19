@@ -58,10 +58,10 @@ out_stack "block/composter_bottom"
     },
     JUKEBOX_SIDE {
         override fun LayerListBuilder.createTextureLayers() {
-            background(OverworldWood.DARK_OAK.color)
-            layer("strokeTopLeftBottomRight4", color)
+            background(color)
+            layer("strokeTopLeftBottomRight4", highlight)
             layer("strokeBottomLeftTopRight4", shadow)
-            layer("borderSolidThick", highlight)
+            layer("borderSolidThick", color)
             layer("borderDotted", shadow)
         }
     },
