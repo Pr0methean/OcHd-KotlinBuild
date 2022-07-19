@@ -1,7 +1,9 @@
 package io.github.pr0methean.ochd
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
-import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.toList
 import org.apache.logging.log4j.LogManager
 import java.nio.file.Paths
 import kotlin.system.measureNanoTime
@@ -40,7 +42,7 @@ suspend fun main(args:Array<String>) {
     val stats = ctx.stats
     startMonitoring(stats, scope)
     val time = measureNanoTime {
-        val copyMetadata = scope.async { withContext(Dispatchers.IO) {
+        val copyMetadata = CoroutineScope(Dispatchers.IO).async {
             stats.onTaskLaunched("Copying metadata files")
             metadataDirectory.walkTopDown().forEach {
                 val outputPath = out.resolve(it.relativeTo(metadataDirectory))
@@ -51,7 +53,7 @@ suspend fun main(args:Array<String>) {
                 }
             }
             stats.onTaskCompleted("Copying metadata files")
-        }}
+        }
         stats.onTaskLaunched("Building task graph")
         val tasks = ALL_MATERIALS.outputTasks(ctx).toList()
         stats.onTaskCompleted("Building task graph")

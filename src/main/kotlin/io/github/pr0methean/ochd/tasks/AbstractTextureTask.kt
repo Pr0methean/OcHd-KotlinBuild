@@ -23,11 +23,12 @@ private val threadLocalRunLater: ThreadLocal<MethodHandle> = ThreadLocal.withIni
     lookup.unreflect(platformClass.getMethod("runLater", Runnable::class.java))
 }
 
+@Suppress("BlockingMethodInNonBlockingContext")
 suspend fun <T> doJfx(name: String, retryer: Retryer, jfxCode: suspend CoroutineScope.() -> T): T
         = retryer.retrying(name) {
     val task = AbstractTextureTask.JfxTask(jfxCode)
     threadLocalRunLater.get().invokeExact(task as Runnable)
-    return@retrying withContext(Dispatchers.IO) { task.get() }
+    return@retrying task.get()
 }
 
 abstract class AbstractTextureTask(
