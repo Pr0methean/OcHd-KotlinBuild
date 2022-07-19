@@ -3,7 +3,9 @@ package io.github.pr0methean.ochd.materials.block.pickaxe
 import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.c
+import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.Companion.stoneExtremeHighlight
 import io.github.pr0methean.ochd.tasks.OutputTask
+import io.github.pr0methean.ochd.tasks.TextureTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import io.github.pr0methean.ochd.texturebase.group
 import javafx.scene.paint.Color
@@ -28,7 +30,18 @@ enum class Ore(
     COAL(
         color = c(0x2f2f2f),
         shadow = Color.BLACK,
-        highlight = c(0x494949)),
+        highlight = c(0x494949)) {
+        override fun oreBlock(ctx: ImageProcessingContext, oreBase: OreBase): TextureTask {
+            if (oreBase == OreBase.DEEPSLATE) {
+                ctx.stack {
+                    copy(OreBase.DEEPSLATE)
+                    layer("coalBorder", stoneExtremeHighlight)
+                    item()
+                }
+            }
+            return super.oreBlock(ctx, oreBase)
+        }
+    },
     COPPER(
         color = c(0xe0734d),
         shadow = c(0x904931),
@@ -170,10 +183,7 @@ enum class Ore(
 
     override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
         substrates.forEach { oreBase ->
-            emit(ctx.out("block/${oreBase.orePrefix}${name}_ore", ctx.stack {
-                copy(oreBase)
-                copy {item()}
-            }))
+            emit(ctx.out("block/${oreBase.orePrefix}${name}_ore", oreBlock(ctx, oreBase)))
         }
         emit(ctx.out("block/${name}_block", ctx.stack { block() }))
         if (needsRefining) {
@@ -183,5 +193,13 @@ enum class Ore(
         } else {
             emit(ctx.out("item/${itemNameOverride ?: name}", ctx.stack {itemForOutput()}))
         }
+    }
+
+    protected open fun oreBlock(
+        ctx: ImageProcessingContext,
+        oreBase: OreBase
+    ) = ctx.stack {
+        copy(oreBase)
+        copy { item() }
     }
 }
