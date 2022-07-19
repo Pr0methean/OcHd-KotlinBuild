@@ -11,6 +11,7 @@ interface PackedImage {
     suspend fun packed(): ByteArray
 
     suspend fun writePng(destination: File) = withContext(Dispatchers.IO) {
+        destination.parentFile.mkdirs()
         FileOutputStream(destination).use { it.write(packed()) }
     }
 }
