@@ -6,6 +6,7 @@ import io.github.pr0methean.ochd.tasks.OutputTask
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
+import java.io.File
 
 abstract class SingleLayerMaterial(
     override val directory: String,
@@ -23,7 +24,7 @@ abstract class SingleLayerMaterial(
     }
 
     override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> {
-        return flowOf(ctx.out(name, ctx.layer(sourceFileName, color, alpha)))
+        return flowOf(ctx.out("""$directory${File.pathSeparator}$name""", ctx.layer(sourceFileName, color, alpha)))
     }
 
 }
