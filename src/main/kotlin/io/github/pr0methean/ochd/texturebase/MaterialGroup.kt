@@ -14,7 +14,5 @@ open class MaterialGroup(val elements: Flow<Material>): Material {
             = elements.flatMapConcat { it.outputTasks(ctx) }
 }
 
-@OptIn(FlowPreview::class)
-@Suppress("UNCHECKED_CAST")
-inline fun <reified E : Enum<out Material>> group()
-        = MaterialGroup(E::class.java.enumConstants.asFlow() as Flow<Material>)
+inline fun <reified E> group(): MaterialGroup where E : Material, E : Enum<E> =
+    MaterialGroup(enumValues<E>().asFlow())
