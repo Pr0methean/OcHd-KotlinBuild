@@ -9,6 +9,7 @@ import io.github.pr0methean.ochd.texturebase.group
 import javafx.scene.paint.Color
 
 val SIMPLE_SOFT_EARTH_BLOCKS = group<SimpleSoftEarth>()
+@Suppress("unused")
 enum class SimpleSoftEarth(
     override val color: Color,
     override val shadow: Color,
@@ -111,13 +112,6 @@ enum class SimpleSoftEarth(
             layer("soulHeads", color)
             layer("soulTopLeftFace", highlight)
             layer("soulBottomRightFace", shadow)
-        }
-    },
-    GRASS_BLOCK_SIDE(c(0x83b253),c(0x64a43a),c(0x9ccb6c)) {
-        override fun LayerListBuilder.createTextureLayers() {
-            copy(DIRT)
-            layer("topPart", highlight)
-            layer("veesTop", shadow)
         }
     };
 }

@@ -43,13 +43,13 @@ enum class DirtGroundCover(
 
         override fun LayerListBuilder.createCoverSideLayers() {
             layer("topPart", grassItemColor)
-            layer("veesTopPart", grassItemShadow)
+            layer("veesTop", grassItemShadow)
         }
 
         override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask>
                 = merge(super.outputTasks(ctx), flowOf(ctx.out("block/grass_block_side_overlay", ctx.stack {
             layer("topPart", color)
-            layer("veesTopPart", shadow)
+            layer("veesTop", shadow)
         })))
     },
     PODZOL(c(0x6a4418),c(0x4a3018),c(0x8b5920)) {
