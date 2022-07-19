@@ -76,7 +76,7 @@ out_stack "block/composter_bottom"
     NOTE_BLOCK {
         override fun LayerListBuilder.createTextureLayers() {
             copy(JUKEBOX_SIDE)
-            layer("note", shadow)
+            layer("note", OverworldWood.DARK_OAK.shadow)
         }
     },
     COMPOSTER_TOP {
