@@ -6,16 +6,12 @@ import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.STONE
 import io.github.pr0methean.ochd.materials.block.shovel.DirtGroundCover
 import io.github.pr0methean.ochd.tasks.OutputTask
-import io.github.pr0methean.ochd.texturebase.MaterialGroup
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
-import io.github.pr0methean.ochd.texturebase.group
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 
-val OVERWORLD_WOODS = group<OverworldWood>()
-val FUNGUS_WOODS = group<Fungus>()
-val WOODS = MaterialGroup(OVERWORLD_WOODS, FUNGUS_WOODS)
 sealed interface Wood: ShadowHighlightMaterial {
     val barkColor: Paint
     val barkHighlight: Paint

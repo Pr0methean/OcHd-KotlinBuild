@@ -5,14 +5,12 @@ import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
-import io.github.pr0methean.ochd.texturebase.group
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
-val POLISHABLES = group<Polishable>()
-
+@Suppress("unused")
 enum class Polishable(
     override val color: Paint,
     override val shadow: Paint,
@@ -58,13 +56,12 @@ push bigRingsTopLeftBottomRight ${andesite_s} a2*/
     }
 
     override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
-        emit(ctx.out("block/$name", ctx.stack { createTextureLayersBase() }))
-        emit(ctx.out("block/polished_$name", ctx.stack(createPolishedTexture())))
+        emit(ctx.out("block/$name", ctx.stack {createTextureLayersBase()}))
+        emit(ctx.out("block/polished_$name", ctx.stack {createPolishedTexture()}))
     }
 
-    internal fun createPolishedTexture(): LayerListBuilder.() -> Unit =
-        {
-            createTextureLayersBase()
-            createBorderPolished()
-        }
+    internal fun LayerListBuilder.createPolishedTexture() {
+        createTextureLayersBase()
+        createBorderPolished()
+    }
 }

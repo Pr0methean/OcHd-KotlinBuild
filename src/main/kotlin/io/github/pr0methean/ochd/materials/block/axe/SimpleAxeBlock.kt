@@ -5,10 +5,8 @@ import io.github.pr0methean.ochd.materials.block.shovel.DirtGroundCover
 import io.github.pr0methean.ochd.texturebase.Block
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
-import io.github.pr0methean.ochd.texturebase.group
 import javafx.scene.paint.Color
 
-val SIMPLE_AXE_BLOCKS = group<SimpleAxeBlock>()
 @Suppress("unused")
 enum class SimpleAxeBlock: SingleTextureMaterial, ShadowHighlightMaterial, Block {
     /*

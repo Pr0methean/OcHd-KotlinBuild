@@ -1,5 +1,7 @@
 package io.github.pr0methean.ochd.materials.block.indestructible
 
 import io.github.pr0methean.ochd.texturebase.MaterialGroup
+import io.github.pr0methean.ochd.texturebase.group
 
-val INDESTRUCTIBLE_BLOCKS = MaterialGroup(COMMAND_BLOCKS, STRUCTURE_AND_JIGSAW_BLOCKS, SIMPLE_INDESTRUCTIBLE_BLOCKS)
+val INDESTRUCTIBLE_BLOCKS =
+    MaterialGroup(group<CommandBlock>(), group<StructureOrJigsaw>(), group<SimpleIndestructibleBlock>())

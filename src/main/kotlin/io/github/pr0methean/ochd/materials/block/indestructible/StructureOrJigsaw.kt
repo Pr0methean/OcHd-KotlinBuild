@@ -5,9 +5,7 @@ import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.texturebase.Block
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
-import io.github.pr0methean.ochd.texturebase.group
 
-val STRUCTURE_AND_JIGSAW_BLOCKS = group<StructureOrJigsaw>()
 @Suppress("unused")
 enum class StructureOrJigsaw(val foregroundLayer: String?): SingleTextureMaterial, ShadowHighlightMaterial, Block {
     JIGSAW_BOTTOM(null),

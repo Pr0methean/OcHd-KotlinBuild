@@ -5,11 +5,10 @@ import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
-import io.github.pr0methean.ochd.texturebase.group
 import javafx.scene.paint.Color
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 
-val COPPER_OXIDES = group<CopperOxide>()
 @Suppress("unused")
 enum class CopperOxide(
     override val color: Color,

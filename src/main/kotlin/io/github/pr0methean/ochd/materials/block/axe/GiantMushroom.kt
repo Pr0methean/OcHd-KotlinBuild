@@ -5,11 +5,10 @@ import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.texturebase.Block
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
-import io.github.pr0methean.ochd.texturebase.group
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 
-val GIANT_MUSHROOMS = group<GiantMushroom>()
+@Suppress("unused")
 enum class GiantMushroom(
     override val color: Paint,
     override val shadow: Paint,

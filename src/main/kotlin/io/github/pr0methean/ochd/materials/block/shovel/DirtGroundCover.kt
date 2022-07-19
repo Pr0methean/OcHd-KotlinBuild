@@ -6,12 +6,12 @@ import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.texturebase.GroundCoverBlock
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
-import io.github.pr0methean.ochd.texturebase.group
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.merge
+
 /*
 grass_item_h='9ccb6c'
 grass_item='83b253'
@@ -20,7 +20,7 @@ grass_item_s='64a43a'
 private val grassItemColor = c(0x83b253)
 private val grassItemShadow = c(0x64a43a)
 private val grassItemHighlight = c(0x9ccb6c)
-val DIRT_GROUND_COVERS = group<DirtGroundCover>()
+
 @Suppress("unused")
 enum class DirtGroundCover(
     override val color: Paint,

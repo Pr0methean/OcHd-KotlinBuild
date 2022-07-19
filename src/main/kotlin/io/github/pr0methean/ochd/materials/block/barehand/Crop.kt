@@ -6,7 +6,6 @@ import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.materials.block.axe.Fungus
 import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.texturebase.Material
-import io.github.pr0methean.ochd.texturebase.group
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -36,7 +35,7 @@ private val wheatColor = c(0x888836)
 private val wheatShadow = c(0x5b6b0f)
 private val wheatHighlight = c(0xdcbb65)
 
-val CROPS = group<Crop>()
+@Suppress("unused")
 enum class Crop(val numStages: Int, val color: Paint): Material {
     NETHER_WART(3, Fungus.CRIMSON.leavesShadow) {
         override fun LayerListBuilder.createTextureForStage(stage: Int) {

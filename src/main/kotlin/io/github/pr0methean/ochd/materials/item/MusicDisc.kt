@@ -5,12 +5,12 @@ import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.materials.DYES
 import io.github.pr0methean.ochd.texturebase.Item
 import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
-import io.github.pr0methean.ochd.texturebase.group
 
 val musicDiscColor = c(0x404040)
 val musicDiscShadow = c(0x212121)
 val musicDiscHighlight = c(0x515151)
-val MUSIC_DISCS = group<MusicDisc>()
+
+@Suppress("unused")
 enum class MusicDisc(val labelDyeName: String): SingleTextureMaterial, Item {
     FAR("red"),
     WAIT("green"),

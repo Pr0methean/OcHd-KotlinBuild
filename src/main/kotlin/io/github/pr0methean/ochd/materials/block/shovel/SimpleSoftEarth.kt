@@ -5,10 +5,8 @@ import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase
 import io.github.pr0methean.ochd.texturebase.Block
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
-import io.github.pr0methean.ochd.texturebase.group
 import javafx.scene.paint.Color
 
-val SIMPLE_SOFT_EARTH_BLOCKS = group<SimpleSoftEarth>()
 @Suppress("unused")
 enum class SimpleSoftEarth(
     override val color: Color,

@@ -5,14 +5,13 @@ import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
-import io.github.pr0methean.ochd.texturebase.group
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
 val commandBlockDotColor = c(0xc2873e)
-val COMMAND_BLOCKS = group<CommandBlock>()
+
 enum class CommandBlock(
     override val color: Paint,
     override val shadow: Paint,

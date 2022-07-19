@@ -7,7 +7,6 @@ import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.Companion.stone
 import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.tasks.TextureTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
-import io.github.pr0methean.ochd.texturebase.group
 import javafx.scene.paint.Color
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -17,7 +16,6 @@ private val OVERWORLD = EnumSet.of(OreBase.STONE, OreBase.DEEPSLATE)
 private val NETHER = EnumSet.of(OreBase.NETHERRACK)
 private val BOTH = EnumSet.allOf(OreBase::class.java)
 
-val ORES = group<Ore>()
 @Suppress("unused")
 enum class Ore(
     override val color: Color,

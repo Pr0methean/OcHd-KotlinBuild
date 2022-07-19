@@ -4,10 +4,8 @@ import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.materials.block.shovel.DirtGroundCover
 import io.github.pr0methean.ochd.texturebase.Block
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
-import io.github.pr0methean.ochd.texturebase.group
 import javafx.scene.paint.Paint
 
-val BIOME_COLORIZED_PLANTS = group<BiomeColorizedPlant>()
 /**
  * Plants whose textures are stored in gray and colorized in real time.
  */

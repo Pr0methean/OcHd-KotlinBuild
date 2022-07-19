@@ -1,9 +1,9 @@
 package io.github.pr0methean.ochd.materials.block.pickaxe
 
 import io.github.pr0methean.ochd.texturebase.MaterialGroup
+import io.github.pr0methean.ochd.texturebase.group
 
 val PICKAXE_BLOCKS = MaterialGroup(
-    MaterialGroup(ORE_BASES, ORES, NYLIUMS),
-                MaterialGroup(COPPER_OXIDES, CutCopper),
-                MaterialGroup(StainedGlassFront, StainedGlassTop, Glass),
-                SIMPLE_PICKAXE_BLOCKS, MiscRedstone, POLISHABLES, DyedTerracotta, Concrete, BoneBlock, Furnace, Rails)
+    group<OreBase>(), group<Ore>(), group<Nylium>(), group<CopperOxide>(), CutCopper, StainedGlassFront,
+    StainedGlassTop, Glass, group<SimplePickaxeBlock>(), MiscRedstone, group<Polishable>(), DyedTerracotta, Concrete,
+    BoneBlock, Furnace, Rails)

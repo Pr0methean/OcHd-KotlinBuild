@@ -9,13 +9,14 @@ import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.DEEPSLATE
 import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.STONE
 import io.github.pr0methean.ochd.materials.block.shovel.SimpleSoftEarth
 import io.github.pr0methean.ochd.tasks.OutputTask
-import io.github.pr0methean.ochd.texturebase.*
+import io.github.pr0methean.ochd.texturebase.Block
+import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
+import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 
-val SIMPLE_PICKAXE_BLOCKS = group<SimplePickaxeBlock>()
 val mortarColor = c(0xa2867d)
 @Suppress("unused")
 enum class SimplePickaxeBlock(
@@ -155,7 +156,7 @@ enum class SimplePickaxeBlock(
     },
     GILDED_BLACKSTONE(Ore.GOLD) {
         override fun LayerListBuilder.createTextureLayers() {
-            copy{Polishable.BLACKSTONE.createPolishedTexture()}
+            copy{Polishable.BLACKSTONE.run {createPolishedTexture()}}
             layer("bigRingsBottomLeftTopRight", color)
         }
     },
@@ -330,11 +331,11 @@ enum class SimplePickaxeBlock(
             layer("borderDottedBottomRight", shadow)
         }
     },
-    AMETHYST_BLOCK(c(0x7a5bb5),c(0x64479e),c(0xc890ff)) {
+    AMETHYST_BLOCK(c(0xc890ff),c(0x7a5bb5),c(0xffcbff)) {
         override fun LayerListBuilder.createTextureLayers() {
-            background(color)
+            background(shadow)
             layer("triangles1", highlight)
-            layer("triangles2", shadow)
+            layer("triangles2", color)
         }
     },
     BUDDING_AMETHYST(AMETHYST_BLOCK.color,c(0x462b7d),AMETHYST_BLOCK.highlight) {
@@ -343,29 +344,29 @@ enum class SimplePickaxeBlock(
             layer("buddingAmethystCenter", shadow)
         }
     },
-    AMETHYST_CLUSTER(AMETHYST_BLOCK.color,BUDDING_AMETHYST.shadow,c(0xffcbff)) {
+    AMETHYST_CLUSTER(AMETHYST_BLOCK) {
         override fun LayerListBuilder.createTextureLayers() {
             layer("amethystCluster1", highlight)
-            layer("amethystCluster2", shadow)
+            layer("amethystCluster2", color)
         }
     },
     LARGE_AMETHYST_BUD(AMETHYST_BLOCK) {
         override fun LayerListBuilder.createTextureLayers() {
-            layer("largeAmethystBud1", highlight)
+            layer("largeAmethystBud1", color)
             layer("largeAmethystBud2", shadow)
-            layer("largeAmethystBud3", color)
+            layer("largeAmethystBud3", highlight)
         }
     },
     MEDIUM_AMETHYST_BUD(AMETHYST_BLOCK) {
         override fun LayerListBuilder.createTextureLayers() {
-            layer("mediumAmethystBud1", highlight)
+            layer("mediumAmethystBud1", color)
             layer("mediumAmethystBud2", shadow)
-            layer("largeAmethystBud3", color)
+            layer("largeAmethystBud3", highlight)
         }
     },
     SMALL_AMETHYST_BUD(AMETHYST_BLOCK) {
         override fun LayerListBuilder.createTextureLayers() {
-            layer("smallAmethystBud1", highlight)
+            layer("smallAmethystBud1", color)
             layer("smallAmethystBud2", shadow)
         }
     }
@@ -374,6 +375,6 @@ enum class SimplePickaxeBlock(
     override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> =
         if (hasOutput) super<SingleTextureMaterial>.outputTasks(ctx) else flowOf()
 
-    constructor(base: ShadowHighlightMaterial, hasOutput: Boolean = false):
+    constructor(base: ShadowHighlightMaterial, hasOutput: Boolean = true):
             this(base.color, base.shadow, base.highlight, hasOutput)
 }

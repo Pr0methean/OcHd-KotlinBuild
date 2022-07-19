@@ -6,12 +6,10 @@ import io.github.pr0methean.ochd.materials.block.pickaxe.SimplePickaxeBlock
 import io.github.pr0methean.ochd.texturebase.Block
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
-import io.github.pr0methean.ochd.texturebase.group
 import javafx.scene.paint.Color.BLACK
 import javafx.scene.paint.Color.WHITE
 import javafx.scene.paint.Paint
 
-val SIMPLE_INDESTRUCTIBLE_BLOCKS = group<SimpleIndestructibleBlock>()
 @Suppress("unused")
 enum class SimpleIndestructibleBlock(
     override val color: Paint,

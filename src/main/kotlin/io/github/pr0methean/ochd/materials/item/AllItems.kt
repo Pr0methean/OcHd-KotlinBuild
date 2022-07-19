@@ -1,5 +1,6 @@
 package io.github.pr0methean.ochd.materials.item
 
 import io.github.pr0methean.ochd.texturebase.MaterialGroup
+import io.github.pr0methean.ochd.texturebase.group
 
-val ITEMS = MaterialGroup(REMAINS, MUSIC_DISCS, SINGLE_TEXTURE_ITEMS)
+val ITEMS = MaterialGroup(REMAINS, group<MusicDisc>(), group<SingleTextureItem>())

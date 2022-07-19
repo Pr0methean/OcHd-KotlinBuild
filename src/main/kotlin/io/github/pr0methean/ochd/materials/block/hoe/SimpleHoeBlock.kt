@@ -6,11 +6,10 @@ import io.github.pr0methean.ochd.materials.block.pickaxe.Ore
 import io.github.pr0methean.ochd.texturebase.Block
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
-import io.github.pr0methean.ochd.texturebase.group
 import javafx.scene.paint.Color.WHITE
 import javafx.scene.paint.Paint
 
-val SIMPLE_HOE_BLOCKS = group<SimpleHoeBlock>()
+@Suppress("unused")
 enum class SimpleHoeBlock(
     override val color: Paint,
     override val shadow: Paint,

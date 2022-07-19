@@ -4,10 +4,9 @@ import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.materials.DYES
 import io.github.pr0methean.ochd.texturebase.Block
 import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
-import io.github.pr0methean.ochd.texturebase.group
 import javafx.scene.paint.Color
 
-val SIMPLE_SHEAR_BLOCKS = group<SimpleShearBlock>()
+@Suppress("unused")
 enum class SimpleShearBlock: SingleTextureMaterial, Block {
     COBWEB {
         override fun LayerListBuilder.createTextureLayers() {
