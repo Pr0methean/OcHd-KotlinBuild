@@ -160,8 +160,8 @@ enum class OverworldWood(
             background(highlight)
             layer("borderSolidExtraThick", color)
             layer("craftingGrid", shadow)
-            layer("doorHingesBig", STONE.shadow)
             layer("borderSolid", shadow)
+            layer("doorHingesBig", STONE.shadow)
         }
 
         override fun LayerListBuilder.leaves() {
