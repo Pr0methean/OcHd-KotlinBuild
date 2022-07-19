@@ -11,8 +11,8 @@ import java.util.concurrent.atomic.AtomicInteger
  * each become unreachable on completion.
  */
 @Suppress("DeferredResultUnused")
-class CompletionHandler(tasks: Collection<OutputTask>, val scope: CoroutineScope) {
-    val remainingTasks = AtomicInteger(tasks.size)
+class CompletionHandler(tasks: Collection<OutputTask>, scope: CoroutineScope) {
+    private val remainingTasks = AtomicInteger(tasks.size)
     init {
         tasks.forEach {
             scope.async {it.run(::onOneFinished)}
