@@ -17,23 +17,19 @@ class OutputTask(val producer: TextureTask,
                  val retryer: Retryer,
 ): StringBuilderFormattable {
 
-    suspend fun run(onExit: () -> Unit) {
+    suspend fun run() {
+        stats.onTaskLaunched(this@OutputTask)
+        val image: PackedImage
         try {
-            stats.onTaskLaunched(this@OutputTask)
-            val image: PackedImage
-            try {
-                image = retryer.retrying(producer.toString()) { producer.getImage()}
-            } catch (e: NotImplementedError) {
-                logger.warn("Skipping $name because it's not implemented yet")
-                return
-            }
-            withContext(Dispatchers.IO) {
-                retryer.retrying(name) { image.writePng(file) }
-            }
-            stats.onTaskCompleted(this@OutputTask)
-        } finally {
-            onExit()
+            image = retryer.retrying(producer.toString()) { producer.getImage()}
+        } catch (e: NotImplementedError) {
+            logger.warn("Skipping $name because it's not implemented yet")
+            return
         }
+        withContext(Dispatchers.IO) {
+            retryer.retrying(name) { image.writePng(file) }
+        }
+        stats.onTaskCompleted(this@OutputTask)
     }
 
     override fun toString(): String = "Output of $name"

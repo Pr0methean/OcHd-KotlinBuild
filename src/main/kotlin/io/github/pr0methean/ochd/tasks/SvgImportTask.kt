@@ -17,7 +17,6 @@ import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileInputStream
-import java.lang.StringBuilder
 
 // svgSalamander doesn't seem to be thread-safe even when loaded in a ThreadLocal<ClassLoader>
 private val batikTranscoder: ThreadLocal<ImageRetainingTranscoder> = ThreadLocal.withInitial {ImageRetainingTranscoder()}
@@ -52,17 +51,17 @@ data class SvgImportTask(
             retryer.retrying(shortName) {
                 stats.onTaskLaunched(this@SvgImportTask)
                 val transcoder = batikTranscoder.get()
-                transcoder.setTranscodingHints(
-                    mapOf(
-                        KEY_WIDTH to tileSize.toFloat(),
-                        KEY_HEIGHT to tileSize.toFloat()
-                    )
-                )
                 ByteArrayOutputStream().use { outStream ->
                     val output = TranscoderOutput(outStream)
                     FileInputStream(file).use {
                         val input = TranscoderInput(file.toURI().toString())
                         val image = transcoder.mutex.withLock {
+                            transcoder.setTranscodingHints(
+                                mapOf(
+                                    KEY_WIDTH to tileSize.toFloat(),
+                                    KEY_HEIGHT to tileSize.toFloat()
+                                )
+                            )
                             transcoder.transcode(input, output)
                             transcoder.takeLastImage()!!
                         }
