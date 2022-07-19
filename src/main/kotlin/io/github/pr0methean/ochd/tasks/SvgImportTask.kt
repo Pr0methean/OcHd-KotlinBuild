@@ -22,6 +22,7 @@ private val batikTranscoder: ThreadLocal<ImageRetainingTranscoder> = ThreadLocal
 
 /** SVG-to-PNG transcoder that retains the last image it wrote, until it's retrieved by calling takeLastImage(). */
 private class ImageRetainingTranscoder: PNGTranscoder() {
+    @Volatile
     private var lastImage: BufferedImage? = null
     override fun writeImage(img: BufferedImage?, output: TranscoderOutput?) {
         lastImage = img
