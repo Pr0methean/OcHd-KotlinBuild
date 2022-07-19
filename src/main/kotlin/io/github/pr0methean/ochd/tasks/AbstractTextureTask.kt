@@ -47,9 +47,10 @@ abstract class AbstractTextureTask(
                 .plus(threadLocalRunLater.asContextElement())
                 .async(start = CoroutineStart.LAZY) {
         stats.onTaskLaunched(this@AbstractTextureTask)
-        val result = retryer.retrying(this@AbstractTextureTask.toString()) {
-            packer.packImage(computeImage(), null, this@AbstractTextureTask,
-                this@AbstractTextureTask.toString())
+        val name = this@AbstractTextureTask.toString()
+        val image = retryer.retrying(name, ::computeImage)
+        val result = retryer.retrying(name) {
+            packer.packImage(image, null, this@AbstractTextureTask, name)
         }
         stats.onTaskCompleted(this@AbstractTextureTask)
         result
