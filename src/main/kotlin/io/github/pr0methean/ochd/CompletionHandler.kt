@@ -3,7 +3,7 @@ package io.github.pr0methean.ochd
 import io.github.pr0methean.ochd.tasks.OutputTask
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -11,17 +11,24 @@ import java.util.concurrent.atomic.AtomicInteger
  * each become unreachable on completion.
  */
 @Suppress("DeferredResultUnused")
-class CompletionHandler(tasks: Collection<OutputTask>, scope: CoroutineScope) {
-    private val remainingTasks = AtomicInteger(tasks.size)
-    init {
-        tasks.forEach {
-            scope.async {it.run(::onOneFinished)}
-        }
+class CompletionHandler(val scope: CoroutineScope) {
+    private val remainingTasks = AtomicInteger()
+    @Volatile
+    private var allAdded: Boolean = false
+
+    fun add(task: OutputTask) {
+        remainingTasks.getAndIncrement()
+        scope.launch {task.run(::onOneFinished)}
     }
+
+    fun onAllAdded() {
+        allAdded = true
+    }
+
     private val allFinished = CompletableDeferred<Unit>()
 
     private fun onOneFinished() {
-        if (remainingTasks.decrementAndGet() == 0) {
+        if (remainingTasks.decrementAndGet() == 0 && allAdded) {
             allFinished.complete(Unit)
         }
     }

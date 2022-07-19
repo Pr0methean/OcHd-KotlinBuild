@@ -55,7 +55,10 @@ suspend fun main(args:Array<String>) {
         stats.onTaskLaunched("Building task graph")
         val tasks = ALL_MATERIALS.outputTasks(ctx).toList()
         stats.onTaskCompleted("Building task graph")
-        CompletionHandler(tasks, scope).awaitAllFinished()
+        val completion = CompletionHandler(scope)
+        tasks.forEach(completion::add)
+        completion.onAllAdded()
+        completion.awaitAllFinished()
         copyMetadata.await()
     }
     stats.log()
