@@ -6,6 +6,8 @@ import io.github.pr0methean.ochd.packedimage.PackedImage
 import io.github.pr0methean.ochd.packedimage.PngImage
 import javafx.embed.swing.SwingFXUtils
 import kotlinx.coroutines.*
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.apache.batik.transcoder.SVGAbstractTranscoder.KEY_HEIGHT
 import org.apache.batik.transcoder.SVGAbstractTranscoder.KEY_WIDTH
 import org.apache.batik.transcoder.TranscoderInput
@@ -23,6 +25,7 @@ private val batikTranscoder: ThreadLocal<ImageRetainingTranscoder> = ThreadLocal
 
 /** SVG-to-PNG transcoder that retains the last image it wrote, until it's retrieved by calling takeLastImage(). */
 private class ImageRetainingTranscoder: PNGTranscoder() {
+    val mutex = Mutex()
     private val lastImage = AtomicReference<BufferedImage?>()
     override fun writeImage(img: BufferedImage?, output: TranscoderOutput?) {
         lastImage.set(img)
@@ -55,10 +58,13 @@ data class SvgImportTask(
                     val output = TranscoderOutput(outStream)
                     FileInputStream(file).use {
                         val input = TranscoderInput(file.toURI().toString())
-                        transcoder.transcode(input, output)
+                        val image = transcoder.mutex.withLock {
+                            transcoder.transcode(input, output)
+                            transcoder.takeLastImage()!!
+                        }
                         return@retrying PngImage(
                             initialPacked = outStream.toByteArray(),
-                            initialUnpacked = SwingFXUtils.toFXImage(transcoder.takeLastImage()!!, null),
+                            initialUnpacked = SwingFXUtils.toFXImage(image, null),
                             name = shortName, scope = scope, retryer = retryer, stats = stats
                         )
                     }
