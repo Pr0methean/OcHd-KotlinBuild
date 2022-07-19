@@ -12,6 +12,7 @@ import javafx.scene.paint.Color.WHITE
 import javafx.scene.paint.Paint
 
 val SIMPLE_INDESTRUCTIBLE_BLOCKS = group<SimpleIndestructibleBlock>()
+@Suppress("unused")
 enum class SimpleIndestructibleBlock(
     override val color: Paint,
     override val shadow: Paint,
@@ -25,13 +26,13 @@ enum class SimpleIndestructibleBlock(
             layer("strokeBottomLeftTopRight2", highlight)
         }
     },
-    END_PORTAL_FRAME_SIDE(jigsawBackground, BLACK, WHITE) {
+    END_PORTAL_FRAME_SIDE(StructureOrJigsaw.JIGSAW_BOTTOM.shadow, BLACK, WHITE) {
         override fun LayerListBuilder.createTextureLayers() {
             copy(SimplePickaxeBlock.END_STONE)
             layer("endPortalFrameSide", color)
         }
     },
-    END_PORTAL_FRAME_TOP(jigsawBackground, BLACK, WHITE) {
+    END_PORTAL_FRAME_TOP(StructureOrJigsaw.JIGSAW_BOTTOM.shadow, BLACK, WHITE) {
         override fun LayerListBuilder.createTextureLayers() {
             copy(SimplePickaxeBlock.END_STONE)
             layer("endPortalFrameTop", color)
