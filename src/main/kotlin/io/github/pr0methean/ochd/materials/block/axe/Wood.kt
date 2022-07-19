@@ -94,8 +94,8 @@ enum class OverworldWood(
         override fun LayerListBuilder.trapdoor() {
             copy {
                 layer("borderSolidThick", color)
-                layer("bigDiamond", shadow)
                 layer("borderSolid", highlight)
+                layer("bigDiamond", shadow)
             }
             layer("trapdoorHingesBig", STONE.shadow)
             layer("trapdoorHinges", STONE.highlight)
@@ -109,8 +109,8 @@ enum class OverworldWood(
         override fun LayerListBuilder.doorBottom() {
             copy {
                 layer("borderSolidThick", color)
-                layer("bigDiamond", shadow)
                 layer("borderSolid", highlight)
+                layer("bigDiamond", shadow)
             }
             layer("doorHingesBig", STONE.shadow)
             layer("doorHinges", STONE.highlight)

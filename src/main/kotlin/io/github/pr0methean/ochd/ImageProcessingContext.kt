@@ -91,7 +91,7 @@ class ImageProcessingContext(
 
     fun out(name: String, source: TextureTask): OutputTask {
         val lowercaseName = name.lowercase(Locale.ENGLISH)
-        return OutputTask(source, lowercaseName, outTextureRoot.resolve(lowercaseName), newTasksSemaphore, stats, retryer)
+        return OutputTask(source, lowercaseName, outTextureRoot.resolve("$lowercaseName.png"), newTasksSemaphore, stats, retryer)
     }
 
     fun out(name: String, source: LayerListBuilder.() -> Unit) = out(name, stack {source()})
