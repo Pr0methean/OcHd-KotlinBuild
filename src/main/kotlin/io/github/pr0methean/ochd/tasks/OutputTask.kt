@@ -34,8 +34,8 @@ class OutputTask(val producer: TextureTask,
         stats.onTaskCompleted(this@OutputTask)
     }
     suspend fun run(onExit: () -> Unit) {
-        try {
-            withContext(Dispatchers.IO) {
+        withContext(Dispatchers.IO) {
+            try {
                 file.parentFile.mkdirs()
                 if (semaphore != null && !producer.isStarted()) {
                     semaphore.withPermit {
@@ -44,9 +44,9 @@ class OutputTask(val producer: TextureTask,
                 } else {
                     invoke()
                 }
+            } finally {
+                onExit()
             }
-        } finally {
-            onExit()
         }
     }
 
