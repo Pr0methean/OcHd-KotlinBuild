@@ -33,7 +33,7 @@ class OutputTask(val producer: TextureTask,
         retryer.retrying(name) {image.writePng(file)}
         stats.onTaskCompleted(this@OutputTask)
     }
-    suspend fun run(onCompletion: (OutputTask) -> Unit) {
+    suspend fun run(onCompletion: () -> Unit) {
         withContext(Dispatchers.IO) {
             file.parentFile.mkdirs()
             if (semaphore != null && !producer.isStarted()) {
@@ -44,7 +44,7 @@ class OutputTask(val producer: TextureTask,
                 invoke()
             }
         }
-        onCompletion(this)
+        onCompletion()
     }
 
     override fun toString(): String = "Output of $name"

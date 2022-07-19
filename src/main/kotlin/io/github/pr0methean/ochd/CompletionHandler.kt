@@ -4,28 +4,24 @@ import io.github.pr0methean.ochd.tasks.OutputTask
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
-import java.util.*
-import java.util.Collections.newSetFromMap
-import java.util.Collections.synchronizedSet
+import java.util.concurrent.atomic.AtomicInteger
 
 /**
  * A class that launches a collection of OutputTask instances, waits for them all to complete, and also ensures they
  * each become unreachable on completion.
  */
 @Suppress("DeferredResultUnused")
-class CompletionHandler(tasks: Iterable<OutputTask>, val scope: CoroutineScope) {
-    private val runningTasks: MutableSet<OutputTask> = synchronizedSet(newSetFromMap(IdentityHashMap()))
+class CompletionHandler(tasks: Collection<OutputTask>, val scope: CoroutineScope) {
+    val remainingTasks = AtomicInteger(tasks.size)
     init {
-        runningTasks.addAll(tasks)
-        runningTasks.forEach {
-            scope.async {it.run(::remove)}
+        tasks.forEach {
+            scope.async {it.run(::onOneFinished)}
         }
     }
     private val allFinished = CompletableDeferred<Unit>()
 
-    private fun remove(task: OutputTask) {
-        runningTasks.remove(task)
-        if (runningTasks.isEmpty()) {
+    private fun onOneFinished() {
+        if (remainingTasks.decrementAndGet() == 0) {
             allFinished.complete(Unit)
         }
     }
