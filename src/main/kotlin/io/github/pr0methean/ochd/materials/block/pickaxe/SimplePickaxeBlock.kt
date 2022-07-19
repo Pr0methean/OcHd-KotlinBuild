@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.flowOf
 
 val SIMPLE_PICKAXE_BLOCKS = group<SimplePickaxeBlock>()
 val mortarColor = c(0xa2867d)
+@Suppress("unused")
 enum class SimplePickaxeBlock(
     override val color: Paint,
     override val shadow: Paint,
@@ -328,7 +329,47 @@ enum class SimplePickaxeBlock(
             layer("borderDotted", highlight)
             layer("borderDottedBottomRight", shadow)
         }
-    };
+    },
+    AMETHYST_BLOCK(c(0x7a5bb5),c(0x64479e),c(0xc890ff)) {
+        override fun LayerListBuilder.createTextureLayers() {
+            background(color)
+            layer("triangles1", highlight)
+            layer("triangles2", shadow)
+        }
+    },
+    BUDDING_AMETHYST(AMETHYST_BLOCK.color,c(0x462b7d),AMETHYST_BLOCK.highlight) {
+        override fun LayerListBuilder.createTextureLayers() {
+            copy(AMETHYST_BLOCK)
+            layer("buddingAmethystCenter", shadow)
+        }
+    },
+    AMETHYST_CLUSTER(AMETHYST_BLOCK.color,BUDDING_AMETHYST.shadow,c(0xffcbff)) {
+        override fun LayerListBuilder.createTextureLayers() {
+            layer("amethystCluster1", highlight)
+            layer("amethystCluster2", shadow)
+        }
+    },
+    LARGE_AMETHYST_BUD(AMETHYST_BLOCK) {
+        override fun LayerListBuilder.createTextureLayers() {
+            layer("largeAmethystBud1", highlight)
+            layer("largeAmethystBud2", shadow)
+            layer("largeAmethystBud3", color)
+        }
+    },
+    MEDIUM_AMETHYST_BUD(AMETHYST_BLOCK) {
+        override fun LayerListBuilder.createTextureLayers() {
+            layer("mediumAmethystBud1", highlight)
+            layer("mediumAmethystBud2", shadow)
+            layer("largeAmethystBud3", color)
+        }
+    },
+    SMALL_AMETHYST_BUD(AMETHYST_BLOCK) {
+        override fun LayerListBuilder.createTextureLayers() {
+            layer("smallAmethystBud1", highlight)
+            layer("smallAmethystBud2", shadow)
+        }
+    }
+    ;
 
     override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> =
         if (hasOutput) super<SingleTextureMaterial>.outputTasks(ctx) else flowOf()
