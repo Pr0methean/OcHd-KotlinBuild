@@ -10,12 +10,8 @@ class SoftAsyncLazy<T>(
 ) {
     private val mutex = Mutex()
     @Volatile
-    private var currentValue: SoftReference<T> = SoftReference<T>(initialValue)
+    private var currentValue: SoftReference<T?> = SoftReference<T?>(initialValue)
     suspend fun get(): T = currentValue.get() ?: mutex.withLock {
         currentValue.get() ?: supplier().also { currentValue = SoftReference(it) }
     }
-
-    fun getNow(): T? = currentValue.get()
-
-    fun isCompleted() = currentValue.get() != null
 }

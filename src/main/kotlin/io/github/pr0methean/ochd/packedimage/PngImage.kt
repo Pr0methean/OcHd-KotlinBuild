@@ -45,7 +45,5 @@ class PngImage(initialUnpacked: Image?, initialPacked: ByteArray?, name: String,
 
 
     override suspend fun packed(): ByteArray = packingTask.await()
-    override fun isAlreadyUnpacked(): Boolean = unpacked.isCompleted()
 
-    override fun isAlreadyPacked(): Boolean = packingTask.isCompleted
 }
