@@ -37,16 +37,6 @@ suspend fun main(args:Array<String>) {
         svgDirectory = svgDirectory,
         outTextureRoot = outTextureRoot
     )
-    // List constants
-    /*
-val SIMPLE_ORES = listOf("coal", "copper", "iron", "redstone", "gold", "quartz")
-val ORES = listOf(SIMPLE_ORES, listOf("lapis", "diamond", "emerald")).flatten()
-val COMMAND_BLOCK_TYPES = listOf("command_block", "repeating_command_block", "chain_command_block")
-val NORMAL_MUSIC_DISCS = listOf("far", "wait", "strad", "mall", "cat", "pigstep", "mellohi", "13", "blocks", "stal",
-        "ward", "5", "otherside", "chirp")
-val DISC_LABEL_COLORS = listOf(DYES.values).subList(1, DYES.values.size - 1)
-val OXIDATION_STATES = listOf("exposed", "weathered", "oxidized")
- */
     val stats = ctx.stats
     startMonitoring(stats, scope)
     val time = measureNanoTime {
@@ -65,7 +55,7 @@ val OXIDATION_STATES = listOf("exposed", "weathered", "oxidized")
         stats.onTaskLaunched("Building task graph")
         val tasks = ALL_MATERIALS.outputTasks(ctx).toList()
         stats.onTaskCompleted("Building task graph")
-        tasks.map{scope.async {it.run()}}.awaitAll()
+        CompletionHandler(tasks, scope).awaitAllFinished()
         copyMetadata.await()
     }
     stats.log()

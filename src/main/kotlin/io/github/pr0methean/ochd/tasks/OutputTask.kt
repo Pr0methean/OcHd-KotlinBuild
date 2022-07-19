@@ -13,33 +13,30 @@ import java.io.File
 import java.lang.StringBuilder
 
 private val logger = LogManager.getLogger("OutputTask")
-class OutputTask(producer: TextureTask,
+class OutputTask(val producer: TextureTask,
                  val name: String,
                  private val file: File,
                  private val semaphore: Semaphore?,
                  val stats: ImageProcessingStats,
                  val retryer: Retryer,
 ): StringBuilderFormattable {
-    @Volatile
-    var producer: TextureTask? = producer
 
     suspend fun invoke() {
         stats.onTaskLaunched(this@OutputTask)
         val image: PackedImage
         try {
-            image = retryer.retrying(producer!!.toString()) {producer!!.getImage()}
+            image = retryer.retrying(producer.toString()) { producer.getImage()}
         } catch (e: NotImplementedError) {
             logger.warn("Skipping $name because it's not implemented yet")
             return
         }
-        producer = null
         retryer.retrying(name) {image.writePng(file)}
         stats.onTaskCompleted(this@OutputTask)
     }
-    suspend fun run() {
+    suspend fun run(onCompletion: (OutputTask) -> Unit) {
         withContext(Dispatchers.IO) {
             file.parentFile.mkdirs()
-            if (semaphore != null && !producer!!.isStarted()) {
+            if (semaphore != null && !producer.isStarted()) {
                 semaphore.withPermit {
                     invoke()
                 }
@@ -47,6 +44,7 @@ class OutputTask(producer: TextureTask,
                 invoke()
             }
         }
+        onCompletion(this)
     }
 
     override fun toString(): String = "Output of $name"
