@@ -439,9 +439,9 @@ enum class OverworldWood(
     override val saplingSynonym = "sapling"
 
     // Like grass, leaves are stored as gray and colorized in real time based on the biome
-    override val leavesColor = DirtGroundCover.GRASS.color
-    override val leavesHighlight = DirtGroundCover.GRASS.highlight
-    override val leavesShadow = DirtGroundCover.GRASS.shadow
+    override val leavesColor = DirtGroundCover.GRASS_BLOCK.color
+    override val leavesHighlight = DirtGroundCover.GRASS_BLOCK.highlight
+    override val leavesShadow = DirtGroundCover.GRASS_BLOCK.shadow
 }
 
 private val fungusSpotColor = c(0xff6500)

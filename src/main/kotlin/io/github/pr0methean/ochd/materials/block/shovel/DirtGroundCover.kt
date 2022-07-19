@@ -21,6 +21,7 @@ private val grassItemColor = c(0x83b253)
 private val grassItemShadow = c(0x64a43a)
 private val grassItemHighlight = c(0x9ccb6c)
 val DIRT_GROUND_COVERS = group<DirtGroundCover>()
+@Suppress("unused")
 enum class DirtGroundCover(
     override val color: Paint,
     override val shadow: Paint,
@@ -31,7 +32,7 @@ enum class DirtGroundCover(
     /**
      * Grass is a gray texture, modified by a colormap according to the biome.
      */
-    GRASS(c(0x9d9d9d), c(0x828282), c(0xbababa)) {
+    GRASS_BLOCK(c(0x9d9d9d), c(0x828282), c(0xbababa)) {
         val extremeShadow = c(0x757575)
         val extremeHighlight = c(0xc3c3c3)
         override fun LayerListBuilder.createTopLayers() {
@@ -42,13 +43,13 @@ enum class DirtGroundCover(
 
         override fun LayerListBuilder.createCoverSideLayers() {
             layer("topPart", grassItemColor)
-            layer("vees", grassItemShadow)
+            layer("veesTopPart", grassItemShadow)
         }
 
         override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask>
                 = merge(super.outputTasks(ctx), flowOf(ctx.out("block/grass_block_side_overlay", ctx.stack {
             layer("topPart", color)
-            layer("vees", shadow)
+            layer("veesTopPart", shadow)
         })))
     },
     PODZOL(c(0x6a4418),c(0x4a3018),c(0x8b5920)) {
