@@ -33,18 +33,21 @@ class OutputTask(val producer: TextureTask,
         retryer.retrying(name) {image.writePng(file)}
         stats.onTaskCompleted(this@OutputTask)
     }
-    suspend fun run(onCompletion: () -> Unit) {
-        withContext(Dispatchers.IO) {
-            file.parentFile.mkdirs()
-            if (semaphore != null && !producer.isStarted()) {
-                semaphore.withPermit {
+    suspend fun run(onExit: () -> Unit) {
+        try {
+            withContext(Dispatchers.IO) {
+                file.parentFile.mkdirs()
+                if (semaphore != null && !producer.isStarted()) {
+                    semaphore.withPermit {
+                        invoke()
+                    }
+                } else {
                     invoke()
                 }
-            } else {
-                invoke()
             }
+        } finally {
+            onExit()
         }
-        onCompletion()
     }
 
     override fun toString(): String = "Output of $name"
