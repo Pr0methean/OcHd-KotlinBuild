@@ -23,7 +23,6 @@ class ImageProcessingContext(
     override fun toString(): String = name
     private val svgTasks: Map<String, SvgImportTask>
     private val taskDeduplicationMap = ConcurrentHashMap<TextureTask, TextureTask>()
-    private val newTasksSemaphore = null
     val stats = ImageProcessingStats()
     val retryer = Retryer(stats)
     val packer = ImagePacker(scope, retryer, stats)
@@ -94,7 +93,7 @@ class ImageProcessingContext(
         destination: File,
         source: TextureTask
     ): OutputTask {
-        return OutputTask(source, lowercaseName, destination, newTasksSemaphore, stats, retryer)
+        return OutputTask(source, lowercaseName, destination, stats, retryer)
     }
 
     fun out(name: String, source: LayerListBuilder.() -> Unit) = out(name, stack {source()})
