@@ -13,16 +13,9 @@ val DEFAULT_SNAPSHOT_PARAMS = SnapshotParameters().also {
     it.fill = Color.TRANSPARENT
 }
 
-fun StringBuilder.appendList(list: List<*>, delim: String = ", "): StringBuilder {
-    if (list.isEmpty()) {
-        return this
-    }
+fun StringBuilder.appendList(list: List<StringBuilderFormattable>, delim: String = ", "): StringBuilder {
     for (item in list) {
-        if (item is StringBuilderFormattable) {
-            item.formatTo(this)
-        } else {
-            append(item)
-        }
+        item.formatTo(this)
         append(delim)
     }
     delete(length - delim.length, length)
