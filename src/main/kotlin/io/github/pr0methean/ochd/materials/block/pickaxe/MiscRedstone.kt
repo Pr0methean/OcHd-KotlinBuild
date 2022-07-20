@@ -5,6 +5,7 @@ import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.tasks.redstoneOffAndOn
 import io.github.pr0methean.ochd.texturebase.Material
+import javafx.scene.paint.Color
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
@@ -23,10 +24,9 @@ object MiscRedstone: Material {
             layer("comparator", stateColor)
         }
         emit(ctx.out("block/redstone_lamp") {
-            background(Ore.REDSTONE.color)
-            layer("bigDiamond", Ore.REDSTONE.shadow)
+            background(Ore.REDSTONE.shadow)
             layer("lamp", Ore.REDSTONE.highlight)
-            layer("borderSolid", Ore.REDSTONE.shadow)
+            layer("borderSolid", Color.BLACK)
             layer("borderSolidTopLeft", Ore.REDSTONE.highlight)
         })
         emit(ctx.out("block/redstone_lamp_on") {
@@ -34,7 +34,6 @@ object MiscRedstone: Material {
             val shadow = c(0x946931)
             val highlight = c(0xffdab4)
             background(color)
-            layer("bigDiamond", shadow)
             layer("lampOn", highlight)
             layer("borderSolid", shadow)
             layer("borderSolidTopLeft", highlight)

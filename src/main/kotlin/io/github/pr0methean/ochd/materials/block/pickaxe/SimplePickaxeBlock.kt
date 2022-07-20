@@ -163,12 +163,12 @@ enum class SimplePickaxeBlock(
     BASALT_TOP(c(0x4e4e4e), c(0x002632), c(0x747474)) {
         override fun LayerListBuilder.createTextureLayers() {
             background(color)
+            layer("borderSolid", shadow)
+            layer("borderLongDashes", highlight)
             layer("bigRingsBottomLeftTopRight", highlight)
             layer("bigRingsTopLeftBottomRight", shadow)
             layer("x", color)
             layer("bigDiamond", color)
-            layer("borderSolid", shadow)
-            layer("borderLongDashes", highlight)
         }
     },
     BASALT_SIDE(BASALT_TOP) {
