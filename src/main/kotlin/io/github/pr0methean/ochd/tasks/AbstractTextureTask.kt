@@ -26,54 +26,46 @@ private val threadLocalRunLater: ThreadLocal<MethodHandle> = ThreadLocal.withIni
 @Suppress("BlockingMethodInNonBlockingContext")
 suspend fun <T> doJfx(name: String, retryer: Retryer, jfxCode: suspend CoroutineScope.() -> T): T
         = retryer.retrying(name) {
-    val task = AbstractTextureTask.JfxTask(jfxCode)
+    val task = JfxTask(jfxCode)
     threadLocalRunLater.get().invokeExact(task as Runnable)
     return@retrying task.get()
+}
+
+class JfxTask<T>(private val jfxCode: suspend CoroutineScope.() -> T) : Task<T>() {
+    override fun call(): T {
+        val out = runBlocking(Dispatchers.Unconfined, jfxCode)
+        updateValue(out)
+        return out
+    }
 }
 
 abstract class AbstractTextureTask(
     open val packer: ImagePacker, open val scope: CoroutineScope, open val stats: ImageProcessingStats,
     open val retryer: Retryer) : TextureTask {
-    open val coroutine by lazy {
-        runTaskAsync(scope)
+    val name by lazy {StringBuilder().also(::formatTo).toString()}
+
+    override fun launchAsync(): Deferred<PackedImage> {
+        // Copy fields to local variables to avoid a reference to this@AbstractTextureTask if possible
+        val typeName = this::class.simpleName ?: "[unnamed AbstractTextureTask]"
+        val name = name
+        val retryer = retryer
+        val packer = packer
+        val stats = stats
+        return scope
+            .plus(threadLocalClassLoader.asContextElement())
+            .plus(threadLocalRunLater.asContextElement())
+            .async(start = CoroutineStart.LAZY) {
+                stats.onTaskLaunched(typeName, name)
+                val image = retryer.retrying(name, ::computeImage)
+                val result = retryer.retrying(name) {
+                    packer.packImage(image, null, name)
+                }
+                stats.onTaskCompleted(typeName, name)
+                result
+            }
     }
 
-    override fun isComplete() = coroutine.isCompleted
-
-    override fun isStarted(): Boolean = coroutine.isActive || coroutine.isCompleted
-
-    protected fun runTaskAsync(coroutineScope: CoroutineScope)
-            = coroutineScope
-                .plus(threadLocalClassLoader.asContextElement())
-                .plus(threadLocalRunLater.asContextElement())
-                .async(start = CoroutineStart.LAZY) {
-        stats.onTaskLaunched(this@AbstractTextureTask)
-        val name = this@AbstractTextureTask.toString()
-        val image = retryer.retrying(name, ::computeImage)
-        val result = retryer.retrying(name) {
-            packer.packImage(image, null, this@AbstractTextureTask, name)
-        }
-        stats.onTaskCompleted(this@AbstractTextureTask)
-        result
-    }
-
-    protected suspend fun <T> doJfx(jfxCode: suspend CoroutineScope.() -> T): T
-            = doJfx(toString(), retryer, jfxCode)
-
-    class JfxTask<T>(private val jfxCode: suspend CoroutineScope.() -> T) : Task<T>() {
-        override fun call(): T {
-            val out = runBlocking(Dispatchers.Unconfined, jfxCode)
-            updateValue(out)
-            return out
-        }
-    }
-
-    /** Must be final to supercede the generated implementation for data classes */
-    final override fun toString(): String = StringBuilder().also { formatTo(it) }.toString()
+    final override fun toString(): String = name
 
     abstract suspend fun computeImage(): Image
-    override suspend fun getImage(): PackedImage = coroutine.await()
-
-    @OptIn(ExperimentalCoroutinesApi::class)
-    override fun getImageNow(): PackedImage? = if (coroutine.isCompleted) coroutine.getCompleted() else null
 }

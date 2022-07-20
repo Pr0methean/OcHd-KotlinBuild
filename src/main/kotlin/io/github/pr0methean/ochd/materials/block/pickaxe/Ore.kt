@@ -4,10 +4,11 @@ import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.Companion.stoneExtremeHighlight
+import io.github.pr0methean.ochd.packedimage.PackedImage
 import io.github.pr0methean.ochd.tasks.OutputTask
-import io.github.pr0methean.ochd.tasks.TextureTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Color
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.util.*
@@ -16,7 +17,7 @@ private val OVERWORLD = EnumSet.of(OreBase.STONE, OreBase.DEEPSLATE)
 private val NETHER = EnumSet.of(OreBase.NETHERRACK)
 private val BOTH = EnumSet.allOf(OreBase::class.java)
 
-@Suppress("unused")
+@Suppress("unused", "DeferredResultUnused")
 enum class Ore(
     override val color: Color,
     override val shadow: Color,
@@ -29,7 +30,7 @@ enum class Ore(
         color = c(0x2f2f2f),
         shadow = Color.BLACK,
         highlight = c(0x494949)) {
-        override fun oreBlock(ctx: ImageProcessingContext, oreBase: OreBase): TextureTask {
+        override fun oreBlock(ctx: ImageProcessingContext, oreBase: OreBase): Deferred<PackedImage> {
             if (oreBase == OreBase.DEEPSLATE) {
                 ctx.stack {
                     copy(OreBase.DEEPSLATE)

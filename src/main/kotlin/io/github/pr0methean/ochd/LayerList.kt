@@ -1,18 +1,18 @@
 package io.github.pr0methean.ochd
 
-import io.github.pr0methean.ochd.tasks.TextureTask
+import io.github.pr0methean.ochd.packedimage.PackedImage
 import javafx.scene.paint.Color.TRANSPARENT
 import javafx.scene.paint.Paint
+import kotlinx.coroutines.Deferred
 import org.apache.logging.log4j.util.StringBuilderFormattable
-import kotlin.text.StringBuilder
 
-data class LayerList(val layers: List<TextureTask>, val background: Paint):
-        StringBuilderFormattable {
-    override fun toString(): String = StringBuilder().also {formatTo(it)}.toString()
+data class LayerList(val layers: List<Deferred<PackedImage>>, val background: Paint): StringBuilderFormattable {
+    val name = StringBuilder().also(::formatTo).toString()
     override fun formatTo(buffer: StringBuilder) {
         if (background != TRANSPARENT) {
-            buffer.append(background).append(", ")
+            buffer.append(background).append(',')
         }
         buffer.appendList(layers)
     }
+    override fun toString() = name
 }

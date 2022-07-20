@@ -38,7 +38,7 @@ private class ImageRetainingTranscoder: PNGTranscoder() {
 }
 
 data class SvgImportTask(
-    val shortName: String,
+    val name: String,
     private val tileSize: Int,
     val file: File,
     val scope: CoroutineScope,
@@ -46,10 +46,17 @@ data class SvgImportTask(
     val stats: ImageProcessingStats
 ): TextureTask {
 
-    private val coroutine: Deferred<PackedImage> by lazy {
-        scope.plus(batikTranscoder.asContextElement()).async {
-            retryer.retrying(shortName) {
-                stats.onTaskLaunched(this@SvgImportTask)
+    override fun launchAsync(): Deferred<PackedImage> {
+        // Copy fields to local variables to avoid a reference to this@SvgImportTask if possible
+        val scope = scope
+        val retryer = retryer
+        val tileSize = tileSize.toFloat()
+        val name = name
+        val stats = stats
+        val file = file
+        return scope.plus(batikTranscoder.asContextElement()).async(start = CoroutineStart.LAZY) {
+            retryer.retrying(name) {
+                stats.onTaskLaunched("SvgImportTask", name)
                 val transcoder = batikTranscoder.get()
                 ByteArrayOutputStream().use { outStream ->
                     val output = TranscoderOutput(outStream)
@@ -58,8 +65,8 @@ data class SvgImportTask(
                         val image = transcoder.mutex.withLock {
                             transcoder.setTranscodingHints(
                                 mapOf(
-                                    KEY_WIDTH to tileSize.toFloat(),
-                                    KEY_HEIGHT to tileSize.toFloat()
+                                    KEY_WIDTH to tileSize,
+                                    KEY_HEIGHT to tileSize
                                 )
                             )
                             transcoder.transcode(input, output)
@@ -68,22 +75,17 @@ data class SvgImportTask(
                         return@retrying PngImage(
                             initialPacked = outStream.toByteArray(),
                             initialUnpacked = SwingFXUtils.toFXImage(image, null),
-                            name = shortName, scope = scope, retryer = retryer, stats = stats
-                        )
+                            name = name, scope = scope, retryer = retryer, stats = stats
+                        ).also { stats.onTaskCompleted("SvgImportTask", name) }
                     }
                 }
             }
-        }.also { stats.onTaskCompleted(this@SvgImportTask) }
+        }
     }
-    override fun isComplete(): Boolean = coroutine.isCompleted
-    override fun isStarted(): Boolean = coroutine.isActive || coroutine.isCompleted
 
-    override suspend fun getImage(): PackedImage = coroutine.await()
-    @OptIn(ExperimentalCoroutinesApi::class)
-    override fun getImageNow(): PackedImage? = if (coroutine.isCompleted) coroutine.getCompleted() else null
-
-    override fun toString(): String = shortName
+    override fun toString(): String = name
     override fun formatTo(buffer: StringBuilder) {
-        buffer.append(shortName)
+        buffer.append(name)
     }
+
 }
