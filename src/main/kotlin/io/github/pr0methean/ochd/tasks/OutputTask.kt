@@ -5,6 +5,7 @@ import io.github.pr0methean.ochd.Retryer
 import io.github.pr0methean.ochd.packedimage.PackedImage
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.StringBuilderFormattable
@@ -20,10 +21,18 @@ class OutputTask(val producer: TextureTask,
 ): StringBuilderFormattable {
 
     suspend fun run() {
+        if (semaphore == null) {
+            invoke()
+        } else {
+            semaphore.withPermit{invoke()}
+        }
+    }
+
+    private suspend fun invoke() {
         stats.onTaskLaunched(this@OutputTask)
         val image: PackedImage
         try {
-            image = retryer.retrying(producer.toString()) { producer.getImage()}
+            image = retryer.retrying(producer.toString()) { producer.getImage() }
         } catch (e: NotImplementedError) {
             logger.warn("Skipping $name because it's not implemented yet")
             return
