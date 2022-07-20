@@ -32,7 +32,7 @@ enum class Ore(
         highlight = c(0x494949)) {
         override fun oreBlock(ctx: ImageProcessingContext, oreBase: OreBase): Deferred<PackedImage> {
             if (oreBase == OreBase.DEEPSLATE) {
-                ctx.stack {
+                return ctx.stack {
                     copy(OreBase.DEEPSLATE)
                     layer("coalBorder", stoneExtremeHighlight)
                     item()

@@ -7,6 +7,7 @@ import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import org.apache.logging.log4j.LogManager
 import java.nio.file.Paths
+import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
 private val logger = run {
@@ -65,4 +66,5 @@ suspend fun main(args:Array<String>) {
     stats.log()
     logger.info("")
     logger.info("All tasks finished after $time ns")
+    exitProcess(0)
 }
