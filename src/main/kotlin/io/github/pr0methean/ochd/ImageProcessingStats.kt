@@ -2,9 +2,7 @@ package io.github.pr0methean.ochd
 
 import com.google.common.collect.ConcurrentHashMultiset
 import com.google.common.collect.Multiset
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.*
 import org.apache.logging.log4j.LogManager
 import java.util.concurrent.atomic.LongAdder
 import kotlin.time.Duration
@@ -16,15 +14,20 @@ private fun Multiset<*>.log() {
 private val REPORTING_INTERVAL: Duration = 1.minutes
 private val logger = LogManager.getLogger("ImageProcessingStats")
 
+var monitoringJob: Job? = null
 @Suppress("DeferredResultUnused")
 fun startMonitoring(stats: ImageProcessingStats, scope: CoroutineScope) {
-    scope.async {
+    monitoringJob = scope.async {
         while (true) {
             delay(REPORTING_INTERVAL)
             logger.info("Completed tasks:")
             stats.taskCompletions.log()
         }
     }
+}
+
+fun stopMonitoring() {
+    monitoringJob?.cancel("Monitoring stopped")
 }
 
 class ImageProcessingStats {

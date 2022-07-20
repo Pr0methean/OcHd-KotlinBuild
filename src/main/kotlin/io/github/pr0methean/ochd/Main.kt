@@ -61,6 +61,7 @@ suspend fun main(args:Array<String>) {
         tasks.map {scope.launch {it.run()}}.joinAll()
         copyMetadata.join()
     }
+    stopMonitoring()
     stats.log()
     logger.info("")
     logger.info("All tasks finished after $time ns")
