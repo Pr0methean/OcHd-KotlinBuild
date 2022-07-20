@@ -5,6 +5,7 @@ import io.github.pr0methean.ochd.tasks.*
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.sync.Semaphore
 import java.io.File
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -13,6 +14,8 @@ fun color(web: String): Color = Color.web(web)
 
 fun color(web: String, alpha: Double): Color = Color.web(web, alpha)
 
+private const val MIN_LIMIT_TO_SKIP_MULTI_SUBTASK_SEMAPHORE = 64
+
 class ImageProcessingContext(
     val name: String,
     val tileSize: Int,
@@ -20,10 +23,12 @@ class ImageProcessingContext(
     val svgDirectory: File,
     val outTextureRoot: File
 ) {
+    private val tasksWithMultipleSubtasksLimit = 1.shl(24) / (tileSize * tileSize)
+    private val needSemaphore = tasksWithMultipleSubtasksLimit < MIN_LIMIT_TO_SKIP_MULTI_SUBTASK_SEMAPHORE
     override fun toString(): String = name
     private val svgTasks: Map<String, SvgImportTask>
     private val taskDeduplicationMap = ConcurrentHashMap<TextureTask, TextureTask>()
-    private val newTasksSemaphore = null
+    private val newTasksSemaphore = if (needSemaphore) Semaphore(tasksWithMultipleSubtasksLimit) else null
     val stats = ImageProcessingStats()
     val retryer = Retryer(stats)
     val packer = ImagePacker(scope, retryer, stats)

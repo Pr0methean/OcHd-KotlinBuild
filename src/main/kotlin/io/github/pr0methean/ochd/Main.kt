@@ -54,7 +54,7 @@ suspend fun main(args:Array<String>) {
                 }
             }
             stats.onTaskCompleted("Copying metadata files")
-        }
+        }}
         stats.onTaskLaunched("Building task graph")
         val tasks = ALL_MATERIALS.outputTasks(ctx).toList()
         stats.onTaskCompleted("Building task graph")
