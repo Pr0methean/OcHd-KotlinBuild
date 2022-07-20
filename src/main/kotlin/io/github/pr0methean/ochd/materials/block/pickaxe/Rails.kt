@@ -12,11 +12,11 @@ object Rails: Material {
     override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
         emit(ctx.out("block/rail") {
             layer("railTies", OverworldWood.OAK.color)
-            layer("rail", OreBase.STONE.highlight)
+            layer("rail", Ore.IRON.refinedShadow)
         })
         emit(ctx.out("block/rail_corner") {
             layer("railTieCorner", OverworldWood.OAK.color)
-            layer("railCorner", OreBase.STONE.highlight)
+            layer("railCorner", Ore.IRON.refinedShadow)
         })
         redstoneOffAndOn(ctx, "block/powered_rail") { stateColor ->
             layer("railTies", OverworldWood.OAK.shadow)
@@ -26,12 +26,12 @@ object Rails: Material {
         redstoneOffAndOn(ctx, "block/activator_rail") { stateColor ->
             layer("railTies", OverworldWood.OAK.shadow)
             layer("thirdRail", stateColor)
-            layer("rail", OreBase.STONE.highlight)
+            layer("rail", Ore.IRON.refinedShadow)
         }
         redstoneOffAndOn(ctx, "block/detector_rail") {stateColor ->
             layer("railTies", OverworldWood.OAK.shadow)
             layer("railDetectorPlate", stateColor)
-            layer("rail", OreBase.STONE.highlight)
+            layer("rail", Ore.IRON.refinedShadow)
         }
     }
 }

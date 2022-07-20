@@ -23,7 +23,10 @@ enum class Ore(
     override val highlight: Color,
     val substrates: EnumSet<OreBase> = OVERWORLD,
     val needsRefining: Boolean = false,
-    val itemNameOverride: String? = null
+    val itemNameOverride: String? = null,
+    val refinedColor: Color = color,
+    val refinedShadow: Color = shadow,
+    val refinedHighlight: Color = highlight
 ): ShadowHighlightMaterial {
     COAL(
         color = c(0x2f2f2f),
@@ -49,7 +52,10 @@ enum class Ore(
         color=c(0xd8af93),
         shadow=c(0xaf8e77),
         highlight=c(0xffc0aa),
-        needsRefining = true),
+        needsRefining = true,
+        refinedColor = c(0xdcdcdc),
+        refinedHighlight = Color.WHITE,
+        refinedShadow = c(0xb0b0b0)),
     REDSTONE(
         color=Color.RED,
         shadow=c(0xca0000),
@@ -154,15 +160,15 @@ enum class Ore(
 
     open fun LayerListBuilder.block() {
         background(color)
-        layer("streaks", highlight)
-        copy {item()}
-        layer("borderSolid", shadow)
-        layer("borderSolidTopLeft", highlight)
+        layer("streaks", refinedHighlight)
+        layer(svgName, refinedShadow)
+        layer("borderSolid", refinedShadow)
+        layer("borderSolidTopLeft", refinedHighlight)
     }
     open fun LayerListBuilder.ingot() {
-        layer("ingotMask", color)
-        layer("ingotBorder", shadow)
-        layer("ingotBorderTopLeft", highlight)
+        layer("ingotMask", refinedColor)
+        layer("ingotBorder", refinedShadow)
+        layer("ingotBorderTopLeft", refinedHighlight)
         layer(svgName, shadow)
     }
     open fun LayerListBuilder.rawOre() {
