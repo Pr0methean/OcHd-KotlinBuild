@@ -2,7 +2,9 @@ package io.github.pr0methean.ochd
 
 import com.google.common.collect.ConcurrentHashMultiset
 import com.google.common.collect.Multiset
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import org.apache.logging.log4j.LogManager
 import java.util.concurrent.atomic.LongAdder
 import kotlin.time.Duration
@@ -14,20 +16,15 @@ private fun Multiset<*>.log() {
 private val REPORTING_INTERVAL: Duration = 1.minutes
 private val logger = LogManager.getLogger("ImageProcessingStats")
 
-var monitoringJob: Job? = null
 @Suppress("DeferredResultUnused")
 fun startMonitoring(stats: ImageProcessingStats, scope: CoroutineScope) {
-    monitoringJob = scope.launch {
+    scope.async {
         while (true) {
             delay(REPORTING_INTERVAL)
             logger.info("Completed tasks:")
             stats.taskCompletions.log()
         }
     }
-}
-
-fun stopMonitoring() {
-    monitoringJob?.cancel("Monitoring stopped")
 }
 
 class ImageProcessingStats {
@@ -65,13 +62,13 @@ class ImageProcessingStats {
         compressions.increment()
     }
 
-    fun onTaskLaunched(type: String, description: String? = null) {
-        logger.info("Launched: {}", description ?: type)
-        taskLaunches.add(type)
+    fun onTaskLaunched(task: Any) {
+        logger.info("Launched: {}", task)
+        taskLaunches.add(task as? String ?: task::class.simpleName ?: "[unnamed class]")
     }
 
-    fun onTaskCompleted(type: String, description: String? = null) {
-        logger.info("Completed: {}", description ?: type)
-        taskCompletions.add(type)
+    fun onTaskCompleted(task: Any) {
+        logger.info("Completed: {}", task)
+        taskCompletions.add(task as? String ?: task::class.simpleName ?: "[unnamed class]")
     }
 }
