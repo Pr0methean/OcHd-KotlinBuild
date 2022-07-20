@@ -26,24 +26,24 @@ class ImageProcessingContext(
     val outTextureRoot: File
 ) {
     override fun toString(): String = name
-    private val svgTasks: Map<String, Lazy<Deferred<PackedImage>>>
+    private val svgTasks: Map<String, Deferred<PackedImage>>
     private val taskDeduplicationMap = ConcurrentHashMap<TextureTask, Deferred<PackedImage>>()
     val stats = ImageProcessingStats()
     val retryer = Retryer(stats)
     val packer = ImagePacker(scope, retryer, stats)
 
     init {
-        val builder = mutableMapOf<String, Lazy<Deferred<PackedImage>>>()
+        val builder = mutableMapOf<String, Deferred<PackedImage>>()
         svgDirectory.list()!!.forEach { svgFile ->
             val shortName = svgFile.removeSuffix(".svg")
-            builder[shortName] = lazy { SvgImportTask(
+            builder[shortName] = SvgImportTask(
                 shortName,
                 tileSize,
                 svgDirectory.resolve("$shortName.svg"),
                 scope,
                 retryer,
                 stats
-            ).launchAsync() }
+            ).launchAsync()
             logger.info("{} is the SvgImportTask for {}", builder[shortName], shortName)
         }
         svgTasks = builder.toMap()
@@ -57,11 +57,8 @@ class ImageProcessingContext(
         if (task is RepaintTask && (task.paint == null || task.paint == Color.BLACK) && task.alpha == 1.0) {
             return task.base
         }
-        if (task is ImageStackingTask && task.layers.background == Color.TRANSPARENT) {
-            when (task.layers.layers.size) {
-                0 -> throw IllegalArgumentException("Empty LayerList")
-                1 -> return task.layers.layers[0]
-            }
+        if (task is ImageStackingTask && task.layers.layers.size == 1 && task.layers.background == Color.TRANSPARENT) {
+            return task.layers.layers[0]
         }
         val className = task::class.simpleName ?: "[unnamed class]"
         stats.dedupeSuccesses.add(className)
@@ -85,7 +82,7 @@ class ImageProcessingContext(
             retryer = retryer))
 
     private fun assertGetSvgTaskNamed(name: String) =
-        (svgTasks[name] ?: throw IllegalArgumentException("No SVG file named $name")).value
+        svgTasks[name] ?: throw IllegalArgumentException("No SVG file named $name")
 
     fun layer(source: TextureTask, paint: Paint? = null, alpha: Double = 1.0): Deferred<PackedImage> {
         return layer(dedup(source), paint, alpha)
