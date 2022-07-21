@@ -64,6 +64,7 @@ suspend fun main(args:Array<String>) {
         copyMetadata.join()
     }
     stopMonitoring()
+    Platform.exit()
     stats.log()
     logger.info("")
     logger.info("All tasks finished after $time ns")
