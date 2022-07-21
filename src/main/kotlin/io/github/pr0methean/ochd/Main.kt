@@ -29,7 +29,8 @@ suspend fun main(args:Array<String>) {
     val metadataDirectory = Paths.get("metadata").toAbsolutePath().toFile()
     val out = Paths.get("out").toAbsolutePath().toFile()
     val outTextureRoot = out.resolve("assets").resolve("minecraft").resolve("textures")
-    out.deleteRecursively()
+    val ioScope = CoroutineScope(Dispatchers.IO)
+    val cleanupJob = ioScope.launch {out.deleteRecursively()}
     val ctx = ImageProcessingContext(
         name = "MainContext",
         tileSize = tileSize,
@@ -40,7 +41,8 @@ suspend fun main(args:Array<String>) {
     val stats = ctx.stats
     startMonitoring(stats, scope)
     val time = measureNanoTime {
-        val copyMetadata = CoroutineScope(Dispatchers.IO).launch {
+        val copyMetadata = ioScope.launch {
+            cleanupJob.join()
             stats.onTaskLaunched("Copy metadata files", "Copy metadata files")
             metadataDirectory.walkTopDown().forEach {
                 val outputPath = out.resolve(it.relativeTo(metadataDirectory))
@@ -55,6 +57,7 @@ suspend fun main(args:Array<String>) {
         stats.onTaskLaunched("Build task graph", "Build task graph")
         val tasks = ALL_MATERIALS.outputTasks(ctx).toList()
         stats.onTaskCompleted("Build task graph", "Build task graph")
+        cleanupJob.join()
         tasks.map {scope.launch {it.run()}}.joinAll()
         copyMetadata.join()
     }

@@ -48,8 +48,8 @@ data class SvgImportTask(
 
     private val coroutine: Deferred<PackedImage> by lazy {
         scope.plus(batikTranscoder.asContextElement()).async(start = CoroutineStart.LAZY) {
+            stats.onTaskLaunched("SvgImportTask", shortName)
             retryer.retrying(shortName) {
-                stats.onTaskLaunched("SvgImportTask", shortName)
                 val transcoder = batikTranscoder.get()
                 ByteArrayOutputStream().use { outStream ->
                     val output = TranscoderOutput(outStream)
