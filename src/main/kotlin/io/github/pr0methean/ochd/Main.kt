@@ -22,7 +22,6 @@ suspend fun main(args:Array<String>) {
     System.setProperty("glass.platform","Monocle")
     System.setProperty("monocle.platform","Headless")
     Platform.startup {}
-
     val tileSize = args[0].toInt()
     if (tileSize <= 0) throw IllegalArgumentException("tileSize shouldn't be zero or negative but was ${args[0]}")
     val scope = CoroutineScope(Dispatchers.Default)
@@ -31,10 +30,6 @@ suspend fun main(args:Array<String>) {
     val out = Paths.get("out").toAbsolutePath().toFile()
     val outTextureRoot = out.resolve("assets").resolve("minecraft").resolve("textures")
     out.deleteRecursively()
-    outTextureRoot.mkdirs()
-    val pngDirectory = Paths.get("png").toAbsolutePath().toFile()
-    pngDirectory.deleteRecursively()
-    pngDirectory.mkdirs()
     val ctx = ImageProcessingContext(
         name = "MainContext",
         tileSize = tileSize,
