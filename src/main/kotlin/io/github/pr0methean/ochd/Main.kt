@@ -15,13 +15,13 @@ private val logger = run {
     LogManager.getRootLogger()
 }
 suspend fun main(args:Array<String>) {
-    Platform.startup {}
     if (args.isEmpty()) {
         println("Usage: main <size>")
         return
     }
     System.setProperty("glass.platform","Monocle")
     System.setProperty("monocle.platform","Headless")
+    Platform.startup {}
 
     val tileSize = args[0].toInt()
     if (tileSize <= 0) throw IllegalArgumentException("tileSize shouldn't be zero or negative but was ${args[0]}")

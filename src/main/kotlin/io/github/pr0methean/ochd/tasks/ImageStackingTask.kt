@@ -8,7 +8,6 @@ import io.github.pr0methean.ochd.packedimage.superimpose
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.toList
 
 data class ImageStackingTask(
     val layers: LayerList,
@@ -21,7 +20,7 @@ data class ImageStackingTask(
 
     override suspend fun createImage() = superimpose(
         layers.background,
-        layers.layers.asFlow().map {it.getImage()}.toList(),
+        layers.layers.asFlow().map {it.getImage()},
         size.toDouble(), size.toDouble(), layers.toString(), retryer, packer
     )
 

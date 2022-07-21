@@ -13,11 +13,13 @@ import javafx.scene.image.ImageView
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.FileOutputStream
 
-suspend fun superimpose(background: Paint = Color.TRANSPARENT, layers: Iterable<PackedImage>, width: Double, height: Double,
+suspend fun superimpose(background: Paint = Color.TRANSPARENT, layers: Flow<PackedImage>, width: Double, height: Double,
                         name: String, retryer: Retryer, packer: ImagePacker): PackedImage {
     val canvas = Canvas(width, height)
     val canvasCtx = canvas.graphicsContext2D
@@ -27,8 +29,7 @@ suspend fun superimpose(background: Paint = Color.TRANSPARENT, layers: Iterable<
             canvasCtx.fillRect(0.0, 0.0, width, height)
         }
     }
-    val layerImages = layers.map { it.unpacked() }
-    doJfx(name, retryer) {layerImages.forEach { canvasCtx.drawImage(it, 0.0, 0.0) }}
+    layers.map { it.unpacked() }.collect {doJfx(name, retryer) {canvasCtx.drawImage(it, 0.0, 0.0)}}
     return packer.packImage(doJfx(name, retryer) {canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, null)}, null, name)
 }
 

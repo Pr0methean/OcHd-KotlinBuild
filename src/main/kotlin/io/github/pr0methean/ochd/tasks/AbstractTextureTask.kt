@@ -32,9 +32,9 @@ abstract class AbstractTextureTask(open val scope: CoroutineScope,
     /** Must be final to supersede the generated implementation for data classes */
     final override fun toString(): String = name
     protected abstract suspend fun createImage(): PackedImage
-    class JfxTask<T>(private val jfxCode: suspend CoroutineScope.() -> T) : Task<T>() {
+    class JfxTask<T>(private val jfxCode: () -> T) : Task<T>() {
         override fun call(): T {
-            val out = runBlocking(Dispatchers.Unconfined) { jfxCode() }
+            val out = jfxCode()
             updateValue(out)
             return out
         }
@@ -42,7 +42,7 @@ abstract class AbstractTextureTask(open val scope: CoroutineScope,
 }
 
 @Suppress("BlockingMethodInNonBlockingContext")
-suspend fun <T> doJfx(name: String, retryer: Retryer, jfxCode: suspend CoroutineScope.() -> T): T
+suspend fun <T> doJfx(name: String, retryer: Retryer, jfxCode: () -> T): T
         = retryer.retrying(name) {
     val task = AbstractTextureTask.JfxTask {jfxCode()}
     Platform.runLater(task)
