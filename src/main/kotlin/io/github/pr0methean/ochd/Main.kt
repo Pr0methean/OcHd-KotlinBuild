@@ -1,5 +1,6 @@
 package io.github.pr0methean.ochd
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
+import javafx.application.Platform
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.toList
@@ -14,6 +15,7 @@ private val logger = run {
     LogManager.getRootLogger()
 }
 suspend fun main(args:Array<String>) {
+    Platform.startup {}
     if (args.isEmpty()) {
         println("Usage: main <size>")
         return
@@ -44,7 +46,7 @@ suspend fun main(args:Array<String>) {
     startMonitoring(stats, scope)
     val time = measureNanoTime {
         val copyMetadata = CoroutineScope(Dispatchers.IO).launch {
-            stats.onTaskLaunched("Copying metadata files")
+            stats.onTaskLaunched("Copy metadata files", "Copy metadata files")
             metadataDirectory.walkTopDown().forEach {
                 val outputPath = out.resolve(it.relativeTo(metadataDirectory))
                 if (it.isDirectory) {
@@ -53,11 +55,11 @@ suspend fun main(args:Array<String>) {
                     it.copyTo(outputPath)
                 }
             }
-            stats.onTaskCompleted("Copying metadata files")
+            stats.onTaskCompleted("Copy metadata files", "Copy metadata files")
         }
-        stats.onTaskLaunched("Building task graph")
+        stats.onTaskLaunched("Build task graph", "Build task graph")
         val tasks = ALL_MATERIALS.outputTasks(ctx).toList()
-        stats.onTaskCompleted("Building task graph")
+        stats.onTaskCompleted("Build task graph", "Build task graph")
         tasks.map {scope.launch {it.run()}}.joinAll()
         copyMetadata.join()
     }

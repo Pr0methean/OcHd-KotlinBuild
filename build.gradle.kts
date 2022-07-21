@@ -7,6 +7,7 @@ plugins {
 
 group = "org.example"
 version = "1.0-SNAPSHOT"
+
 tasks.jar {
     manifest {
         attributes("Main-Class" to "io.github.pr0methean.ochd.MainKt")

@@ -29,7 +29,7 @@ class OutputTask(val producer: TextureTask,
     }
 
     private suspend fun invoke() {
-        stats.onTaskLaunched(this@OutputTask)
+        stats.onTaskLaunched("OutputTask", name)
         val image: PackedImage
         try {
             image = retryer.retrying(producer.toString()) { producer.getImage() }
@@ -40,7 +40,7 @@ class OutputTask(val producer: TextureTask,
         withContext(Dispatchers.IO) {
             retryer.retrying(name) { image.writePng(file) }
         }
-        stats.onTaskCompleted(this@OutputTask)
+        stats.onTaskCompleted("OutputTask", name)
     }
 
     override fun toString(): String = "Output of $name"
