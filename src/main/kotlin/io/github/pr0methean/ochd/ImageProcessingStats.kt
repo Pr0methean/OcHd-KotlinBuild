@@ -3,21 +3,16 @@ package io.github.pr0methean.ochd
 import com.google.common.collect.ConcurrentHashMultiset
 import com.google.common.collect.Multiset
 import kotlinx.coroutines.*
-import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
-import org.apache.logging.log4j.util.Unbox
-import java.lang.management.ManagementFactory
-import java.lang.management.ThreadInfo
 import java.util.concurrent.atomic.LongAdder
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Duration.Companion.minutes
 
 private fun Multiset<*>.log() {
     toSet().forEach { logger.info("{}: {}", it, count(it)) }
 }
-private val REPORTING_INTERVAL: Duration = 30.seconds
+private val REPORTING_INTERVAL: Duration = 1.minutes
 private val logger = LogManager.getLogger("ImageProcessingStats")
-val threadMxBean = ManagementFactory.getThreadMXBean()
 var monitoringJob: Job? = null
 @Suppress("DeferredResultUnused")
 fun startMonitoring(stats: ImageProcessingStats, scope: CoroutineScope) {
@@ -26,30 +21,13 @@ fun startMonitoring(stats: ImageProcessingStats, scope: CoroutineScope) {
             delay(REPORTING_INTERVAL)
             logger.info("Completed tasks:")
             stats.taskCompletions.log()
-            val deadlocks = threadMxBean.findDeadlockedThreads()
-            if (deadlocks == null) {
-                logger.info("No deadlocked threads found.")
-                threadMxBean.allThreadIds.map { it to threadMxBean.getThreadInfo(it, 20) }.forEach { (id, threadInfo) ->
-                    logThread(Level.INFO, id, threadInfo)
-                }
-            } else {
-                logger.error("Deadlocked threads found!")
-                deadlocks.map { it to threadMxBean.getThreadInfo(it, 20) }.forEach { (id, threadInfo) ->
-                    logThread(Level.ERROR, id, threadInfo)
-                }
-            }
         }
     }
 }
 
-fun logThread(logLevel: Level, id: Long, threadInfo: ThreadInfo) {
-    logger.log(logLevel, "Thread: {} (id: {})", threadInfo.threadName, Unbox.box(id))
-    threadInfo.stackTrace.forEach {logger.log(logLevel, "{}.{} ({} line {})",
-        it.className, it.methodName, it.fileName, it.lineNumber)}
-}
-
 fun stopMonitoring() {
     monitoringJob?.cancel("Monitoring stopped")
+    monitoringJob = null
 }
 
 class ImageProcessingStats {
