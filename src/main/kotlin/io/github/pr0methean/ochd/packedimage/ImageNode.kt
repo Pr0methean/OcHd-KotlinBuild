@@ -17,7 +17,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.apache.logging.log4j.LogManager
-import org.apache.logging.log4j.util.Unbox
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -252,12 +251,10 @@ private fun alphaBlendChannel(
 suspend fun superimpose(background: Paint = Color.TRANSPARENT, layers: List<ImageNode>, width: Double, height: Double,
                         name: String, retryer: Retryer, packer: ImagePacker
 ): ImageNode {
-    logger.debug("For {}: {} total layers", name, Unbox.box(layers.size))
     val (realBackgroundIndex, realBackgroundNode) = layers.withIndex().findLast {
         it.value.let { node -> node is SolidColorImageNode && node.color.isOpaque }
     } ?: IndexedValue(-1, null)
     val visibleLayers = layers.subList(realBackgroundIndex + 1, layers.size)
-    logger.debug("For {}: {} visible layers", name, Unbox.box(visibleLayers.size))
     var visibleLayerIndex = 0
     var realBackgroundPaint = (realBackgroundNode as SolidColorImageNode?)?.color ?: background
     if (realBackgroundPaint is Color && realBackgroundIndex >= 0) {
