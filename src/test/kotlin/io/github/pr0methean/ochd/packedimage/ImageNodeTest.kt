@@ -139,7 +139,16 @@ internal abstract class ImageNodeTest(val expected: Image, val actual: suspend (
             expectedSuperimpose = canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, null)
         }
         val actualSuperimpose = superimpose(Color.TRANSPARENT, listOf(actual(),
-                SolidColorImageNode(foreground, TEST_TILE_SIZE, TEST_TILE_SIZE, "foreground", ctx.scope, ctx.retryer, ctx.stats)),
+                SolidColorImageNode(
+                    foreground,
+                    TEST_TILE_SIZE,
+                    TEST_TILE_SIZE,
+                    "foreground",
+                    ctx.scope,
+                    ctx.retryer,
+                    ctx.stats,
+                    ctx.packer
+                )),
             TEST_TILE_SIZE.toDouble(), TEST_TILE_SIZE.toDouble(), "superimpose",
             ctx.retryer, ctx.packer).unpacked()
         assertImagesEqual("$className.superimposeBelow", expectedSuperimpose!!, actualSuperimpose)

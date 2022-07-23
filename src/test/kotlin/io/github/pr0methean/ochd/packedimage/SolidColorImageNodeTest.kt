@@ -10,9 +10,17 @@ import io.github.pr0methean.ochd.packedimage.TEST_IMAGE_PROCESSING_CONTEXT as ct
 
 internal class SolidColorImageNodeTest : ImageNodeTest(
     expected = createSolidColorImage(Color.ORANGE),
-    actual = {SolidColorImageNode(Color.ORANGE, ctx.tileSize, ctx.tileSize, "Solid Orange Test Node", ctx.scope, ctx.retryer, ctx.stats)}) {
+    actual = {SolidColorImageNode(
+        Color.ORANGE,
+        ctx.tileSize,
+        ctx.tileSize,
+        "Solid Orange Test Node",
+        ctx.scope,
+        ctx.retryer,
+        ctx.stats,
+        ctx.packer)}) {
     override suspend fun isSolidColor() {
-        assertTrue(actual().isSolidColor)
+        assertTrue(actual().isSolidColor())
     }
 
     override suspend fun toSolidColorIfPossible() {
@@ -30,7 +38,16 @@ internal class SolidColorImageNodeTest : ImageNodeTest(
 
     @Test
     fun repaintTransparent() = runBlocking {
-        val before = SolidColorImageNode(Color.TRANSPARENT, ctx.tileSize, ctx.tileSize, "Transparent Test Node", ctx.scope, ctx.retryer, ctx.stats)
+        val before = SolidColorImageNode(
+            Color.TRANSPARENT,
+            ctx.tileSize,
+            ctx.tileSize,
+            "Transparent Test Node",
+            ctx.scope,
+            ctx.retryer,
+            ctx.stats,
+            ctx.packer
+        )
         val after = before.repaint(Color.BLUE, 1.0, "Transparent Test Node 2", ctx.retryer, ctx.packer)
         assertTrue(after is SolidColorImageNode)
         assertEquals(Color.TRANSPARENT, (after as SolidColorImageNode).color)

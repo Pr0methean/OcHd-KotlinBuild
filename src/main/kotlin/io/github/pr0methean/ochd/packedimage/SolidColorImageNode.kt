@@ -37,9 +37,11 @@ private fun unpack(argb: Int, width: Int, height: Int): Image {
     return out
 }
 
-class SolidColorImageNode(val color: Color, width: Int, height: Int,
-        name: String, scope: CoroutineScope, retryer: Retryer, stats: ImageProcessingStats)
-        : ImageNode(width, height, initialPacked = null, name = name, scope = scope, retryer = retryer, stats = stats) {
+class SolidColorImageNode(
+    val color: Color, width: Int, height: Int,
+    name: String, scope: CoroutineScope, retryer: Retryer, stats: ImageProcessingStats, packer: ImagePacker
+)
+        : ImageNode(width, height, initialPacked = null, name = name, scope = scope, retryer = retryer, stats = stats, packer = packer) {
     private val argb = colorToArgb(color)
 
     class SolidColorPixelReader(val width: Int, val height: Int, val color: Color, val argb: Int)
@@ -91,8 +93,8 @@ class SolidColorImageNode(val color: Color, width: Int, height: Int,
     override suspend fun toSolidColorIfPossible(): ImageNode = this
 
     override suspend fun asQuadtree(): QuadtreeImageNode {
-        val quadrant = SolidColorImageNode(color, width / 2, height / 2, name, scope, retryer, stats)
-        return QuadtreeImageNode(width, height, quadrant, quadrant, quadrant, quadrant, name, scope, retryer, stats)
+        val quadrant = packer.deduplicate(SolidColorImageNode(color, width / 2, height / 2, name, scope, retryer, stats, packer))
+        return QuadtreeImageNode(width, height, quadrant, quadrant, quadrant, quadrant, name, scope, retryer, stats, packer)
     }
 
     override suspend fun pixelReader(): PixelReader {
@@ -123,7 +125,7 @@ class SolidColorImageNode(val color: Color, width: Int, height: Int,
                 Color(color.red, color.green, color.blue, color.opacity * alpha)
             }
         } else return super.repaint(newPaint, alpha, name, retryer, packer)
-        return packer.deduplicate(SolidColorImageNode(newPaintWithAlpha, width, height, name, scope, retryer, stats))
+        return packer.deduplicate(SolidColorImageNode(newPaintWithAlpha, width, height, name, scope, retryer, stats, packer))
     }
 
     override fun shouldDeduplicate(): Boolean = true

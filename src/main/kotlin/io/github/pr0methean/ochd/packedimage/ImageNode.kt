@@ -17,6 +17,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.apache.logging.log4j.LogManager
+import org.apache.logging.log4j.util.Unbox
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
@@ -30,7 +31,8 @@ private val logger = LogManager.getLogger("ImageNode")
 abstract class ImageNode(
     val width: Int, val height: Int, initialUnpacked: Image? = null, initialPacked: ByteArray? = null,
     val name: String, val scope: CoroutineScope, val retryer: Retryer,
-    val stats: ImageProcessingStats
+    val stats: ImageProcessingStats,
+    val packer: ImagePacker
 ) {
 
     protected val pngBytes = StrongAsyncLazy(initialPacked) {
@@ -117,7 +119,7 @@ abstract class ImageNode(
 
     open suspend fun toSolidColorIfPossible(): ImageNode {
         return if (isSolidColor()) {
-            SolidColorImageNode(pixelReader().getColor(0, 0), width, height, name, scope, retryer, stats)
+            SolidColorImageNode(pixelReader().getColor(0, 0), width, height, name, scope, retryer, stats, packer)
         } else {
             this
         }
@@ -135,7 +137,7 @@ abstract class ImageNode(
                 quadrant.getTopY(height)
             )
             quadrants[quadrant] =
-                SimpleImageNode(quadrantBuffer, null, name, scope, retryer, stats, tileWidth, tileHeight)
+                SimpleImageNode(quadrantBuffer, null, name, scope, retryer, stats, tileWidth, tileHeight, packer)
         }
         return QuadtreeImageNode(
             width, height,
@@ -143,7 +145,7 @@ abstract class ImageNode(
             topRight = quadrants[Quadrant.UPPER_RIGHT]!!.toSolidColorIfPossible(),
             bottomLeft = quadrants[Quadrant.LOWER_LEFT]!!.toSolidColorIfPossible(),
             bottomRight = quadrants[Quadrant.LOWER_RIGHT]!!.toSolidColorIfPossible(),
-            name, scope, retryer, stats)
+            name, scope, retryer, stats, packer)
     }
 
     open suspend fun asSolidOrQuadtreeRecursive(
@@ -170,11 +172,11 @@ abstract class ImageNode(
         val bottomLeft = result.bottomLeft.asSolidOrQuadtreeRecursive(maxDepth - 1, leafWidth, leafHeight)
         val bottomRight = result.bottomRight.asSolidOrQuadtreeRecursive(maxDepth - 1,leafWidth, leafHeight)
         return QuadtreeImageNode(
-                    width, height,
-                    topLeft = topLeft,
-                    topRight = topRight,
-                    bottomLeft = bottomLeft,
-                    bottomRight = bottomRight, name, scope, retryer, stats)
+            width, height,
+            topLeft = topLeft,
+            topRight = topRight,
+            bottomLeft = bottomLeft,
+            bottomRight = bottomRight, name, scope, retryer, stats, packer)
     }
 
     open val pixelReader = SoftAsyncLazy {
@@ -256,10 +258,12 @@ private fun alphaBlendChannel(
 suspend fun superimpose(background: Paint = Color.TRANSPARENT, layers: List<ImageNode>, width: Double, height: Double,
                         name: String, retryer: Retryer, packer: ImagePacker
 ): ImageNode {
+    logger.debug("For {}: {} total layers", name, Unbox.box(layers.size))
     val (realBackgroundIndex, realBackgroundNode) = layers.withIndex().findLast {
         it.value.let { node -> node is SolidColorImageNode && node.color.isOpaque }
     } ?: IndexedValue(-1, null)
     val visibleLayers = layers.subList(realBackgroundIndex + 1, layers.size)
+    logger.debug("For {}: {} visible layers", name, Unbox.box(visibleLayers.size))
     var visibleLayerIndex = 0
     var realBackgroundPaint = (realBackgroundNode as SolidColorImageNode?)?.color ?: background
     if (realBackgroundPaint is Color && realBackgroundIndex >= 0) {
@@ -275,40 +279,58 @@ suspend fun superimpose(background: Paint = Color.TRANSPARENT, layers: List<Imag
         val visibleLayer = visibleLayers[visibleLayerIndex]
         val previousLayer = layersAfterCollapsing.lastOrNull()
         if (visibleLayer is SolidColorImageNode && previousLayer is SolidColorImageNode) {
-                layersAfterCollapsing[layersAfterCollapsing.size - 1] = SolidColorImageNode(
+                layersAfterCollapsing[layersAfterCollapsing.size - 1] = packer.deduplicate(SolidColorImageNode(
                     alphaBlend(foreground = visibleLayer.color, background = previousLayer.color),
-                    width.toInt(), height.toInt(), name, visibleLayer.scope, retryer, visibleLayer.stats)
+                    width.toInt(), height.toInt(), name, visibleLayer.scope, retryer, visibleLayer.stats, packer))
         } else {
-            layersAfterCollapsing.add(visibleLayer)
+            layersAfterCollapsing.add(packer.deduplicate(visibleLayer))
         }
         visibleLayerIndex++
     }
     val layersAfterQuadtreeTransform: List<ImageNode>
     val unpackedBack = layersAfterCollapsing.takeWhile { it.isAlreadyUnpacked() || it is SolidColorImageNode }
     val unpackedFront = layersAfterCollapsing.takeLastWhile { it.isAlreadyUnpacked() || it is SolidColorImageNode }
-    val layersForQuadtreeing = layersAfterCollapsing.subList(
-            unpackedBack.size, layersAfterCollapsing.size - unpackedFront.size)
-    if (layersForQuadtreeing.all {it is QuadtreeImageNode || it is SolidColorImageNode}
-            && layersForQuadtreeing.any {it is QuadtreeImageNode}
+    if (unpackedBack.size < layersAfterCollapsing.size) {
+        val layersForQuadtreeing = layersAfterCollapsing.subList(
+            unpackedBack.size, layersAfterCollapsing.size - unpackedFront.size
+        )
+        if (layersForQuadtreeing.all { it is QuadtreeImageNode || it is SolidColorImageNode }
+            && layersForQuadtreeing.any { it is QuadtreeImageNode }
             && layersForQuadtreeing.size >= 2
             && height > packer.leafSize) {
-        layersAfterQuadtreeTransform = unpackedBack.toMutableList()
-        val tileWidth = width / 2
-        val tileHeight = height / 2
-        val quadtreeLayers = layersAfterCollapsing.map {it.asQuadtree()}
-        layersAfterQuadtreeTransform.add(packer.deduplicate(QuadtreeImageNode(
-            width = width.toInt(),
-            height = height.toInt(),
-            topLeft = superimpose(realBackgroundPaint, quadtreeLayers.map{it.topLeft},
-                tileWidth, tileHeight, name, retryer, packer),
-            topRight = superimpose(realBackgroundPaint, quadtreeLayers.map{it.topRight},
-                tileWidth, tileHeight, name, retryer, packer),
-            bottomLeft = superimpose(realBackgroundPaint, quadtreeLayers.map{it.bottomLeft},
-                tileWidth, tileHeight, name, retryer, packer),
-            bottomRight = superimpose(realBackgroundPaint, quadtreeLayers.map{it.bottomRight},
-                tileWidth, tileHeight, name, retryer, packer),
-            name, layersAfterCollapsing[0].scope, retryer, layersAfterCollapsing[0].stats)))
-        layersAfterQuadtreeTransform.addAll(unpackedFront)
+            layersAfterQuadtreeTransform = unpackedBack.toMutableList()
+            val tileWidth = width / 2
+            val tileHeight = height / 2
+            val quadtreeLayers = layersForQuadtreeing.map { it.asQuadtree() }
+            layersAfterQuadtreeTransform.add(
+                packer.deduplicate(
+                    QuadtreeImageNode(
+                        width = width.toInt(),
+                        height = height.toInt(),
+                        topLeft = superimpose(
+                            realBackgroundPaint, quadtreeLayers.map { it.topLeft },
+                            tileWidth, tileHeight, name, retryer, packer
+                        ),
+                        topRight = superimpose(
+                            realBackgroundPaint, quadtreeLayers.map { it.topRight },
+                            tileWidth, tileHeight, name, retryer, packer
+                        ),
+                        bottomLeft = superimpose(
+                            realBackgroundPaint, quadtreeLayers.map { it.bottomLeft },
+                            tileWidth, tileHeight, name, retryer, packer
+                        ),
+                        bottomRight = superimpose(
+                            realBackgroundPaint, quadtreeLayers.map { it.bottomRight },
+                            tileWidth, tileHeight, name, retryer, packer
+                        ),
+                        name, layersAfterCollapsing[0].scope, retryer, layersAfterCollapsing[0].stats, packer
+                    )
+                )
+            )
+            layersAfterQuadtreeTransform.addAll(unpackedFront)
+        } else {
+            layersAfterQuadtreeTransform = layersAfterCollapsing
+        }
     } else {
         layersAfterQuadtreeTransform = layersAfterCollapsing
     }
@@ -319,6 +341,8 @@ suspend fun superimpose(background: Paint = Color.TRANSPARENT, layers: List<Imag
             canvasCtx.fill = realBackgroundPaint
             canvasCtx.fillRect(0.0, 0.0, width, height)
         }
+    } else if (layersAfterQuadtreeTransform.size == 1) {
+        return packer.deduplicate(layersAfterQuadtreeTransform[0])
     }
     layersAfterQuadtreeTransform.forEach { it.renderTo(canvasCtx, 0, 0) }
     return packer.packImage(doJfx(name, retryer) { canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, null) }, null, name)

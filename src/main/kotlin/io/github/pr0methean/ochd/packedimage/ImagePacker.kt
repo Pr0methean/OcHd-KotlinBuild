@@ -24,7 +24,16 @@ class ImagePacker(
      * Encapsulates the given image in a form small enough to fit on the heap.
      */
     suspend fun packImage(input: Image, initialPng: ByteArray?, name: String): ImageNode {
-        val basicImage = SimpleImageNode(input, initialPng, name, scope, retryer, stats, input.width.toInt(), input.height.toInt())
+        val basicImage = SimpleImageNode(
+            input,
+            initialPng,
+            name,
+            scope,
+            retryer,
+            stats,
+            input.width.toInt(),
+            input.height.toInt(),
+            this)
         return deduplicate(if (input.height <= MAX_UNCOMPRESSED_TILESIZE) {
             basicImage
         } else {

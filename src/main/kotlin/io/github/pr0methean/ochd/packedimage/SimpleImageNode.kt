@@ -9,12 +9,13 @@ import org.apache.logging.log4j.LogManager
 import java.io.ByteArrayInputStream
 
 private val logger = LogManager.getLogger("SimpleImageNode")
-class SimpleImageNode(initialUnpacked: Image?, initialPng: ByteArray?, name: String,
-                      scope: CoroutineScope, retryer: Retryer, stats: ImageProcessingStats,
-                      width: Int, height: Int
-) : ImageNode(
-    width, height, initialPacked = initialPng, initialUnpacked = initialUnpacked,
-    name = name, scope = scope, retryer = retryer, stats = stats) {
+class SimpleImageNode(
+    initialUnpacked: Image?, initialPng: ByteArray?, name: String,
+    scope: CoroutineScope, retryer: Retryer, stats: ImageProcessingStats,
+    width: Int, height: Int, packer: ImagePacker) : ImageNode(
+    width, height, initialUnpacked = initialUnpacked, initialPacked = initialPng,
+    name = name, scope = scope, retryer = retryer, stats = stats, packer = packer
+) {
     override suspend fun pixelReader(): PixelReader {
         return unpacked().pixelReader
     }

@@ -19,10 +19,13 @@ import java.nio.ByteBuffer
 import java.nio.IntBuffer
 import java.util.*
 
-class QuadtreeImageNode(width: Int, height: Int, val topLeft: ImageNode,
-                        val topRight: ImageNode, val bottomLeft: ImageNode, val bottomRight: ImageNode,
-                        name: String, scope: CoroutineScope, retryer: Retryer, stats: ImageProcessingStats)
-        : ImageNode(width, height, initialPacked = null, name = name, scope = scope, retryer = retryer, stats = stats) {
+class QuadtreeImageNode(
+    width: Int, height: Int, val topLeft: ImageNode,
+    val topRight: ImageNode, val bottomLeft: ImageNode, val bottomRight: ImageNode,
+    name: String, scope: CoroutineScope, retryer: Retryer, stats: ImageProcessingStats, packer: ImagePacker
+)
+        : ImageNode(width, height, initialPacked = null, name = name, scope = scope, retryer = retryer, stats = stats,
+        packer = packer) {
     class QuadtreePixelReader(private val treeNode: QuadtreeImageNode): AbstractPixelReader(unpacked = {treeNode.unpacked()}) {
         private val quadrantReaders = EnumMap<Quadrant, SoftAsyncLazy<PixelReader>>(Quadrant::class.java).also {
             for (quadrant in enumValues<Quadrant>()) {
@@ -190,12 +193,13 @@ class QuadtreeImageNode(width: Int, height: Int, val topLeft: ImageNode,
         val repainted = if (newPaint == null && alpha == 1.0) {
             this
         } else {
-            QuadtreeImageNode(width, height,
+            QuadtreeImageNode(
+                width, height,
                 topLeft = topLeft.repaint(newPaint, alpha, name, retryer, packer),
                 topRight = topRight.repaint(newPaint, alpha, name, retryer, packer),
                 bottomLeft = bottomLeft.repaint(newPaint, alpha, name, retryer, packer),
                 bottomRight = bottomRight.repaint(newPaint, alpha, name, retryer, packer),
-                name, scope, retryer, stats)
+                name, scope, retryer, stats, packer)
         }
         return packer.deduplicate(repainted)
     }
