@@ -14,6 +14,7 @@ import kotlinx.coroutines.CoroutineScope
 import java.nio.Buffer
 import java.nio.ByteBuffer
 import java.nio.IntBuffer
+import java.util.*
 import kotlin.math.roundToInt
 
 fun colorToArgb(color: Color) = (color.opacity * 255.0).roundToInt().shl(24)
@@ -121,13 +122,26 @@ class SolidColorImageNode(val color: Color, width: Int, height: Int,
             }
             Color(color.red, color.green, color.blue, color.opacity * alpha)
         } else return super.repaint(newPaint, alpha, name, retryer, packer)
-        return SolidColorImageNode(newPaintWithAlpha, width, height, name, scope, retryer, stats)
+        return packer.deduplicate(SolidColorImageNode(newPaintWithAlpha, width, height, name, scope, retryer, stats))
     }
+
+    override fun shouldDeduplicate(): Boolean = true
 
     override suspend fun renderTo(out: GraphicsContext, x: Int, y: Int) {
         doJfx(name, retryer) {
             out.fill = color
             out.fillRect(x.toDouble(), y.toDouble(), (x + width).toDouble(), (y + height).toDouble())
         }
+    }
+
+    override fun equals(other: Any?): Boolean {
+        return (this === other) || (other is SolidColorImageNode
+                && width == other.width
+                && height == other.height
+                && argb == other.argb)
+    }
+
+    override fun hashCode(): Int {
+        return Objects.hash(width, height, argb)
     }
 }

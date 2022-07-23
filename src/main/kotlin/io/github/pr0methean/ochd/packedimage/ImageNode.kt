@@ -13,7 +13,9 @@ import javafx.scene.effect.ColorInput
 import javafx.scene.image.*
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.apache.logging.log4j.LogManager
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -28,23 +30,24 @@ private val logger = LogManager.getLogger("ImageNode")
 abstract class ImageNode(
     val width: Int, val height: Int, initialUnpacked: Image? = null, initialPacked: ByteArray? = null,
     val name: String, val scope: CoroutineScope, val retryer: Retryer,
-    val stats: ImageProcessingStats,
-    start: CoroutineStart = CoroutineStart.LAZY
+    val stats: ImageProcessingStats
 ) {
 
-    protected val packingTask by lazy {
-        if (initialPacked == null) {
-            scope.async(start = start) {
-                ByteArrayOutputStream().use {
-                    retryer.retrying<ByteArray>("Compression of $name") {
-                        stats.onCompressPngImage(name)
-                        @Suppress("BlockingMethodInNonBlockingContext")
-                        ImageIO.write(SwingFXUtils.fromFXImage(unpacked(), null), "PNG", it)
-                        return@retrying it.toByteArray()
-                    }
-                }.also { logger.info("Done compressing {}", name) }
+    protected val pngBytes = StrongAsyncLazy(initialPacked) {
+        ByteArrayOutputStream().use {
+            retryer.retrying<ByteArray>("Compression of $name") {
+                stats.onCompressPngImage(name)
+                @Suppress("BlockingMethodInNonBlockingContext")
+                ImageIO.write(SwingFXUtils.fromFXImage(unpacked(), null), "PNG", it)
+                return@retrying it.toByteArray()
             }
-        } else CompletableDeferred(initialPacked)
+        }.also { logger.info("Done compressing {}", name) }
+    }
+
+    init {
+        if (initialUnpacked != null) {
+            pngBytes.start(scope)
+        }
     }
 
     class ImageNodePixelReader(unpacked: suspend () -> Image) : AbstractPixelReader(unpacked) {
@@ -92,17 +95,17 @@ abstract class ImageNode(
 
     }
 
-    protected open val isSolidColor = AsyncLazy<Boolean> {
+    protected open val isSolidColor = StrongAsyncLazy {
         val pixelReader = pixelReader()
         val topLeftArgb = pixelReader.getArgb(0, 0)
         for (y in 0 until height) {
             for (x in 0 until width) {
                 if (pixelReader.getArgb(x, y) != topLeftArgb) {
-                    return@AsyncLazy false
+                    return@StrongAsyncLazy false
                 }
             }
         }
-        return@AsyncLazy true
+        return@StrongAsyncLazy true
     }
 
     open suspend fun renderTo(out: GraphicsContext, x: Int, y: Int) {
@@ -174,7 +177,10 @@ abstract class ImageNode(
                     bottomRight = bottomRight, name, scope, retryer, stats)
     }
 
-    open suspend fun pixelReader(): PixelReader = ImageNodePixelReader(this::unpacked)
+    open val pixelReader = SoftAsyncLazy {
+        ImageNodePixelReader(this::unpacked)
+    }
+    open suspend fun pixelReader(): PixelReader = pixelReader.get()
 
     val unpacked = SoftAsyncLazy(initialUnpacked, this::unpack)
 
@@ -188,6 +194,9 @@ abstract class ImageNode(
         retryer: Retryer,
         packer: ImagePacker
     ): ImageNode {
+        if (newPaint == null && alpha == 1.0) {
+            return this
+        }
         val unpacked = unpacked()
         val view = doJfx(name, retryer) {ImageView(unpacked)}
         if (newPaint != null) {
@@ -204,12 +213,21 @@ abstract class ImageNode(
         return packer.packImage(doJfx(name, retryer) { view.snapshot(DEFAULT_SNAPSHOT_PARAMS, null) }, null, name)
     }
 
-    suspend fun asPng(): ByteArray = packingTask.await()
+    suspend fun asPng(): ByteArray = pngBytes.get()
     suspend fun writePng(destination: File) = withContext(Dispatchers.IO) {
         val pngBytes = asPng()
         destination.parentFile?.mkdirs()
         FileOutputStream(destination).use { it.write(pngBytes) }
     }
+
+    suspend fun mergeWithDuplicate(other: ImageNode) {
+        pngBytes.mergeWithDuplicate(other.pngBytes)
+        unpacked.mergeWithDuplicate(other.unpacked)
+        pixelReader.mergeWithDuplicate(other.pixelReader)
+        isSolidColor.mergeWithDuplicate(other.isSolidColor)
+    }
+
+    abstract fun shouldDeduplicate(): Boolean
 }
 
 fun alphaBlend(foreground: Color, background: Color): Color {

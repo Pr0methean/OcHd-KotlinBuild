@@ -1,9 +1,9 @@
 package io.github.pr0methean.ochd.packedimage
 
-import io.github.pr0methean.ochd.AsyncLazy
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.Retryer
 import io.github.pr0methean.ochd.SoftAsyncLazy
+import io.github.pr0methean.ochd.StrongAsyncLazy
 import io.github.pr0methean.ochd.tasks.doJfx
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.image.Image
@@ -187,13 +187,19 @@ class QuadtreeImageNode(width: Int, height: Int, val topLeft: ImageNode,
         retryer: Retryer,
         packer: ImagePacker
     ): ImageNode {
-        return QuadtreeImageNode(width, height,
+        if (newPaint == null && alpha == 1.0) {
+            return this
+        }
+        return packer.deduplicate(QuadtreeImageNode(width, height,
             topLeft = topLeft.repaint(newPaint, alpha, name, retryer, packer),
             topRight = topRight.repaint(newPaint, alpha, name, retryer, packer),
             bottomLeft = bottomLeft.repaint(newPaint, alpha, name, retryer, packer),
             bottomRight = bottomRight.repaint(newPaint, alpha, name, retryer, packer),
-        name, scope, retryer, stats)
+        name, scope, retryer, stats))
     }
+
+    override fun shouldDeduplicate(): Boolean = topLeft.shouldDeduplicate() && topRight.shouldDeduplicate()
+            && bottomLeft.shouldDeduplicate() && bottomRight.shouldDeduplicate()
 
     override suspend fun renderTo(out: GraphicsContext, x: Int, y: Int) {
         val rendered = unpacked.getNow()
@@ -205,19 +211,33 @@ class QuadtreeImageNode(width: Int, height: Int, val topLeft: ImageNode,
         }
     }
 
-    override val isSolidColor = AsyncLazy {
-        if (!topLeft.isSolidColor()) {return@AsyncLazy false}
-        if (!topRight.isSolidColor()) {return@AsyncLazy false}
-        if (!bottomLeft.isSolidColor()) {return@AsyncLazy false}
-        if (!bottomRight.isSolidColor()) {return@AsyncLazy false}
+    override val isSolidColor = StrongAsyncLazy {
+        if (!topLeft.isSolidColor()) {return@StrongAsyncLazy false}
+        if (!topRight.isSolidColor()) {return@StrongAsyncLazy false}
+        if (!bottomLeft.isSolidColor()) {return@StrongAsyncLazy false}
+        if (!bottomRight.isSolidColor()) {return@StrongAsyncLazy false}
         val topLeftColor = topLeft.pixelReader().getArgb(0,0)
         val topRightColor = topRight.pixelReader().getArgb(0,0)
-        if (topRightColor != topLeftColor) {return@AsyncLazy false}
+        if (topRightColor != topLeftColor) {return@StrongAsyncLazy false}
         val bottomLeftColor = bottomLeft.pixelReader().getArgb(0,0)
-        if (bottomLeftColor != topLeftColor) {return@AsyncLazy false}
+        if (bottomLeftColor != topLeftColor) {return@StrongAsyncLazy false}
         val bottomRightColor = bottomRight.pixelReader().getArgb(0, 0)
-        if (bottomRightColor != topLeftColor) {return@AsyncLazy false}
-        if (bottomRightColor != topLeftColor) {return@AsyncLazy false}
+        if (bottomRightColor != topLeftColor) {return@StrongAsyncLazy false}
+        if (bottomRightColor != topLeftColor) {return@StrongAsyncLazy false}
         true
+    }
+
+    override fun equals(other: Any?): Boolean {
+        return (this === other) || (other is QuadtreeImageNode
+                && width == other.width
+                && height == other.height
+                && topLeft == other.topLeft
+                && topRight == other.topRight
+                && bottomLeft == other.bottomLeft
+                && bottomRight == other.bottomRight)
+    }
+
+    override fun hashCode(): Int {
+        return Objects.hash(width, height, topLeft, topRight, bottomLeft, bottomRight)
     }
 }

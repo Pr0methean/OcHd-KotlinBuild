@@ -1,14 +1,33 @@
 package io.github.pr0methean.ochd
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
-class AsyncLazy<T>(
-    val supplier: suspend () -> T
-) {
-    @Volatile var result: T? = null
-    private val mutex = Mutex()
-    suspend fun get(): T = result ?: mutex.withLock {
-        result ?: supplier().also { result = it }
+abstract class AsyncLazy<T> {
+    val mutex = Mutex()
+
+    suspend fun get(): T = getNow() ?: mutex.withLock {
+        getNow() ?: getFromSupplier().also(::set)
+    }
+
+    protected abstract suspend fun getFromSupplier(): T
+    abstract fun getNow(): T?
+
+    protected abstract fun set(value: T?)
+
+    suspend fun mergeWithDuplicate(other: AsyncLazy<T>) {
+        if (getNow() == null) {
+            mutex.withLock {
+                if (getNow() == null) {
+                    set(other.getNow())
+                }
+            }
+        }
+    }
+
+    fun start(scope: CoroutineScope) {
+        scope.launch { get() }
     }
 }
