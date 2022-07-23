@@ -7,6 +7,7 @@ import kotlinx.coroutines.CoroutineScope
 import java.util.concurrent.ConcurrentHashMap
 
 const val MAX_UNCOMPRESSED_TILESIZE = 512
+const val MIN_SIZE_TO_DEDUP = 128
 class ImagePacker(
     val scope: CoroutineScope, private val retryer: Retryer, private val stats: ImageProcessingStats,
     val maxQuadtreeDepth: Int,
@@ -14,7 +15,8 @@ class ImagePacker(
 ) {
     val deduplicationMap = ConcurrentHashMap<ImageNode, ImageNode>()
 
-    suspend fun deduplicate(input: ImageNode): ImageNode = if (input.shouldDeduplicate()) {
+    suspend fun deduplicate(input: ImageNode): ImageNode = if (input.shouldDeduplicate()
+            && input.height >= MIN_SIZE_TO_DEDUP) {
         deduplicationMap.putIfAbsent(input, input)?.also {it.mergeWithDuplicate(input)} ?: input
     } else {
         input
