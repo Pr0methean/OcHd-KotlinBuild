@@ -179,7 +179,7 @@ abstract class ImageNode(val width: Int, val height: Int, initialPacked: ByteArr
         packer: ImagePacker
     ): ImageNode {
         val unpacked = unpacked()
-        val view = ImageView(unpacked)
+        val view = doJfx(name, retryer) {ImageView(unpacked)}
         if (newPaint != null) {
             val colorLayer = ColorInput(0.0, 0.0, width.toDouble(), height.toDouble(), newPaint)
             val blend = Blend()
