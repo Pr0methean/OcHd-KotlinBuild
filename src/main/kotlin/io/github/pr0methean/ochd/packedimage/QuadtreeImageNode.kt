@@ -4,6 +4,7 @@ import io.github.pr0methean.ochd.AsyncLazy
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.Retryer
 import io.github.pr0methean.ochd.SoftAsyncLazy
+import javafx.scene.canvas.GraphicsContext
 import javafx.scene.image.Image
 import javafx.scene.image.PixelReader
 import javafx.scene.image.WritableImage
@@ -193,7 +194,11 @@ class QuadtreeImageNode(width: Int, height: Int, val topLeft: ImageNode,
         name, scope, retryer, stats)
     }
 
-    override fun toString(): String = "Quadtree[UL=$topLeft,UR=$topRight,LL=$bottomLeft,LR=$bottomRight]"
+    override suspend fun renderTo(out: GraphicsContext, x: Int, y: Int) {
+        for (quadrant in enumValues<Quadrant>()) {
+            quadrant.getter(this).renderTo(out, quadrant.getLeftX(width) + x, quadrant.getTopY(height) + y)
+        }
+    }
 
     override val isSolidColor = AsyncLazy {
         if (!topLeft.isSolidColor()) {return@AsyncLazy false}

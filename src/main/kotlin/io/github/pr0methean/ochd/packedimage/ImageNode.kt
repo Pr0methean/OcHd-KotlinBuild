@@ -9,6 +9,7 @@ import io.github.pr0methean.ochd.tasks.doJfx
 import javafx.embed.swing.SwingFXUtils
 import javafx.scene.CacheHint
 import javafx.scene.canvas.Canvas
+import javafx.scene.canvas.GraphicsContext
 import javafx.scene.effect.Blend
 import javafx.scene.effect.BlendMode
 import javafx.scene.effect.ColorInput
@@ -102,6 +103,11 @@ abstract class ImageNode(val width: Int, val height: Int, initialPacked: ByteArr
             }
         }
         return@AsyncLazy true
+    }
+
+    open suspend fun renderTo(out: GraphicsContext, x: Int, y: Int) {
+        val unpacked = unpacked()
+        doJfx(name, retryer) {out.drawImage(unpacked, x.toDouble(), y.toDouble())}
     }
 
     open suspend fun isSolidColor() = isSolidColor.get()
@@ -200,8 +206,6 @@ abstract class ImageNode(val width: Int, val height: Int, initialPacked: ByteArr
         destination.parentFile?.mkdirs()
         FileOutputStream(destination).use { it.write(pngBytes) }
     }
-
-    abstract override fun toString(): String
 }
 
 fun alphaBlend(foreground: Color, background: Color): Color {
@@ -284,7 +288,6 @@ suspend fun superimpose(background: Paint = Color.TRANSPARENT, layers: List<Imag
             canvasCtx.fillRect(0.0, 0.0, width, height)
         }
     }
-    val layerImagesAfterCollapsing = layersAfterCollapsing.map {it.unpacked()}
-    layerImagesAfterCollapsing.forEach { doJfx(name, retryer) { canvasCtx.drawImage(it, 0.0, 0.0) } }
+    layersAfterCollapsing.forEach { it.renderTo(canvasCtx, 0, 0) }
     return packer.packImage(doJfx(name, retryer) { canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, null) }, null, name)
 }

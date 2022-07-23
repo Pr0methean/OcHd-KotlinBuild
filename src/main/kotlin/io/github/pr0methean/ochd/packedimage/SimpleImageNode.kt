@@ -38,5 +38,4 @@ class SimpleImageNode(initialUncompressed: Image?, initialPng: ByteArray?, name:
     }
 
     override suspend fun unpacked() = unpacked.get()
-    override fun toString(): String = "Simple"
 }

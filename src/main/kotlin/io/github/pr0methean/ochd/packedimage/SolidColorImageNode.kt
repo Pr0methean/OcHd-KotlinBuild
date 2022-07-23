@@ -2,6 +2,8 @@ package io.github.pr0methean.ochd.packedimage
 
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.Retryer
+import io.github.pr0methean.ochd.tasks.doJfx
+import javafx.scene.canvas.GraphicsContext
 import javafx.scene.image.Image
 import javafx.scene.image.PixelReader
 import javafx.scene.image.WritableImage
@@ -122,5 +124,10 @@ class SolidColorImageNode(val color: Color, width: Int, height: Int,
         return SolidColorImageNode(newPaintWithAlpha, width, height, name, scope, retryer, stats)
     }
 
-    override fun toString(): String = "Solid[$color]"
+    override suspend fun renderTo(out: GraphicsContext, x: Int, y: Int) {
+        doJfx(name, retryer) {
+            out.fill = color
+            out.fillRect(x.toDouble(), y.toDouble(), (x + width).toDouble(), (y + height).toDouble())
+        }
+    }
 }
