@@ -283,13 +283,20 @@ suspend fun superimpose(background: Paint = Color.TRANSPARENT, layers: List<Imag
         }
         visibleLayerIndex++
     }
-    if (layersAfterCollapsing.all { it is QuadtreeImageNode || it is SolidColorImageNode }
-            && layersAfterCollapsing.any {it is QuadtreeImageNode && !it.isAlreadyUnpacked()}
+    val layersAfterQuadtreeTransform: List<ImageNode>
+    val unpackedBack = layersAfterCollapsing.takeWhile { it.isAlreadyUnpacked() || it is SolidColorImageNode }
+    val unpackedFront = layersAfterCollapsing.takeLastWhile { it.isAlreadyUnpacked() || it is SolidColorImageNode }
+    val layersForQuadtreeing = layersAfterCollapsing.subList(
+            unpackedBack.size, layersAfterCollapsing.size - unpackedFront.size)
+    if (layersForQuadtreeing.all {it is QuadtreeImageNode || it is SolidColorImageNode}
+            && layersForQuadtreeing.any {it is QuadtreeImageNode}
+            && layersForQuadtreeing.size >= 2
             && height > packer.leafSize) {
+        layersAfterQuadtreeTransform = unpackedBack.toMutableList()
         val tileWidth = width / 2
         val tileHeight = height / 2
         val quadtreeLayers = layersAfterCollapsing.map {it.asQuadtree()}
-        return QuadtreeImageNode(
+        layersAfterQuadtreeTransform.add(packer.deduplicate(QuadtreeImageNode(
             width = width.toInt(),
             height = height.toInt(),
             topLeft = superimpose(realBackgroundPaint, quadtreeLayers.map{it.topLeft},
@@ -300,9 +307,10 @@ suspend fun superimpose(background: Paint = Color.TRANSPARENT, layers: List<Imag
                 tileWidth, tileHeight, name, retryer, packer),
             bottomRight = superimpose(realBackgroundPaint, quadtreeLayers.map{it.bottomRight},
                 tileWidth, tileHeight, name, retryer, packer),
-            name, layersAfterCollapsing[0].scope, retryer, layersAfterCollapsing[0].stats
-        )
-
+            name, layersAfterCollapsing[0].scope, retryer, layersAfterCollapsing[0].stats)))
+        layersAfterQuadtreeTransform.addAll(unpackedFront)
+    } else {
+        layersAfterQuadtreeTransform = layersAfterCollapsing
     }
     val canvas = Canvas(width, height)
     val canvasCtx = canvas.graphicsContext2D
@@ -312,6 +320,6 @@ suspend fun superimpose(background: Paint = Color.TRANSPARENT, layers: List<Imag
             canvasCtx.fillRect(0.0, 0.0, width, height)
         }
     }
-    layersAfterCollapsing.forEach { it.renderTo(canvasCtx, 0, 0) }
+    layersAfterQuadtreeTransform.forEach { it.renderTo(canvasCtx, 0, 0) }
     return packer.packImage(doJfx(name, retryer) { canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, null) }, null, name)
 }
