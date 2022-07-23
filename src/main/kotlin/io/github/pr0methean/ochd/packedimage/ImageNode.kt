@@ -1,5 +1,6 @@
 package io.github.pr0methean.ochd.packedimage
 
+import io.github.pr0methean.ochd.AsyncLazy
 import io.github.pr0methean.ochd.DEFAULT_SNAPSHOT_PARAMS
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.Retryer
@@ -45,24 +46,21 @@ abstract class ImageNode(val width: Int, val height: Int, initialPacked: ByteArr
         } else CompletableDeferred(initialPacked)
     }
 
-    class ImageNodePixelReader(val unpacked: suspend () -> Image) : PixelReader {
-        private fun blockForSource() = runBlocking { unpacked() }
-        override fun getPixelFormat(): PixelFormat<*> = blockForSource().pixelReader.pixelFormat
+    class ImageNodePixelReader(unpacked: suspend () -> Image) : AbstractPixelReader(unpacked) {
+        override fun getArgb(x: Int, y: Int): Int = sourceReader().getArgb(x, y)
 
-        override fun getArgb(x: Int, y: Int): Int = blockForSource().pixelReader.getArgb(x, y)
+        override fun getColor(x: Int, y: Int): Color = sourceReader().getColor(x, y)
 
-        override fun getColor(x: Int, y: Int): Color = blockForSource().pixelReader.getColor(x, y)
-
-        override fun <T : Buffer?> getPixels(
+        override fun <T : Buffer> getPixels(
             x: Int,
             y: Int,
             w: Int,
             h: Int,
-            pixelformat: WritablePixelFormat<T>?,
+            pixelformat: WritablePixelFormat<T>,
             buffer: T,
             scanlineStride: Int
         ) {
-            blockForSource().pixelReader.getPixels(x, y, w, h, pixelformat, buffer, scanlineStride)
+            sourceReader().getPixels(x, y, w, h, pixelformat, buffer, scanlineStride)
         }
 
         override fun getPixels(
@@ -70,12 +68,12 @@ abstract class ImageNode(val width: Int, val height: Int, initialPacked: ByteArr
             y: Int,
             w: Int,
             h: Int,
-            pixelformat: WritablePixelFormat<ByteBuffer>?,
-            buffer: ByteArray?,
+            pixelformat: WritablePixelFormat<ByteBuffer>,
+            buffer: ByteArray,
             offset: Int,
             scanlineStride: Int
         ) {
-            blockForSource().pixelReader.getPixels(x, y, w, h, pixelformat, buffer, offset, scanlineStride)
+            sourceReader().getPixels(x, y, w, h, pixelformat, buffer, offset, scanlineStride)
         }
 
         override fun getPixels(
@@ -83,31 +81,33 @@ abstract class ImageNode(val width: Int, val height: Int, initialPacked: ByteArr
             y: Int,
             w: Int,
             h: Int,
-            pixelformat: WritablePixelFormat<IntBuffer>?,
-            buffer: IntArray?,
+            pixelformat: WritablePixelFormat<IntBuffer>,
+            buffer: IntArray,
             offset: Int,
             scanlineStride: Int
         ) {
-            blockForSource().pixelReader.getPixels(x, y, w, h, pixelformat, buffer, offset, scanlineStride)
+            sourceReader().getPixels(x, y, w, h, pixelformat, buffer, offset, scanlineStride)
         }
 
     }
 
-    open val isSolidColor: Boolean by lazy {
-        val pixelReader = runBlocking { pixelReader() }
+    protected open val isSolidColor = AsyncLazy<Boolean> {
+        val pixelReader = pixelReader()
         val topLeftArgb = pixelReader.getArgb(0, 0)
         for (y in 0 until height) {
             for (x in 0 until width) {
                 if (pixelReader.getArgb(x, y) != topLeftArgb) {
-                    return@lazy false
+                    return@AsyncLazy false
                 }
             }
         }
-        return@lazy true
+        return@AsyncLazy true
     }
 
+    open suspend fun isSolidColor() = isSolidColor.get()
+
     open suspend fun toSolidColorIfPossible(): ImageNode {
-        return if (isSolidColor) {
+        return if (isSolidColor()) {
             SolidColorImageNode(pixelReader().getColor(0, 0), width, height, name, scope, retryer, stats)
         } else {
             this

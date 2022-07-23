@@ -2,11 +2,13 @@ package io.github.pr0methean.ochd.packedimage
 
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.Retryer
-import javafx.scene.image.*
+import javafx.scene.image.Image
+import javafx.scene.image.PixelReader
+import javafx.scene.image.WritableImage
+import javafx.scene.image.WritablePixelFormat
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.runBlocking
 import java.nio.Buffer
 import java.nio.ByteBuffer
 import java.nio.IntBuffer
@@ -21,14 +23,24 @@ fun colorToArgb(color: Color) = (color.opacity * 255.0).roundToInt().shl(24)
     )
     .or((color.blue * 255.0).roundToInt())
 
+private fun unpack(argb: Int, width: Int, height: Int): Image {
+    val out = WritableImage(width, height)
+    val writer = out.pixelWriter
+    for (y in 0 until height) {
+        for (x in 0 until width) {
+            writer.setArgb(x, y, argb)
+        }
+    }
+    return out
+}
+
 class SolidColorImageNode(val color: Color, width: Int, height: Int,
         name: String, scope: CoroutineScope, retryer: Retryer, stats: ImageProcessingStats)
         : ImageNode(width, height, null, name, scope, retryer, stats) {
     private val argb = colorToArgb(color)
 
-    inner class SolidColorPixelReader(val color: Color, val argb: Int): AbstractPixelReader() {
-        override fun getPixelFormat(): PixelFormat<*> = PixelFormat.getIntArgbInstance()
-
+    class SolidColorPixelReader(val width: Int, val height: Int, val color: Color, val argb: Int)
+            : AbstractPixelReader(unpacked = {unpack(argb, width, height)}) {
         override fun getArgb(x: Int, y: Int): Int = argb
 
         override fun getColor(x: Int, y: Int): Color = color
@@ -42,7 +54,7 @@ class SolidColorImageNode(val color: Color, width: Int, height: Int,
             offset: Int,
             scanlineStride: Int
         ) {
-            runBlocking { unpacked() }.pixelReader.getPixels(x, y, w, h, pixelformat, buffer, offset, scanlineStride)
+            sourceReader().getPixels(x, y, w, h, pixelformat, buffer, offset, scanlineStride)
         }
 
         override fun getPixels(
@@ -55,7 +67,7 @@ class SolidColorImageNode(val color: Color, width: Int, height: Int,
             offset: Int,
             scanlineStride: Int
         ) {
-            runBlocking { unpacked() }.pixelReader.getPixels(x, y, w, h, pixelformat, buffer, offset, scanlineStride)
+            sourceReader().getPixels(x, y, w, h, pixelformat, buffer, offset, scanlineStride)
         }
 
         override fun <T : Buffer> getPixels(
@@ -67,11 +79,11 @@ class SolidColorImageNode(val color: Color, width: Int, height: Int,
             buffer: T,
             scanlineStride: Int
         ) {
-            runBlocking { unpacked() }.pixelReader.getPixels(x, y, w, h, pixelformat, buffer, scanlineStride)
+            sourceReader().getPixels(x, y, w, h, pixelformat, buffer, scanlineStride)
         }
     }
 
-    override val isSolidColor = true
+    override suspend fun isSolidColor() = true
 
     override suspend fun toSolidColorIfPossible(): ImageNode = this
 
@@ -81,19 +93,10 @@ class SolidColorImageNode(val color: Color, width: Int, height: Int,
     }
 
     override suspend fun pixelReader(): PixelReader {
-        return SolidColorPixelReader(color, argb)
+        return SolidColorPixelReader(width, height, color, argb)
     }
 
-    override suspend fun unpacked(): Image {
-        val out = WritableImage(width, height)
-        val writer = out.pixelWriter
-        for (y in 0 until height) {
-            for (x in 0 until width) {
-                writer.setArgb(x, y, argb)
-            }
-        }
-        return out
-    }
+    override suspend fun unpacked(): Image = unpack(argb, width, height)
 
     override suspend fun repaint(
         newPaint: Paint?,

@@ -20,7 +20,7 @@ internal class QuadtreeImageNodeTest : ImageNodeTest(
     expected = quadtreeTestExpected,
     actual = {quadtreeTestActual}) {
     override suspend fun isSolidColor() {
-        assertFalse(actual().isSolidColor)
+        assertFalse(actual().isSolidColor())
     }
 
     override suspend fun toSolidColorIfPossible() {
@@ -74,7 +74,7 @@ internal class QuadtreeImageNodeTest : ImageNodeTest(
     override suspend fun repaint() {
         val repaintedFurnace = ctx.layer(baseImageTask, Color.BLUE).getImage()
         val expectedReader = expected.pixelReader
-        assertFalse(repaintedFurnace.isSolidColor)
+        assertFalse(repaintedFurnace.isSolidColor())
         val actualReader = repaintedFurnace.pixelReader()
         for (y in 0 until repaintedFurnace.height) {
             for (x in 0 until repaintedFurnace.width) {

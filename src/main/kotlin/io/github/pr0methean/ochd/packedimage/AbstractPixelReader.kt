@@ -1,15 +1,18 @@
 package io.github.pr0methean.ochd.packedimage
 
+import io.github.pr0methean.ochd.SoftAsyncLazy
+import javafx.scene.image.Image
 import javafx.scene.image.PixelFormat
 import javafx.scene.image.PixelReader
 import javafx.scene.image.WritablePixelFormat
 import javafx.scene.paint.Color
+import kotlinx.coroutines.runBlocking
 import java.nio.Buffer
 import java.nio.ByteBuffer
 import java.nio.IntBuffer
 
-abstract class AbstractPixelReader : PixelReader {
-    abstract override fun getPixelFormat(): PixelFormat<*>
+abstract class AbstractPixelReader(val unpacked: suspend () -> Image) : PixelReader {
+    override fun getPixelFormat(): PixelFormat<IntBuffer> = PixelFormat.getIntArgbInstance()
 
     abstract override fun getArgb(x: Int, y: Int): Int
 
@@ -54,4 +57,10 @@ abstract class AbstractPixelReader : PixelReader {
         bufferWrapper.position(offset)
         getPixels(x, y, w, h, pixelformat, bufferWrapper, scanlineStride)
     }
+
+    private val sourceReader = SoftAsyncLazy {
+        unpacked().pixelReader
+    }
+
+    protected fun sourceReader(): PixelReader = runBlocking { sourceReader.get() }
 }

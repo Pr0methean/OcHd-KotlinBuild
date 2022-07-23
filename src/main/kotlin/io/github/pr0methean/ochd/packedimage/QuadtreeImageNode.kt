@@ -1,8 +1,13 @@
 package io.github.pr0methean.ochd.packedimage
 
+import io.github.pr0methean.ochd.AsyncLazy
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.Retryer
-import javafx.scene.image.*
+import io.github.pr0methean.ochd.SoftAsyncLazy
+import javafx.scene.image.Image
+import javafx.scene.image.PixelReader
+import javafx.scene.image.WritableImage
+import javafx.scene.image.WritablePixelFormat
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.CoroutineScope
@@ -10,13 +15,19 @@ import kotlinx.coroutines.runBlocking
 import java.nio.Buffer
 import java.nio.ByteBuffer
 import java.nio.IntBuffer
+import java.util.*
 
 class QuadtreeImageNode(width: Int, height: Int, val topLeft: ImageNode,
                         val topRight: ImageNode, val bottomLeft: ImageNode, val bottomRight: ImageNode,
                         name: String, scope: CoroutineScope, retryer: Retryer, stats: ImageProcessingStats)
         : ImageNode(width, height, null, name, scope, retryer, stats) {
-    class QuadtreePixelReader(private val treeNode: QuadtreeImageNode): AbstractPixelReader() {
-        private fun getQuadrantReader(quadrant: Quadrant) = runBlocking { quadrant.getter(treeNode).pixelReader() }
+    class QuadtreePixelReader(private val treeNode: QuadtreeImageNode): AbstractPixelReader(unpacked = {treeNode.unpacked()}) {
+        private val quadrantReaders = EnumMap<Quadrant, SoftAsyncLazy<PixelReader>>(Quadrant::class.java).also {
+            for (quadrant in enumValues<Quadrant>()) {
+                it[quadrant] = SoftAsyncLazy {quadrant.getter(treeNode).pixelReader()}
+            }
+        }
+        private fun getQuadrantReader(quadrant: Quadrant) = runBlocking {quadrantReaders[quadrant]!!.get()}
 
         private fun quadrantForPoint(x: Int, y: Int): Triple<Quadrant, Int, Int> =
             if (x < treeNode.tileWidth) {
@@ -32,8 +43,6 @@ class QuadtreeImageNode(width: Int, height: Int, val topLeft: ImageNode,
                     Triple(Quadrant.LOWER_RIGHT, x - treeNode.tileWidth, y - treeNode.tileHeight)
                 }
             }
-
-        override fun getPixelFormat(): PixelFormat<*> = getQuadrantReader(Quadrant.UPPER_LEFT).pixelFormat
 
         override fun getArgb(x: Int, y: Int): Int {
             val (quadrant, qx, qy) = quadrantForPoint(x, y)
@@ -59,7 +68,7 @@ class QuadtreeImageNode(width: Int, height: Int, val topLeft: ImageNode,
             if (quadrantTopLeft == quadrantBottomRight) {
                 getQuadrantReader(quadrantTopLeft).getPixels(qLeft, qTop, w, h, pixelformat, buffer, scanlineStride)
             } else {
-                runBlocking { treeNode.unpacked().pixelReader }.getPixels(
+                sourceReader().getPixels(
                     x,
                     y,
                     w,
@@ -95,7 +104,7 @@ class QuadtreeImageNode(width: Int, height: Int, val topLeft: ImageNode,
                     scanlineStride
                 )
             } else {
-                runBlocking { treeNode.unpacked().pixelReader }.getPixels(
+                sourceReader().getPixels(
                     x,
                     y,
                     w,
@@ -132,7 +141,7 @@ class QuadtreeImageNode(width: Int, height: Int, val topLeft: ImageNode,
                     scanlineStride
                 )
             } else {
-                runBlocking { treeNode.unpacked().pixelReader }.getPixels(
+                sourceReader().getPixels(
                     x,
                     y,
                     w,
@@ -186,18 +195,19 @@ class QuadtreeImageNode(width: Int, height: Int, val topLeft: ImageNode,
 
     override fun toString(): String = "Quadtree[UL=$topLeft,UR=$topRight,LL=$bottomLeft,LR=$bottomRight]"
 
-    override val isSolidColor: Boolean by lazy {
-        if (!topLeft.isSolidColor) {return@lazy false}
-        if (!topRight.isSolidColor) {return@lazy false}
-        if (!bottomLeft.isSolidColor) {return@lazy false}
-        if (!bottomRight.isSolidColor) {return@lazy false}
-        val topLeftColor = runBlocking {topLeft.pixelReader()}.getArgb(0,0)
-        val topRightColor = runBlocking {topRight.pixelReader()}.getArgb(0,0)
-        if (topRightColor != topLeftColor) {return@lazy false}
-        val bottomLeftColor = runBlocking {bottomLeft.pixelReader()}.getArgb(0,0)
-        if (bottomLeftColor != topLeftColor) {return@lazy false}
-        val bottomRightColor = runBlocking {bottomRight.pixelReader()}.getArgb(0, 0)
-        if (bottomRightColor != topLeftColor) {return@lazy false}
+    override val isSolidColor = AsyncLazy {
+        if (!topLeft.isSolidColor()) {return@AsyncLazy false}
+        if (!topRight.isSolidColor()) {return@AsyncLazy false}
+        if (!bottomLeft.isSolidColor()) {return@AsyncLazy false}
+        if (!bottomRight.isSolidColor()) {return@AsyncLazy false}
+        val topLeftColor = topLeft.pixelReader().getArgb(0,0)
+        val topRightColor = topRight.pixelReader().getArgb(0,0)
+        if (topRightColor != topLeftColor) {return@AsyncLazy false}
+        val bottomLeftColor = bottomLeft.pixelReader().getArgb(0,0)
+        if (bottomLeftColor != topLeftColor) {return@AsyncLazy false}
+        val bottomRightColor = bottomRight.pixelReader().getArgb(0, 0)
+        if (bottomRightColor != topLeftColor) {return@AsyncLazy false}
+        if (bottomRightColor != topLeftColor) {return@AsyncLazy false}
         true
     }
 }
