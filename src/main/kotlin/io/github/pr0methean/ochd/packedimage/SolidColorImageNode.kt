@@ -38,7 +38,7 @@ private fun unpack(argb: Int, width: Int, height: Int): Image {
 
 class SolidColorImageNode(val color: Color, width: Int, height: Int,
         name: String, scope: CoroutineScope, retryer: Retryer, stats: ImageProcessingStats)
-        : ImageNode(width, height, null, name, scope, retryer, stats) {
+        : ImageNode(width, height, initialPacked = null, name = name, scope = scope, retryer = retryer, stats = stats) {
     private val argb = colorToArgb(color)
 
     class SolidColorPixelReader(val width: Int, val height: Int, val color: Color, val argb: Int)
@@ -98,7 +98,7 @@ class SolidColorImageNode(val color: Color, width: Int, height: Int,
         return SolidColorPixelReader(width, height, color, argb)
     }
 
-    override suspend fun unpacked(): Image = unpack(argb, width, height)
+    override suspend fun unpack(): Image = unpack(argb, width, height)
 
     override suspend fun repaint(
         newPaint: Paint?,

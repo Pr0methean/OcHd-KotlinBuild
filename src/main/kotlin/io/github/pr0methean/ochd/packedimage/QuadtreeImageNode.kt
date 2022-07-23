@@ -21,7 +21,7 @@ import java.util.*
 class QuadtreeImageNode(width: Int, height: Int, val topLeft: ImageNode,
                         val topRight: ImageNode, val bottomLeft: ImageNode, val bottomRight: ImageNode,
                         name: String, scope: CoroutineScope, retryer: Retryer, stats: ImageProcessingStats)
-        : ImageNode(width, height, null, name, scope, retryer, stats) {
+        : ImageNode(width, height, initialPacked = null, name = name, scope = scope, retryer = retryer, stats = stats) {
     class QuadtreePixelReader(private val treeNode: QuadtreeImageNode): AbstractPixelReader(unpacked = {treeNode.unpacked()}) {
         private val quadrantReaders = EnumMap<Quadrant, SoftAsyncLazy<PixelReader>>(Quadrant::class.java).also {
             for (quadrant in enumValues<Quadrant>()) {
@@ -169,7 +169,7 @@ class QuadtreeImageNode(width: Int, height: Int, val topLeft: ImageNode,
     val tileWidth = width / 2
     val tileHeight = height / 2
     override suspend fun asQuadtree(): QuadtreeImageNode = this
-    override suspend fun unpacked(): Image {
+    override suspend fun unpack(): Image {
         val out = WritableImage(width, height)
         val writer = out.pixelWriter
         for (quadrant in enumValues<Quadrant>()) {

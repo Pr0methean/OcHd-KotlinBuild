@@ -1,9 +1,6 @@
 package io.github.pr0methean.ochd.packedimage
 
-import io.github.pr0methean.ochd.AsyncLazy
-import io.github.pr0methean.ochd.DEFAULT_SNAPSHOT_PARAMS
-import io.github.pr0methean.ochd.ImageProcessingStats
-import io.github.pr0methean.ochd.Retryer
+import io.github.pr0methean.ochd.*
 import io.github.pr0methean.ochd.packedimage.QuadtreeImageNode.Quadrant
 import io.github.pr0methean.ochd.tasks.doJfx
 import javafx.embed.swing.SwingFXUtils
@@ -28,9 +25,12 @@ import java.util.*
 import javax.imageio.ImageIO
 
 private val logger = LogManager.getLogger("ImageNode")
-abstract class ImageNode(val width: Int, val height: Int, initialPacked: ByteArray? = null, val name: String,
-                         val scope: CoroutineScope, val retryer: Retryer, val stats: ImageProcessingStats,
-                         start: CoroutineStart = CoroutineStart.LAZY) {
+abstract class ImageNode(
+    val width: Int, val height: Int, initialUnpacked: Image? = null, initialPacked: ByteArray? = null,
+    val name: String, val scope: CoroutineScope, val retryer: Retryer,
+    val stats: ImageProcessingStats,
+    start: CoroutineStart = CoroutineStart.LAZY
+) {
 
     protected val packingTask by lazy {
         if (initialPacked == null) {
@@ -176,7 +176,11 @@ abstract class ImageNode(val width: Int, val height: Int, initialPacked: ByteArr
 
     open suspend fun pixelReader(): PixelReader = ImageNodePixelReader(this::unpacked)
 
-    abstract suspend fun unpacked(): Image
+    val unpacked = SoftAsyncLazy(initialUnpacked, this::unpack)
+
+    suspend fun unpacked(): Image = unpacked.get()
+
+    abstract suspend fun unpack(): Image
     open suspend fun repaint(
         newPaint: Paint? = null,
         alpha: Double = 1.0,
