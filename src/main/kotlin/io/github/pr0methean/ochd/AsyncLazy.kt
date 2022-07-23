@@ -4,10 +4,9 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
 class AsyncLazy<T>(
-    initialValue: T? = null,
     val supplier: suspend () -> T
 ) {
-    @Volatile var result = initialValue
+    @Volatile var result: T? = null
     private val mutex = Mutex()
     suspend fun get(): T = result ?: mutex.withLock {
         result ?: supplier().also { result = it }

@@ -4,6 +4,7 @@ import io.github.pr0methean.ochd.AsyncLazy
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.Retryer
 import io.github.pr0methean.ochd.SoftAsyncLazy
+import io.github.pr0methean.ochd.tasks.doJfx
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.image.Image
 import javafx.scene.image.PixelReader
@@ -195,6 +196,10 @@ class QuadtreeImageNode(width: Int, height: Int, val topLeft: ImageNode,
     }
 
     override suspend fun renderTo(out: GraphicsContext, x: Int, y: Int) {
+        val rendered = unpacked.getNow()
+        if (rendered != null) {
+            doJfx(name, retryer) {out.drawImage(rendered, x.toDouble(), y.toDouble())}
+        }
         for (quadrant in enumValues<Quadrant>()) {
             quadrant.getter(this).renderTo(out, quadrant.getLeftX(width) + x, quadrant.getTopY(height) + y)
         }
