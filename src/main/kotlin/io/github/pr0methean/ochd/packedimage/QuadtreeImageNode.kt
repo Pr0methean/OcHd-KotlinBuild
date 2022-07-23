@@ -187,15 +187,17 @@ class QuadtreeImageNode(width: Int, height: Int, val topLeft: ImageNode,
         retryer: Retryer,
         packer: ImagePacker
     ): ImageNode {
-        if (newPaint == null && alpha == 1.0) {
-            return this
+        val repainted = if (newPaint == null && alpha == 1.0) {
+            this
+        } else {
+            QuadtreeImageNode(width, height,
+                topLeft = topLeft.repaint(newPaint, alpha, name, retryer, packer),
+                topRight = topRight.repaint(newPaint, alpha, name, retryer, packer),
+                bottomLeft = bottomLeft.repaint(newPaint, alpha, name, retryer, packer),
+                bottomRight = bottomRight.repaint(newPaint, alpha, name, retryer, packer),
+                name, scope, retryer, stats)
         }
-        return packer.deduplicate(QuadtreeImageNode(width, height,
-            topLeft = topLeft.repaint(newPaint, alpha, name, retryer, packer),
-            topRight = topRight.repaint(newPaint, alpha, name, retryer, packer),
-            bottomLeft = bottomLeft.repaint(newPaint, alpha, name, retryer, packer),
-            bottomRight = bottomRight.repaint(newPaint, alpha, name, retryer, packer),
-        name, scope, retryer, stats))
+        return packer.deduplicate(repainted)
     }
 
     override fun shouldDeduplicate(): Boolean = topLeft.shouldDeduplicate() && topRight.shouldDeduplicate()

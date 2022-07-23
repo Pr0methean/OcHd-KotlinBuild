@@ -118,9 +118,10 @@ class SolidColorImageNode(val color: Color, width: Int, height: Int,
             }
         } else if (newPaint == null) {
             if (alpha == 1.0) {
-                return this
+                return packer.deduplicate(this)
+            } else {
+                Color(color.red, color.green, color.blue, color.opacity * alpha)
             }
-            Color(color.red, color.green, color.blue, color.opacity * alpha)
         } else return super.repaint(newPaint, alpha, name, retryer, packer)
         return packer.deduplicate(SolidColorImageNode(newPaintWithAlpha, width, height, name, scope, retryer, stats))
     }

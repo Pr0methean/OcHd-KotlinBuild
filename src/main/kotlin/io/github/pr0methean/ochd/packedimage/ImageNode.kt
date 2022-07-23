@@ -195,7 +195,7 @@ abstract class ImageNode(
         packer: ImagePacker
     ): ImageNode {
         if (newPaint == null && alpha == 1.0) {
-            return this
+            return packer.deduplicate(this)
         }
         val unpacked = unpacked()
         val view = doJfx(name, retryer) {ImageView(unpacked)}
