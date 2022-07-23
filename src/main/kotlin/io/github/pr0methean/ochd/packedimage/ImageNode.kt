@@ -184,6 +184,8 @@ abstract class ImageNode(
 
     val unpacked = SoftAsyncLazy(initialUnpacked, this::unpack)
 
+    fun isAlreadyUnpacked(): Boolean = unpacked.getNow() != null
+
     suspend fun unpacked(): Image = unpacked.get()
 
     abstract suspend fun unpack(): Image
@@ -282,7 +284,7 @@ suspend fun superimpose(background: Paint = Color.TRANSPARENT, layers: List<Imag
         visibleLayerIndex++
     }
     if (layersAfterCollapsing.all { it is QuadtreeImageNode || it is SolidColorImageNode }
-            && layersAfterCollapsing.any {it is QuadtreeImageNode}
+            && layersAfterCollapsing.any {it is QuadtreeImageNode && !it.isAlreadyUnpacked()}
             && height > packer.leafSize) {
         val tileWidth = width / 2
         val tileHeight = height / 2
