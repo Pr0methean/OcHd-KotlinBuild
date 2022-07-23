@@ -187,7 +187,17 @@ class QuadtreeImageNode(width: Int, height: Int, val topLeft: ImageNode,
     override fun toString(): String = "Quadtree[UL=$topLeft,UR=$topRight,LL=$bottomLeft,LR=$bottomRight]"
 
     override val isSolidColor: Boolean by lazy {
-        topLeft.isSolidColor && topRight.isSolidColor && bottomLeft.isSolidColor && bottomRight.isSolidColor
-                && super.isSolidColor
+        if (!topLeft.isSolidColor) {return@lazy false}
+        if (!topRight.isSolidColor) {return@lazy false}
+        if (!bottomLeft.isSolidColor) {return@lazy false}
+        if (!bottomRight.isSolidColor) {return@lazy false}
+        val topLeftColor = runBlocking {topLeft.pixelReader()}.getArgb(0,0)
+        val topRightColor = runBlocking {topRight.pixelReader()}.getArgb(0,0)
+        if (topRightColor != topLeftColor) {return@lazy false}
+        val bottomLeftColor = runBlocking {bottomLeft.pixelReader()}.getArgb(0,0)
+        if (bottomLeftColor != topLeftColor) {return@lazy false}
+        val bottomRightColor = runBlocking {bottomRight.pixelReader()}.getArgb(0, 0)
+        if (bottomRightColor != topLeftColor) {return@lazy false}
+        true
     }
 }
