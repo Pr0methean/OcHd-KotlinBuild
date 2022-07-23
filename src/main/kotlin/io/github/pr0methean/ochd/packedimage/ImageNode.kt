@@ -121,12 +121,10 @@ abstract class ImageNode(val width: Int, val height: Int, initialPacked: ByteArr
         val quadrants = EnumMap<Quadrant, ImageNode>(Quadrant::class.java)
         for (quadrant in enumValues<Quadrant>()) {
             val quadrantBuffer = WritableImage(tileWidth, tileHeight)
-            doJfx(name, retryer) {
-                quadrantBuffer.pixelWriter.setPixels(
-                    0, 0, tileWidth, tileHeight, pixelReader, quadrant.getLeftX(width),
-                    quadrant.getTopY(height)
-                )
-            }
+            quadrantBuffer.pixelWriter.setPixels(
+                0, 0, tileWidth, tileHeight, pixelReader, quadrant.getLeftX(width),
+                quadrant.getTopY(height)
+            )
             quadrants[quadrant] =
                 SimpleImageNode(quadrantBuffer, null, name, scope, retryer, stats, tileWidth, tileHeight)
         }
@@ -162,16 +160,12 @@ abstract class ImageNode(val width: Int, val height: Int, initialPacked: ByteArr
         val topRight = result.topRight.asSolidOrQuadtreeRecursive(maxDepth - 1, leafWidth, leafHeight)
         val bottomLeft = result.bottomLeft.asSolidOrQuadtreeRecursive(maxDepth - 1, leafWidth, leafHeight)
         val bottomRight = result.bottomRight.asSolidOrQuadtreeRecursive(maxDepth - 1,leafWidth, leafHeight)
-        return doJfx(name, retryer) {
-            runBlocking {
-                QuadtreeImageNode(
+        return QuadtreeImageNode(
                     width, height,
                     topLeft = topLeft,
                     topRight = topRight,
                     bottomLeft = bottomLeft,
                     bottomRight = bottomRight, name, scope, retryer, stats)
-            }
-        }
     }
 
     open suspend fun pixelReader(): PixelReader = ImageNodePixelReader(this::unpacked)
