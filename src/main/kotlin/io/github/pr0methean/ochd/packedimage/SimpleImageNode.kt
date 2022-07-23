@@ -21,7 +21,7 @@ class SimpleImageNode(
     }
 
     init {
-        if (initialUnpacked != null && height >= MAX_UNCOMPRESSED_TILESIZE) {
+        if (initialUnpacked != null && height > MAX_UNCOMPRESSED_TILESIZE) {
             pngBytes.start(scope)
         }
     }
