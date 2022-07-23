@@ -20,6 +20,12 @@ class SimpleImageNode(
         return unpacked().pixelReader
     }
 
+    init {
+        if (initialUnpacked != null && height >= MAX_UNCOMPRESSED_TILESIZE) {
+            pngBytes.start(scope)
+        }
+    }
+
     override suspend fun unpack(): Image {
         stats.onDecompressPngImage(name)
         return retryer.retrying("Decompression of $name") {

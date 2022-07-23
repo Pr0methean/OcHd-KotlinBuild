@@ -46,12 +46,6 @@ abstract class ImageNode(
         }.also { logger.info("Done compressing {}", name) }
     }
 
-    init {
-        if (initialUnpacked != null) {
-            pngBytes.start(scope)
-        }
-    }
-
     class ImageNodePixelReader(unpacked: suspend () -> Image) : AbstractPixelReader(unpacked) {
         override fun getArgb(x: Int, y: Int): Int = sourceReader().getArgb(x, y)
 
