@@ -2,8 +2,8 @@ package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.Retryer
+import io.github.pr0methean.ochd.packedimage.ImageNode
 import io.github.pr0methean.ochd.packedimage.ImagePacker
-import io.github.pr0methean.ochd.packedimage.PackedImage
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.CoroutineScope
 import org.apache.logging.log4j.util.Unbox
@@ -19,7 +19,7 @@ data class RepaintTask(
     val retryer: Retryer,
 ) : AbstractTextureTask(scope, stats) {
 
-    override suspend fun createImage(): PackedImage
+    override suspend fun createImage(): ImageNode
         = base.getImage().repaint(paint, alpha, base.toString(), retryer, packer)
 
     override fun formatTo(buffer: StringBuilder) {

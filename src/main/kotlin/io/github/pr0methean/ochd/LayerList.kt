@@ -4,7 +4,6 @@ import io.github.pr0methean.ochd.tasks.TextureTask
 import javafx.scene.paint.Color.TRANSPARENT
 import javafx.scene.paint.Paint
 import org.apache.logging.log4j.util.StringBuilderFormattable
-import kotlin.text.StringBuilder
 
 data class LayerList(val layers: List<TextureTask>, val background: Paint):
         StringBuilderFormattable {

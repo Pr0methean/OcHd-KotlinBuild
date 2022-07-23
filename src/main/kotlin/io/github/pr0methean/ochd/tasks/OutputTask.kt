@@ -2,7 +2,7 @@ package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.Retryer
-import io.github.pr0methean.ochd.packedimage.PackedImage
+import io.github.pr0methean.ochd.packedimage.ImageNode
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
@@ -30,7 +30,7 @@ class OutputTask(val producer: TextureTask,
 
     private suspend fun invoke() {
         stats.onTaskLaunched("OutputTask", name)
-        val image: PackedImage
+        val image: ImageNode
         try {
             image = retryer.retrying(producer.toString()) { producer.getImage() }
         } catch (e: NotImplementedError) {
