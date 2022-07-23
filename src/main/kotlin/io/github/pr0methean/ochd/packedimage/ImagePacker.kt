@@ -15,11 +15,7 @@ class ImagePacker(
     val deduplicationMap = ConcurrentHashMap<ImageNode, ImageNode>()
 
     suspend fun deduplicate(input: ImageNode): ImageNode = if (input.shouldDeduplicate()) {
-        val original = deduplicationMap.putIfAbsent(input, input)!!
-        if (original !== input) {
-            original.mergeWithDuplicate(input)
-        }
-        original
+        deduplicationMap.putIfAbsent(input, input)?.also {it.mergeWithDuplicate(input)} ?: input
     } else {
         input
     }
