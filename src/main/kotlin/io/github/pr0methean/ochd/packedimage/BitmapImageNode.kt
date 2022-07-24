@@ -22,12 +22,6 @@ class BitmapImageNode(
         unpacked().pixelReader
     }
 
-    init {
-        if (initialUnpacked != null && height > MAX_UNCOMPRESSED_TILESIZE) {
-            pngBytes.start(scope)
-        }
-    }
-
     override suspend fun unpack(): Image {
         if (height >= MIN_LOGGABLE_SIZE) {
             stats.onDecompressPngImage("a ${width}×$height chunk of $name")
