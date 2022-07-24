@@ -46,15 +46,15 @@ data class RepaintTask(
                 it.bottomInput = null
             }
         } else null
-        val snapshot = doJfx(name, retryer) {
+        val snapshot = pool.borrow {doJfx(name, retryer) {
             val canvas = Canvas(unpacked.width, unpacked.height)
             canvas.isCache = true
             val gfx = canvas.graphicsContext2D
             canvas.opacity = alpha
             blend?.let { gfx.setEffect(it) }
             gfx.drawImage(unpacked, 0.0, 0.0)
-            canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, null)
-        }
+            canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, it)
+        }}
         return packer.packImage(snapshot, null, name)
     }
 
