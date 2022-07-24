@@ -2,11 +2,8 @@ package io.github.pr0methean.ochd
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
 import io.github.pr0methean.ochd.tasks.doJfx
 import javafx.application.Platform
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.joinAll
-import kotlinx.coroutines.launch
 import org.apache.logging.log4j.LogManager
 import java.nio.file.Paths
 import kotlin.system.measureNanoTime
@@ -31,7 +28,7 @@ suspend fun main(args:Array<String>) {
     val out = Paths.get("out").toAbsolutePath().toFile()
     val outTextureRoot = out.resolve("assets").resolve("minecraft").resolve("textures")
     val ioScope = CoroutineScope(Dispatchers.IO)
-    val cleanupJob = ioScope.launch {out.deleteRecursively()}
+    val cleanupJob = ioScope.plus(CoroutineName("Delete old outputs")).launch {out.deleteRecursively()}
     val ctx = ImageProcessingContext(
         name = "MainContext",
         tileSize = tileSize,
@@ -45,7 +42,7 @@ suspend fun main(args:Array<String>) {
     val stats = ctx.stats
     startMonitoring(stats, scope)
     val time = measureNanoTime {
-        val copyMetadata = ioScope.launch {
+        val copyMetadata = ioScope.plus(CoroutineName("Copy metadata files")).launch {
             cleanupJob.join()
             stats.onTaskLaunched("Copy metadata files", "Copy metadata files")
             metadataDirectory.walkTopDown().forEach {

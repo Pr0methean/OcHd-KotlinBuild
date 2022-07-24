@@ -31,7 +31,7 @@ fun startMonitoring(stats: ImageProcessingStats, scope: CoroutineScope) {
         DebugProbes.install()
     }
     val loggerStream = IoBuilder.forLogger(logger).setLevel(Level.DEBUG).buildPrintStream()
-    monitoringJob = scope.async {
+    monitoringJob = scope.plus(CoroutineName("Stats monitoring job")).async {
         while (true) {
             delay(REPORTING_INTERVAL)
             logger.info("Completed tasks:")

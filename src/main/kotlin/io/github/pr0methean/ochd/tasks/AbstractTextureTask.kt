@@ -12,7 +12,7 @@ abstract class AbstractTextureTask(open val scope: CoroutineScope,
 ) : TextureTask {
     val coroutine by lazy {
         val typeName = this::class.simpleName ?: "[unnamed AbstractTextureTask]"
-        scope.async(start = CoroutineStart.LAZY) {
+        scope.plus(CoroutineName(name)).async(start = CoroutineStart.LAZY) {
             stats.onTaskLaunched(typeName, name)
             val image = createImage()
             stats.onTaskCompleted(typeName, name)
@@ -36,7 +36,7 @@ abstract class AbstractTextureTask(open val scope: CoroutineScope,
 
 @Suppress("BlockingMethodInNonBlockingContext")
 suspend fun <T> doJfx(name: String, retryer: Retryer, jfxCode: CoroutineScope.() -> T): T
-        = retryer.retrying(name) { withContext(Dispatchers.Main) {
+        = retryer.retrying(name) { withContext(Dispatchers.Main.plus(CoroutineName(name))) {
             logger.info("Starting JFX task: {}", name)
             val result = jfxCode()
             logger.info("Finished JFX task: {}", name)

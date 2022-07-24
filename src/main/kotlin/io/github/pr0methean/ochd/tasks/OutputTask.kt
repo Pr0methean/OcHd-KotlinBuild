@@ -3,6 +3,7 @@ package io.github.pr0methean.ochd.tasks
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.Retryer
 import io.github.pr0methean.ochd.packedimage.ImageNode
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
@@ -38,7 +39,7 @@ class OutputTask(val producer: TextureTask,
                 logger.warn("Skipping $name because it's not implemented yet")
                 return
             }
-            withContext(Dispatchers.IO) {
+            withContext(Dispatchers.IO.plus(CoroutineName(name))) {
                 retryer.retrying(name) { image.writePng(file) }
             }
             if (!file.exists()) {

@@ -6,6 +6,7 @@ import javafx.embed.swing.SwingFXUtils
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -56,7 +57,8 @@ abstract class ImageNode(
     abstract suspend fun unpack(): Image
 
     suspend fun asPng(): ByteArray = pngBytes.get()
-    suspend fun writePng(destination: File) = withContext(Dispatchers.IO) {
+    @Suppress("BlockingMethodInNonBlockingContext")
+    suspend fun writePng(destination: File) = withContext(Dispatchers.IO.plus(CoroutineName(name))) {
         val pngBytes = asPng()
         destination.parentFile?.mkdirs()
         FileOutputStream(destination).use { it.write(pngBytes) }
