@@ -8,12 +8,14 @@ import kotlinx.coroutines.CoroutineScope
 
 const val MAX_UNCOMPRESSED_TILESIZE = 512
 const val MIN_SIZE_TO_DEDUP = 64
+private const val DEDUP_CACHE_SIZE = 5_000L
+
 class ImagePacker(
     val scope: CoroutineScope, private val retryer: Retryer, private val stats: ImageProcessingStats,
     val maxQuadtreeDepth: Int,
     val leafSize: Int
 ) {
-    val deduplicationMap = Caffeine.newBuilder().maximumSize(10_000).build<ImageNode, ImageNode> { it }
+    val deduplicationMap = Caffeine.newBuilder().maximumSize(DEDUP_CACHE_SIZE).build<ImageNode, ImageNode> { it }
 
     suspend fun deduplicate(input: ImageNode): ImageNode {
         if (input.shouldDeduplicate()
@@ -31,7 +33,7 @@ class ImagePacker(
      * Encapsulates the given image in a form small enough to fit on the heap.
      */
     suspend fun packImage(input: Image, initialPng: ByteArray?, name: String): ImageNode {
-        val basicImage = SimpleImageNode(
+        val basicImage = BitmapImageNode(
             input,
             initialPng,
             name,

@@ -1,0 +1,17 @@
+package io.github.pr0methean.ochd
+
+import java.lang.ref.WeakReference
+
+class WeakAsyncLazy<T>(
+    initialValue: T? = null,
+    val supplier: suspend () -> T
+) : AsyncLazy<T>() {
+    @Volatile
+    private var currentValue: WeakReference<T?> = WeakReference<T?>(initialValue)
+    override suspend fun getFromSupplier(): T = supplier()
+
+    override fun getNow(): T? = currentValue.get()
+    override fun set(value: T?) {
+        currentValue = WeakReference(value)
+    }
+}

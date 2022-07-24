@@ -112,7 +112,7 @@ abstract class ImageNode(
 
     open suspend fun toSolidColorIfPossible(): ImageNode {
         return if (isSolidColor()) {
-            SolidColorImageNode(pixelReader().getColor(0, 0), width, height, name, scope, retryer, stats, packer)
+            SolidColorImageNode(unpacked.getNow(), pixelReader().getColor(0, 0), width, height, name, scope, retryer, stats, packer)
         } else {
             this
         }
@@ -130,10 +130,10 @@ abstract class ImageNode(
                 quadrant.getTopY(height)
             )
             quadrants[quadrant] =
-                SimpleImageNode(quadrantBuffer, null, name, scope, retryer, stats, tileWidth, tileHeight, packer)
+                BitmapImageNode(quadrantBuffer, null, name, scope, retryer, stats, tileWidth, tileHeight, packer)
         }
         return QuadtreeImageNode(
-            width, height,
+            unpacked.getNow(), width, height,
             topLeft = quadrants[Quadrant.UPPER_LEFT]!!.toSolidColorIfPossible(),
             topRight = quadrants[Quadrant.UPPER_RIGHT]!!.toSolidColorIfPossible(),
             bottomLeft = quadrants[Quadrant.LOWER_LEFT]!!.toSolidColorIfPossible(),
@@ -165,7 +165,7 @@ abstract class ImageNode(
         val bottomLeft = result.bottomLeft.asSolidOrQuadtreeRecursive(maxDepth - 1, leafWidth, leafHeight)
         val bottomRight = result.bottomRight.asSolidOrQuadtreeRecursive(maxDepth - 1,leafWidth, leafHeight)
         return QuadtreeImageNode(
-            width, height,
+            unpacked.getNow(), width, height,
             topLeft = topLeft,
             topRight = topRight,
             bottomLeft = bottomLeft,
@@ -177,11 +177,11 @@ abstract class ImageNode(
     }
     open suspend fun pixelReader(): PixelReader = pixelReader.get()
 
-    val unpacked = SoftAsyncLazy(initialUnpacked, this::unpack)
+    open val unpacked: AsyncLazy<Image> = SoftAsyncLazy(initialUnpacked, this::unpack)
 
     fun isAlreadyUnpacked(): Boolean = unpacked.getNow() != null
 
-    open suspend fun unpacked(): Image = unpacked.get()
+    suspend fun unpacked(): Image = unpacked.get()
 
     abstract suspend fun unpack(): Image
     open suspend fun repaint(
@@ -271,7 +271,7 @@ suspend fun superimpose(background: Paint = Color.TRANSPARENT, layers: List<Imag
         val previousLayer = layersAfterCollapsing.lastOrNull()
         if (visibleLayer is SolidColorImageNode && previousLayer is SolidColorImageNode) {
                 layersAfterCollapsing[layersAfterCollapsing.size - 1] = packer.deduplicate(SolidColorImageNode(
-                    alphaBlend(foreground = visibleLayer.color, background = previousLayer.color),
+                    null, alphaBlend(foreground = visibleLayer.color, background = previousLayer.color),
                     width.toInt(), height.toInt(), name, visibleLayer.scope, retryer, visibleLayer.stats, packer))
         } else {
             layersAfterCollapsing.add(packer.deduplicate(visibleLayer))
@@ -297,7 +297,7 @@ suspend fun superimpose(background: Paint = Color.TRANSPARENT, layers: List<Imag
                 val quadtreeLayers = layersForQuadtreeing.map { it.asQuadtree() }
                 layersAfterQuadtreeTransform.add(
                     packer.deduplicate(
-                        QuadtreeImageNode(
+                        QuadtreeImageNode(null,
                             width = width.toInt(),
                             height = height.toInt(),
                             topLeft = superimpose(

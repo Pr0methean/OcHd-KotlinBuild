@@ -9,7 +9,7 @@ import org.apache.logging.log4j.LogManager
 import java.io.ByteArrayInputStream
 
 private val logger = LogManager.getLogger("SimpleImageNode")
-class SimpleImageNode(
+class BitmapImageNode(
     initialUnpacked: Image?, initialPng: ByteArray?, name: String,
     scope: CoroutineScope, retryer: Retryer, stats: ImageProcessingStats,
     width: Int, height: Int, packer: ImagePacker) : ImageNode(

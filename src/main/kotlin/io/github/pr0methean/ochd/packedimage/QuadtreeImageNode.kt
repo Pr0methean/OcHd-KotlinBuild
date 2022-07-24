@@ -1,9 +1,6 @@
 package io.github.pr0methean.ochd.packedimage
 
-import io.github.pr0methean.ochd.ImageProcessingStats
-import io.github.pr0methean.ochd.Retryer
-import io.github.pr0methean.ochd.SoftAsyncLazy
-import io.github.pr0methean.ochd.StrongAsyncLazy
+import io.github.pr0methean.ochd.*
 import io.github.pr0methean.ochd.tasks.doJfx
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.image.Image
@@ -20,7 +17,7 @@ import java.nio.IntBuffer
 import java.util.*
 
 class QuadtreeImageNode(
-    width: Int, height: Int, val topLeft: ImageNode,
+    initialUnpacked: Image? = null, width: Int, height: Int, val topLeft: ImageNode,
     val topRight: ImageNode, val bottomLeft: ImageNode, val bottomRight: ImageNode,
     name: String, scope: CoroutineScope, retryer: Retryer, stats: ImageProcessingStats, packer: ImagePacker
 )
@@ -183,6 +180,8 @@ class QuadtreeImageNode(
         return out
     }
 
+    override val unpacked = WeakAsyncLazy(initialUnpacked, this::unpack)
+
     override suspend fun repaint(
         newPaint: Paint?,
         alpha: Double,
@@ -194,7 +193,7 @@ class QuadtreeImageNode(
             this
         } else {
             QuadtreeImageNode(
-                width, height,
+                null, width, height,
                 topLeft = topLeft.repaint(newPaint, alpha, name, retryer, packer),
                 topRight = topRight.repaint(newPaint, alpha, name, retryer, packer),
                 bottomLeft = bottomLeft.repaint(newPaint, alpha, name, retryer, packer),
