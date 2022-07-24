@@ -13,7 +13,9 @@ import javafx.scene.image.WritablePixelFormat
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.toList
 import java.nio.Buffer
 import java.nio.ByteBuffer
 import java.nio.IntBuffer
@@ -26,14 +28,15 @@ class QuadtreeImageNode(
 )
         : ImageNode(width, height, initialUnpacked = initialUnpacked, initialPacked = null, name = name, scope = scope, retryer = retryer, stats = stats,
         packer = packer) {
-    class QuadtreePixelReader(private val treeNode: QuadtreeImageNode): AbstractPixelReader() {
-        private val quadrantReaders = EnumMap<Quadrant, SoftAsyncLazy<PixelReader>>(Quadrant::class.java).also {
-            for (quadrant in enumValues<Quadrant>()) {
-                it[quadrant] = SoftAsyncLazy {quadrant.getter(treeNode).pixelReader()}
-            }
+    private val quadrantReaders = EnumMap<Quadrant, SoftAsyncLazy<PixelReader>>(Quadrant::class.java).also {
+        for (quadrant in enumValues<Quadrant>()) {
+            it[quadrant] = SoftAsyncLazy {quadrant.getter(this).pixelReader()}
         }
-        private val sourceReaderLazy = SoftAsyncLazy(treeNode.unpacked.getNow()?.pixelReader) {treeNode.unpacked().pixelReader}
-        private fun getQuadrantReader(quadrant: Quadrant) = runBlocking {quadrantReaders[quadrant]!!.get()}
+    }
+    private val sourceReaderLazy = SoftAsyncLazy(initialUnpacked?.pixelReader) {unpacked().pixelReader}
+    class QuadtreePixelReader(private val treeNode: QuadtreeImageNode, private val sourceReader: PixelReader,
+            private val quadrantReaders: Map<Quadrant, PixelReader>): AbstractPixelReader() {
+        private fun getQuadrantReader(quadrant: Quadrant) = quadrantReaders[quadrant]!!
 
         private fun quadrantForPoint(x: Int, y: Int): Triple<Quadrant, Int, Int> =
             if (x < treeNode.tileWidth) {
@@ -74,7 +77,7 @@ class QuadtreeImageNode(
             if (quadrantTopLeft == quadrantBottomRight) {
                 getQuadrantReader(quadrantTopLeft).getPixels(qLeft, qTop, w, h, pixelformat, buffer, scanlineStride)
             } else {
-                runBlocking {sourceReaderLazy.get()}.getPixels(
+                sourceReader.getPixels(
                     x,
                     y,
                     w,
@@ -110,7 +113,7 @@ class QuadtreeImageNode(
                     scanlineStride
                 )
             } else {
-                runBlocking {sourceReaderLazy.get()}.getPixels(
+                sourceReader.getPixels(
                     x,
                     y,
                     w,
@@ -147,7 +150,7 @@ class QuadtreeImageNode(
                     scanlineStride
                 )
             } else {
-                runBlocking {sourceReaderLazy.get()}.getPixels(
+                sourceReader.getPixels(
                     x,
                     y,
                     w,
@@ -162,7 +165,9 @@ class QuadtreeImageNode(
     }
 
     override val pixelReader = SoftAsyncLazy<PixelReader>(initialUnpacked?.pixelReader) {
-        QuadtreePixelReader(this)
+        val quadrantReaders = quadrantReaders.toList().asFlow()
+            .map { (quadrant, readerLazy) -> quadrant to readerLazy.get() }.toList().toMap()
+        QuadtreePixelReader(this, sourceReaderLazy.get(), quadrantReaders)
     }
 
     enum class Quadrant(val xMultiplier: Int, val yMultiplier: Int, val getter: (QuadtreeImageNode) -> ImageNode) {
