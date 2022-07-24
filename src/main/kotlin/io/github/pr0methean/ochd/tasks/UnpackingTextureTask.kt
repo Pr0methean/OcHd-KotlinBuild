@@ -13,9 +13,6 @@ abstract class UnpackingTextureTask(
 
     override suspend fun createImage(): ImageNode = packer.packImage(computeImage(), null, name)
 
-    protected suspend fun <T> doJfx(jfxCode: CoroutineScope.() -> T): T
-            = doJfx(name, retryer, jfxCode)
-
     abstract suspend fun computeImage(): Image
 
 }

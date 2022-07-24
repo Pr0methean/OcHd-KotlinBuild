@@ -38,7 +38,7 @@ abstract class ImageNode(
 
     open suspend fun renderTo(out: GraphicsContext, x: Int, y: Int) {
         val unpacked = unpacked()
-        doJfx(name, retryer) {out.drawImage(unpacked, x.toDouble(), y.toDouble())}
+        doJfx("Rendering for $name", retryer) {out.drawImage(unpacked, x.toDouble(), y.toDouble())}
     }
 
     @Suppress("LeakingThis")

@@ -38,7 +38,7 @@ data class RepaintTask(
             }
         } else null
         val output = WritableImage(unpacked.width.toInt(), unpacked.height.toInt())
-        val snapshot = doJfx(name, retryer) {
+        val snapshot = doJfx("Repaint $name", retryer) {
             val canvas = Canvas(unpacked.width, unpacked.height)
             canvas.isCache = true
             val gfx = canvas.graphicsContext2D

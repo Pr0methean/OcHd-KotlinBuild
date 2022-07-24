@@ -32,7 +32,7 @@ data class ImageStackingTask(
         canvas.isCache = true
         val canvasCtx = canvas.graphicsContext2D
         if (layers.background != Color.TRANSPARENT) {
-            doJfx(name, retryer) {
+            doJfx("background for $name", retryer) {
                 canvasCtx.fill = layers.background
                 canvasCtx.fillRect(0.0, 0.0, width, height)
             }
@@ -40,7 +40,7 @@ data class ImageStackingTask(
         layerImages.forEach { it.renderTo(canvasCtx, 0, 0) }
         val output = WritableImage(size, size)
         return packer
-            .packImage(doJfx(name, retryer) { canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output) }, null, name)
+            .packImage(doJfx("snapshot for $name", retryer) { canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output) }, null, name)
     }
 
     override fun formatTo(buffer: StringBuilder) {

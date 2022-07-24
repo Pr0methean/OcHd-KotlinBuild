@@ -30,7 +30,7 @@ data class AnimationColumnTask(
         val canvasCtx = canvas.graphicsContext2D
         frameImages.forEach {it.value.renderTo(canvasCtx, 0, height * it.index)}
         val output = WritableImage(width, height)
-        return doJfx {canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)}
+        return doJfx("snapshot for $name", retryer) {canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)}
     }
 
     override fun formatTo(buffer: StringBuilder) {
