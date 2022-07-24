@@ -102,7 +102,7 @@ abstract class ImageNode(
             name, scope, retryer, stats, packer)
     }
 
-    open suspend fun asSolidOrQuadtreeRecursive(
+    open suspend fun asSolidOrQuadtreeDeduplicatedRecursive(
         maxDepth: Int,
         leafWidth: Int,
         leafHeight: Int
@@ -121,12 +121,12 @@ abstract class ImageNode(
             return packer.deduplicate(asQuadtree())
         }
         val result = asQuadtree()
-        val topLeft = result.topLeft.asSolidOrQuadtreeRecursive(maxDepth - 1, leafWidth, leafHeight)
-        val topRight = result.topRight.asSolidOrQuadtreeRecursive(maxDepth - 1, leafWidth, leafHeight)
-        val bottomLeft = result.bottomLeft.asSolidOrQuadtreeRecursive(maxDepth - 1, leafWidth, leafHeight)
-        val bottomRight = result.bottomRight.asSolidOrQuadtreeRecursive(maxDepth - 1,leafWidth, leafHeight)
+        val topLeft = result.topLeft.asSolidOrQuadtreeDeduplicatedRecursive(maxDepth - 1, leafWidth, leafHeight)
+        val topRight = result.topRight.asSolidOrQuadtreeDeduplicatedRecursive(maxDepth - 1, leafWidth, leafHeight)
+        val bottomLeft = result.bottomLeft.asSolidOrQuadtreeDeduplicatedRecursive(maxDepth - 1, leafWidth, leafHeight)
+        val bottomRight = result.bottomRight.asSolidOrQuadtreeDeduplicatedRecursive(maxDepth - 1,leafWidth, leafHeight)
         return packer.deduplicate(QuadtreeImageNode(
-            unpacked.getNow(), width, height,
+            result.unpacked.getNow() ?: unpacked.getNow(), width, height,
             topLeft = topLeft,
             topRight = topRight,
             bottomLeft = bottomLeft,

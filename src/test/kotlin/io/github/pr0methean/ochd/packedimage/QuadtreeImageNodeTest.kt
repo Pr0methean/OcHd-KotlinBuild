@@ -64,8 +64,8 @@ internal class QuadtreeImageNodeTest : ImageNodeTest(
             gfx.drawImage(quadtreeTestExpected, 0.0, 0.0)
             canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, null)
         }
-        val actual = superimpose(Color.TRANSPARENT, listOf(triangles.asSolidOrQuadtreeRecursive(5, 2, 2),
-                quadtreeTestActual.asSolidOrQuadtreeRecursive(5, 2, 2)),
+        val actual = superimpose(Color.TRANSPARENT, listOf(triangles.asSolidOrQuadtreeDeduplicatedRecursive(5, 2, 2),
+                quadtreeTestActual.asSolidOrQuadtreeDeduplicatedRecursive(5, 2, 2)),
             TEST_TILE_SIZE.toDouble(),
             TEST_TILE_SIZE.toDouble(), "Actual for testSuperimposeQuadtreeOnQuadtreeRecursive", ctx.retryer, ctx.packer).unpacked()
         assertImagesEqual("testSuperimposeQuadtreeOnQuadtreeRecursive", expected, actual)

@@ -96,7 +96,7 @@ internal abstract class ImageNodeTest(val expected: Image, val actual: suspend (
     }
 
     suspend fun asSolidOrQuadtreeRecursive() {
-        assertImagesEqual("$className.asSolidOrQuadtreeRecursive", expected, actual().asSolidOrQuadtreeRecursive(5, 4, 4).unpacked())
+        assertImagesEqual("$className.asSolidOrQuadtreeRecursive", expected, actual().asSolidOrQuadtreeDeduplicatedRecursive(5, 4, 4).unpacked())
     }
 
     suspend fun pixelReader() {
@@ -140,6 +140,7 @@ internal abstract class ImageNodeTest(val expected: Image, val actual: suspend (
         }
         val actualSuperimpose = superimpose(Color.TRANSPARENT, listOf(actual(),
                 SolidColorImageNode(
+                    null,
                     foreground,
                     TEST_TILE_SIZE,
                     TEST_TILE_SIZE,
