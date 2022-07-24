@@ -8,8 +8,10 @@ import javafx.scene.image.Image
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.runBlocking
 import org.apache.logging.log4j.LogManager
+import org.apache.logging.log4j.util.Unbox.box
 import java.io.ByteArrayInputStream
 
+private const val MIN_LOGGABLE_SIZE = 8
 private val logger = LogManager.getLogger("SimpleImageNode")
 class BitmapImageNode(
     initialUnpacked: Image?, initialPng: ByteArray?, name: String,
@@ -53,14 +55,18 @@ class BitmapImageNode(
     }
 
     override suspend fun unpack(): Image {
-        stats.onDecompressPngImage(name)
+        if (height >= MIN_LOGGABLE_SIZE) {
+            stats.onDecompressPngImage("a ${width}×$height chunk of $name")
+        }
         return retryer.retrying("Decompression of $name") {
             ByteArrayInputStream(asPng()).use {
                 Image(
                     it
                 )
             }
-        }.also { logger.info("Done decompressing {}", name) }
+        }.also { if (height >= MIN_LOGGABLE_SIZE) {
+            logger.info("Done decompressing a {}×{} chunk of {}", box(width), box(height), name)
+        } }
     }
 
     override suspend fun mergeWithDuplicate(other: ImageNode) {
