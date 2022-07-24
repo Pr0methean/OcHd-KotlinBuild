@@ -228,9 +228,10 @@ class QuadtreeImageNode(
         val rendered = unpacked.getNow()
         if (rendered != null) {
             doJfx(name, retryer) {out.drawImage(rendered, x.toDouble(), y.toDouble())}
-        }
-        for (quadrant in enumValues<Quadrant>()) {
-            quadrant.getter(this).renderTo(out, quadrant.getLeftX(width) + x, quadrant.getTopY(height) + y)
+        } else {
+            for (quadrant in enumValues<Quadrant>()) {
+                quadrant.getter(this).renderTo(out, quadrant.getLeftX(width) + x, quadrant.getTopY(height) + y)
+            }
         }
     }
 
