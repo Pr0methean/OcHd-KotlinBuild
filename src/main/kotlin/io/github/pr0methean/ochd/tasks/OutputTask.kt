@@ -21,7 +21,7 @@ class OutputTask(val producer: TextureTask,
 ): StringBuilderFormattable {
 
     suspend fun run() {
-        if (semaphore == null) {
+        if (semaphore == null || producer.isStarted()) {
             invoke()
         } else {
             semaphore.withPermit{invoke()}
