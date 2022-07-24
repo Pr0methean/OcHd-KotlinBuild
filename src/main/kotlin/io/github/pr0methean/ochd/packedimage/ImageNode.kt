@@ -162,8 +162,8 @@ abstract class ImageNode(
             val canvas = Canvas(width.toDouble(), height.toDouble())
             val gfx = canvas.graphicsContext2D
             canvas.opacity = alpha
+            blend?.let { gfx.setEffect(it) }
             gfx.drawImage(unpacked, 0.0, 0.0)
-            blend?.let { gfx.applyEffect(it) }
             canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, null)
         }
         return packer.packImage(snapshot, null, name)
