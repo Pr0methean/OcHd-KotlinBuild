@@ -278,9 +278,9 @@ suspend fun superimpose(background: Paint = Color.TRANSPARENT, layers: List<Imag
     }
     val layersAfterQuadtreeTransform: List<ImageNode>
     if (height <= packer.leafSize || layersAfterCollapsing.size <= 1) {
-        layersAfterQuadtreeTransform = layersAfterCollapsing
+        layersAfterQuadtreeTransform = layersAfterCollapsing.map {packer.deduplicate(it)}
     } else {
-        val quadtreeLayers = layersAfterCollapsing.map { packer.quadtreeify(it) }
+        val quadtreeLayers = layersAfterCollapsing.map {packer.quadtreeify(it)}
         layersAfterQuadtreeTransform = listOf(
             packer.deduplicate(
                 QuadtreeImageNode(
