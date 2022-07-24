@@ -181,7 +181,7 @@ abstract class ImageNode(
 
     fun isAlreadyUnpacked(): Boolean = unpacked.getNow() != null
 
-    suspend fun unpacked(): Image = unpacked.get()
+    open suspend fun unpacked(): Image = unpacked.get()
 
     abstract suspend fun unpack(): Image
     open suspend fun repaint(

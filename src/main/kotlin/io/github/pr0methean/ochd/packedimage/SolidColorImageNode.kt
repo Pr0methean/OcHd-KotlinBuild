@@ -101,6 +101,8 @@ class SolidColorImageNode(
         return SolidColorPixelReader(width, height, color, argb)
     }
 
+    override suspend fun unpacked(): Image = unpack()
+
     override suspend fun unpack(): Image = unpack(argb, width, height)
 
     override suspend fun repaint(
