@@ -4,7 +4,9 @@ import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.Retryer
 import io.github.pr0methean.ochd.packedimage.ImageNode
 import kotlinx.coroutines.*
+import org.apache.logging.log4j.LogManager
 
+private val logger = LogManager.getLogger("AbstractTextureTask")
 abstract class AbstractTextureTask(open val scope: CoroutineScope,
                                    open val stats: ImageProcessingStats
 ) : TextureTask {
@@ -12,9 +14,9 @@ abstract class AbstractTextureTask(open val scope: CoroutineScope,
         val typeName = this::class.simpleName ?: "[unnamed AbstractTextureTask]"
         scope.async(start = CoroutineStart.LAZY) {
             stats.onTaskLaunched(typeName, name)
-            createImage().also {
-                stats.onTaskCompleted(typeName, name)
-            }
+            val image = createImage()
+            stats.onTaskCompleted(typeName, name)
+            image
         }
     }
     val name by lazy { StringBuilder().also { formatTo(it) }.toString() }
@@ -34,4 +36,9 @@ abstract class AbstractTextureTask(open val scope: CoroutineScope,
 
 @Suppress("BlockingMethodInNonBlockingContext")
 suspend fun <T> doJfx(name: String, retryer: Retryer, jfxCode: CoroutineScope.() -> T): T
-        = retryer.retrying(name) { withContext(Dispatchers.Main, block = jfxCode)}
+        = retryer.retrying(name) { withContext(Dispatchers.Main) {
+            logger.info("Starting JFX task for {}", name)
+            val result = jfxCode()
+            logger.info("Finished JFX task for {}", name)
+            result
+}}

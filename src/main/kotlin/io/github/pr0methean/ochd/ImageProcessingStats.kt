@@ -2,6 +2,7 @@ package io.github.pr0methean.ochd
 
 import com.google.common.collect.ConcurrentHashMultiset
 import com.google.common.collect.Multiset
+import com.sun.glass.ui.Application
 import kotlinx.coroutines.*
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
@@ -27,6 +28,7 @@ fun startMonitoring(stats: ImageProcessingStats, scope: CoroutineScope) {
             delay(REPORTING_INTERVAL)
             logger.info("Completed tasks:")
             stats.taskCompletions.log()
+            Application.GetApplication().notifyRenderingFinished()
             if (NEED_THREAD_MONITORING) {
                 val deadlocks = threadMxBean.findDeadlockedThreads()
                 if (deadlocks == null) {

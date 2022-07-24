@@ -50,7 +50,7 @@ data class SvgImportTask(
     private val coroutine: Deferred<ImageNode> by lazy {
         scope.plus(batikTranscoder.asContextElement()).async(start = CoroutineStart.LAZY) {
             stats.onTaskLaunched("SvgImportTask", shortName)
-            retryer.retrying(shortName) {
+            val result = retryer.retrying(shortName) {
                 val transcoder = batikTranscoder.get()
                 ByteArrayOutputStream().use { outStream ->
                     val output = TranscoderOutput(outStream)
@@ -71,7 +71,9 @@ data class SvgImportTask(
                     }
                 }
             }
-        }.also { stats.onTaskCompleted("SvgImportTask", shortName) }
+            stats.onTaskCompleted("SvgImportTask", shortName)
+            result
+        }
     }
     override fun isComplete(): Boolean = coroutine.isCompleted
     override fun isStarted(): Boolean = coroutine.isActive || coroutine.isCompleted
