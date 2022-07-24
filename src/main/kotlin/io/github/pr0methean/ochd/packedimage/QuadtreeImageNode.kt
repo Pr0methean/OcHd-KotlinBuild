@@ -164,6 +164,15 @@ class QuadtreeImageNode(
         }
     }
 
+    override suspend fun mergeWithDuplicate(other: ImageNode) {
+        super.mergeWithDuplicate(other)
+        other as QuadtreeImageNode
+        sourceReaderLazy.mergeWithDuplicate(other.sourceReaderLazy)
+        for (quadrant in enumValues<Quadrant>()) {
+            quadrantReaders[quadrant]!!.mergeWithDuplicate(other.quadrantReaders[quadrant]!!)
+        }
+    }
+
     override val pixelReader = SoftAsyncLazy<PixelReader>(initialUnpacked?.pixelReader) {
         val quadrantReaders = quadrantReaders.toList().asFlow()
             .map { (quadrant, readerLazy) -> quadrant to readerLazy.get() }.toList().toMap()
