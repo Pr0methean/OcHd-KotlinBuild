@@ -29,21 +29,20 @@ data class RepaintTask(
             return base.getImage()
         }
         val unpacked = base.getImage().unpacked()
-        val blend = if (paint != null) {
-            val colorLayer = ColorInput(0.0, 0.0, unpacked.width, unpacked.height, paint)
-            Blend().also {
-                it.mode = BlendMode.SRC_ATOP
-                it.topInput = colorLayer
-                it.bottomInput = null
-            }
-        } else null
         val output = WritableImage(unpacked.width.toInt(), unpacked.height.toInt())
         val snapshot = doJfx(name, retryer) {
             val canvas = Canvas(unpacked.width, unpacked.height)
             canvas.isCache = true
             val gfx = canvas.graphicsContext2D
             canvas.opacity = alpha
-            blend?.let { gfx.setEffect(it) }
+            if (paint != null) {
+                val colorLayer = ColorInput(0.0, 0.0, unpacked.width, unpacked.height, paint)
+                val blend = Blend()
+                blend.mode = BlendMode.SRC_ATOP
+                blend.topInput = colorLayer
+                blend.bottomInput = null
+                gfx.setEffect(blend)
+            }
             gfx.drawImage(unpacked, 0.0, 0.0)
             canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
             if (output.isError) {
