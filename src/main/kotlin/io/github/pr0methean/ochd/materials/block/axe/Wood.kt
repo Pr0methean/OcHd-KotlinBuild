@@ -486,7 +486,7 @@ enum class Fungus(
                 layer("planksTopBorderVertical", shadow)
                 layer("borderShortDashes", highlight)
                 copy {
-                    layer("zigzagSolid2", highlight)
+                    layer("zigzagSolid2", barkHighlight)
                     layer("zigzagSolid", shadow)
                 }
                 layer("doorHingesBig", STONE.highlight)
@@ -534,7 +534,7 @@ enum class Fungus(
             background(color)
             layer("planksTopBorderVertical", shadow)
             layer("borderShortDashes", highlight)
-            layer("waves", highlight)
+            layer("waves", barkHighlight)
             layer("doorHingesBig", STONE.shadow)
             layer("doorHinges", STONE.highlight)
         }
