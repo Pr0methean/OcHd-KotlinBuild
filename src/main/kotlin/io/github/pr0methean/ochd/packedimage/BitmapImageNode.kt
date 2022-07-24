@@ -18,7 +18,7 @@ class BitmapImageNode(
     width, height, initialUnpacked = initialUnpacked, initialPacked = initialPng,
     name = name, scope = scope, retryer = retryer, stats = stats, packer = packer
 ) {
-    override val pixelReader = SoftAsyncLazy {
+    override val pixelReader = SoftAsyncLazy(unpacked.getNow()?.pixelReader) {
         unpacked().pixelReader
     }
 
