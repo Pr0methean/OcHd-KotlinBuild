@@ -18,7 +18,8 @@ class ImagePacker(
 
     @Suppress("UNCHECKED_CAST")
     suspend fun <T : ImageNode> deduplicate(input: T): T {
-        if (input.height >= MIN_SIZE_TO_DEDUP) {
+        if (input.shouldDeduplicate()
+               && input.height >= MIN_SIZE_TO_DEDUP) {
             val original = deduplicationCache.putIfAbsent(input, input)?.also {it.mergeWithDuplicate(input)} ?: input
             return original as T
         }

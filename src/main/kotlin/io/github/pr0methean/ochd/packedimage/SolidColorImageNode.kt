@@ -130,6 +130,8 @@ class SolidColorImageNode(initialUnpacked: Image? = null,
         return packer.deduplicate(SolidColorImageNode(null, newPaintWithAlpha, width, height, name, scope, retryer, stats, packer))
     }
 
+    override fun shouldDeduplicate(): Boolean = true
+
     override suspend fun renderTo(out: GraphicsContext, x: Int, y: Int) {
         doJfx(name, retryer) {
             out.fill = color
