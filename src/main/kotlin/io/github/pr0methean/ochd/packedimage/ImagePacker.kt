@@ -9,14 +9,13 @@ import kotlinx.coroutines.CoroutineScope
 
 const val MAX_UNCOMPRESSED_TILESIZE = 512
 const val MIN_SIZE_TO_DEDUP = 128
-private const val DEDUP_CACHE_SIZE = 5_000L
 
 class ImagePacker(
     val scope: CoroutineScope, private val retryer: Retryer, private val stats: ImageProcessingStats,
     private val maxQuadtreeDepth: Int,
     val leafSize: Int
 ) {
-    private val nodeDedupCache: LoadingCache<ImageNode, ImageNode> = Caffeine.newBuilder().maximumSize(DEDUP_CACHE_SIZE).build<ImageNode, ImageNode> { it }
+    private val nodeDedupCache: LoadingCache<ImageNode, ImageNode> = Caffeine.newBuilder().build<ImageNode, ImageNode> { it }
 
     @Suppress("UNCHECKED_CAST")
     suspend fun <T : ImageNode> deduplicate(input: T): T {

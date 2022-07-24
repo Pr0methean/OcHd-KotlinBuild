@@ -30,7 +30,7 @@ class ImageProcessingContext(
     private val svgTasks: Map<String, SvgImportTask>
     private val taskDeduplicationMap = ConcurrentHashMap<TextureTask, TextureTask>()
     private val newTasksSemaphore = if (needSemaphore) Semaphore(outputTasksWithNewSubtasksLimit) else null
-    private val leafImageSize = max(2, tileSize.shr(5))
+    private val leafImageSize = max(1, tileSize.shr(5))
     val stats = ImageProcessingStats()
     val retryer = Retryer(stats)
     val packer = ImagePacker(scope, retryer, stats, 5, leafImageSize)
