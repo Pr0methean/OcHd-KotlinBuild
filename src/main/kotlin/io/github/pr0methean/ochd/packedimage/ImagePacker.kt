@@ -39,7 +39,7 @@ class ImagePacker(
             input.width.toInt(),
             input.height.toInt(),
             this)
-        return deduplicate(if (input.height <= MAX_UNCOMPRESSED_TILESIZE) {
+        return deduplicate(if (input.height <= leafSize) {
             basicImage
         } else {
             basicImage.asSolidOrQuadtreeRecursive(maxQuadtreeDepth, leafSize, leafSize)
