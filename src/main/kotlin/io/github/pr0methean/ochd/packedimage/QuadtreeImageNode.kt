@@ -26,12 +26,13 @@ class QuadtreeImageNode(
 )
         : ImageNode(width, height, initialUnpacked = initialUnpacked, initialPacked = null, name = name, scope = scope, retryer = retryer, stats = stats,
         packer = packer) {
-    class QuadtreePixelReader(private val treeNode: QuadtreeImageNode): AbstractPixelReader(unpacked = {treeNode.unpacked()}) {
+    class QuadtreePixelReader(private val treeNode: QuadtreeImageNode): AbstractPixelReader() {
         private val quadrantReaders = EnumMap<Quadrant, SoftAsyncLazy<PixelReader>>(Quadrant::class.java).also {
             for (quadrant in enumValues<Quadrant>()) {
                 it[quadrant] = SoftAsyncLazy {quadrant.getter(treeNode).pixelReader()}
             }
         }
+        private val sourceReaderLazy = SoftAsyncLazy(treeNode.unpacked.getNow()?.pixelReader) {treeNode.unpacked().pixelReader}
         private fun getQuadrantReader(quadrant: Quadrant) = runBlocking {quadrantReaders[quadrant]!!.get()}
 
         private fun quadrantForPoint(x: Int, y: Int): Triple<Quadrant, Int, Int> =
@@ -73,7 +74,7 @@ class QuadtreeImageNode(
             if (quadrantTopLeft == quadrantBottomRight) {
                 getQuadrantReader(quadrantTopLeft).getPixels(qLeft, qTop, w, h, pixelformat, buffer, scanlineStride)
             } else {
-                sourceReader().getPixels(
+                runBlocking {sourceReaderLazy.get()}.getPixels(
                     x,
                     y,
                     w,
@@ -109,7 +110,7 @@ class QuadtreeImageNode(
                     scanlineStride
                 )
             } else {
-                sourceReader().getPixels(
+                runBlocking {sourceReaderLazy.get()}.getPixels(
                     x,
                     y,
                     w,
@@ -146,7 +147,7 @@ class QuadtreeImageNode(
                     scanlineStride
                 )
             } else {
-                sourceReader().getPixels(
+                runBlocking {sourceReaderLazy.get()}.getPixels(
                     x,
                     y,
                     w,

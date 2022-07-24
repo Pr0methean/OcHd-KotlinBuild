@@ -10,7 +10,10 @@ import javafx.scene.canvas.GraphicsContext
 import javafx.scene.effect.Blend
 import javafx.scene.effect.BlendMode
 import javafx.scene.effect.ColorInput
-import javafx.scene.image.*
+import javafx.scene.image.Image
+import javafx.scene.image.ImageView
+import javafx.scene.image.PixelReader
+import javafx.scene.image.WritableImage
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.CoroutineScope
@@ -20,9 +23,6 @@ import org.apache.logging.log4j.LogManager
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileOutputStream
-import java.nio.Buffer
-import java.nio.ByteBuffer
-import java.nio.IntBuffer
 import java.util.*
 import javax.imageio.ImageIO
 
@@ -49,51 +49,6 @@ abstract class ImageNode(
                 logger.info("Done compressing a {}×{} chunk of {}", width, height, name)
             }
         }
-    }
-
-    class ImageNodePixelReader(unpacked: suspend () -> Image) : AbstractPixelReader(unpacked) {
-        override fun getArgb(x: Int, y: Int): Int = sourceReader().getArgb(x, y)
-
-        override fun getColor(x: Int, y: Int): Color = sourceReader().getColor(x, y)
-
-        override fun <T : Buffer> getPixels(
-            x: Int,
-            y: Int,
-            w: Int,
-            h: Int,
-            pixelformat: WritablePixelFormat<T>,
-            buffer: T,
-            scanlineStride: Int
-        ) {
-            sourceReader().getPixels(x, y, w, h, pixelformat, buffer, scanlineStride)
-        }
-
-        override fun getPixels(
-            x: Int,
-            y: Int,
-            w: Int,
-            h: Int,
-            pixelformat: WritablePixelFormat<ByteBuffer>,
-            buffer: ByteArray,
-            offset: Int,
-            scanlineStride: Int
-        ) {
-            sourceReader().getPixels(x, y, w, h, pixelformat, buffer, offset, scanlineStride)
-        }
-
-        override fun getPixels(
-            x: Int,
-            y: Int,
-            w: Int,
-            h: Int,
-            pixelformat: WritablePixelFormat<IntBuffer>,
-            buffer: IntArray,
-            offset: Int,
-            scanlineStride: Int
-        ) {
-            sourceReader().getPixels(x, y, w, h, pixelformat, buffer, offset, scanlineStride)
-        }
-
     }
 
     protected open val isSolidColor = StrongAsyncLazy {
@@ -178,9 +133,7 @@ abstract class ImageNode(
             bottomRight = bottomRight, name, scope, retryer, stats, packer))
     }
 
-    open val pixelReader: AsyncLazy<PixelReader> = SoftAsyncLazy(initialUnpacked?.pixelReader) {
-        ImageNodePixelReader(this::unpacked)
-    }
+    abstract val pixelReader: AsyncLazy<PixelReader>
     suspend fun pixelReader(): PixelReader = pixelReader.get()
 
     open val unpacked: AsyncLazy<Image> = SoftAsyncLazy(initialUnpacked, this::unpack)

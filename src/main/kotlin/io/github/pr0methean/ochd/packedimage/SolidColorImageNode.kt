@@ -46,7 +46,8 @@ class SolidColorImageNode(initialUnpacked: Image? = null,
     private val argb = colorToArgb(color)
 
     class SolidColorPixelReader(val width: Int, val height: Int, val color: Color, val argb: Int)
-            : AbstractPixelReader(unpacked = {unpack(argb, width, height)}) {
+            : AbstractPixelReader() {
+        private val sourceReader by lazy {unpack(argb, width, height).pixelReader}
         override fun getArgb(x: Int, y: Int): Int = argb
 
         override fun getColor(x: Int, y: Int): Color = color
@@ -60,7 +61,7 @@ class SolidColorImageNode(initialUnpacked: Image? = null,
             offset: Int,
             scanlineStride: Int
         ) {
-            sourceReader().getPixels(x, y, w, h, pixelformat, buffer, offset, scanlineStride)
+            sourceReader.getPixels(x, y, w, h, pixelformat, buffer, offset, scanlineStride)
         }
 
         override fun getPixels(
@@ -73,7 +74,7 @@ class SolidColorImageNode(initialUnpacked: Image? = null,
             offset: Int,
             scanlineStride: Int
         ) {
-            sourceReader().getPixels(x, y, w, h, pixelformat, buffer, offset, scanlineStride)
+            sourceReader.getPixels(x, y, w, h, pixelformat, buffer, offset, scanlineStride)
         }
 
         override fun <T : Buffer> getPixels(
@@ -85,7 +86,7 @@ class SolidColorImageNode(initialUnpacked: Image? = null,
             buffer: T,
             scanlineStride: Int
         ) {
-            sourceReader().getPixels(x, y, w, h, pixelformat, buffer, scanlineStride)
+            sourceReader.getPixels(x, y, w, h, pixelformat, buffer, scanlineStride)
         }
     }
 
