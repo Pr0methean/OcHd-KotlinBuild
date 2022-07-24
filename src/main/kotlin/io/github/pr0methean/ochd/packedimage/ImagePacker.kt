@@ -49,8 +49,4 @@ class ImagePacker(
             basicImage.asSolidOrQuadtreeRecursive(maxQuadtreeDepth, leafSize, leafSize)
         })
     }
-
-    suspend fun quadtreeify(input: ImageNode): QuadtreeImageNode {
-        return deduplicate(input.asSolidOrQuadtreeRecursive(maxQuadtreeDepth, leafSize, leafSize).asQuadtree())
-    }
 }
