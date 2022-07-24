@@ -44,7 +44,6 @@ dependencies {
     runtimeOnly("org.apache.logging.log4j:log4j-jul:$log4jVersion")
     runtimeOnly("org.apache.logging.log4j:log4j-jpl:$log4jVersion")
     runtimeOnly("com.lmax:disruptor:3.4.4")
-    implementation("com.github.ben-manes.caffeine:caffeine:3.1.1")
 }
 
 tasks.test {
