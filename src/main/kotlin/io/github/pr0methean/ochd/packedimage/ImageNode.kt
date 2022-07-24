@@ -215,7 +215,7 @@ abstract class ImageNode(
         FileOutputStream(destination).use { it.write(pngBytes) }
     }
 
-    suspend fun mergeWithDuplicate(other: ImageNode) {
+    open suspend fun mergeWithDuplicate(other: ImageNode) {
         pngBytes.mergeWithDuplicate(other.pngBytes)
         unpacked.mergeWithDuplicate(other.unpacked)
         pixelReader.mergeWithDuplicate(other.pixelReader)

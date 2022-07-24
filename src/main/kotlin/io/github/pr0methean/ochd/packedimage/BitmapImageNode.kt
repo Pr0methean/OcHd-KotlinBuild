@@ -62,4 +62,8 @@ class BitmapImageNode(
             }
         }.also { logger.info("Done decompressing {}", name) }
     }
+
+    override suspend fun mergeWithDuplicate(other: ImageNode) {
+        hashCode.mergeWithDuplicate((other as BitmapImageNode).hashCode)
+    }
 }
