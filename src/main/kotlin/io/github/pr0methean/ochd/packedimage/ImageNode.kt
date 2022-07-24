@@ -147,29 +147,29 @@ abstract class ImageNode(
         leafHeight: Int
     ): ImageNode {
         if (width <= leafWidth || height <= leafHeight) {
-            return this
+            return packer.deduplicate(this)
         }
         val solid = toSolidColorIfPossible()
         if (solid is SolidColorImageNode) {
-            return solid
+            return packer.deduplicate(solid)
         }
         if (maxDepth == 0) {
-            return this
+            return packer.deduplicate(this)
         }
         if (maxDepth == 1) {
-            return asQuadtree()
+            return packer.deduplicate(asQuadtree())
         }
         val result = asQuadtree()
         val topLeft = result.topLeft.asSolidOrQuadtreeRecursive(maxDepth - 1, leafWidth, leafHeight)
         val topRight = result.topRight.asSolidOrQuadtreeRecursive(maxDepth - 1, leafWidth, leafHeight)
         val bottomLeft = result.bottomLeft.asSolidOrQuadtreeRecursive(maxDepth - 1, leafWidth, leafHeight)
         val bottomRight = result.bottomRight.asSolidOrQuadtreeRecursive(maxDepth - 1,leafWidth, leafHeight)
-        return QuadtreeImageNode(
+        return packer.deduplicate(QuadtreeImageNode(
             unpacked.getNow(), width, height,
             topLeft = topLeft,
             topRight = topRight,
             bottomLeft = bottomLeft,
-            bottomRight = bottomRight, name, scope, retryer, stats, packer)
+            bottomRight = bottomRight, name, scope, retryer, stats, packer))
     }
 
     open val pixelReader: AsyncLazy<PixelReader> = SoftAsyncLazy {
@@ -280,7 +280,7 @@ suspend fun superimpose(background: Paint = Color.TRANSPARENT, layers: List<Imag
     if (height <= packer.leafSize || layersAfterCollapsing.size <= 1) {
         layersAfterQuadtreeTransform = layersAfterCollapsing
     } else {
-        val quadtreeLayers = layersAfterCollapsing.map { packer.deduplicate(it.asQuadtree()) as QuadtreeImageNode }
+        val quadtreeLayers = layersAfterCollapsing.map { packer.quadtreeify(it) }
         layersAfterQuadtreeTransform = listOf(
             packer.deduplicate(
                 QuadtreeImageNode(

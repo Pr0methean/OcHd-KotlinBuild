@@ -18,13 +18,14 @@ class ImagePacker(
 ) {
     private val deduplicationMap: LoadingCache<ImageNode, ImageNode> = Caffeine.newBuilder().maximumSize(DEDUP_CACHE_SIZE).build<ImageNode, ImageNode> { it }
 
-    suspend fun deduplicate(input: ImageNode): ImageNode {
+    @Suppress("UNCHECKED_CAST")
+    suspend fun <T : ImageNode> deduplicate(input: T): T {
         if (input.shouldDeduplicate()
                && input.height >= MIN_SIZE_TO_DEDUP) {
             val original = deduplicationMap.get(input)
             if (original !== input) {
                 original.mergeWithDuplicate(input)
-                return original
+                return original as T
             }
         }
         return input
@@ -49,5 +50,9 @@ class ImagePacker(
         } else {
             basicImage.asSolidOrQuadtreeRecursive(maxQuadtreeDepth, leafSize, leafSize)
         })
+    }
+
+    suspend fun quadtreeify(input: ImageNode): QuadtreeImageNode {
+        return deduplicate(input.asSolidOrQuadtreeRecursive(maxQuadtreeDepth, leafSize, leafSize).asQuadtree())
     }
 }
