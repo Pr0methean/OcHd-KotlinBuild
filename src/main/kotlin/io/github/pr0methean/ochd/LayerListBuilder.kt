@@ -1,5 +1,6 @@
 package io.github.pr0methean.ochd
 
+import io.github.pr0methean.ochd.tasks.ImageStackingTask
 import io.github.pr0methean.ochd.tasks.TextureTask
 import io.github.pr0methean.ochd.tasks.TopPartCroppingTask
 import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
@@ -37,19 +38,18 @@ class LayerListBuilder(val ctx: ImageProcessingContext) {
     fun copy(sourceInit: LayerListBuilder.() -> Unit) =
         copy(LayerListBuilder(ctx).also(sourceInit).build())
     fun copy(source: LayerList) {
-        if (source.layers.size > 1) { // Don't flatten sub-stacks since we want to deduplicate them
-            copy(ctx.stack {
-                background(source.background)
-                addAll(source.layers)
-            })
-        } else {
-            if (source.background != Color.TRANSPARENT) {
-                if (background == Color.TRANSPARENT && layers.isEmpty()) {
+        if (source.background != Color.TRANSPARENT) {
+            if (background == Color.TRANSPARENT && layers.isEmpty()) {
+                if (source.layers.size <= 1) {
                     background = source.background
-                } else {
-                    throw IllegalStateException("Source's background would overwrite the existing layers")
                 }
+            } else {
+                throw IllegalStateException("Source's background would overwrite the existing layers")
             }
+        }
+        if (source.layers.size > 1) { // Don't flatten sub-stacks since we want to deduplicate them
+            copy(ImageStackingTask(source, ctx.tileSize, ctx.packer, ctx.scope, ctx.stats, ctx.retryer))
+        } else {
             addAll(source.layers)
         }
     }
