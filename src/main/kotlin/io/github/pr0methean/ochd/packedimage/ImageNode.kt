@@ -221,8 +221,6 @@ abstract class ImageNode(
         pixelReader.mergeWithDuplicate(other.pixelReader)
         isSolidColor.mergeWithDuplicate(other.isSolidColor)
     }
-
-    abstract fun shouldDeduplicate(): Boolean
 }
 
 fun alphaBlend(foreground: Color, background: Color): Color {

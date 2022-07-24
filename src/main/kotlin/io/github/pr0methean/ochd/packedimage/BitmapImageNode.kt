@@ -3,8 +3,10 @@ package io.github.pr0methean.ochd.packedimage
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.Retryer
 import io.github.pr0methean.ochd.SoftAsyncLazy
+import io.github.pr0methean.ochd.StrongAsyncLazy
 import javafx.scene.image.Image
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.runBlocking
 import org.apache.logging.log4j.LogManager
 import java.io.ByteArrayInputStream
 
@@ -20,10 +22,34 @@ class BitmapImageNode(
         unpacked().pixelReader
     }
 
+    val hashCode = StrongAsyncLazy {
+        asPng().contentHashCode()
+    }
+
     init {
         if (initialUnpacked != null && height > MAX_UNCOMPRESSED_TILESIZE) {
             pngBytes.start(scope)
         }
+    }
+
+    override fun equals(other: Any?): Boolean {
+        if (other === this) {
+            return true
+        }
+        if (other !is BitmapImageNode
+            || width != other.width
+            || height != other.height) {
+            return false
+        }
+        val unpacked = unpacked.getNow()
+        if (unpacked != null && other.unpacked.getNow() == unpacked) {
+            return true
+        }
+        return runBlocking {asPng().contentEquals(other.asPng())}
+    }
+
+    override fun hashCode(): Int {
+        return runBlocking {hashCode.get()}
     }
 
     override suspend fun unpack(): Image {
@@ -36,6 +62,4 @@ class BitmapImageNode(
             }
         }.also { logger.info("Done decompressing {}", name) }
     }
-
-    override fun shouldDeduplicate(): Boolean = false
 }

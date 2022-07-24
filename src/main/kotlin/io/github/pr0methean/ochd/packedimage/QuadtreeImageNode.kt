@@ -206,9 +206,6 @@ class QuadtreeImageNode(
         return packer.deduplicate(repainted)
     }
 
-    override fun shouldDeduplicate(): Boolean = topLeft.shouldDeduplicate() && topRight.shouldDeduplicate()
-            && bottomLeft.shouldDeduplicate() && bottomRight.shouldDeduplicate()
-
     override suspend fun renderTo(out: GraphicsContext, x: Int, y: Int) {
         val rendered = unpacked.getNow()
         if (rendered != null) {
