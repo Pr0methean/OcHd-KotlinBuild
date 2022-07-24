@@ -8,7 +8,11 @@ class WeakAsyncLazy<T>(
 ) : AsyncLazy<T>() {
     @Volatile
     private var currentValue: WeakReference<T?> = WeakReference<T?>(initialValue)
-    override suspend fun getFromSupplier(): T = supplier()
+    override suspend fun getFromSupplierAndStore(): T {
+        val result = supplier()
+        set(result)
+        return result
+    }
 
     override fun getNow(): T? = currentValue.get()
     override fun set(value: T?) {

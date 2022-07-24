@@ -9,14 +9,15 @@ abstract class AsyncLazy<T> {
     val mutex = Mutex()
 
     suspend fun get(): T = getNow() ?: mutex.withLock {
-        getNow() ?: getFromSupplier().also(::set)
+        getNow() ?: getFromSupplierAndStore()
     }
 
-    protected abstract suspend fun getFromSupplier(): T
+    protected abstract suspend fun getFromSupplierAndStore(): T
     abstract fun getNow(): T?
 
     protected abstract fun set(value: T?)
 
+    @Suppress("unused")
     suspend fun mergeWithDuplicate(other: AsyncLazy<T>) {
         if (getNow() == null) {
             mutex.withLock {

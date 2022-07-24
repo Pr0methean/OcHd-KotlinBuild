@@ -37,8 +37,8 @@ abstract class AbstractTextureTask(open val scope: CoroutineScope,
 @Suppress("BlockingMethodInNonBlockingContext")
 suspend fun <T> doJfx(name: String, retryer: Retryer, jfxCode: CoroutineScope.() -> T): T
         = retryer.retrying(name) { withContext(Dispatchers.Main) {
-            logger.info("Starting JFX task for {}", name)
+            logger.info("Starting JFX task: {}", name)
             val result = jfxCode()
-            logger.info("Finished JFX task for {}", name)
+            logger.info("Finished JFX task: {}", name)
             result
 }}

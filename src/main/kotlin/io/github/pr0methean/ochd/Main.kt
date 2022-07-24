@@ -1,5 +1,6 @@
 package io.github.pr0methean.ochd
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
+import io.github.pr0methean.ochd.tasks.doJfx
 import javafx.application.Platform
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -38,6 +39,9 @@ suspend fun main(args:Array<String>) {
         svgDirectory = svgDirectory,
         outTextureRoot = outTextureRoot
     )
+    doJfx("Increase rendering thread priority", ctx.retryer) {
+        Thread.currentThread().priority = Thread.MAX_PRIORITY
+    }
     val stats = ctx.stats
     startMonitoring(stats, scope)
     val time = measureNanoTime {

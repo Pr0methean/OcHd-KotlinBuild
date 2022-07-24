@@ -6,8 +6,9 @@ class StrongAsyncLazy<T>(
 ): AsyncLazy<T>() {
     @Volatile var supplier: (suspend () -> T)? = supplier
     @Volatile var result: T? = initialValue
-    override suspend fun getFromSupplier(): T {
+    override suspend fun getFromSupplierAndStore(): T {
         val result = supplier!!()
+        set(result)
         supplier = null
         return result
     }
