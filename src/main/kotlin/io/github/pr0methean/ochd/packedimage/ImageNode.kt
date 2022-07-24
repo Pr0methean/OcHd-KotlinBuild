@@ -276,12 +276,12 @@ suspend fun superimpose(background: Paint = Color.TRANSPARENT, layers: List<Imag
         }
         visibleLayerIndex++
     }
-    val layersAfterQuadtreeTransform: Sequence<ImageNode>
+    val layersAfterQuadtreeTransform: List<ImageNode>
     if (height <= packer.leafSize || layersAfterCollapsing.size <= 1) {
-        layersAfterQuadtreeTransform = layersAfterCollapsing.map {packer.deduplicate(it)}.asSequence()
+        layersAfterQuadtreeTransform = layersAfterCollapsing.map {packer.deduplicate(it)}
     } else {
         val quadtreeLayers = layersAfterCollapsing.map {packer.quadtreeify(it)}
-        layersAfterQuadtreeTransform = sequenceOf(
+        layersAfterQuadtreeTransform = listOf(
             packer.deduplicate(
                 QuadtreeImageNode(
                     initialUnpacked = layersAfterCollapsing.singleOrNull()?.unpacked?.getNow(),
@@ -315,6 +315,8 @@ suspend fun superimpose(background: Paint = Color.TRANSPARENT, layers: List<Imag
             canvasCtx.fill = realBackgroundPaint
             canvasCtx.fillRect(0.0, 0.0, width, height)
         }
+    } else if (layersAfterQuadtreeTransform.size == 1) {
+        return packer.deduplicate(layersAfterQuadtreeTransform[0])
     }
     layersAfterQuadtreeTransform.forEach { it.renderTo(canvasCtx, 0, 0) }
     return packer.packImage(doJfx(name, retryer) { canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, null) }, null, name)
