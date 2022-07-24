@@ -5,12 +5,15 @@ import io.github.pr0methean.ochd.Retryer
 import io.github.pr0methean.ochd.packedimage.ImageNode
 import kotlinx.coroutines.*
 import org.apache.logging.log4j.LogManager
+import java.io.ByteArrayOutputStream
+import java.io.PrintStream
+import java.nio.charset.StandardCharsets
 
 private val logger = LogManager.getLogger("AbstractTextureTask")
 abstract class AbstractTextureTask(open val scope: CoroutineScope,
                                    open val stats: ImageProcessingStats
 ) : TextureTask {
-    val coroutine by lazy {
+    private val coroutine by lazy {
         val typeName = this::class.simpleName ?: "[unnamed AbstractTextureTask]"
         scope.plus(CoroutineName(name)).async(start = CoroutineStart.LAZY) {
             stats.onTaskLaunched(typeName, name)
@@ -37,8 +40,19 @@ abstract class AbstractTextureTask(open val scope: CoroutineScope,
 @Suppress("BlockingMethodInNonBlockingContext")
 suspend fun <T> doJfx(name: String, retryer: Retryer, jfxCode: CoroutineScope.() -> T): T
         = retryer.retrying(name) { withContext(Dispatchers.Main.plus(CoroutineName(name))) {
-            logger.info("Starting JFX task: {}", name)
-            val result = jfxCode()
-            logger.info("Finished JFX task: {}", name)
-            result
+            val oldSystemErr = System.err
+            try {
+                ByteArrayOutputStream().use { errorCatcher ->
+                    System.setErr(PrintStream(errorCatcher))
+                    logger.info("Starting JFX task: {}", name)
+                    val result = jfxCode()
+                    logger.info("Finished JFX task: {}", name)
+                    if (errorCatcher.size() > 0) {
+                        throw RuntimeException(String(errorCatcher.toByteArray(), StandardCharsets.UTF_8))
+                    }
+                    return@withContext result
+                }
+            } finally {
+                System.setErr(oldSystemErr)
+            }
 }}
