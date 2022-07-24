@@ -39,6 +39,7 @@ data class RepaintTask(
         } else null
         val snapshot = doJfx(name, retryer) {
             val canvas = Canvas(unpacked.width, unpacked.height)
+            canvas.isCache = true
             val gfx = canvas.graphicsContext2D
             canvas.opacity = alpha
             blend?.let { gfx.setEffect(it) }

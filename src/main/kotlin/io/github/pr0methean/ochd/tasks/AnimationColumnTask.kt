@@ -25,6 +25,7 @@ data class AnimationColumnTask(
             .withIndex()
             .toList()
         val canvas = Canvas(width.toDouble(), height.toDouble())
+        canvas.isCache = true
         val canvasCtx = canvas.graphicsContext2D
         frameImages.forEach {it.value.renderTo(canvasCtx, 0, height * it.index)}
         return doJfx {canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, null)}
