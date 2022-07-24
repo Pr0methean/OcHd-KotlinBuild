@@ -29,17 +29,22 @@ class OutputTask(val producer: TextureTask,
     }
 
     private suspend fun invoke() {
-        stats.onTaskLaunched("OutputTask", name)
-        val image: ImageNode
-        try {
-            image = retryer.retrying(producer.toString()) { producer.getImage() }
-        } catch (e: NotImplementedError) {
-            logger.warn("Skipping $name because it's not implemented yet")
-            return
-        }
-        withContext(Dispatchers.IO) {
-            retryer.retrying(name) { image.writePng(file) }
-        }
+        do {
+            stats.onTaskLaunched("OutputTask", name)
+            val image: ImageNode
+            try {
+                image = retryer.retrying(producer.toString()) { producer.getImage() }
+            } catch (e: NotImplementedError) {
+                logger.warn("Skipping $name because it's not implemented yet")
+                return
+            }
+            withContext(Dispatchers.IO) {
+                retryer.retrying(name) { image.writePng(file) }
+            }
+            if (!file.exists()) {
+                logger.error("OutputTask $name appeared to succeed, but $file still doesn't exist")
+            }
+        } while (!file.exists())
         stats.onTaskCompleted("OutputTask", name)
     }
 

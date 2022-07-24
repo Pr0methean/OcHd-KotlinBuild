@@ -13,14 +13,14 @@ import java.lang.management.ManagementFactory
 import java.lang.management.ThreadInfo
 import java.util.concurrent.atomic.LongAdder
 import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
+import kotlin.time.Duration.Companion.minutes
 
 private fun Multiset<*>.log() {
     toSet().forEach { logger.info("{}: {}", it, count(it)) }
 }
 private val NEED_THREAD_MONITORING = false
 private val NEED_COROUTINE_DEBUG = true
-private val REPORTING_INTERVAL: Duration = 30.seconds
+private val REPORTING_INTERVAL: Duration = 1.minutes
 private val logger = LogManager.getLogger("ImageProcessingStats")
 val threadMxBean = ManagementFactory.getThreadMXBean()
 var monitoringJob: Job? = null
