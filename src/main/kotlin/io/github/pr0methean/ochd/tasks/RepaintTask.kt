@@ -1,8 +1,6 @@
 package io.github.pr0methean.ochd.tasks
 
-import io.github.pr0methean.ochd.DEFAULT_SNAPSHOT_PARAMS
-import io.github.pr0methean.ochd.ImageProcessingStats
-import io.github.pr0methean.ochd.Retryer
+import io.github.pr0methean.ochd.*
 import io.github.pr0methean.ochd.packedimage.ImageNode
 import io.github.pr0methean.ochd.packedimage.ImagePacker
 import javafx.scene.canvas.Canvas
@@ -22,7 +20,18 @@ data class RepaintTask(
     override val scope: CoroutineScope,
     override val stats: ImageProcessingStats,
     val retryer: Retryer,
+    val pool: WritableImagePool
 ) : AbstractTextureTask(scope, stats) {
+    constructor(paint: Paint?,
+                base: TextureTask,
+                size: Int,
+                alpha: Double = 1.0,
+                packer: ImagePacker,
+                scope: CoroutineScope,
+                stats: ImageProcessingStats,
+                retryer: Retryer,
+                poolProvider: WritableImagePoolProvider) : this(paint, base, size, alpha, packer, scope, stats, retryer,
+            poolProvider.getPool(size, size))
 
     override suspend fun createImage(): ImageNode {
         if (paint == null && alpha == 1.0) {

@@ -32,6 +32,9 @@ class ImageProcessingContext(
     val stats = ImageProcessingStats()
     val retryer = Retryer(stats)
     val packer = ImagePacker(scope, retryer, stats)
+    val standardBufferPoolSize = 1.shl(26) / (tileSize * tileSize)
+    val nonsquareBufferPoolSize = 1.shl(24) / (tileSize * tileSize)
+    val bufferPoolProvider = WritableImagePoolProvider(standardBufferPoolSize, nonsquareBufferPoolSize, scope)
 
     init {
         val builder = mutableMapOf<String, SvgImportTask>()
@@ -77,17 +80,17 @@ class ImageProcessingContext(
         if ((paint == Color.BLACK || paint == null) && alpha == 1.0) {
             return source
         }
-        return deduplicate(RepaintTask(paint, source, tileSize, alpha, packer, scope, stats, retryer))
+        return deduplicate(RepaintTask(paint, source, tileSize, alpha, packer, scope, stats, retryer, bufferPoolProvider))
     }
 
     fun stack(init: LayerListBuilder.() -> Unit): TextureTask {
         val layerTasks = LayerListBuilder(this)
         layerTasks.init()
-        return deduplicate(ImageStackingTask(layerTasks.build(), tileSize, packer, scope, stats, retryer))
+        return deduplicate(ImageStackingTask(layerTasks.build(), tileSize, packer, scope, stats, retryer, bufferPoolProvider))
     }
 
     fun animate(frames: List<TextureTask>): TextureTask {
-        return deduplicate(AnimationColumnTask(frames, tileSize, packer, scope, stats, retryer))
+        return deduplicate(AnimationColumnTask(frames, tileSize, packer, scope, stats, retryer, bufferPoolProvider))
     }
 
     fun out(name: String, source: TextureTask): OutputTask {
