@@ -10,6 +10,7 @@ import javafx.scene.image.Image
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.withIndex
 
 data class AnimationColumnTask(
@@ -19,12 +20,13 @@ data class AnimationColumnTask(
 ): UnpackingTextureTask(packer, scope, stats, retryer) {
     override suspend fun computeImage(): Image {
         val height = width * frames.size
+        val frameImages = frames.asFlow()
+            .map(TextureTask::getImage)
+            .withIndex()
+            .toList()
         val canvas = Canvas(width.toDouble(), height.toDouble())
         val canvasCtx = canvas.graphicsContext2D
-        frames.asFlow()
-                .map(TextureTask::getImage)
-                .withIndex()
-                .collect {it.value.renderTo(canvasCtx, 0, height * it.index)}
+        frameImages.forEach {it.value.renderTo(canvasCtx, 0, height * it.index)}
         return doJfx {canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, null)}
     }
 

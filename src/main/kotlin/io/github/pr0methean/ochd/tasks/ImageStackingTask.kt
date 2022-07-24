@@ -25,18 +25,19 @@ data class ImageStackingTask(
     override suspend fun createImage(): ImageNode {
         val width = size.toDouble()
         val height = size.toDouble()
-        val name1 = layers.toString()
+        val name = layers.toString()
+        val layerImages = layers.layers.asFlow().map { it.getImage() }.toList()
         val canvas = Canvas(width, height)
         val canvasCtx = canvas.graphicsContext2D
         if (layers.background != Color.TRANSPARENT) {
-            doJfx(name1, retryer) {
+            doJfx(name, retryer) {
                 canvasCtx.fill = layers.background
                 canvasCtx.fillRect(0.0, 0.0, width, height)
             }
         }
-        layers.layers.asFlow().map { it.getImage() }.toList().forEach { it.renderTo(canvasCtx, 0, 0) }
+        layerImages.forEach { it.renderTo(canvasCtx, 0, 0) }
         return packer
-            .packImage(doJfx(name1, retryer) { canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, null) }, null, name1)
+            .packImage(doJfx(name, retryer) { canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, null) }, null, name)
     }
 
     override fun formatTo(buffer: StringBuilder) {

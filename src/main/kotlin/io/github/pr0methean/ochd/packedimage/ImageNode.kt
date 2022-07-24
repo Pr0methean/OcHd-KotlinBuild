@@ -41,6 +41,7 @@ abstract class ImageNode(
         doJfx(name, retryer) {out.drawImage(unpacked, x.toDouble(), y.toDouble())}
     }
 
+    @Suppress("LeakingThis")
     open val unpacked: AsyncLazy<Image> = SoftAsyncLazy(initialUnpacked, this::unpack)
 
     suspend fun unpacked(): Image = unpacked.get()
