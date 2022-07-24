@@ -8,7 +8,7 @@ import javafx.scene.image.Image
 import kotlinx.coroutines.CoroutineScope
 
 const val MAX_UNCOMPRESSED_TILESIZE = 512
-const val MIN_SIZE_TO_DEDUP = 32
+const val MIN_SIZE_TO_DEDUP = 128
 private const val DEDUP_CACHE_SIZE = 5_000L
 
 class ImagePacker(
