@@ -4,6 +4,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import javax.annotation.concurrent.GuardedBy
 
 abstract class AsyncLazy<T> {
     val mutex = Mutex()
@@ -15,6 +16,7 @@ abstract class AsyncLazy<T> {
     protected abstract suspend fun getFromSupplierAndStore(): T
     abstract fun getNow(): T?
 
+    @GuardedBy("mutex")
     protected abstract fun set(value: T?)
 
     @Suppress("unused")

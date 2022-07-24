@@ -4,8 +4,10 @@ import com.google.common.collect.ConcurrentHashMultiset
 import com.google.common.collect.Multiset
 import com.sun.glass.ui.Application
 import kotlinx.coroutines.*
+import kotlinx.coroutines.debug.DebugProbes
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
+import org.apache.logging.log4j.io.IoBuilder
 import org.apache.logging.log4j.util.Unbox
 import java.lang.management.ManagementFactory
 import java.lang.management.ThreadInfo
@@ -17,12 +19,18 @@ private fun Multiset<*>.log() {
     toSet().forEach { logger.info("{}: {}", it, count(it)) }
 }
 private val NEED_THREAD_MONITORING = false
+private val NEED_COROUTINE_DEBUG = true
 private val REPORTING_INTERVAL: Duration = 30.seconds
 private val logger = LogManager.getLogger("ImageProcessingStats")
 val threadMxBean = ManagementFactory.getThreadMXBean()
 var monitoringJob: Job? = null
+@OptIn(ExperimentalCoroutinesApi::class)
 @Suppress("DeferredResultUnused")
 fun startMonitoring(stats: ImageProcessingStats, scope: CoroutineScope) {
+    if (NEED_COROUTINE_DEBUG) {
+        DebugProbes.install()
+    }
+    val loggerStream = IoBuilder.forLogger(logger).setLevel(Level.DEBUG).buildPrintStream()
     monitoringJob = scope.async {
         while (true) {
             delay(REPORTING_INTERVAL)
@@ -43,6 +51,9 @@ fun startMonitoring(stats: ImageProcessingStats, scope: CoroutineScope) {
                         logThread(Level.ERROR, id, threadInfo)
                     }
                 }
+            }
+            if (NEED_COROUTINE_DEBUG) {
+                DebugProbes.dumpCoroutines(loggerStream)
             }
         }
     }
