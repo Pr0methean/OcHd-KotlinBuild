@@ -1,14 +1,9 @@
 package io.github.pr0methean.ochd.packedimage
 
-import io.github.pr0methean.ochd.DEFAULT_SNAPSHOT_PARAMS
 import io.github.pr0methean.ochd.ImageProcessingContext
-import io.github.pr0methean.ochd.tasks.doJfx
 import javafx.application.Platform
 import javafx.embed.swing.SwingFXUtils
-import javafx.scene.canvas.Canvas
 import javafx.scene.image.Image
-import javafx.scene.image.WritableImage
-import javafx.scene.paint.Color
 import kotlinx.coroutines.*
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.BeforeAll
@@ -75,6 +70,7 @@ suspend fun assertImagesEqual(testName: String, expected: Image, actual: Image) 
 fun <T> runBlocking(block: suspend CoroutineScope.() -> T)
         = runBlocking(ctx.scope.coroutineContext, block = block)
 
+@Suppress("unused")
 internal abstract class ImageNodeTest(val expected: Image, val actual: suspend () -> ImageNode) {
 
     val className = this::class.simpleName
@@ -87,92 +83,16 @@ internal abstract class ImageNodeTest(val expected: Image, val actual: suspend (
         }
     }
 
-    abstract suspend fun isSolidColor()
-
-    abstract suspend fun toSolidColorIfPossible()
-
-    suspend fun asQuadtree() {
-        assertImagesEqual("$className.asQuadtree", expected, actual().asQuadtree().unpacked())
-    }
-
-    suspend fun asSolidOrQuadtreeRecursive() {
-        assertImagesEqual("$className.asSolidOrQuadtreeRecursive", expected, actual().asSolidOrQuadtreeDeduplicatedRecursive(5, 4, 4).unpacked())
-    }
-
-    suspend fun pixelReader() {
-        val actualNode = actual()
-        val actualImage = WritableImage(actualNode.width, actualNode.height)
-        actualImage.pixelWriter.setPixels(0, 0, actualNode.width, actualNode.height, actualNode.pixelReader(), 0, 0)
-        assertImagesEqual("$className.pixelReader", expected, actualImage)
-    }
-
     suspend fun unpacked() {
         assertImagesEqual("$className.unpacked", expected, actual().unpacked())
     }
 
-    suspend fun superimposeOnSemitransparentSolidColor() {
-        val background = Color(1.0, 0.75, 0.5, 0.5)
-        val canvas = Canvas(TEST_TILE_SIZE.toDouble(), TEST_TILE_SIZE.toDouble())
-        val graphics = canvas.graphicsContext2D
-        graphics.fill = background
-        var expectedSuperimpose: Image? = null
-        doJfx("superimpose", ctx.retryer) {
-            graphics.fillRect(0.0, 0.0, TEST_TILE_SIZE.toDouble(), TEST_TILE_SIZE.toDouble())
-            graphics.drawImage(expected, 0.0, 0.0)
-            expectedSuperimpose = canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, null)
-        }
-        val actualSuperimpose = superimpose(background, listOf(actual()),
-            TEST_TILE_SIZE.toDouble(), TEST_TILE_SIZE.toDouble(), "superimpose",
-            ctx.retryer, ctx.packer).unpacked()
-        assertImagesEqual("$className.superimposeOn", expectedSuperimpose!!, actualSuperimpose)
-    }
-
-    suspend fun superimposeBelowSemitransparentSolidColor() {
-        val foreground = Color(1.0, 0.75, 0.5, 0.5)
-        val canvas = Canvas(TEST_TILE_SIZE.toDouble(), TEST_TILE_SIZE.toDouble())
-        val graphics = canvas.graphicsContext2D
-        graphics.fill = foreground
-        var expectedSuperimpose: Image? = null
-        doJfx("superimpose", ctx.retryer) {
-            graphics.drawImage(expected, 0.0, 0.0)
-            graphics.fillRect(0.0, 0.0, TEST_TILE_SIZE.toDouble(), TEST_TILE_SIZE.toDouble())
-            expectedSuperimpose = canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, null)
-        }
-        val actualSuperimpose = superimpose(Color.TRANSPARENT, listOf(actual(),
-                SolidColorImageNode(
-                    null,
-                    foreground,
-                    TEST_TILE_SIZE,
-                    TEST_TILE_SIZE,
-                    "foreground",
-                    ctx.scope,
-                    ctx.retryer,
-                    ctx.stats,
-                    ctx.packer
-                )),
-            TEST_TILE_SIZE.toDouble(), TEST_TILE_SIZE.toDouble(), "superimpose",
-            ctx.retryer, ctx.packer).unpacked()
-        assertImagesEqual("$className.superimposeBelow", expectedSuperimpose!!, actualSuperimpose)
-    }
 
     abstract suspend fun repaint()
 
     @Test
-    fun testIsSolidColor() = runBlocking { isSolidColor() }
-    @Test
-    fun testToSolidColorIfPossible() = runBlocking { toSolidColorIfPossible() }
-    @Test
-    fun testAsQuadtree() = runBlocking { asQuadtree() }
-    @Test
-    fun testAsSolidOrQuadtreeRecursive() = runBlocking { asSolidOrQuadtreeRecursive() }
-    @Test
-    fun testPixelReader() = runBlocking { pixelReader() }
-    @Test
     fun testUnpacked() = runBlocking { unpacked() }
     @Test
     fun testRepaint() = runBlocking { repaint() }
-    @Test
-    fun testSuperimposeOnSemitransparentColor() = runBlocking { superimposeOnSemitransparentSolidColor() }
-    @Test
-    fun testSuperimposeUnderSemitransparentColor() = runBlocking { superimposeBelowSemitransparentSolidColor() }
+
 }
