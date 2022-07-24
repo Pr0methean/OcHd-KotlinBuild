@@ -9,7 +9,7 @@ import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox.box
 import java.io.ByteArrayInputStream
 
-private const val MIN_LOGGABLE_SIZE = 8
+const val MIN_LOGGABLE_SIZE = 8
 private val logger = LogManager.getLogger("SimpleImageNode")
 class BitmapImageNode(
     initialUnpacked: Image?, initialPng: ByteArray?, name: String,
