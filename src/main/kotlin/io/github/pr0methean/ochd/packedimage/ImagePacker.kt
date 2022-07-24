@@ -7,7 +7,7 @@ import kotlinx.coroutines.CoroutineScope
 import java.util.concurrent.ConcurrentHashMap
 
 const val MAX_UNCOMPRESSED_TILESIZE = 512
-const val MIN_SIZE_TO_DEDUP = 1
+const val MIN_SIZE_TO_DEDUP = 8
 
 class ImagePacker(
     val scope: CoroutineScope, private val retryer: Retryer, private val stats: ImageProcessingStats,
