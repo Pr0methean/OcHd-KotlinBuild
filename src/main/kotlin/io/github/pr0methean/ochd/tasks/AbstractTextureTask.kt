@@ -3,8 +3,6 @@ package io.github.pr0methean.ochd.tasks
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.Retryer
 import io.github.pr0methean.ochd.packedimage.ImageNode
-import javafx.application.Platform
-import javafx.concurrent.Task
 import kotlinx.coroutines.*
 
 abstract class AbstractTextureTask(open val scope: CoroutineScope,
@@ -32,19 +30,8 @@ abstract class AbstractTextureTask(open val scope: CoroutineScope,
     /** Must be final to supersede the generated implementation for data classes */
     final override fun toString(): String = name
     protected abstract suspend fun createImage(): ImageNode
-    class JfxTask<T>(private val jfxCode: () -> T) : Task<T>() {
-        override fun call(): T {
-            val out = jfxCode()
-            updateValue(out)
-            return out
-        }
-    }
 }
 
 @Suppress("BlockingMethodInNonBlockingContext")
-suspend fun <T> doJfx(name: String, retryer: Retryer, jfxCode: () -> T): T
-        = retryer.retrying(name) {
-    val task = AbstractTextureTask.JfxTask {jfxCode()}
-    Platform.runLater(task)
-    return@retrying withContext(Dispatchers.IO) {task.get()}
-}
+suspend fun <T> doJfx(name: String, retryer: Retryer, jfxCode: CoroutineScope.() -> T): T
+        = retryer.retrying(name) { withContext(Dispatchers.Main, block = jfxCode)}

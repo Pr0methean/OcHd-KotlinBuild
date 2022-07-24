@@ -56,7 +56,7 @@ fun stopMonitoring() {
     monitoringJob?.cancel("Monitoring stopped")
 }
 
-class ImageProcessingStats() {
+class ImageProcessingStats {
     val taskLaunches: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val taskCompletions: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val dedupeSuccesses: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()

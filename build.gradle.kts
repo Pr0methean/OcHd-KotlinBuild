@@ -33,6 +33,7 @@ dependencies {
     testImplementation(kotlin("test"))
     implementation("no.tornado:tornadofx:1.7.20")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-javafx:1.6.4")
     implementation("com.google.guava:guava:31.1-jre")
     implementation("org.testfx:openjfx-monocle:jdk-12.0.1+2")
     implementation("org.apache.xmlgraphics:batik-transcoder:1.14")
