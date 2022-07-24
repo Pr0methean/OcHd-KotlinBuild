@@ -10,7 +10,6 @@ import javafx.scene.effect.Blend
 import javafx.scene.effect.BlendMode
 import javafx.scene.effect.ColorInput
 import javafx.scene.image.Image
-import javafx.scene.image.ImageView
 import javafx.scene.image.PixelReader
 import javafx.scene.image.WritableImage
 import javafx.scene.paint.Color
@@ -160,12 +159,12 @@ abstract class ImageNode(
             }
         } else null
         val snapshot = doJfx(name, retryer) {
-            val view = ImageView(unpacked)
-            view.opacity = alpha
-            view.isCache = false
-            view.isSmooth = true
-            blend?.let { view.effect = it }
-            view.snapshot(DEFAULT_SNAPSHOT_PARAMS, null)
+            val canvas = Canvas(width.toDouble(), height.toDouble())
+            val gfx = canvas.graphicsContext2D
+            canvas.opacity = alpha
+            gfx.drawImage(unpacked, 0.0, 0.0)
+            blend?.let { gfx.applyEffect(it) }
+            canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, null)
         }
         return packer.packImage(snapshot, null, name)
     }
