@@ -27,9 +27,9 @@ data class AnimationColumnTask(
             .map(ImageNode::unpacked)
             .withIndex()
             .toList()
-        val canvas = Canvas(width.toDouble(), height.toDouble())
         val output = WritableImage(width, height)
         doJfx("snapshot for $name", retryer) {
+            val canvas = Canvas(width.toDouble(), height.toDouble())
             canvas.isCache = true
             val canvasCtx = canvas.graphicsContext2D
             frameImages.forEach {canvasCtx.drawImage(it.value, 0.0, (height * it.index).toDouble())}

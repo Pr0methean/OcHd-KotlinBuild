@@ -28,10 +28,10 @@ data class ImageStackingTask(
         val height = size.toDouble()
         val name = layers.toString()
         val layerImages = layers.layers.asFlow().map { it.getImage() }.map(ImageNode::unpacked).toList()
-        val canvas = Canvas(width, height)
-        canvas.isCache = true
         val output = WritableImage(size, size)
         val snapshot = doJfx(name, retryer) {
+            val canvas = Canvas(width, height)
+            canvas.isCache = true
             val canvasCtx = canvas.graphicsContext2D
             if (layers.background != Color.TRANSPARENT) {
 
