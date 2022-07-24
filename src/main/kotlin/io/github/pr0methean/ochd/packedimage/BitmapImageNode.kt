@@ -2,8 +2,8 @@ package io.github.pr0methean.ochd.packedimage
 
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.Retryer
+import io.github.pr0methean.ochd.SoftAsyncLazy
 import javafx.scene.image.Image
-import javafx.scene.image.PixelReader
 import kotlinx.coroutines.CoroutineScope
 import org.apache.logging.log4j.LogManager
 import java.io.ByteArrayInputStream
@@ -16,8 +16,8 @@ class BitmapImageNode(
     width, height, initialUnpacked = initialUnpacked, initialPacked = initialPng,
     name = name, scope = scope, retryer = retryer, stats = stats, packer = packer
 ) {
-    override suspend fun pixelReader(): PixelReader {
-        return unpacked().pixelReader
+    override val pixelReader = SoftAsyncLazy {
+        unpacked().pixelReader
     }
 
     init {

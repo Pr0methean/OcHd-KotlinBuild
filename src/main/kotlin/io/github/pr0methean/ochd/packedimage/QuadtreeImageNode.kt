@@ -160,7 +160,9 @@ class QuadtreeImageNode(
         }
     }
 
-    override suspend fun pixelReader(): PixelReader = QuadtreePixelReader(this)
+    override val pixelReader = SoftAsyncLazy<PixelReader> {
+        QuadtreePixelReader(this)
+    }
 
     enum class Quadrant(val xMultiplier: Int, val yMultiplier: Int, val getter: (QuadtreeImageNode) -> ImageNode) {
         UPPER_LEFT(0,0, QuadtreeImageNode::topLeft),

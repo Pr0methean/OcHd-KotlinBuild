@@ -1,6 +1,7 @@
 package io.github.pr0methean.ochd.packedimage
 
 import com.github.benmanes.caffeine.cache.Caffeine
+import com.github.benmanes.caffeine.cache.LoadingCache
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.Retryer
 import javafx.scene.image.Image
@@ -12,10 +13,10 @@ private const val DEDUP_CACHE_SIZE = 5_000L
 
 class ImagePacker(
     val scope: CoroutineScope, private val retryer: Retryer, private val stats: ImageProcessingStats,
-    val maxQuadtreeDepth: Int,
+    private val maxQuadtreeDepth: Int,
     val leafSize: Int
 ) {
-    val deduplicationMap = Caffeine.newBuilder().maximumSize(DEDUP_CACHE_SIZE).build<ImageNode, ImageNode> { it }
+    private val deduplicationMap: LoadingCache<ImageNode, ImageNode> = Caffeine.newBuilder().maximumSize(DEDUP_CACHE_SIZE).build<ImageNode, ImageNode> { it }
 
     suspend fun deduplicate(input: ImageNode): ImageNode {
         if (input.shouldDeduplicate()

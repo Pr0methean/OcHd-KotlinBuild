@@ -2,6 +2,7 @@ package io.github.pr0methean.ochd.packedimage
 
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.Retryer
+import io.github.pr0methean.ochd.SoftAsyncLazy
 import io.github.pr0methean.ochd.tasks.doJfx
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.image.Image
@@ -98,8 +99,8 @@ class SolidColorImageNode(initialUnpacked: Image? = null,
             width, height, quadrant, quadrant, quadrant, quadrant, name, scope, retryer, stats, packer)
     }
 
-    override suspend fun pixelReader(): PixelReader {
-        return SolidColorPixelReader(width, height, color, argb)
+    override val pixelReader = SoftAsyncLazy<PixelReader> {
+        SolidColorPixelReader(width, height, color, argb)
     }
 
     override suspend fun unpack(): Image = unpack(argb, width, height)
