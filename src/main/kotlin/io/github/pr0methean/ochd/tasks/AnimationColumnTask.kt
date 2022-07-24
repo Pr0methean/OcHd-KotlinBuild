@@ -4,6 +4,7 @@ import io.github.pr0methean.ochd.DEFAULT_SNAPSHOT_PARAMS
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.Retryer
 import io.github.pr0methean.ochd.appendList
+import io.github.pr0methean.ochd.packedimage.ImageNode
 import io.github.pr0methean.ochd.packedimage.ImagePacker
 import javafx.scene.canvas.Canvas
 import javafx.scene.image.Image
@@ -23,16 +24,19 @@ data class AnimationColumnTask(
         val height = width * frames.size
         val frameImages = frames.asFlow()
             .map(TextureTask::getImage)
+            .map(ImageNode::unpacked)
             .withIndex()
             .toList()
         val canvas = Canvas(width.toDouble(), height.toDouble())
-        canvas.isCache = true
-        val canvasCtx = canvas.graphicsContext2D
-        frameImages.forEach {it.value.renderTo(canvasCtx, 0, height * it.index)}
         val output = WritableImage(width, height)
-        doJfx("snapshot for $name", retryer) {canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)}
-        if (output.isError) {
-            throw output.exception
+        doJfx("snapshot for $name", retryer) {
+            canvas.isCache = true
+            val canvasCtx = canvas.graphicsContext2D
+            frameImages.forEach {canvasCtx.drawImage(it.value, 0.0, (height * it.index).toDouble())}
+            canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
+            if (output.isError) {
+                throw output.exception
+            }
         }
         return output
     }

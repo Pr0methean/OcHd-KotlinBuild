@@ -27,25 +27,25 @@ data class ImageStackingTask(
         val width = size.toDouble()
         val height = size.toDouble()
         val name = layers.toString()
-        val layerImages = layers.layers.asFlow().map { it.getImage() }.toList()
+        val layerImages = layers.layers.asFlow().map { it.getImage() }.map(ImageNode::unpacked).toList()
         val canvas = Canvas(width, height)
         canvas.isCache = true
-        val canvasCtx = canvas.graphicsContext2D
-        if (layers.background != Color.TRANSPARENT) {
-            doJfx("background for $name", retryer) {
+        val output = WritableImage(size, size)
+        val snapshot = doJfx(name, retryer) {
+            val canvasCtx = canvas.graphicsContext2D
+            if (layers.background != Color.TRANSPARENT) {
+
                 canvasCtx.fill = layers.background
                 canvasCtx.fillRect(0.0, 0.0, width, height)
             }
-        }
-        layerImages.forEach { it.renderTo(canvasCtx, 0, 0) }
-        val output = WritableImage(size, size)
-        return packer.packImage(doJfx("snapshot for $name", retryer) {
-            canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
-            if (output.isError) {
-                throw output.exception
+            layerImages.forEach { canvasCtx.drawImage(it, 0.0, 0.0) }
+            val snapshot = canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
+            if (snapshot.isError) {
+                throw snapshot.exception
             }
-            return@doJfx output
-       }, null, name)
+            return@doJfx snapshot
+        }
+        return packer.packImage(snapshot, null, name)
     }
 
     override fun formatTo(buffer: StringBuilder) {
