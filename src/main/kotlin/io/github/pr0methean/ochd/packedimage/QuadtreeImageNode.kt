@@ -160,7 +160,7 @@ class QuadtreeImageNode(
         }
     }
 
-    override val pixelReader = SoftAsyncLazy<PixelReader> {
+    override val pixelReader = SoftAsyncLazy<PixelReader>(initialUnpacked?.pixelReader) {
         QuadtreePixelReader(this)
     }
 

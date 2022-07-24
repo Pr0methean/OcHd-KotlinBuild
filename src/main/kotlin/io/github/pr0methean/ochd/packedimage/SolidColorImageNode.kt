@@ -99,7 +99,7 @@ class SolidColorImageNode(initialUnpacked: Image? = null,
             width, height, quadrant, quadrant, quadrant, quadrant, name, scope, retryer, stats, packer)
     }
 
-    override val pixelReader = SoftAsyncLazy<PixelReader> {
+    override val pixelReader = SoftAsyncLazy<PixelReader>(initialUnpacked?.pixelReader) {
         SolidColorPixelReader(width, height, color, argb)
     }
 

@@ -172,7 +172,7 @@ abstract class ImageNode(
             bottomRight = bottomRight, name, scope, retryer, stats, packer))
     }
 
-    open val pixelReader: AsyncLazy<PixelReader> = SoftAsyncLazy {
+    open val pixelReader: AsyncLazy<PixelReader> = SoftAsyncLazy(initialUnpacked?.pixelReader) {
         ImageNodePixelReader(this::unpacked)
     }
     suspend fun pixelReader(): PixelReader = pixelReader.get()
