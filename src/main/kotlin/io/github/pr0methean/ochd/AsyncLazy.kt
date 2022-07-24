@@ -17,7 +17,7 @@ abstract class AsyncLazy<T> {
     abstract fun getNow(): T?
 
     @GuardedBy("mutex")
-    protected abstract fun set(value: T?)
+    abstract fun set(value: T?)
 
     @Suppress("unused")
     suspend fun mergeWithDuplicate(other: AsyncLazy<T>) {

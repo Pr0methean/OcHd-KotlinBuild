@@ -39,8 +39,13 @@ data class ImageStackingTask(
         }
         layerImages.forEach { it.renderTo(canvasCtx, 0, 0) }
         val output = WritableImage(size, size)
-        return packer
-            .packImage(doJfx("snapshot for $name", retryer) { canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output) }, null, name)
+        return packer.packImage(doJfx("snapshot for $name", retryer) {
+            canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
+            if (output.isError) {
+                throw output.exception
+            }
+            return@doJfx output
+       }, null, name)
     }
 
     override fun formatTo(buffer: StringBuilder) {

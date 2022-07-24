@@ -46,6 +46,10 @@ data class RepaintTask(
             blend?.let { gfx.setEffect(it) }
             gfx.drawImage(unpacked, 0.0, 0.0)
             canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
+            if (output.isError) {
+                throw output.exception
+            }
+            return@doJfx output
         }
         return packer.packImage(snapshot, null, name)
     }

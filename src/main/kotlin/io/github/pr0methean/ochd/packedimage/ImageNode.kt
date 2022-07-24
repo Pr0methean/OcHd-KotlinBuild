@@ -44,7 +44,14 @@ abstract class ImageNode(
     @Suppress("LeakingThis")
     open val unpacked: AsyncLazy<Image> = SoftAsyncLazy(initialUnpacked, this::unpack)
 
-    suspend fun unpacked(): Image = unpacked.get()
+    suspend fun unpacked(): Image {
+        val unpacked = unpacked.get()
+        if (unpacked.isError) {
+            this.unpacked.set(null)
+            throw unpacked.exception
+        }
+        return unpacked
+    }
 
     abstract suspend fun unpack(): Image
 
