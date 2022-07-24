@@ -284,7 +284,7 @@ suspend fun superimpose(background: Paint = Color.TRANSPARENT, layers: List<Imag
         layersAfterQuadtreeTransform = sequenceOf(
             packer.deduplicate(
                 QuadtreeImageNode(
-                    null,
+                    initialUnpacked = layersAfterCollapsing.singleOrNull()?.unpacked?.getNow(),
                     width = width.toInt(),
                     height = height.toInt(),
                     topLeft = superimpose(
