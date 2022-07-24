@@ -64,6 +64,7 @@ class BitmapImageNode(
     }
 
     override suspend fun mergeWithDuplicate(other: ImageNode) {
+        super.mergeWithDuplicate(other)
         hashCode.mergeWithDuplicate((other as BitmapImageNode).hashCode)
     }
 }
