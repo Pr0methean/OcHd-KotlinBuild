@@ -4,7 +4,6 @@ import io.github.pr0methean.ochd.*
 import io.github.pr0methean.ochd.packedimage.QuadtreeImageNode.Quadrant
 import io.github.pr0methean.ochd.tasks.doJfx
 import javafx.embed.swing.SwingFXUtils
-import javafx.scene.CacheHint
 import javafx.scene.canvas.Canvas
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.effect.Blend
@@ -152,18 +151,19 @@ abstract class ImageNode(
             return packer.deduplicate(this)
         }
         val unpacked = unpacked()
-        val view = doJfx(name, retryer) {ImageView(unpacked)}
-        if (newPaint != null) {
+        val blend = if (newPaint != null) {
             val colorLayer = ColorInput(0.0, 0.0, width.toDouble(), height.toDouble(), newPaint)
-            val blend = Blend()
-            blend.mode = BlendMode.SRC_ATOP
-            blend.topInput = colorLayer
-            blend.bottomInput = null
-            view.effect = blend
-        }
+            Blend().also {
+                it.mode = BlendMode.SRC_ATOP
+                it.topInput = colorLayer
+                it.bottomInput = null
+            }
+        } else null
+        val view = doJfx(name, retryer) {ImageView(unpacked)}
         view.opacity = alpha
-        view.cacheHint = CacheHint.QUALITY
+        view.isCache = false
         view.isSmooth = true
+        blend?.also { view.effect = it }
         return packer.packImage(doJfx(name, retryer) { view.snapshot(DEFAULT_SNAPSHOT_PARAMS, null) }, null, name)
     }
 
@@ -222,24 +222,25 @@ suspend fun superimpose(background: Paint = Color.TRANSPARENT, layers: List<Imag
                     background = realBackgroundPaint as Color)
         }
     }
-    val layersAfterCollapsing = mutableListOf<ImageNode>()
+    val collapsedDeduplicatedLayers = mutableListOf<ImageNode>()
     while (visibleLayerIndex < visibleLayers.size) {
         val visibleLayer = visibleLayers[visibleLayerIndex]
-        val previousLayer = layersAfterCollapsing.lastOrNull()
+        val previousLayer = collapsedDeduplicatedLayers.lastOrNull()
         if (visibleLayer is SolidColorImageNode && previousLayer is SolidColorImageNode) {
-                layersAfterCollapsing[layersAfterCollapsing.size - 1] = packer.deduplicate(SolidColorImageNode(
+                collapsedDeduplicatedLayers[collapsedDeduplicatedLayers.size - 1] = packer.deduplicate(SolidColorImageNode(
                     null, alphaBlend(foreground = visibleLayer.color, background = previousLayer.color),
                     width.toInt(), height.toInt(), name, visibleLayer.scope, retryer, visibleLayer.stats, packer))
         } else {
-            layersAfterCollapsing.add(packer.deduplicate(visibleLayer))
+            collapsedDeduplicatedLayers
+                .add(packer.deduplicate(visibleLayer))
         }
         visibleLayerIndex++
     }
     val layersAfterQuadtreeTransform: List<ImageNode>
-    if (height <= packer.leafSize || layersAfterCollapsing.size <= 1) {
-        layersAfterQuadtreeTransform = layersAfterCollapsing
+    if (height <= packer.leafSize || width <= packer.leafSize || collapsedDeduplicatedLayers.size <= 1) {
+        layersAfterQuadtreeTransform = collapsedDeduplicatedLayers
     } else {
-        val quadtreeLayers = layersAfterCollapsing.map {
+        val quadtreeLayers = collapsedDeduplicatedLayers.map {
             if (it is QuadtreeImageNode) {
                 it
             } else {
@@ -250,7 +251,7 @@ suspend fun superimpose(background: Paint = Color.TRANSPARENT, layers: List<Imag
         layersAfterQuadtreeTransform = listOf(
             packer.deduplicate(
                 QuadtreeImageNode(
-                    initialUnpacked = layersAfterCollapsing.singleOrNull()?.unpacked?.getNow(),
+                    initialUnpacked = collapsedDeduplicatedLayers.singleOrNull()?.unpacked?.getNow(),
                     width = width.toInt(),
                     height = height.toInt(),
                     topLeft = superimpose(
@@ -269,7 +270,7 @@ suspend fun superimpose(background: Paint = Color.TRANSPARENT, layers: List<Imag
                         realBackgroundPaint, quadtreeLayers.map { it.bottomRight },
                         width / 2, height / 2, name, retryer, packer
                     ),
-                    name, layersAfterCollapsing[0].scope, retryer, layersAfterCollapsing[0].stats, packer
+                    name, collapsedDeduplicatedLayers[0].scope, retryer, collapsedDeduplicatedLayers[0].stats, packer
                 )
             )
         )
