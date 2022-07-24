@@ -32,7 +32,7 @@ class BitmapImageNode(
         if (height >= MIN_LOGGABLE_SIZE) {
             stats.onDecompressPngImage("a ${width}×$height chunk of $name")
         }
-        return retryer.retrying("Decompression of $name") {
+        return retryer.retrying("Decompression of a ${width}×$height chunk of  $name") {
             ByteArrayInputStream(asPng()).use {
                 Image(
                     it

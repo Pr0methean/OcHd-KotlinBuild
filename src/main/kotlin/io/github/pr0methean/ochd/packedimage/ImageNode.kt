@@ -36,13 +36,13 @@ abstract class ImageNode(
 
     protected val pngBytes = StrongAsyncLazy(initialPacked) {
         ByteArrayOutputStream().use {
-            retryer.retrying<ByteArray>("Compression of $name") {
-                stats.onCompressPngImage(name)
+            retryer.retrying<ByteArray>("Compression of a ${width}×$height chunk of $name") {
+                stats.onCompressPngImage("a ${width}×$height chunk of $name")
                 @Suppress("BlockingMethodInNonBlockingContext")
                 ImageIO.write(SwingFXUtils.fromFXImage(unpacked(), null), "PNG", it)
                 return@retrying it.toByteArray()
             }
-        }.also { logger.info("Done compressing {}", name) }
+        }.also { logger.info("Done compressing a {}×{} chunk of {}", width, height, name) }
     }
 
     class ImageNodePixelReader(unpacked: suspend () -> Image) : AbstractPixelReader(unpacked) {
