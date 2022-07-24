@@ -28,7 +28,7 @@ abstract class ImageNode(
             retryer.retrying<ByteArray>("Compression of $name") {
                 stats.onCompressPngImage(name)
                 @Suppress("BlockingMethodInNonBlockingContext")
-                ImageIO.write(SwingFXUtils.fromFXImage(unpacked(), null), "PNG", it)
+                ImageIO.write(SwingFXUtils.fromFXImage(initialUnpacked ?: unpacked(), null), "PNG", it)
                 return@retrying it.toByteArray()
             }
         }.also {
