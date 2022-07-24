@@ -1,27 +1,29 @@
 package io.github.pr0methean.ochd.packedimage
 
+import com.github.benmanes.caffeine.cache.Caffeine
+import com.github.benmanes.caffeine.cache.LoadingCache
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.Retryer
 import javafx.scene.image.Image
 import kotlinx.coroutines.CoroutineScope
-import java.util.concurrent.ConcurrentHashMap
 
 const val MAX_UNCOMPRESSED_TILESIZE = 512
 const val MIN_SIZE_TO_DEDUP = 128
+private const val DEDUP_CACHE_SIZE = 1_000L
 
 class ImagePacker(
     val scope: CoroutineScope, private val retryer: Retryer, private val stats: ImageProcessingStats,
     private val maxQuadtreeDepth: Int,
     val leafSize: Int
 ) {
-    private val nodeDedupCache = ConcurrentHashMap<ImageNode, ImageNode>()
+    private val nodeDedupCache: LoadingCache<ImageNode, ImageNode> = Caffeine.newBuilder().maximumSize(DEDUP_CACHE_SIZE).build<ImageNode, ImageNode> { it }
 
     @Suppress("UNCHECKED_CAST")
     suspend fun <T : ImageNode> deduplicate(input: T): T {
         if (input.shouldDeduplicate()
                && input.height >= MIN_SIZE_TO_DEDUP) {
-            val original = nodeDedupCache.putIfAbsent(input, input)
-            if (original != null) {
+            val original = nodeDedupCache.get(input)
+            if (original !== input) {
                 original.mergeWithDuplicate(input)
                 return original as T
             }
