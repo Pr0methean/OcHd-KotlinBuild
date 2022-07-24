@@ -9,6 +9,7 @@ import javafx.scene.canvas.Canvas
 import javafx.scene.effect.Blend
 import javafx.scene.effect.BlendMode
 import javafx.scene.effect.ColorInput
+import javafx.scene.image.WritableImage
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.CoroutineScope
 import org.apache.logging.log4j.util.Unbox
@@ -16,7 +17,6 @@ import org.apache.logging.log4j.util.Unbox
 data class RepaintTask(
     val paint: Paint?,
     val base: TextureTask,
-    private val size: Int,
     val alpha: Double = 1.0,
     val packer: ImagePacker,
     override val scope: CoroutineScope,
@@ -37,15 +37,16 @@ data class RepaintTask(
                 it.bottomInput = null
             }
         } else null
-        val snapshot = pool.borrow {doJfx(name, retryer) {
+        val output = WritableImage(unpacked.width.toInt(), unpacked.height.toInt())
+        val snapshot = doJfx(name, retryer) {
             val canvas = Canvas(unpacked.width, unpacked.height)
             canvas.isCache = true
             val gfx = canvas.graphicsContext2D
             canvas.opacity = alpha
             blend?.let { gfx.setEffect(it) }
             gfx.drawImage(unpacked, 0.0, 0.0)
-            canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, it)
-        }}
+            canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
+        }
         return packer.packImage(snapshot, null, name)
     }
 

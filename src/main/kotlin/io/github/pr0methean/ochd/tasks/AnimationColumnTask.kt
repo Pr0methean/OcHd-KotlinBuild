@@ -7,6 +7,7 @@ import io.github.pr0methean.ochd.appendList
 import io.github.pr0methean.ochd.packedimage.ImagePacker
 import javafx.scene.canvas.Canvas
 import javafx.scene.image.Image
+import javafx.scene.image.WritableImage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
@@ -28,7 +29,8 @@ data class AnimationColumnTask(
         canvas.isCache = true
         val canvasCtx = canvas.graphicsContext2D
         frameImages.forEach {it.value.renderTo(canvasCtx, 0, height * it.index)}
-        return doJfx {canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, null)}
+        val output = WritableImage(width, height)
+        return doJfx {canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)}
     }
 
     override fun formatTo(buffer: StringBuilder) {

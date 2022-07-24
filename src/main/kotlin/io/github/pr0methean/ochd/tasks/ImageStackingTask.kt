@@ -7,6 +7,7 @@ import io.github.pr0methean.ochd.Retryer
 import io.github.pr0methean.ochd.packedimage.ImageNode
 import io.github.pr0methean.ochd.packedimage.ImagePacker
 import javafx.scene.canvas.Canvas
+import javafx.scene.image.WritableImage
 import javafx.scene.paint.Color
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.asFlow
@@ -37,8 +38,9 @@ data class ImageStackingTask(
             }
         }
         layerImages.forEach { it.renderTo(canvasCtx, 0, 0) }
+        val output = WritableImage(size, size)
         return packer
-            .packImage(doJfx(name, retryer) { canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, null) }, null, name)
+            .packImage(doJfx(name, retryer) { canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output) }, null, name)
     }
 
     override fun formatTo(buffer: StringBuilder) {

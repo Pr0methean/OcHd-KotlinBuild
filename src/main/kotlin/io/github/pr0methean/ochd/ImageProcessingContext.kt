@@ -77,7 +77,7 @@ class ImageProcessingContext(
         if ((paint == Color.BLACK || paint == null) && alpha == 1.0) {
             return source
         }
-        return deduplicate(RepaintTask(paint, source, tileSize, alpha, packer, scope, stats, retryer))
+        return deduplicate(RepaintTask(paint, source, alpha, packer, scope, stats, retryer))
     }
 
     fun stack(init: LayerListBuilder.() -> Unit): TextureTask {
