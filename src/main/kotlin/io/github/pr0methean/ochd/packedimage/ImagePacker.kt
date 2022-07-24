@@ -43,13 +43,11 @@ class ImagePacker(
             input.width.toInt(),
             input.height.toInt(),
             this)
-        val deduplicated = deduplicate(if (input.height <= leafSize) {
+        return deduplicate(if (input.height <= leafSize) {
             basicImage
         } else {
             basicImage.asSolidOrQuadtreeRecursive(maxQuadtreeDepth, leafSize, leafSize)
         })
-        deduplicated.unpacked.setIfEmpty(input)
-        return deduplicated
     }
 
     suspend fun quadtreeify(input: ImageNode): QuadtreeImageNode {

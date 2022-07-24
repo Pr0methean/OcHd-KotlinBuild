@@ -267,9 +267,6 @@ suspend fun superimpose(background: Paint = Color.TRANSPARENT, layers: List<Imag
             )
         )
     }
-    if (layersAfterQuadtreeTransform.size == 1 && realBackgroundPaint == Color.TRANSPARENT) {
-        return packer.deduplicate(layersAfterQuadtreeTransform[0])
-    }
     val canvas = Canvas(width, height)
     val canvasCtx = canvas.graphicsContext2D
     if (realBackgroundPaint != Color.TRANSPARENT) {
@@ -277,6 +274,8 @@ suspend fun superimpose(background: Paint = Color.TRANSPARENT, layers: List<Imag
             canvasCtx.fill = realBackgroundPaint
             canvasCtx.fillRect(0.0, 0.0, width, height)
         }
+    } else if (layersAfterQuadtreeTransform.size == 1) {
+        return packer.deduplicate(layersAfterQuadtreeTransform[0])
     }
     layersAfterQuadtreeTransform.forEach { it.renderTo(canvasCtx, 0, 0) }
     return packer.packImage(doJfx(name, retryer) { canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, null) }, null, name)

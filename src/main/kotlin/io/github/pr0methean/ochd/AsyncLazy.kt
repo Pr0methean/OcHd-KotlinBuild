@@ -27,16 +27,6 @@ abstract class AsyncLazy<T> {
         }
     }
 
-    suspend fun setIfEmpty(value: T) {
-        if (getNow() == null) {
-            mutex.withLock {
-                if (getNow() == null) {
-                    set(value)
-                }
-            }
-        }
-    }
-
     fun start(scope: CoroutineScope) {
         scope.launch { get() }
     }
