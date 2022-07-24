@@ -159,12 +159,15 @@ abstract class ImageNode(
                 it.bottomInput = null
             }
         } else null
-        val view = doJfx(name, retryer) {ImageView(unpacked)}
-        view.opacity = alpha
-        view.isCache = false
-        view.isSmooth = true
-        blend?.also { view.effect = it }
-        return packer.packImage(doJfx(name, retryer) { view.snapshot(DEFAULT_SNAPSHOT_PARAMS, null) }, null, name)
+        val snapshot = doJfx(name, retryer) {
+            val view = ImageView(unpacked)
+            view.opacity = alpha
+            view.isCache = false
+            view.isSmooth = true
+            blend?.let { view.effect = it }
+            view.snapshot(DEFAULT_SNAPSHOT_PARAMS, null)
+        }
+        return packer.packImage(snapshot, null, name)
     }
 
     suspend fun asPng(): ByteArray = pngBytes.get()
