@@ -59,7 +59,7 @@ suspend fun main(args:Array<String>) {
         val tasks = ALL_MATERIALS.outputTasks(ctx).toList()
         stats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupJob.join()
-        tasks.map {scope.launch {it.run()}}.joinAll()
+        tasks.map {scope.plus(CoroutineName(it.name)).launch {it.run()}}.joinAll()
         copyMetadata.join()
     }
     stopMonitoring()

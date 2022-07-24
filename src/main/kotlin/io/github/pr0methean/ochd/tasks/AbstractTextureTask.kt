@@ -48,7 +48,7 @@ suspend fun <T> doJfx(name: String, retryer: Retryer, jfxCode: CoroutineScope.()
                     val result = jfxCode()
                     logger.info("Finished JFX task: {}", name)
                     if (errorCatcher.size() > 0) {
-                        throw RuntimeException(String(errorCatcher.toByteArray(), StandardCharsets.UTF_8))
+                        throw RuntimeException(errorCatcher.toString(StandardCharsets.UTF_8))
                     }
                     return@withContext result
                 }
