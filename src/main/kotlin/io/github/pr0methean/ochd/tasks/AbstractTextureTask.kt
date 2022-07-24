@@ -15,7 +15,7 @@ abstract class AbstractTextureTask(open val scope: CoroutineScope,
 ) : TextureTask {
     private val coroutine by lazy {
         val typeName = this::class.simpleName ?: "[unnamed AbstractTextureTask]"
-        scope.plus(CoroutineName(name)).async(start = CoroutineStart.LAZY) {
+        scope.async(CoroutineName(name), start = CoroutineStart.LAZY) {
             stats.onTaskLaunched(typeName, name)
             val image = createImage()
             stats.onTaskCompleted(typeName, name)

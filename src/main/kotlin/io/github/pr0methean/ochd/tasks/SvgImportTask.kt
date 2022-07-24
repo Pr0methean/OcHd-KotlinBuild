@@ -48,8 +48,8 @@ data class SvgImportTask(
 ): TextureTask {
 
     private val coroutine: Deferred<ImageNode> by lazy {
-        scope.plus(batikTranscoder.asContextElement()).plus(CoroutineName("SvgImportTask for $shortName"))
-                .async(start = CoroutineStart.LAZY) {
+        scope.plus(batikTranscoder.asContextElement())
+                .async(CoroutineName("SvgImportTask for $shortName"), start = CoroutineStart.LAZY) {
             stats.onTaskLaunched("SvgImportTask", shortName)
             val result = retryer.retrying(shortName) {
                 val transcoder = batikTranscoder.get()

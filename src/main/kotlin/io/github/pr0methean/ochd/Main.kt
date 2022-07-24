@@ -28,7 +28,7 @@ suspend fun main(args:Array<String>) {
     val out = Paths.get("out").toAbsolutePath().toFile()
     val outTextureRoot = out.resolve("assets").resolve("minecraft").resolve("textures")
     val ioScope = CoroutineScope(Dispatchers.IO)
-    val cleanupJob = ioScope.plus(CoroutineName("Delete old outputs")).launch {out.deleteRecursively()}
+    val cleanupJob = ioScope.launch(CoroutineName("Delete old outputs")) {out.deleteRecursively()}
     val ctx = ImageProcessingContext(
         name = "MainContext",
         tileSize = tileSize,
