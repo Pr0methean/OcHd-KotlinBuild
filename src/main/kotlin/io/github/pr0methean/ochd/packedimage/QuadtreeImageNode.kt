@@ -1,6 +1,9 @@
 package io.github.pr0methean.ochd.packedimage
 
-import io.github.pr0methean.ochd.*
+import io.github.pr0methean.ochd.ImageProcessingStats
+import io.github.pr0methean.ochd.Retryer
+import io.github.pr0methean.ochd.SoftAsyncLazy
+import io.github.pr0methean.ochd.StrongAsyncLazy
 import io.github.pr0methean.ochd.tasks.doJfx
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.image.Image
@@ -21,7 +24,7 @@ class QuadtreeImageNode(
     val topRight: ImageNode, val bottomLeft: ImageNode, val bottomRight: ImageNode,
     name: String, scope: CoroutineScope, retryer: Retryer, stats: ImageProcessingStats, packer: ImagePacker
 )
-        : ImageNode(width, height, initialPacked = null, name = name, scope = scope, retryer = retryer, stats = stats,
+        : ImageNode(width, height, initialUnpacked = initialUnpacked, initialPacked = null, name = name, scope = scope, retryer = retryer, stats = stats,
         packer = packer) {
     class QuadtreePixelReader(private val treeNode: QuadtreeImageNode): AbstractPixelReader(unpacked = {treeNode.unpacked()}) {
         private val quadrantReaders = EnumMap<Quadrant, SoftAsyncLazy<PixelReader>>(Quadrant::class.java).also {
@@ -179,8 +182,6 @@ class QuadtreeImageNode(
         }
         return out
     }
-
-    override val unpacked = WeakAsyncLazy(initialUnpacked, this::unpack)
 
     override suspend fun repaint(
         newPaint: Paint?,
