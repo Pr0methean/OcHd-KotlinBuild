@@ -7,7 +7,6 @@ import kotlinx.coroutines.*
 import org.apache.logging.log4j.LogManager
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
-import java.nio.charset.StandardCharsets
 
 private val logger = LogManager.getLogger("AbstractTextureTask")
 abstract class AbstractTextureTask(open val scope: CoroutineScope,
@@ -43,12 +42,12 @@ suspend fun <T> doJfx(name: String, retryer: Retryer, jfxCode: CoroutineScope.()
             val oldSystemErr = System.err
             try {
                 ByteArrayOutputStream().use { errorCatcher ->
-                    System.setErr(PrintStream(errorCatcher))
+                    System.setErr(PrintStream(errorCatcher, true, oldSystemErr.charset()))
                     logger.info("Starting JFX task: {}", name)
                     val result = jfxCode()
                     logger.info("Finished JFX task: {}", name)
                     if (errorCatcher.size() > 0) {
-                        throw RuntimeException(errorCatcher.toString(StandardCharsets.UTF_8))
+                        throw RuntimeException(errorCatcher.toString(oldSystemErr.charset()))
                     }
                     return@withContext result
                 }
