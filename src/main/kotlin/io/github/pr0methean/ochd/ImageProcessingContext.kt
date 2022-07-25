@@ -24,7 +24,7 @@ class ImageProcessingContext(
     val svgDirectory: File,
     val outTextureRoot: File
 ) {
-    private val tasksWithCanvasLimit = max(1.shl(25) / (tileSize * tileSize), 4)
+    private val tasksWithCanvasLimit = max(1.shl(25) / (tileSize * tileSize), 2)
     private val needSemaphore = tasksWithCanvasLimit < MIN_LIMIT_TO_SKIP_MULTI_SUBTASK_SEMAPHORE
     override fun toString(): String = name
     private val svgTasks: Map<String, SvgImportTask>
