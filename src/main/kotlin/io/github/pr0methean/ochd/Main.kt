@@ -3,6 +3,9 @@ import io.github.pr0methean.ochd.materials.ALL_MATERIALS
 import io.github.pr0methean.ochd.tasks.doJfx
 import javafx.application.Platform
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import org.apache.logging.log4j.LogManager
 import java.nio.file.Paths
@@ -12,6 +15,8 @@ private val logger = run {
     System.setProperty("java.util.logging.manager", "org.apache.logging.log4j.jul.LogManager")
     LogManager.getRootLogger()
 }
+
+@OptIn(ExperimentalCoroutinesApi::class)
 suspend fun main(args:Array<String>) {
     if (args.isEmpty()) {
         println("Usage: main <size>")
@@ -59,7 +64,11 @@ suspend fun main(args:Array<String>) {
         val tasks = ALL_MATERIALS.outputTasks(ctx).toList()
         stats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupJob.join()
-        tasks.map {scope.plus(CoroutineName(it.name)).launch {it.run()}}.joinAll()
+        tasks.asFlow().flowOn(Dispatchers.Default.limitedParallelism(1)).map {
+            val job = scope.plus(CoroutineName(it.name)).launch {it.run()}
+            yield() // Let the new job start before measuring memory again
+            return@map job
+        }.collect(Job::join)
         copyMetadata.join()
     }
     stopMonitoring()
