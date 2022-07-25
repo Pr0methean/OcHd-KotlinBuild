@@ -15,7 +15,7 @@ fun color(web: String): Color = Color.web(web)
 
 fun color(web: String, alpha: Double): Color = Color.web(web, alpha)
 
-private const val MIN_LIMIT_TO_SKIP_MULTI_SUBTASK_SEMAPHORE = 64
+private const val MIN_LIMIT_TO_SKIP_MULTI_SUBTASK_SEMAPHORE = 1
 
 class ImageProcessingContext(
     val name: String,
