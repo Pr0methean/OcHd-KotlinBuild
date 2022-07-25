@@ -8,6 +8,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import org.apache.logging.log4j.LogManager
+import org.apache.logging.log4j.util.Unbox
 import java.lang.management.ManagementFactory
 import java.nio.file.Paths
 import java.util.concurrent.ThreadLocalRandom
@@ -68,10 +69,17 @@ suspend fun main(args:Array<String>) {
         stats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupJob.join()
         tasks.asFlow().flowOn(Dispatchers.Default.limitedParallelism(1)).map {
-            if (ThreadLocalRandom.current().nextBoolean() || freeMemoryBytes() < YIELD_IF_FREE_HEAP_BELOW) {
-                logger.info("Calling yield() before next task launch")
-                System.gc()
+            if (ThreadLocalRandom.current().nextBoolean()) {
+                logger.info("Calling yield() randomly before next task launch")
                 yield()
+            } else {
+                val freeBytes = freeMemoryBytes()
+                if (freeBytes < YIELD_IF_FREE_HEAP_BELOW) {
+                    logger.info("Calling yield() before next task launch because only {} bytes are free",
+                        Unbox.box(freeBytes))
+                    System.gc()
+                    yield()
+                }
             }
             scope.plus(CoroutineName(it.name)).launch {it.run()}
         }.collect(Job::join)
