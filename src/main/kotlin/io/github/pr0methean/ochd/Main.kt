@@ -44,7 +44,7 @@ suspend fun main(args:Array<String>) {
         svgDirectory = svgDirectory,
         outTextureRoot = outTextureRoot
     )
-    doJfx("Increase rendering thread priority", ctx.retryer) {
+    doJfx("Increase rendering thread priority") {
         Thread.currentThread().priority = Thread.MAX_PRIORITY
     }
     val stats = ctx.stats

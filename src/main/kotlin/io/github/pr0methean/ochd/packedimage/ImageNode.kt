@@ -1,9 +1,7 @@
 package io.github.pr0methean.ochd.packedimage
 
 import io.github.pr0methean.ochd.*
-import io.github.pr0methean.ochd.tasks.doJfx
 import javafx.embed.swing.SwingFXUtils
-import javafx.scene.canvas.GraphicsContext
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import kotlinx.coroutines.CoroutineName
@@ -35,11 +33,6 @@ abstract class ImageNode(
         }.also {
             logger.info("Done compressing {}", name)
         }
-    }
-
-    open suspend fun renderTo(out: GraphicsContext, x: Int, y: Int) {
-        val unpacked = unpacked()
-        doJfx("Rendering for $name", retryer) {out.drawImage(unpacked, x.toDouble(), y.toDouble())}
     }
 
     @Suppress("LeakingThis")

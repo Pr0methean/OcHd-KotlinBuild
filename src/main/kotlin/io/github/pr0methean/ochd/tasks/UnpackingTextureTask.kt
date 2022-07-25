@@ -11,7 +11,8 @@ abstract class UnpackingTextureTask(
     open val packer: ImagePacker, scope: CoroutineScope, override val stats: ImageProcessingStats,
     open val retryer: Retryer) : AbstractTextureTask(scope, stats) {
 
-    override suspend fun createImage(): ImageNode = packer.packImage(computeImage(), null, name)
+    override suspend fun createImage(): ImageNode = packer.packImage(
+        retryer.retrying(name){computeImage()}, null, name)
 
     abstract suspend fun computeImage(): Image
 

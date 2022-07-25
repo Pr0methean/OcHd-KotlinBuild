@@ -29,7 +29,7 @@ data class ImageStackingTask(
         val name = layers.toString()
         val layerImages = layers.layers.asFlow().map { it.getImage() }.map(ImageNode::unpacked).toList()
         val output = retryer.retrying("Create WritableImage for $name") {WritableImage(size, size)}
-        return doJfx(name, retryer) {
+        return doJfx(name) {
             val canvas = Canvas(width, height)
             canvas.isCache = true
             val canvasCtx = canvas.graphicsContext2D

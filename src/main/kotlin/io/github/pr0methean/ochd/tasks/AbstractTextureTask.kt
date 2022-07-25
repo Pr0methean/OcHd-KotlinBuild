@@ -1,7 +1,6 @@
 package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.ImageProcessingStats
-import io.github.pr0methean.ochd.Retryer
 import io.github.pr0methean.ochd.packedimage.ImageNode
 import kotlinx.coroutines.*
 import org.apache.logging.log4j.LogManager
@@ -37,8 +36,8 @@ abstract class AbstractTextureTask(open val scope: CoroutineScope,
 }
 
 @Suppress("BlockingMethodInNonBlockingContext")
-suspend fun <T> doJfx(name: String, retryer: Retryer, jfxCode: CoroutineScope.() -> T): T
-        = retryer.retrying(name) { withContext(Dispatchers.Main.plus(CoroutineName(name))) {
+suspend fun <T> doJfx(name: String, jfxCode: CoroutineScope.() -> T): T
+        = withContext(Dispatchers.Main.plus(CoroutineName(name))) {
             val oldSystemErr = System.err
             try {
                 ByteArrayOutputStream().use { errorCatcher ->
@@ -54,4 +53,4 @@ suspend fun <T> doJfx(name: String, retryer: Retryer, jfxCode: CoroutineScope.()
             } finally {
                 System.setErr(oldSystemErr)
             }
-}}
+        }

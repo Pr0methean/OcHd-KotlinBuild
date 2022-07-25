@@ -34,28 +34,28 @@ data class RepaintTask(
 
     override suspend fun computeImage(): Image {
         val unpacked = base.getImage().unpacked()
-        val output = retryer.retrying("Create WritableImage for $name") {
-            WritableImage(unpacked.width.toInt(), unpacked.height.toInt()
-        )}
-        return doJfx(name, retryer) {
-            val canvas = Canvas(unpacked.width, unpacked.height)
-            canvas.isCache = true
-            val gfx = canvas.graphicsContext2D
-            canvas.opacity = alpha
-            if (paint != null) {
-                val colorLayer = ColorInput(0.0, 0.0, unpacked.width, unpacked.height, paint)
-                val blend = Blend()
-                blend.mode = BlendMode.SRC_ATOP
-                blend.topInput = colorLayer
-                blend.bottomInput = null
-                gfx.setEffect(blend)
+        return retryer.retrying(name) {
+            val output = WritableImage(unpacked.width.toInt(), unpacked.height.toInt())
+            return@retrying doJfx(name) {
+                val canvas = Canvas(unpacked.width, unpacked.height)
+                canvas.isCache = true
+                val gfx = canvas.graphicsContext2D
+                canvas.opacity = alpha
+                if (paint != null) {
+                    val colorLayer = ColorInput(0.0, 0.0, unpacked.width, unpacked.height, paint)
+                    val blend = Blend()
+                    blend.mode = BlendMode.SRC_ATOP
+                    blend.topInput = colorLayer
+                    blend.bottomInput = null
+                    gfx.setEffect(blend)
+                }
+                gfx.drawImage(unpacked, 0.0, 0.0)
+                canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
+                if (output.isError) {
+                    throw output.exception
+                }
+                return@doJfx output
             }
-            gfx.drawImage(unpacked, 0.0, 0.0)
-            canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
-            if (output.isError) {
-                throw output.exception
-            }
-            return@doJfx output
         }
     }
 
