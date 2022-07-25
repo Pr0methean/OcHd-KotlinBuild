@@ -8,9 +8,9 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import org.apache.logging.log4j.LogManager
-import org.apache.logging.log4j.util.Unbox
 import java.lang.management.ManagementFactory
 import java.nio.file.Paths
+import java.util.concurrent.ThreadLocalRandom
 import kotlin.system.measureNanoTime
 
 private val logger = run {
@@ -18,7 +18,7 @@ private val logger = run {
     LogManager.getRootLogger()
 }
 private val YIELD_IF_FREE_HEAP_BELOW = 250_000_000L
-
+private val memoryMxBean = ManagementFactory.getMemoryMXBean()
 @OptIn(ExperimentalCoroutinesApi::class)
 suspend fun main(args:Array<String>) {
     if (args.isEmpty()) {
@@ -48,7 +48,6 @@ suspend fun main(args:Array<String>) {
         Thread.currentThread().priority = Thread.MAX_PRIORITY
     }
     val stats = ctx.stats
-    val memoryMxBean = ManagementFactory.getMemoryMXBean()
     startMonitoring(stats, scope)
     val time = measureNanoTime {
         val copyMetadata = ioScope.plus(CoroutineName("Copy metadata files")).launch {
@@ -69,9 +68,8 @@ suspend fun main(args:Array<String>) {
         stats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupJob.join()
         tasks.asFlow().flowOn(Dispatchers.Default.limitedParallelism(1)).map {
-            val freeBytes = memoryMxBean.heapMemoryUsage.max - memoryMxBean.heapMemoryUsage.used
-            if (freeBytes < YIELD_IF_FREE_HEAP_BELOW) {
-                logger.info("Calling yield() before next task launch; only {} bytes free", Unbox.box(freeBytes))
+            if (ThreadLocalRandom.current().nextBoolean() || freeMemoryBytes() < YIELD_IF_FREE_HEAP_BELOW) {
+                logger.info("Calling yield() before next task launch")
                 System.gc()
                 yield()
             }
@@ -85,3 +83,5 @@ suspend fun main(args:Array<String>) {
     logger.info("")
     logger.info("All tasks finished after $time ns")
 }
+
+private fun freeMemoryBytes() = memoryMxBean.heapMemoryUsage.max - memoryMxBean.heapMemoryUsage.used
