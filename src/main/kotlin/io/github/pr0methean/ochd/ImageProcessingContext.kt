@@ -16,6 +16,7 @@ fun color(web: String): Color = Color.web(web)
 fun color(web: String, alpha: Double): Color = Color.web(web, alpha)
 
 private const val MIN_LIMIT_TO_SKIP_MULTI_SUBTASK_SEMAPHORE = 64
+private const val MIN_SEMAPHORE_PERMITS = 8
 
 class ImageProcessingContext(
     val name: String,
@@ -24,7 +25,7 @@ class ImageProcessingContext(
     val svgDirectory: File,
     val outTextureRoot: File
 ) {
-    private val tasksWithCanvasLimit = max(1.shl(25) / (tileSize * tileSize), 2)
+    private val tasksWithCanvasLimit = max(1.shl(25) / (tileSize * tileSize), MIN_SEMAPHORE_PERMITS)
     private val needSemaphore = tasksWithCanvasLimit < MIN_LIMIT_TO_SKIP_MULTI_SUBTASK_SEMAPHORE
     override fun toString(): String = name
     private val svgTasks: Map<String, SvgImportTask>
