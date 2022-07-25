@@ -4,6 +4,7 @@ import io.github.pr0methean.ochd.DEFAULT_SNAPSHOT_PARAMS
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.LayerList
 import io.github.pr0methean.ochd.Retryer
+import io.github.pr0methean.ochd.packedimage.ImageNode
 import io.github.pr0methean.ochd.packedimage.ImagePacker
 import javafx.scene.canvas.Canvas
 import javafx.scene.image.Image
@@ -12,6 +13,7 @@ import javafx.scene.paint.Color
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.toList
 
 data class ImageStackingTask(
     val layers: LayerList,
@@ -25,8 +27,9 @@ data class ImageStackingTask(
     val height = size.toDouble()
     override suspend fun computeImage(): Image {
         val name = layers.toString()
+        val layerImages = layers.layers.asFlow().map { it.getImage() }.map(ImageNode::unpacked).toList()
         val output = retryer.retrying("Create WritableImage for $name") {WritableImage(size, size)}
-        val (canvas, canvasCtx) = doJfx(name, retryer) {
+        return doJfx(name, retryer) {
             val canvas = Canvas(width, height)
             canvas.isCache = true
             val canvasCtx = canvas.graphicsContext2D
@@ -35,10 +38,7 @@ data class ImageStackingTask(
                 canvasCtx.fill = layers.background
                 canvasCtx.fillRect(0.0, 0.0, width, height)
             }
-            return@doJfx canvas to canvasCtx
-        }
-        layers.layers.asFlow().map(TextureTask::getImage).collect {it.renderTo(canvasCtx, 0, 0)}
-        return doJfx(name, retryer) {
+            layerImages.forEach { canvasCtx.drawImage(it, 0.0, 0.0) }
             val snapshot = canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
             if (snapshot.isError) {
                 throw snapshot.exception

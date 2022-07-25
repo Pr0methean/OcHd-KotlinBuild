@@ -5,13 +5,17 @@ import io.github.pr0methean.ochd.tasks.*
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.sync.Semaphore
 import java.io.File
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.math.max
 
 fun color(web: String): Color = Color.web(web)
 
 fun color(web: String, alpha: Double): Color = Color.web(web, alpha)
+
+private const val MIN_LIMIT_TO_SKIP_MULTI_SUBTASK_SEMAPHORE = 1
 
 class ImageProcessingContext(
     val name: String,
@@ -20,9 +24,12 @@ class ImageProcessingContext(
     val svgDirectory: File,
     val outTextureRoot: File
 ) {
+    private val tasksWithCanvasLimit = max(1.shl(25) / (tileSize * tileSize), MIN_SEMAPHORE_PERMITS)
+    private val needSemaphore = tasksWithCanvasLimit < MIN_LIMIT_TO_SKIP_MULTI_SUBTASK_SEMAPHORE
     override fun toString(): String = name
     private val svgTasks: Map<String, SvgImportTask>
     private val taskDeduplicationMap = ConcurrentHashMap<TextureTask, TextureTask>()
+    private val canvasSemaphore = if (needSemaphore) Semaphore(tasksWithCanvasLimit) else null
     val stats = ImageProcessingStats()
     val retryer = Retryer(stats)
     val packer = ImagePacker(scope, retryer, stats)
@@ -71,17 +78,17 @@ class ImageProcessingContext(
         if ((paint == Color.BLACK || paint == null) && alpha == 1.0) {
             return source
         }
-        return deduplicate(RepaintTask(paint, source, alpha, packer, scope, stats, retryer))
+        return deduplicate(RepaintTask(paint, source, alpha, packer, scope, stats, retryer, canvasSemaphore))
     }
 
     fun stack(init: LayerListBuilder.() -> Unit): TextureTask {
         val layerTasks = LayerListBuilder(this)
         layerTasks.init()
-        return deduplicate(ImageStackingTask(layerTasks.build(), tileSize, packer, scope, stats, retryer))
+        return deduplicate(ImageStackingTask(layerTasks.build(), tileSize, packer, scope, stats, retryer, canvasSemaphore))
     }
 
     fun animate(frames: List<TextureTask>): TextureTask {
-        return deduplicate(AnimationColumnTask(frames, tileSize, packer, scope, stats, retryer))
+        return deduplicate(AnimationColumnTask(frames, tileSize, packer, scope, stats, retryer, canvasSemaphore))
     }
 
     fun out(name: String, source: TextureTask): OutputTask {

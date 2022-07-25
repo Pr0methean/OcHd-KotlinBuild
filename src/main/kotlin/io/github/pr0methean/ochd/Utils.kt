@@ -2,6 +2,8 @@ package io.github.pr0methean.ochd
 
 import javafx.scene.SnapshotParameters
 import javafx.scene.paint.Color
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import org.apache.logging.log4j.util.StringBuilderFormattable
 
 fun c(value: Int): Color = Color.rgb(
@@ -22,3 +24,4 @@ fun StringBuilder.appendList(list: List<StringBuilderFormattable>, delim: String
     return this
 }
 
+suspend fun <T> Semaphore?.withPermitIfNeeded(block: suspend () -> T): T = this?.withPermit { block() } ?: block()
