@@ -1,9 +1,6 @@
 package io.github.pr0methean.ochd.tasks
 
-import io.github.pr0methean.ochd.DEFAULT_SNAPSHOT_PARAMS
-import io.github.pr0methean.ochd.ImageProcessingStats
-import io.github.pr0methean.ochd.LayerList
-import io.github.pr0methean.ochd.Retryer
+import io.github.pr0methean.ochd.*
 import io.github.pr0methean.ochd.packedimage.ImageNode
 import io.github.pr0methean.ochd.packedimage.ImagePacker
 import javafx.scene.canvas.Canvas
@@ -15,7 +12,6 @@ import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
 
 data class ImageStackingTask(
     val layers: LayerList,
@@ -32,7 +28,7 @@ data class ImageStackingTask(
         val name = layers.toString()
         val layerImages = layers.layers.asFlow().map { it.getImage() }.map(ImageNode::unpacked).toList()
         val output = WritableImage(size, size)
-        val snapshot = doJfx(name, retryer) {
+        val snapshot = canvasSemaphore.withPermitIfNeeded { doJfx(name, retryer) {
             val canvas = Canvas(width, height)
             canvas.isCache = true
             val canvasCtx = canvas.graphicsContext2D
@@ -47,15 +43,8 @@ data class ImageStackingTask(
                 throw snapshot.exception
             }
             return@doJfx snapshot
-        }
+        }}
         return snapshot
-    }
-
-    override suspend fun createImage(): ImageNode {
-        canvasSemaphore?.withPermit {
-            return@withPermit super.createImage()
-        }
-        return super.createImage()
     }
 
     override fun formatTo(buffer: StringBuilder) {

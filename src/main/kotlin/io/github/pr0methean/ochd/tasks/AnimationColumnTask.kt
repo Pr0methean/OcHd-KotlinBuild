@@ -1,9 +1,6 @@
 package io.github.pr0methean.ochd.tasks
 
-import io.github.pr0methean.ochd.DEFAULT_SNAPSHOT_PARAMS
-import io.github.pr0methean.ochd.ImageProcessingStats
-import io.github.pr0methean.ochd.Retryer
-import io.github.pr0methean.ochd.appendList
+import io.github.pr0methean.ochd.*
 import io.github.pr0methean.ochd.packedimage.ImageNode
 import io.github.pr0methean.ochd.packedimage.ImagePacker
 import javafx.scene.canvas.Canvas
@@ -15,7 +12,6 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.withIndex
 import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
 
 data class AnimationColumnTask(
     private val frames: List<TextureTask>, val width: Int,
@@ -31,7 +27,7 @@ data class AnimationColumnTask(
             .withIndex()
             .toList()
         val output = WritableImage(width, height)
-        doJfx("snapshot for $name", retryer) {
+        canvasSemaphore.withPermitIfNeeded {doJfx("snapshot for $name", retryer) {
             val canvas = Canvas(width.toDouble(), height.toDouble())
             canvas.isCache = true
             val canvasCtx = canvas.graphicsContext2D
@@ -40,15 +36,8 @@ data class AnimationColumnTask(
             if (output.isError) {
                 throw output.exception
             }
-        }
+        }}
         return output
-    }
-
-    override suspend fun createImage(): ImageNode {
-        canvasSemaphore?.withPermit {
-            return super.createImage()
-        }
-        return super.createImage()
     }
 
     override fun formatTo(buffer: StringBuilder) {

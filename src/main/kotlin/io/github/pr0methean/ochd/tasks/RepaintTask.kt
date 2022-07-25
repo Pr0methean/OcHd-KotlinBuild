@@ -5,6 +5,7 @@ import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.Retryer
 import io.github.pr0methean.ochd.packedimage.ImageNode
 import io.github.pr0methean.ochd.packedimage.ImagePacker
+import io.github.pr0methean.ochd.withPermitIfNeeded
 import javafx.scene.canvas.Canvas
 import javafx.scene.effect.Blend
 import javafx.scene.effect.BlendMode
@@ -40,28 +41,30 @@ data class RepaintTask(
 
     override suspend fun computeImage(): Image {
         val unpacked = base.getImage().unpacked()
-        val output = WritableImage(unpacked.width.toInt(), unpacked.height.toInt())
-        val snapshot = doJfx(name, retryer) {
-            val canvas = Canvas(unpacked.width, unpacked.height)
-            canvas.isCache = true
-            val gfx = canvas.graphicsContext2D
-            canvas.opacity = alpha
-            if (paint != null) {
-                val colorLayer = ColorInput(0.0, 0.0, unpacked.width, unpacked.height, paint)
-                val blend = Blend()
-                blend.mode = BlendMode.SRC_ATOP
-                blend.topInput = colorLayer
-                blend.bottomInput = null
-                gfx.setEffect(blend)
+        return canvasSemaphore.withPermitIfNeeded {
+            val output = WritableImage(unpacked.width.toInt(), unpacked.height.toInt())
+            val snapshot = doJfx(name, retryer) {
+                val canvas = Canvas(unpacked.width, unpacked.height)
+                canvas.isCache = true
+                val gfx = canvas.graphicsContext2D
+                canvas.opacity = alpha
+                if (paint != null) {
+                    val colorLayer = ColorInput(0.0, 0.0, unpacked.width, unpacked.height, paint)
+                    val blend = Blend()
+                    blend.mode = BlendMode.SRC_ATOP
+                    blend.topInput = colorLayer
+                    blend.bottomInput = null
+                    gfx.setEffect(blend)
+                }
+                gfx.drawImage(unpacked, 0.0, 0.0)
+                canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
+                if (output.isError) {
+                    throw output.exception
+                }
+                return@doJfx output
             }
-            gfx.drawImage(unpacked, 0.0, 0.0)
-            canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
-            if (output.isError) {
-                throw output.exception
-            }
-            return@doJfx output
+            return@withPermitIfNeeded snapshot
         }
-        return snapshot
     }
 
     override fun formatTo(buffer: StringBuilder) {
