@@ -25,7 +25,7 @@ data class ImageStackingTask(
     val height = size.toDouble()
     override suspend fun computeImage(): Image {
         val name = layers.toString()
-        val output = WritableImage(size, size)
+        val output = retryer.retrying("Create WritableImage for $name") {WritableImage(size, size)}
         val (canvas, canvasCtx) = doJfx(name, retryer) {
             val canvas = Canvas(width, height)
             canvas.isCache = true

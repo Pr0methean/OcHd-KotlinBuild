@@ -30,7 +30,7 @@ data class AnimationColumnTask(
             return@doJfx canvas to canvasCtx
         }
         framesIndexed.collect { it.value.renderTo(canvasCtx, 0, width * it.index) }
-        val output = WritableImage(width, height)
+        val output = retryer.retrying("Create WritableImage for $name") {WritableImage(width, height)}
         doJfx(name, retryer) {
             canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
             if (output.isError) {

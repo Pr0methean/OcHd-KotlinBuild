@@ -34,7 +34,9 @@ data class RepaintTask(
 
     override suspend fun computeImage(): Image {
         val unpacked = base.getImage().unpacked()
-        val output = WritableImage(unpacked.width.toInt(), unpacked.height.toInt())
+        val output = retryer.retrying("Create WritableImage for $name") {
+            WritableImage(unpacked.width.toInt(), unpacked.height.toInt()
+        )}
         return doJfx(name, retryer) {
             val canvas = Canvas(unpacked.width, unpacked.height)
             canvas.isCache = true

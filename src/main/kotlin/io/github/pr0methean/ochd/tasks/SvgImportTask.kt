@@ -64,8 +64,10 @@ data class SvgImportTask(
                                     KEY_HEIGHT to tileSize.toFloat()
                                 )
                             )
-                            transcoder.transcode(input, output)
-                            transcoder.takeLastImage()!!
+                            retryer.retrying(shortName) {
+                                transcoder.transcode(input, output)
+                                transcoder.takeLastImage()!!
+                            }
                         }
                         return@retrying packer.packImage(SwingFXUtils.toFXImage(image, null),
                             outStream.toByteArray(), shortName)
