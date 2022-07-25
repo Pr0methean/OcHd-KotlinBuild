@@ -14,14 +14,17 @@ import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.flow.withIndex
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 
 data class AnimationColumnTask(
     private val frames: List<TextureTask>, val width: Int,
     override val packer: ImagePacker, override val scope: CoroutineScope, override val stats: ImageProcessingStats,
-    override val retryer: Retryer
+    override val retryer: Retryer,
+    val canvasSemaphore: Semaphore?
 ): UnpackingTextureTask(packer, scope, stats, retryer) {
+    val height = width * frames.size
     override suspend fun computeImage(): Image {
-        val height = width * frames.size
         val frameImages = frames.asFlow()
             .map(TextureTask::getImage)
             .map(ImageNode::unpacked)
@@ -32,13 +35,20 @@ data class AnimationColumnTask(
             val canvas = Canvas(width.toDouble(), height.toDouble())
             canvas.isCache = true
             val canvasCtx = canvas.graphicsContext2D
-            frameImages.forEach {canvasCtx.drawImage(it.value, 0.0, (height * it.index).toDouble())}
+            frameImages.forEach { canvasCtx.drawImage(it.value, 0.0, (height * it.index).toDouble()) }
             canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
             if (output.isError) {
                 throw output.exception
             }
         }
         return output
+    }
+
+    override suspend fun createImage(): ImageNode {
+        canvasSemaphore?.withPermit {
+            return super.createImage()
+        }
+        return super.createImage()
     }
 
     override fun formatTo(buffer: StringBuilder) {

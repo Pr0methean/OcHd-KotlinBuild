@@ -5,8 +5,6 @@ import io.github.pr0methean.ochd.Retryer
 import io.github.pr0methean.ochd.packedimage.ImageNode
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.sync.Semaphore
-import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.StringBuilderFormattable
@@ -16,17 +14,12 @@ private val logger = LogManager.getLogger("OutputTask")
 class OutputTask(val producer: TextureTask,
                  val name: String,
                  private val file: File,
-                 private val semaphore: Semaphore?,
                  val stats: ImageProcessingStats,
                  val retryer: Retryer,
 ): StringBuilderFormattable {
 
     suspend fun run() {
-        if (semaphore == null || producer.isStarted()) {
-            invoke()
-        } else {
-            semaphore.withPermit{invoke()}
-        }
+        invoke()
     }
 
     private suspend fun invoke() {

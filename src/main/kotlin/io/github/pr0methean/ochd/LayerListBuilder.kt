@@ -1,6 +1,5 @@
 package io.github.pr0methean.ochd
 
-import io.github.pr0methean.ochd.tasks.ImageStackingTask
 import io.github.pr0methean.ochd.tasks.TextureTask
 import io.github.pr0methean.ochd.tasks.TopPartCroppingTask
 import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
@@ -48,7 +47,7 @@ class LayerListBuilder(val ctx: ImageProcessingContext) {
             }
         }
         if (source.layers.size > 1) { // Don't flatten sub-stacks since we want to deduplicate them
-            copy(ImageStackingTask(source, ctx.tileSize, ctx.packer, ctx.scope, ctx.stats, ctx.retryer))
+            copy(ctx.stack { addAll(source.layers) })
         } else {
             addAll(source.layers)
         }

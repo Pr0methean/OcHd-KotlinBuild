@@ -9,25 +9,36 @@ import javafx.scene.canvas.Canvas
 import javafx.scene.effect.Blend
 import javafx.scene.effect.BlendMode
 import javafx.scene.effect.ColorInput
+import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 import org.apache.logging.log4j.util.Unbox
 
 data class RepaintTask(
     val paint: Paint?,
     val base: TextureTask,
     val alpha: Double = 1.0,
-    val packer: ImagePacker,
+    override val packer: ImagePacker,
     override val scope: CoroutineScope,
     override val stats: ImageProcessingStats,
-    val retryer: Retryer,
-) : AbstractTextureTask(scope, stats) {
+    override val retryer: Retryer,
+    val canvasSemaphore: Semaphore?,
+) : UnpackingTextureTask(packer, scope, stats, retryer) {
 
     override suspend fun createImage(): ImageNode {
         if (paint == null && alpha == 1.0) {
             return base.getImage()
         }
+        canvasSemaphore?.withPermit {
+            return super.createImage()
+        }
+        return super.createImage()
+    }
+
+    override suspend fun computeImage(): Image {
         val unpacked = base.getImage().unpacked()
         val output = WritableImage(unpacked.width.toInt(), unpacked.height.toInt())
         val snapshot = doJfx(name, retryer) {
@@ -50,7 +61,7 @@ data class RepaintTask(
             }
             return@doJfx output
         }
-        return packer.packImage(snapshot, null, name)
+        return snapshot
     }
 
     override fun formatTo(buffer: StringBuilder) {
