@@ -8,6 +8,8 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import org.apache.logging.log4j.LogManager
+import org.apache.logging.log4j.util.Unbox
+import java.lang.management.ManagementFactory
 import java.nio.file.Paths
 import kotlin.system.measureNanoTime
 
@@ -15,6 +17,7 @@ private val logger = run {
     System.setProperty("java.util.logging.manager", "org.apache.logging.log4j.jul.LogManager")
     LogManager.getRootLogger()
 }
+private val YIELD_IF_FREE_HEAP_BELOW = 250_000_000L
 
 @OptIn(ExperimentalCoroutinesApi::class)
 suspend fun main(args:Array<String>) {
@@ -45,6 +48,7 @@ suspend fun main(args:Array<String>) {
         Thread.currentThread().priority = Thread.MAX_PRIORITY
     }
     val stats = ctx.stats
+    val memoryMxBean = ManagementFactory.getMemoryMXBean()
     startMonitoring(stats, scope)
     val time = measureNanoTime {
         val copyMetadata = ioScope.plus(CoroutineName("Copy metadata files")).launch {
@@ -65,9 +69,13 @@ suspend fun main(args:Array<String>) {
         stats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupJob.join()
         tasks.asFlow().flowOn(Dispatchers.Default.limitedParallelism(1)).map {
-            val job = scope.plus(CoroutineName(it.name)).launch {it.run()}
-            yield() // Let the new job start before measuring memory again
-            return@map job
+            val freeBytes = memoryMxBean.heapMemoryUsage.max - memoryMxBean.heapMemoryUsage.used
+            if (freeBytes < YIELD_IF_FREE_HEAP_BELOW) {
+                logger.info("Calling yield() before next task launch; only {} bytes free", Unbox.box(freeBytes))
+                System.gc()
+                yield()
+            }
+            scope.plus(CoroutineName(it.name)).launch {it.run()}
         }.collect(Job::join)
         copyMetadata.join()
     }
