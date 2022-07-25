@@ -37,7 +37,7 @@ private class ImageRetainingTranscoder: PNGTranscoder() {
 }
 
 data class SvgImportTask(
-    val shortName: String,
+    override val name: String,
     private val tileSize: Int,
     val file: File,
     val scope: CoroutineScope,
@@ -48,9 +48,9 @@ data class SvgImportTask(
 
     private val coroutine: Deferred<ImageNode> by lazy {
         scope.plus(batikTranscoder.asContextElement())
-                .async(CoroutineName("SvgImportTask for $shortName"), start = CoroutineStart.LAZY) {
-            stats.onTaskLaunched("SvgImportTask", shortName)
-            val result = retryer.retrying(shortName) {
+                .async(CoroutineName("SvgImportTask for $name"), start = CoroutineStart.LAZY) {
+            stats.onTaskLaunched("SvgImportTask", name)
+            val result = retryer.retrying(name) {
                 val transcoder = batikTranscoder.get()
                 ByteArrayOutputStream().use { outStream ->
                     val output = TranscoderOutput(outStream)
@@ -66,22 +66,23 @@ data class SvgImportTask(
                         transcoder.takeLastImage()!!
                     }
                     return@retrying packer.packImage(SwingFXUtils.toFXImage(image, null),
-                        outStream.toByteArray(), shortName)
+                        outStream.toByteArray(), name)
                 }
             }
-            stats.onTaskCompleted("SvgImportTask", shortName)
+            stats.onTaskCompleted("SvgImportTask", name)
             result
         }
     }
     override fun isComplete(): Boolean = coroutine.isCompleted
     override fun isStarted(): Boolean = coroutine.isActive || coroutine.isCompleted
+    override fun dependencies(): Collection<Task> = listOf()
 
     override suspend fun getImage(): ImageNode = coroutine.await()
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun getImageNow(): ImageNode? = if (coroutine.isCompleted) coroutine.getCompleted() else null
 
-    override fun toString(): String = shortName
+    override fun toString(): String = name
     override fun formatTo(buffer: StringBuilder) {
-        buffer.append(shortName)
+        buffer.append(name)
     }
 }

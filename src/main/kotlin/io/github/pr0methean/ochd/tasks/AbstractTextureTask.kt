@@ -20,7 +20,7 @@ abstract class AbstractTextureTask(open val scope: CoroutineScope,
             image
         }
     }
-    val name by lazy { StringBuilder().also { formatTo(it) }.toString() }
+    override val name by lazy { StringBuilder().also { formatTo(it) }.toString() }
 
     override fun isComplete() = coroutine.isCompleted
     override fun isStarted(): Boolean = coroutine.isActive || coroutine.isCompleted

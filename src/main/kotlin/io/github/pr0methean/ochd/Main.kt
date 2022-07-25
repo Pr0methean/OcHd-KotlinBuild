@@ -11,15 +11,20 @@ import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox
 import java.lang.management.ManagementFactory
 import java.nio.file.Paths
-import java.util.concurrent.ThreadLocalRandom
 import kotlin.system.measureNanoTime
+import kotlin.time.Duration.Companion.seconds
 
 private val logger = run {
     System.setProperty("java.util.logging.manager", "org.apache.logging.log4j.jul.LogManager")
     LogManager.getRootLogger()
 }
-private val YIELD_IF_FREE_HEAP_BELOW = 250_000_000L
+private val INITIALIZATION_DELAY = 5.seconds
+private val NEW_TASK_FREE_MEMORY_THRESHOLD = 1_000_000_000L
 private val memoryMxBean = ManagementFactory.getMemoryMXBean()
+private fun freeMemoryBytes() = memoryMxBean.heapMemoryUsage.max - memoryMxBean.heapMemoryUsage.used
+
+
+@Suppress("UnstableApiUsage")
 @OptIn(ExperimentalCoroutinesApi::class)
 suspend fun main(args:Array<String>) {
     if (args.isEmpty()) {
@@ -68,20 +73,16 @@ suspend fun main(args:Array<String>) {
         val tasks = ALL_MATERIALS.outputTasks(ctx).toList()
         stats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupJob.join()
-        tasks.asFlow().flowOn(Dispatchers.Default.limitedParallelism(1)).map {
-            if (ThreadLocalRandom.current().nextBoolean()) {
-                logger.info("Calling yield() randomly before next task launch")
+        tasks.asFlow().flowOn(Dispatchers.Default.limitedParallelism(1)).map {task ->
+            val job = scope.plus(CoroutineName(task.name)).launch { task.run() }
+            delay(INITIALIZATION_DELAY)
+            val freeBytes = freeMemoryBytes()
+            while (freeBytes < NEW_TASK_FREE_MEMORY_THRESHOLD && !task.isComplete()) {
+                logger.debug("Yielding because task {} is still in progress and only {} bytes are free",
+                        task, Unbox.box(freeBytes))
                 yield()
-            } else {
-                val freeBytes = freeMemoryBytes()
-                if (freeBytes < YIELD_IF_FREE_HEAP_BELOW) {
-                    logger.info("Calling yield() before next task launch because only {} bytes are free",
-                        Unbox.box(freeBytes))
-                    System.gc()
-                    yield()
-                }
             }
-            scope.plus(CoroutineName(it.name)).launch {it.run()}
+            job
         }.collect(Job::join)
         copyMetadata.join()
     }
@@ -91,5 +92,3 @@ suspend fun main(args:Array<String>) {
     logger.info("")
     logger.info("All tasks finished after $time ns")
 }
-
-private fun freeMemoryBytes() = memoryMxBean.heapMemoryUsage.max - memoryMxBean.heapMemoryUsage.used
