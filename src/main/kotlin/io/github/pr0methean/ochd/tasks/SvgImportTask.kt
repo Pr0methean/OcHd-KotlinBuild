@@ -16,7 +16,6 @@ import org.apache.batik.transcoder.image.PNGTranscoder
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import java.io.File
-import java.io.FileInputStream
 
 // svgSalamander doesn't seem to be thread-safe even when loaded in a ThreadLocal<ClassLoader>
 private val batikTranscoder: ThreadLocal<ImageRetainingTranscoder> = ThreadLocal.withInitial {ImageRetainingTranscoder()}
@@ -55,23 +54,19 @@ data class SvgImportTask(
                 val transcoder = batikTranscoder.get()
                 ByteArrayOutputStream().use { outStream ->
                     val output = TranscoderOutput(outStream)
-                    FileInputStream(file).use {
-                        val input = TranscoderInput(file.toURI().toString())
-                        val image = transcoder.mutex.withLock {
-                            transcoder.setTranscodingHints(
-                                mapOf(
-                                    KEY_WIDTH to tileSize.toFloat(),
-                                    KEY_HEIGHT to tileSize.toFloat()
-                                )
+                    val input = TranscoderInput(file.toURI().toString())
+                    val image = transcoder.mutex.withLock {
+                        transcoder.setTranscodingHints(
+                            mapOf(
+                                KEY_WIDTH to tileSize.toFloat(),
+                                KEY_HEIGHT to tileSize.toFloat()
                             )
-                            retryer.retrying(shortName) {
-                                transcoder.transcode(input, output)
-                                transcoder.takeLastImage()!!
-                            }
-                        }
-                        return@retrying packer.packImage(SwingFXUtils.toFXImage(image, null),
-                            outStream.toByteArray(), shortName)
+                        )
+                        transcoder.transcode(input, output)
+                        transcoder.takeLastImage()!!
                     }
+                    return@retrying packer.packImage(SwingFXUtils.toFXImage(image, null),
+                        outStream.toByteArray(), shortName)
                 }
             }
             stats.onTaskCompleted("SvgImportTask", shortName)
