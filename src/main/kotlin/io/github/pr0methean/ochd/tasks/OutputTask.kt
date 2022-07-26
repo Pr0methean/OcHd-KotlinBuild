@@ -2,6 +2,7 @@ package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.StrongAsyncLazy
+import io.github.pr0methean.ochd.packedimage.PackedImage
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -43,12 +44,19 @@ class OutputTask(private val producer: TextureTask,
         }
     }
     override suspend fun run() = result.get().getOrThrow()
-    override suspend fun join(): Result<Unit> = result.get()
+    override suspend fun join(): Result<Unit>  = result.get()
+
+    override fun clearResult() {
+        result.set(null)
+    }
 
     override fun isComplete(): Boolean = completed
 
     override fun isStarted(): Boolean = started
+
     override fun isFailed(): Boolean = result.getNow()?.isFailure != true
+
+    override fun dependencies(): Collection<Task<PackedImage>> = listOf(producer)
 
     override fun toString(): String = "Output of $name"
     override fun formatTo(buffer: StringBuilder) {

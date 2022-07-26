@@ -86,8 +86,12 @@ data class SvgImportTask(
     override fun isComplete(): Boolean = result.getNow() != null
     override fun isStarted(): Boolean = result.isStarted()
     override fun isFailed(): Boolean = result.getNow()?.isFailure == true
+    override fun dependencies(): Collection<Task<*>> = listOf()
 
     override suspend fun join(): Result<PackedImage> = result.get()
+    override fun clearResult() {
+        result.set(null)
+    }
 
     override suspend fun getImage(): PackedImage = result.get().getOrThrow()
     @OptIn(ExperimentalCoroutinesApi::class)

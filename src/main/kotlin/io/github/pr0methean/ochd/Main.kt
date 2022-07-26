@@ -80,6 +80,7 @@ suspend fun main(args:Array<String>) {
                     tasks.remove(it)
                 } else {
                     logger.error("Error in {}", it, result.exceptionOrNull())
+                    it.reset()
                 }
             }
         }
