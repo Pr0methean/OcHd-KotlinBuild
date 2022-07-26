@@ -4,7 +4,6 @@ import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.tasks.doJfx
 import javafx.application.Platform
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.toList
 import org.apache.logging.log4j.LogManager
 import java.nio.file.Paths
@@ -74,7 +73,7 @@ suspend fun main(args:Array<String>) {
             tasks.map {
                 scope.plus(CoroutineName(it.name)).launch { it.run() }
                 it
-            }.asFlow().collect {
+            }.toList().forEach {
                 val result = it.join()
                 if (result.isFailure) {
                     it.clearFailure()
