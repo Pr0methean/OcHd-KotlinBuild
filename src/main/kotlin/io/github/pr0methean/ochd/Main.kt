@@ -68,7 +68,9 @@ suspend fun main(args:Array<String>) {
         stats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupJob.join()
         tasks.asFlow().flowOn(Dispatchers.Default.limitedParallelism(1)).map {
-            scope.plus(CoroutineName(it.name)).launch { it.run() }
+            withContext(MEMORY_INTENSE_COROUTINE_CONTEXT) {
+                scope.plus(CoroutineName(it.name)).launch { it.run() }
+            }
         }.collect(Job::join)
         copyMetadata.join()
     }
