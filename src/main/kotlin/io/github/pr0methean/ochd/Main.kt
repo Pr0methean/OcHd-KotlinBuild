@@ -1,16 +1,11 @@
 package io.github.pr0methean.ochd
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
-import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.tasks.doJfx
 import javafx.application.Platform
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.flowOn
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.flow.*
 import org.apache.logging.log4j.LogManager
 import java.nio.file.Paths
-import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.Executors
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
@@ -68,31 +63,30 @@ suspend fun main(args:Array<String>) {
             stats.onTaskCompleted("Copy metadata files", "Copy metadata files")
         }
         stats.onTaskLaunched("Build task graph", "Build task graph")
-        var tasks = ALL_MATERIALS.outputTasks(ctx).toList().toCollection(ConcurrentLinkedQueue())
+        var tasks = ALL_MATERIALS.outputTasks(ctx)
         stats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupJob.join()
-        while (tasks.isNotEmpty()) {
-            val currentTasks = ConcurrentLinkedQueue(tasks)
-            val tasksToRetry = ConcurrentLinkedQueue<OutputTask>()
-            tasks.asFlow().flowOn(Dispatchers.Default.limitedParallelism(1)).map {
+        var retrying = false
+        while (tasks.firstOrNull() != null) {
+            if (retrying) {
+                logger.info("Retrying these failed tasks: {}", tasks)
+                System.gc()
+            }
+            tasks = tasks.flowOn(Dispatchers.Default.limitedParallelism(1)).map {
                 scope.plus(CoroutineName(it.name)).launch { it.run() }
                 it
-            }.collect {
+            }.filter {
                 val result = it.join()
                 if (result.isFailure) {
                     it.clearFailure()
                     stats.retries.increment()
                     logger.error("Error in {}", it, result.exceptionOrNull())
-                    tasksToRetry.add(it)
+                    true
                 } else {
-                    currentTasks.remove(it)
+                    false
                 }
-            }
-            tasks = tasksToRetry
-            if (tasksToRetry.isNotEmpty()) {
-                logger.info("Retrying these failed tasks: {}", tasksToRetry)
-                System.gc()
-            }
+            }.toList().asFlow()
+            retrying = true
         }
         copyMetadata.join()
     }
