@@ -1,6 +1,7 @@
 package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.ImageProcessingStats
+import io.github.pr0methean.ochd.MEMORY_INTENSE_COROUTINE_CONTEXT
 import io.github.pr0methean.ochd.Retryer
 import io.github.pr0methean.ochd.packedimage.ImageNode
 import io.github.pr0methean.ochd.packedimage.ImagePacker
@@ -55,18 +56,22 @@ data class SvgImportTask(
                 ByteArrayOutputStream().use { outStream ->
                     val output = TranscoderOutput(outStream)
                     val input = TranscoderInput(file.toURI().toString())
-                    val image = transcoder.mutex.withLock {
-                        transcoder.setTranscodingHints(
-                            mapOf(
-                                KEY_WIDTH to tileSize.toFloat(),
-                                KEY_HEIGHT to tileSize.toFloat()
+                    withContext(MEMORY_INTENSE_COROUTINE_CONTEXT) {
+                        val image = transcoder.mutex.withLock {
+                            transcoder.setTranscodingHints(
+                                mapOf(
+                                    KEY_WIDTH to tileSize.toFloat(),
+                                    KEY_HEIGHT to tileSize.toFloat()
+                                )
                             )
+                            transcoder.transcode(input, output)
+                            transcoder.takeLastImage()!!
+                        }
+                        return@withContext packer.packImage(
+                            SwingFXUtils.toFXImage(image, null),
+                            outStream.toByteArray(), name
                         )
-                        transcoder.transcode(input, output)
-                        transcoder.takeLastImage()!!
                     }
-                    return@retrying packer.packImage(SwingFXUtils.toFXImage(image, null),
-                        outStream.toByteArray(), name)
                 }
             }
             stats.onTaskCompleted("SvgImportTask", name)
