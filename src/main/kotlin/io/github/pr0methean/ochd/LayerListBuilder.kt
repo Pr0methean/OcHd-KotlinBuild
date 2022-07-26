@@ -54,7 +54,7 @@ class LayerListBuilder(val ctx: ImageProcessingContext) {
     }
     fun copy(source: SingleTextureMaterial) 
             = copy(LayerListBuilder(ctx).also {source.run {createTextureLayers()}}.build())
-    fun copyTopOf(source: TextureTask) = copy(TopPartCroppingTask(source, ctx.tileSize, ctx.packer, ctx.scope, ctx.stats, ctx.retryer))
+    fun copyTopOf(source: TextureTask) = copy(TopPartCroppingTask(source, ctx.tileSize, ctx.packer, ctx.scope, ctx.stats))
     fun copyTopOf(source: LayerListBuilder.() -> Unit) = copyTopOf(ctx.stack(source))
     fun copy(element: TextureTask) = layers.add(ctx.deduplicate(element))
     fun addAll(elements: Collection<TextureTask>) = layers.addAll(elements.map(ctx::deduplicate))

@@ -1,14 +1,13 @@
 package io.github.pr0methean.ochd.packedimage
 
 import io.github.pr0methean.ochd.ImageProcessingStats
-import io.github.pr0methean.ochd.Retryer
 import javafx.scene.image.Image
 import kotlinx.coroutines.CoroutineScope
 
 const val MAX_UNCOMPRESSED_TILESIZE = 512
 
 class ImagePacker(
-    val scope: CoroutineScope, private val retryer: Retryer, private val stats: ImageProcessingStats
+    val scope: CoroutineScope, private val stats: ImageProcessingStats
 ) {
 
     /**
@@ -20,7 +19,6 @@ class ImagePacker(
             initialPng,
             name,
             scope,
-            retryer,
             stats,
             this)
     }

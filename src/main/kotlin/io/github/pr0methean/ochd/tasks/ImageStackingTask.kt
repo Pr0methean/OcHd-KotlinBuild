@@ -1,6 +1,9 @@
 package io.github.pr0methean.ochd.tasks
 
-import io.github.pr0methean.ochd.*
+import io.github.pr0methean.ochd.DEFAULT_SNAPSHOT_PARAMS
+import io.github.pr0methean.ochd.ImageProcessingStats
+import io.github.pr0methean.ochd.LayerList
+import io.github.pr0methean.ochd.MEMORY_INTENSE_COROUTINE_CONTEXT
 import io.github.pr0methean.ochd.packedimage.ImagePacker
 import io.github.pr0methean.ochd.packedimage.PackedImage
 import javafx.scene.canvas.Canvas
@@ -18,16 +21,15 @@ data class ImageStackingTask(
     val size: Int,
     override val packer: ImagePacker,
     override val scope: CoroutineScope,
-    override val stats: ImageProcessingStats,
-    override val retryer: Retryer
-): UnpackingTextureTask(packer, scope, stats, retryer) {
+    override val stats: ImageProcessingStats
+): UnpackingTextureTask(packer, scope, stats) {
     val width = size.toDouble()
     val height = size.toDouble()
     override suspend fun computeImage(): Image {
         val name = layers.toString()
         return withContext(MEMORY_INTENSE_COROUTINE_CONTEXT) {
             val layerImages = layers.layers.asFlow().map { it.getImage() }.map(PackedImage::unpacked).toList()
-            val output = retryer.retrying("Create WritableImage for $name") { WritableImage(size, size) }
+            val output = WritableImage(size, size)
             return@withContext doJfx(name) {
                 val canvas = Canvas(width, height)
                 canvas.isCache = true

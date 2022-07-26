@@ -2,7 +2,6 @@ package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.MEMORY_INTENSE_COROUTINE_CONTEXT
-import io.github.pr0methean.ochd.Retryer
 import io.github.pr0methean.ochd.StrongAsyncLazy
 import io.github.pr0methean.ochd.packedimage.ImagePacker
 import io.github.pr0methean.ochd.packedimage.PackedImage
@@ -48,7 +47,6 @@ data class SvgImportTask(
     private val tileSize: Int,
     val file: File,
     val scope: CoroutineScope,
-    val retryer: Retryer,
     val stats: ImageProcessingStats,
     val packer: ImagePacker
 ): TextureTask {

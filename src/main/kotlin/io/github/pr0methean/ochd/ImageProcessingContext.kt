@@ -24,8 +24,7 @@ class ImageProcessingContext(
     private val svgTasks: Map<String, SvgImportTask>
     private val taskDeduplicationMap = ConcurrentHashMap<TextureTask, TextureTask>()
     val stats = ImageProcessingStats()
-    val retryer = Retryer(stats)
-    val packer = ImagePacker(scope, retryer, stats)
+    val packer = ImagePacker(scope, stats)
 
     init {
         val builder = mutableMapOf<String, SvgImportTask>()
@@ -36,7 +35,6 @@ class ImageProcessingContext(
                 tileSize,
                 svgDirectory.resolve("$shortName.svg"),
                 scope,
-                retryer,
                 stats,
                 packer
             )
@@ -71,17 +69,17 @@ class ImageProcessingContext(
         if ((paint == Color.BLACK || paint == null) && alpha == 1.0) {
             return source
         }
-        return deduplicate(RepaintTask(paint, source, alpha, packer, scope, stats, retryer))
+        return deduplicate(RepaintTask(paint, source, alpha, packer, scope, stats))
     }
 
     fun stack(init: LayerListBuilder.() -> Unit): TextureTask {
         val layerTasks = LayerListBuilder(this)
         layerTasks.init()
-        return deduplicate(ImageStackingTask(layerTasks.build(), tileSize, packer, scope, stats, retryer))
+        return deduplicate(ImageStackingTask(layerTasks.build(), tileSize, packer, scope, stats))
     }
 
     fun animate(frames: List<TextureTask>): TextureTask {
-        return deduplicate(AnimationColumnTask(frames, tileSize, packer, scope, stats, retryer))
+        return deduplicate(AnimationColumnTask(frames, tileSize, packer, scope, stats))
     }
 
     fun out(name: String, source: TextureTask): OutputTask {
@@ -94,7 +92,7 @@ class ImageProcessingContext(
         destination: File,
         source: TextureTask
     ): OutputTask {
-        return OutputTask(source, lowercaseName, destination, stats, retryer)
+        return OutputTask(source, lowercaseName, destination, stats)
     }
 
     fun out(name: String, source: LayerListBuilder.() -> Unit) = out(name, stack {source()})

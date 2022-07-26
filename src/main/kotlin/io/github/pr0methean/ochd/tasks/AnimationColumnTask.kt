@@ -1,6 +1,9 @@
 package io.github.pr0methean.ochd.tasks
 
-import io.github.pr0methean.ochd.*
+import io.github.pr0methean.ochd.DEFAULT_SNAPSHOT_PARAMS
+import io.github.pr0methean.ochd.ImageProcessingStats
+import io.github.pr0methean.ochd.MEMORY_INTENSE_COROUTINE_CONTEXT
+import io.github.pr0methean.ochd.appendList
 import io.github.pr0methean.ochd.packedimage.ImagePacker
 import io.github.pr0methean.ochd.packedimage.PackedImage
 import javafx.scene.canvas.Canvas
@@ -15,9 +18,8 @@ import kotlinx.coroutines.withContext
 
 data class AnimationColumnTask(
     private val frames: List<TextureTask>, val width: Int,
-    override val packer: ImagePacker, override val scope: CoroutineScope, override val stats: ImageProcessingStats,
-    override val retryer: Retryer
-): UnpackingTextureTask(packer, scope, stats, retryer) {
+    override val packer: ImagePacker, override val scope: CoroutineScope, override val stats: ImageProcessingStats
+): UnpackingTextureTask(packer, scope, stats) {
     val height = width * frames.size
     override suspend fun computeImage(): Image = withContext(MEMORY_INTENSE_COROUTINE_CONTEXT) {
         val frameImages = frames.asFlow()

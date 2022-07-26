@@ -2,7 +2,6 @@ package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.MEMORY_INTENSE_COROUTINE_CONTEXT
-import io.github.pr0methean.ochd.Retryer
 import io.github.pr0methean.ochd.packedimage.ImagePacker
 import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
@@ -15,9 +14,8 @@ data class TopPartCroppingTask(
     val width: Int,
     override val packer: ImagePacker,
     override val scope: CoroutineScope,
-    override val stats: ImageProcessingStats,
-    override val retryer: Retryer
-): UnpackingTextureTask(packer, scope, stats, retryer) {
+    override val stats: ImageProcessingStats
+): UnpackingTextureTask(packer, scope, stats) {
     private val height = (width * TOP_PORTION).toInt()
     override suspend fun computeImage(): Image = withContext(MEMORY_INTENSE_COROUTINE_CONTEXT) {
         val pixelReader = base.getImage().unpacked().pixelReader

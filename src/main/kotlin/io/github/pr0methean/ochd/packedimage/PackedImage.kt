@@ -1,6 +1,9 @@
 package io.github.pr0methean.ochd.packedimage
 
-import io.github.pr0methean.ochd.*
+import io.github.pr0methean.ochd.AsyncLazy
+import io.github.pr0methean.ochd.ImageProcessingStats
+import io.github.pr0methean.ochd.SoftAsyncLazy
+import io.github.pr0methean.ochd.StrongAsyncLazy
 import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
@@ -17,21 +20,19 @@ import javax.imageio.ImageIO
 private val logger = LogManager.getLogger("ImageNode")
 abstract class PackedImage(
     initialUnpacked: Image? = null, initialPacked: ByteArray? = null,
-    val name: String, val scope: CoroutineScope, val retryer: Retryer,
+    val name: String, val scope: CoroutineScope,
     val stats: ImageProcessingStats,
     val packer: ImagePacker
 ) {
 
     protected val pngBytes = StrongAsyncLazy(initialPacked) {
-        ByteArrayOutputStream().use {
-            retryer.retrying<ByteArray>("Compression of $name") {
-                stats.onCompressPngImage(name)
-                @Suppress("BlockingMethodInNonBlockingContext")
-                ImageIO.write(SwingFXUtils.fromFXImage(initialUnpacked ?: unpacked(), null), "PNG", it)
-                return@retrying it.toByteArray()
-            }
-        }.also {
+        return@StrongAsyncLazy ByteArrayOutputStream().use {
+            stats.onCompressPngImage(name)
+            @Suppress("BlockingMethodInNonBlockingContext")
+            ImageIO.write(SwingFXUtils.fromFXImage(initialUnpacked ?: unpacked(), null), "PNG", it)
+            val packed = it.toByteArray()
             logger.info("Done compressing {}", name)
+            packed
         }
     }
 

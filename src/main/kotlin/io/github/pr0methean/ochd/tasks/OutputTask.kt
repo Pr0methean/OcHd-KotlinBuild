@@ -1,7 +1,6 @@
 package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.ImageProcessingStats
-import io.github.pr0methean.ochd.Retryer
 import io.github.pr0methean.ochd.StrongAsyncLazy
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Dispatchers
@@ -16,16 +15,15 @@ class OutputTask(private val producer: TextureTask,
                  override val name: String,
                  private val file: File,
                  val stats: ImageProcessingStats,
-                 val retryer: Retryer,
 ): Task<Unit> {
     @Volatile private var started: Boolean = false
     @Volatile private var completed: Boolean = false
 
-    val result = StrongAsyncLazy<Result<Unit>> {
+    val result = StrongAsyncLazy {
         stats.onTaskLaunched("OutputTask", name)
         started = true
         try {
-            val image = retryer.retrying(producer.toString()) { producer.getImage() }
+            val image = producer.getImage()
             withContext(Dispatchers.IO.plus(CoroutineName(name))) {
                 image.writePng(file)
             }
