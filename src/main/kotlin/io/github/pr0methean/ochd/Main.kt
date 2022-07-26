@@ -72,6 +72,7 @@ suspend fun main(args:Array<String>) {
         stats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupJob.join()
         while (tasks.isNotEmpty()) {
+            val currentTasks = ConcurrentLinkedQueue(tasks)
             val tasksToRetry = ConcurrentLinkedQueue<OutputTask>()
             tasks.asFlow().flowOn(Dispatchers.Default.limitedParallelism(1)).map {
                 scope.plus(CoroutineName(it.name)).launch { it.run() }
@@ -84,7 +85,7 @@ suspend fun main(args:Array<String>) {
                     logger.error("Error in {}", it, result.exceptionOrNull())
                     tasksToRetry.add(it)
                 } else {
-                    it.clearResult()
+                    currentTasks.remove(it)
                 }
             }
             tasks = tasksToRetry
