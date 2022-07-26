@@ -75,8 +75,11 @@ suspend fun main(args:Array<String>) {
                 }
                 it
             }.collect {
-                if(it.join().isSuccess) {
+                val result = it.join()
+                if(result.isSuccess) {
                     tasks.remove(it)
+                } else {
+                    logger.error("Error in {}", it, result.exceptionOrNull())
                 }
             }
         }
