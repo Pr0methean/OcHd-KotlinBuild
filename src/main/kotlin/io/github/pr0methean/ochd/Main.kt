@@ -6,6 +6,7 @@ import javafx.application.Platform
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import org.apache.logging.log4j.LogManager
 import java.nio.file.Paths
@@ -72,10 +73,12 @@ suspend fun main(args:Array<String>) {
         cleanupJob.join()
         while (tasks.isNotEmpty()) {
             val tasksToRetry = ConcurrentLinkedQueue<OutputTask>()
-            tasks.asFlow().flowOn(Dispatchers.Default.limitedParallelism(1)).collect {
-                scope.plus(CoroutineName(it.name)).launch { it.run() }
-            }
-            tasks.asFlow().collect {
+            tasks.asFlow().flowOn(Dispatchers.Default.limitedParallelism(1)).map {
+                withContext(MEMORY_INTENSE_COROUTINE_CONTEXT) {
+                    scope.plus(CoroutineName(it.name)).launch { it.run() }
+                }
+                it
+            }.collect {
                 val result = it.join()
                 if (result.isFailure) {
                     logger.error("Error in {}", it, result.exceptionOrNull())
