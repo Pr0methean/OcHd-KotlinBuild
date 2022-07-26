@@ -11,7 +11,6 @@ import org.apache.logging.log4j.LogManager
 import java.nio.file.Paths
 import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.Executors
-import kotlin.math.min
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
@@ -47,8 +46,7 @@ suspend fun main(args:Array<String>) {
         svgDirectory = svgDirectory,
         outTextureRoot = outTextureRoot
     )
-    MEMORY_INTENSE_COROUTINE_CONTEXT = Executors.newFixedThreadPool(min(Runtime.getRuntime().availableProcessors(),
-        1.shl(24) / (tileSize * tileSize))).asCoroutineDispatcher()
+    MEMORY_INTENSE_COROUTINE_CONTEXT = Executors.newFixedThreadPool(1.shl(24) / (tileSize * tileSize)).asCoroutineDispatcher()
     doJfx("Increase rendering thread priority") {
         Thread.currentThread().priority = Thread.MAX_PRIORITY
     }
