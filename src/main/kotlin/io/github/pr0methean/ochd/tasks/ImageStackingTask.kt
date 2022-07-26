@@ -1,8 +1,8 @@
 package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.*
-import io.github.pr0methean.ochd.packedimage.ImageNode
 import io.github.pr0methean.ochd.packedimage.ImagePacker
+import io.github.pr0methean.ochd.packedimage.PackedImage
 import javafx.scene.canvas.Canvas
 import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
@@ -26,7 +26,7 @@ data class ImageStackingTask(
     override suspend fun computeImage(): Image {
         val name = layers.toString()
         return withContext(MEMORY_INTENSE_COROUTINE_CONTEXT) {
-            val layerImages = layers.layers.asFlow().map { it.getImage() }.map(ImageNode::unpacked).toList()
+            val layerImages = layers.layers.asFlow().map { it.getImage() }.map(PackedImage::unpacked).toList()
             val output = retryer.retrying("Create WritableImage for $name") { WritableImage(size, size) }
             return@withContext doJfx(name) {
                 val canvas = Canvas(width, height)

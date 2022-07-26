@@ -14,8 +14,8 @@ class ImagePacker(
     /**
      * Encapsulates the given image in a form small enough to fit on the heap.
      */
-    fun packImage(input: Image, initialPng: ByteArray?, name: String): ImageNode {
-        return BitmapImageNode(
+    fun packImage(input: Image, initialPng: ByteArray?, name: String): PackedImage {
+        return BitmapPackedImage(
             input,
             initialPng,
             name,

@@ -4,8 +4,8 @@ import io.github.pr0methean.ochd.DEFAULT_SNAPSHOT_PARAMS
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.MEMORY_INTENSE_COROUTINE_CONTEXT
 import io.github.pr0methean.ochd.Retryer
-import io.github.pr0methean.ochd.packedimage.ImageNode
 import io.github.pr0methean.ochd.packedimage.ImagePacker
+import io.github.pr0methean.ochd.packedimage.PackedImage
 import javafx.scene.canvas.Canvas
 import javafx.scene.effect.Blend
 import javafx.scene.effect.BlendMode
@@ -27,7 +27,7 @@ data class RepaintTask(
     override val retryer: Retryer,
 ) : UnpackingTextureTask(packer, scope, stats, retryer) {
 
-    override suspend fun createImage(): ImageNode {
+    override suspend fun createImage(): PackedImage {
         if (paint == null && alpha == 1.0) {
             return base.getImage()
         }

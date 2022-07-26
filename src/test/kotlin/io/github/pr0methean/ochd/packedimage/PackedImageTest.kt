@@ -71,7 +71,7 @@ fun <T> runBlocking(block: suspend CoroutineScope.() -> T)
         = runBlocking(ctx.scope.coroutineContext, block = block)
 
 @Suppress("unused")
-internal abstract class ImageNodeTest(val expected: Image, val actual: suspend () -> ImageNode) {
+internal abstract class PackedImageTest(val expected: Image, val actual: suspend () -> PackedImage) {
 
     val className = this::class.simpleName
 

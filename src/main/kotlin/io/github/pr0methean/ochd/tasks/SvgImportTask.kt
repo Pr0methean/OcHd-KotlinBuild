@@ -3,8 +3,8 @@ package io.github.pr0methean.ochd.tasks
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.MEMORY_INTENSE_COROUTINE_CONTEXT
 import io.github.pr0methean.ochd.Retryer
-import io.github.pr0methean.ochd.packedimage.ImageNode
 import io.github.pr0methean.ochd.packedimage.ImagePacker
+import io.github.pr0methean.ochd.packedimage.PackedImage
 import javafx.embed.swing.SwingFXUtils
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
@@ -47,7 +47,7 @@ data class SvgImportTask(
     val packer: ImagePacker
 ): TextureTask {
 
-    private val coroutine: Deferred<ImageNode> by lazy {
+    private val coroutine: Deferred<PackedImage> by lazy {
         scope.plus(batikTranscoder.asContextElement())
                 .async(CoroutineName("SvgImportTask for $name"), start = CoroutineStart.LAZY) {
             stats.onTaskLaunched("SvgImportTask", name)
@@ -82,9 +82,9 @@ data class SvgImportTask(
     override fun isStarted(): Boolean = coroutine.isActive || coroutine.isCompleted
     override fun dependencies(): Collection<Task> = listOf()
 
-    override suspend fun getImage(): ImageNode = coroutine.await()
+    override suspend fun getImage(): PackedImage = coroutine.await()
     @OptIn(ExperimentalCoroutinesApi::class)
-    override fun getImageNow(): ImageNode? = if (coroutine.isCompleted) coroutine.getCompleted() else null
+    override fun getImageNow(): PackedImage? = if (coroutine.isCompleted) coroutine.getCompleted() else null
 
     override fun toString(): String = name
     override fun formatTo(buffer: StringBuilder) {

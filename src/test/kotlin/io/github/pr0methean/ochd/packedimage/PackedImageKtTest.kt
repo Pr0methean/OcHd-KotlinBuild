@@ -4,7 +4,7 @@ import javafx.scene.paint.Color
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Test
 
-internal class ImageNodeKtTest {
+internal class PackedImageKtTest {
 
     @Test
     fun alphaBlend() {

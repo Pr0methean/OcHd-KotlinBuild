@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.ImageProcessingStats
-import io.github.pr0methean.ochd.packedimage.ImageNode
+import io.github.pr0methean.ochd.packedimage.PackedImage
 import kotlinx.coroutines.*
 import org.apache.logging.log4j.LogManager
 import java.io.ByteArrayOutputStream
@@ -25,32 +25,31 @@ abstract class AbstractTextureTask(open val scope: CoroutineScope,
     override fun isComplete() = coroutine.isCompleted
     override fun isStarted(): Boolean = coroutine.isActive || coroutine.isCompleted
 
-    override suspend fun getImage(): ImageNode = coroutine.await()
+    override suspend fun getImage(): PackedImage = coroutine.await()
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    override fun getImageNow(): ImageNode? = if (coroutine.isCompleted) coroutine.getCompleted() else null
+    override fun getImageNow(): PackedImage? = if (coroutine.isCompleted) coroutine.getCompleted() else null
 
     /** Must be final to supersede the generated implementation for data classes */
     final override fun toString(): String = name
-    protected abstract suspend fun createImage(): ImageNode
+    protected abstract suspend fun createImage(): PackedImage
 }
 
 @Suppress("BlockingMethodInNonBlockingContext")
-suspend fun <T> doJfx(name: String, jfxCode: CoroutineScope.() -> T): T
-        = withContext(Dispatchers.Main.plus(CoroutineName(name))) {
-            val oldSystemErr = System.err
-            try {
-                ByteArrayOutputStream().use { errorCatcher ->
-                    System.setErr(PrintStream(errorCatcher, true, oldSystemErr.charset()))
-                    logger.info("Starting JFX task: {}", name)
-                    val result = jfxCode()
-                    logger.info("Finished JFX task: {}", name)
-                    if (errorCatcher.size() > 0) {
-                        throw RuntimeException(errorCatcher.toString(oldSystemErr.charset()))
-                    }
-                    return@withContext result
-                }
-            } finally {
-                System.setErr(oldSystemErr)
+suspend fun <T> doJfx(name: String, jfxCode: CoroutineScope.() -> T): T {
+    val oldSystemErr = System.err
+    try {
+        ByteArrayOutputStream().use { errorCatcher ->
+            System.setErr(PrintStream(errorCatcher, true, oldSystemErr.charset()))
+            logger.info("Starting JFX task: {}", name)
+            val result = withContext(Dispatchers.Main.plus(CoroutineName(name))) { jfxCode() }
+            if (errorCatcher.size() > 0) {
+                throw RuntimeException(errorCatcher.toString(oldSystemErr.charset()))
             }
+            logger.info("Finished JFX task: {}", name)
+            return result
         }
+    } finally {
+        System.setErr(oldSystemErr)
+    }
+}

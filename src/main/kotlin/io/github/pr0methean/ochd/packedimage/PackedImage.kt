@@ -15,7 +15,7 @@ import java.io.FileOutputStream
 import javax.imageio.ImageIO
 
 private val logger = LogManager.getLogger("ImageNode")
-abstract class ImageNode(
+abstract class PackedImage(
     initialUnpacked: Image? = null, initialPacked: ByteArray? = null,
     val name: String, val scope: CoroutineScope, val retryer: Retryer,
     val stats: ImageProcessingStats,

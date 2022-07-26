@@ -1,8 +1,8 @@
 package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.*
-import io.github.pr0methean.ochd.packedimage.ImageNode
 import io.github.pr0methean.ochd.packedimage.ImagePacker
+import io.github.pr0methean.ochd.packedimage.PackedImage
 import javafx.scene.canvas.Canvas
 import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
@@ -22,7 +22,7 @@ data class AnimationColumnTask(
     override suspend fun computeImage(): Image = withContext(MEMORY_INTENSE_COROUTINE_CONTEXT) {
         val frameImages = frames.asFlow()
             .map(TextureTask::getImage)
-            .map(ImageNode::unpacked)
+            .map(PackedImage::unpacked)
             .withIndex()
             .toList()
         val output = WritableImage(width, height)
