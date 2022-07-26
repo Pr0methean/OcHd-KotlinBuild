@@ -3,6 +3,7 @@ package io.github.pr0methean.ochd.tasks
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.MEMORY_INTENSE_COROUTINE_CONTEXT
 import io.github.pr0methean.ochd.packedimage.ImagePacker
+import io.github.pr0methean.ochd.packedimage.PackedImage
 import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
 import kotlinx.coroutines.CoroutineScope
@@ -23,6 +24,8 @@ data class TopPartCroppingTask(
             return@doJfx WritableImage(pixelReader, width, height)
         }
     }
+
+    override fun dependencies(): Collection<Task<PackedImage>> = listOf(base)
 
     override fun formatTo(buffer: StringBuilder) {
         buffer.append("Top part of ")
