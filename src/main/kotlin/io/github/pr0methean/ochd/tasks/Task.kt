@@ -16,7 +16,7 @@ interface Task<out T> : StringBuilderFormattable {
 
     fun reset() {
         for (task in dependencies()) {
-            if (task.isFailed()) {
+            if (isSucceeded() || task.isFailed()) {
                 task.reset()
             }
         }
