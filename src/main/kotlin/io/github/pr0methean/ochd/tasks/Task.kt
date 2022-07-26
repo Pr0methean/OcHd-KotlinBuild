@@ -14,13 +14,13 @@ interface Task<out T> : StringBuilderFormattable {
 
     suspend fun join(): Result<T>
 
-    fun reset() {
+    fun clearFailure() {
         for (task in dependencies()) {
-            if (isSucceeded() || task.isFailed()) {
-                task.reset()
-            }
+            task.clearFailure()
         }
-        clearResult()
+        if (isFailed()) {
+            clearResult()
+        }
     }
 
     fun clearResult()

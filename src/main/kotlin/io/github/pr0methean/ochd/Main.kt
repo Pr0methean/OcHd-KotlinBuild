@@ -78,11 +78,13 @@ suspend fun main(args:Array<String>) {
                 it
             }.collect {
                 val result = it.join()
-                it.reset()
                 if (result.isFailure) {
+                    it.clearFailure()
                     stats.retries.increment()
                     logger.error("Error in {}", it, result.exceptionOrNull())
                     tasksToRetry.add(it)
+                } else {
+                    it.clearResult()
                 }
             }
             tasks = tasksToRetry
