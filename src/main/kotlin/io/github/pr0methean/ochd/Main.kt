@@ -69,7 +69,7 @@ suspend fun main(args:Array<String>) {
         var retrying = false
         while (tasks.firstOrNull() != null) {
             if (retrying) {
-                logger.info("Retrying these failed tasks: {}", tasks)
+                logger.info("Retrying these failed tasks: {}", tasks.toList())
                 System.gc()
             }
             tasks = tasks.flowOn(Dispatchers.Default.limitedParallelism(1)).map {
