@@ -4,6 +4,9 @@ import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.tasks.doJfx
 import javafx.application.Platform
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.flowOn
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import org.apache.logging.log4j.LogManager
 import java.nio.file.Paths
@@ -69,11 +72,12 @@ suspend fun main(args:Array<String>) {
         stats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupJob.join()
         while (tasks.isNotEmpty()) {
+            val currentTasks = ConcurrentLinkedQueue(tasks)
             val tasksToRetry = ConcurrentLinkedQueue<OutputTask>()
-            tasks.map {
+            tasks.asFlow().flowOn(Dispatchers.Default.limitedParallelism(1)).map {
                 scope.plus(CoroutineName(it.name)).launch { it.run() }
                 it
-            }.toList().forEach {
+            }.collect {
                 val result = it.join()
                 if (result.isFailure) {
                     it.clearFailure()
@@ -81,7 +85,7 @@ suspend fun main(args:Array<String>) {
                     logger.error("Error in {}", it, result.exceptionOrNull())
                     tasksToRetry.add(it)
                 } else {
-                    tasks.remove(it)
+                    currentTasks.remove(it)
                 }
             }
             tasks = tasksToRetry
