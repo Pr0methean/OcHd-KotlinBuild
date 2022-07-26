@@ -60,7 +60,7 @@ jobs:
       with:
         name: OcHD-App
     - name: Make Textures
-      run: java -Dkotlinx.coroutines.debug -Xms6G -Xmx6G '-Xlog:gc*=debug,gc+heap=trace,gc+heap+exit=trace,gc+metaspace=trace' -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ParallelGCThreads=2 -jar OcHd-KotlinBuild-1.0-SNAPSHOT.jar ${{ matrix.size }}
+      run: java -Dkotlinx.coroutines.debug -Dprism.maxvram=1G -Xms5G -Xmx5G '-Xlog:gc*=debug,gc+heap=trace,gc+heap+exit=trace,gc+metaspace=trace' -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:ParallelGCThreads=2 -jar OcHd-KotlinBuild-1.0-SNAPSHOT.jar ${{ matrix.size }}
     - name: Zip Texture Pack
       run: cd out && zip -r OcHD-${{ matrix.size}}x${{ matrix.size}}.zip *
     - name: Publish Texture Pack
