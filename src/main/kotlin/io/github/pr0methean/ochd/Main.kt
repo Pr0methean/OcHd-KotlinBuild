@@ -1,5 +1,6 @@
 package io.github.pr0methean.ochd
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
+import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.tasks.doJfx
 import javafx.application.Platform
 import kotlinx.coroutines.*
@@ -9,7 +10,9 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import org.apache.logging.log4j.LogManager
 import java.nio.file.Paths
+import java.util.concurrent.ConcurrentLinkedQueue
 import java.util.concurrent.Executors
+import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
 private val logger = run {
@@ -65,10 +68,11 @@ suspend fun main(args:Array<String>) {
             stats.onTaskCompleted("Copy metadata files", "Copy metadata files")
         }
         stats.onTaskLaunched("Build task graph", "Build task graph")
-        val tasks = ALL_MATERIALS.outputTasks(ctx).toList().toMutableList()
+        var tasks = ALL_MATERIALS.outputTasks(ctx).toList().toCollection(ConcurrentLinkedQueue())
         stats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupJob.join()
         while (tasks.isNotEmpty()) {
+            val tasksToRetry = ConcurrentLinkedQueue<OutputTask>()
             tasks.asFlow().flowOn(Dispatchers.Default.limitedParallelism(1)).map {
                 withContext(MEMORY_INTENSE_COROUTINE_CONTEXT) {
                     scope.plus(CoroutineName(it.name)).launch { it.run() }
@@ -76,13 +80,13 @@ suspend fun main(args:Array<String>) {
                 it
             }.collect {
                 val result = it.join()
-                if(result.isSuccess) {
-                    tasks.remove(it)
-                } else {
+                if(result.isFailure) {
                     logger.error("Error in {}", it, result.exceptionOrNull())
+                    tasksToRetry.add(it)
                     it.reset()
                 }
             }
+            tasks = tasksToRetry
         }
         copyMetadata.join()
     }
@@ -91,4 +95,5 @@ suspend fun main(args:Array<String>) {
     stats.log()
     logger.info("")
     logger.info("All tasks finished after $time ns")
+    exitProcess(0)
 }
