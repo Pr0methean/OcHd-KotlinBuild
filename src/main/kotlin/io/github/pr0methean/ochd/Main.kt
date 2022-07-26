@@ -80,13 +80,17 @@ suspend fun main(args:Array<String>) {
                 it
             }.collect {
                 val result = it.join()
-                if(result.isFailure) {
+                if (result.isFailure) {
                     logger.error("Error in {}", it, result.exceptionOrNull())
                     tasksToRetry.add(it)
                     it.reset()
                 }
             }
             tasks = tasksToRetry
+            if (tasksToRetry.isNotEmpty()) {
+                logger.info("Retrying these failed tasks: {}", tasksToRetry)
+                System.gc()
+            }
         }
         copyMetadata.join()
     }
