@@ -74,9 +74,7 @@ suspend fun main(args:Array<String>) {
         while (tasks.isNotEmpty()) {
             val tasksToRetry = ConcurrentLinkedQueue<OutputTask>()
             tasks.asFlow().flowOn(Dispatchers.Default.limitedParallelism(1)).map {
-                withContext(MEMORY_INTENSE_COROUTINE_CONTEXT) {
-                    scope.plus(CoroutineName(it.name)).launch { it.run() }
-                }
+                scope.plus(CoroutineName(it.name)).launch { it.run() }
                 it
             }.collect {
                 val result = it.join()
