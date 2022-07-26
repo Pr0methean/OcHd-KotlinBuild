@@ -16,7 +16,7 @@ private val logger = run {
     System.setProperty("java.util.logging.manager", "org.apache.logging.log4j.jul.LogManager")
     LogManager.getRootLogger()
 }
-val MEMORY_INTENSE_COROUTINE_CONTEXT = Executors.newFixedThreadPool(2).asCoroutineDispatcher()
+var MEMORY_INTENSE_COROUTINE_CONTEXT: CoroutineDispatcher = Dispatchers.Unconfined
 
 @Suppress("UnstableApiUsage")
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -44,6 +44,7 @@ suspend fun main(args:Array<String>) {
         svgDirectory = svgDirectory,
         outTextureRoot = outTextureRoot
     )
+    MEMORY_INTENSE_COROUTINE_CONTEXT = Executors.newFixedThreadPool(1.shl(24) / (tileSize * tileSize)).asCoroutineDispatcher()
     doJfx("Increase rendering thread priority") {
         Thread.currentThread().priority = Thread.MAX_PRIORITY
     }
