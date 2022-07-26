@@ -8,9 +8,13 @@ import javax.annotation.concurrent.GuardedBy
 
 abstract class AsyncLazy<T> {
     val mutex = Mutex()
+    @Volatile private var started: Boolean = false
 
     suspend fun get(): T = getNow() ?: mutex.withLock {
-        getNow() ?: getFromSupplierAndStore()
+        getNow() ?: let {
+            started = true
+            getFromSupplierAndStore()
+        }
     }
 
     protected abstract suspend fun getFromSupplierAndStore(): T
@@ -18,6 +22,14 @@ abstract class AsyncLazy<T> {
 
     @GuardedBy("mutex")
     abstract fun set(value: T?)
+
+    suspend fun compareAndSet(expected: T?, newValue: T?): T? = mutex.withLock {
+        val actual = getNow()
+        if (actual == expected) {
+            set(newValue)
+        }
+        return actual
+    }
 
     @Suppress("unused")
     suspend fun mergeWithDuplicate(other: AsyncLazy<T>) {
@@ -33,4 +45,6 @@ abstract class AsyncLazy<T> {
     fun start(scope: CoroutineScope) {
         scope.launch { get() }
     }
+
+    fun isStarted(): Boolean = getNow() != null || started
 }

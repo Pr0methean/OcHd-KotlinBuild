@@ -65,14 +65,21 @@ suspend fun main(args:Array<String>) {
             stats.onTaskCompleted("Copy metadata files", "Copy metadata files")
         }
         stats.onTaskLaunched("Build task graph", "Build task graph")
-        val tasks = ALL_MATERIALS.outputTasks(ctx).toList()
+        val tasks = ALL_MATERIALS.outputTasks(ctx).toList().toMutableList()
         stats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupJob.join()
-        tasks.asFlow().flowOn(Dispatchers.Default.limitedParallelism(1)).map {
-            withContext(MEMORY_INTENSE_COROUTINE_CONTEXT) {
-                scope.plus(CoroutineName(it.name)).launch { it.run() }
+        while (tasks.isNotEmpty()) {
+            tasks.asFlow().flowOn(Dispatchers.Default.limitedParallelism(1)).map {
+                withContext(MEMORY_INTENSE_COROUTINE_CONTEXT) {
+                    scope.plus(CoroutineName(it.name)).launch { it.run() }
+                }
+                it
+            }.collect {
+                if(it.join().isSuccess) {
+                    tasks.remove(it)
+                }
             }
-        }.collect(Job::join)
+        }
         copyMetadata.join()
     }
     stopMonitoring()

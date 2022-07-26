@@ -47,8 +47,6 @@ data class ImageStackingTask(
         }
     }
 
-    override fun dependencies(): Collection<Task> = layers.layers
-
     override fun formatTo(buffer: StringBuilder) {
         layers.formatTo(buffer)
     }

@@ -1,34 +1,56 @@
 package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.ImageProcessingStats
+import io.github.pr0methean.ochd.SoftAsyncLazy
 import io.github.pr0methean.ochd.packedimage.PackedImage
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.apache.logging.log4j.LogManager
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 
 private val logger = LogManager.getLogger("AbstractTextureTask")
 abstract class AbstractTextureTask(open val scope: CoroutineScope,
-                                   open val stats: ImageProcessingStats
+                                   open val stats: ImageProcessingStats,
+                                   initialResult: PackedImage? = null
 ) : TextureTask {
-    private val coroutine by lazy {
+    private val result = SoftAsyncLazy(initialResult?.let {Result.success(it)}) {
         val typeName = this::class.simpleName ?: "[unnamed AbstractTextureTask]"
-        scope.async(CoroutineName(name), start = CoroutineStart.LAZY) {
-            stats.onTaskLaunched(typeName, name)
-            val image = createImage()
-            stats.onTaskCompleted(typeName, name)
-            image
+        stats.onTaskLaunched(typeName, name)
+        val image = try {
+            createImage()
+        } catch (t: Throwable) {
+            logger.error("Error in {}", name, t)
+            return@SoftAsyncLazy Result.failure(t)
         }
+        stats.onTaskCompleted(typeName, name)
+        return@SoftAsyncLazy Result.success(image)
     }
+
     override val name by lazy { StringBuilder().also { formatTo(it) }.toString() }
+    override fun isFailed() = result.getNow()?.isFailure == true
 
-    override fun isComplete() = coroutine.isCompleted
-    override fun isStarted(): Boolean = coroutine.isActive || coroutine.isCompleted
+    override fun isComplete() = result.getNow() != null
+    override fun isStarted() = result.isStarted()
 
-    override suspend fun getImage(): PackedImage = coroutine.await()
+    override suspend fun getImage(): PackedImage = result.get().getOrThrow()
 
-    @OptIn(ExperimentalCoroutinesApi::class)
-    override fun getImageNow(): PackedImage? = if (coroutine.isCompleted) coroutine.getCompleted() else null
+    override suspend fun join(): Result<PackedImage> = result.get()
+
+    suspend fun getImageRetrying(): PackedImage {
+        var currentResult: Result<PackedImage>
+        do {
+            currentResult = result.get()
+            if (currentResult.isFailure) {
+                result.compareAndSet(currentResult, null)
+            }
+        } while (currentResult.isFailure)
+        return currentResult.getOrThrow()
+    }
+
+    override fun getImageNow(): PackedImage? = result.getNow()?.getOrThrow()
 
     /** Must be final to supersede the generated implementation for data classes */
     final override fun toString(): String = name

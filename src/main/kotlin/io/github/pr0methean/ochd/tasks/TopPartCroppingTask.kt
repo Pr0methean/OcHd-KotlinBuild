@@ -26,8 +26,6 @@ data class TopPartCroppingTask(
         }
     }
 
-    override fun dependencies(): Collection<Task> = listOf(base)
-
     override fun formatTo(buffer: StringBuilder) {
         buffer.append("Top part of ")
         base.formatTo(buffer)

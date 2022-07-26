@@ -3,12 +3,16 @@ package io.github.pr0methean.ochd.tasks
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.MEMORY_INTENSE_COROUTINE_CONTEXT
 import io.github.pr0methean.ochd.Retryer
+import io.github.pr0methean.ochd.StrongAsyncLazy
 import io.github.pr0methean.ochd.packedimage.ImagePacker
 import io.github.pr0methean.ochd.packedimage.PackedImage
 import javafx.embed.swing.SwingFXUtils
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.asContextElement
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import org.apache.batik.transcoder.SVGAbstractTranscoder.KEY_HEIGHT
 import org.apache.batik.transcoder.SVGAbstractTranscoder.KEY_WIDTH
 import org.apache.batik.transcoder.TranscoderInput
@@ -17,6 +21,8 @@ import org.apache.batik.transcoder.image.PNGTranscoder
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
 import java.io.File
+import kotlin.Result.Companion.failure
+import kotlin.Result.Companion.success
 
 // svgSalamander doesn't seem to be thread-safe even when loaded in a ThreadLocal<ClassLoader>
 private val batikTranscoder: ThreadLocal<ImageRetainingTranscoder> = ThreadLocal.withInitial {ImageRetainingTranscoder()}
@@ -47,16 +53,15 @@ data class SvgImportTask(
     val packer: ImagePacker
 ): TextureTask {
 
-    private val coroutine: Deferred<PackedImage> by lazy {
-        scope.plus(batikTranscoder.asContextElement())
-                .async(CoroutineName("SvgImportTask for $name"), start = CoroutineStart.LAZY) {
+    private val result = StrongAsyncLazy<Result<PackedImage>> {
+        withContext(scope.coroutineContext.plus(batikTranscoder.asContextElement())) {
             stats.onTaskLaunched("SvgImportTask", name)
-            val result = retryer.retrying(name) {
-                val transcoder = batikTranscoder.get()
-                ByteArrayOutputStream().use { outStream ->
+            val transcoder = batikTranscoder.get()
+            return@withContext try {
+                val packed = ByteArrayOutputStream().use { outStream ->
                     val output = TranscoderOutput(outStream)
                     val input = TranscoderInput(file.toURI().toString())
-                    withContext(MEMORY_INTENSE_COROUTINE_CONTEXT) {
+                    return@use withContext(MEMORY_INTENSE_COROUTINE_CONTEXT) {
                         val image = transcoder.mutex.withLock {
                             transcoder.setTranscodingHints(
                                 mapOf(
@@ -67,24 +72,28 @@ data class SvgImportTask(
                             transcoder.transcode(input, output)
                             transcoder.takeLastImage()!!
                         }
-                        return@withContext packer.packImage(
+                        packer.packImage(
                             SwingFXUtils.toFXImage(image, null),
                             outStream.toByteArray(), name
                         )
                     }
                 }
+                stats.onTaskCompleted("SvgImportTask", name)
+                success(packed)
+            } catch (t: Throwable) {
+                failure(t)
             }
-            stats.onTaskCompleted("SvgImportTask", name)
-            result
         }
     }
-    override fun isComplete(): Boolean = coroutine.isCompleted
-    override fun isStarted(): Boolean = coroutine.isActive || coroutine.isCompleted
-    override fun dependencies(): Collection<Task> = listOf()
+    override fun isComplete(): Boolean = result.getNow() != null
+    override fun isStarted(): Boolean = result.isStarted()
+    override fun isFailed(): Boolean = result.getNow()?.isFailure == true
 
-    override suspend fun getImage(): PackedImage = coroutine.await()
+    override suspend fun join(): Result<PackedImage> = result.get()
+
+    override suspend fun getImage(): PackedImage = result.get().getOrThrow()
     @OptIn(ExperimentalCoroutinesApi::class)
-    override fun getImageNow(): PackedImage? = if (coroutine.isCompleted) coroutine.getCompleted() else null
+    override fun getImageNow(): PackedImage? = result.getNow()?.getOrThrow()
 
     override fun toString(): String = name
     override fun formatTo(buffer: StringBuilder) {

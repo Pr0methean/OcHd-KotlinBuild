@@ -39,8 +39,6 @@ data class AnimationColumnTask(
         }
     }
 
-    override fun dependencies(): Collection<Task> = frames
-
     override fun formatTo(buffer: StringBuilder) {
         buffer.append("Animation [").appendList(frames, "; ").append(']')
     }

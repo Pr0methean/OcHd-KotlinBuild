@@ -63,8 +63,6 @@ data class RepaintTask(
         }
     }
 
-    override fun dependencies(): Collection<Task> = listOf(base)
-
     override fun formatTo(buffer: StringBuilder) {
         buffer.append("RepaintTask(").append(base).append(',').append(paint).append(',')
             .append(Unbox.box(alpha)).append(")")
