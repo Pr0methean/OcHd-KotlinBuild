@@ -11,11 +11,16 @@ abstract class AsyncLazy<T> {
 
     suspend fun get(): T {
         return getNow() ?: withContext(currentCoroutineContext().plus(SupervisorJob())) {
-            return@withContext mutex.withLock {
-                getNow() ?: let {
-                    started = true
-                    return@withLock getFromSupplierAndStore()
+            try {
+                return@withContext mutex.withLock {
+                    getNow() ?: let {
+                        started = true
+                        return@withLock getFromSupplierAndStore()
+                    }
                 }
+            } catch (e: CancellationException) {
+                // Don't cancel siblings
+                throw RuntimeException(e)
             }
         }
     }
@@ -25,14 +30,6 @@ abstract class AsyncLazy<T> {
 
     @GuardedBy("mutex")
     abstract fun set(value: T?)
-
-    suspend fun compareAndSet(expected: T?, newValue: T?): T? = mutex.withLock {
-        val actual = getNow()
-        if (actual == expected) {
-            set(newValue)
-        }
-        return actual
-    }
 
     @Suppress("unused")
     suspend fun mergeWithDuplicate(other: AsyncLazy<T>) {
