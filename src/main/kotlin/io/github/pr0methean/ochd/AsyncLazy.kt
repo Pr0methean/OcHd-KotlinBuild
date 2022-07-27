@@ -1,19 +1,23 @@
 package io.github.pr0methean.ochd
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import javax.annotation.concurrent.GuardedBy
 
 abstract class AsyncLazy<T> {
     val mutex = Mutex()
+    val supervisorJob = SupervisorJob()
     @Volatile private var started: Boolean = false
 
-    suspend fun get(): T = getNow() ?: mutex.withLock {
-        getNow() ?: let {
-            started = true
-            getFromSupplierAndStore()
+    suspend fun get(): T {
+        return getNow() ?: withContext(currentCoroutineContext().plus(supervisorJob)) {
+            return@withContext mutex.withLock {
+                getNow() ?: let {
+                    started = true
+                    return@withLock getFromSupplierAndStore()
+                }
+            }
         }
     }
 
