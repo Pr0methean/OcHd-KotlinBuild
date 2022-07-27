@@ -26,14 +26,15 @@ suspend fun main(args:Array<String>) {
     System.setProperty("glass.platform","Monocle")
     System.setProperty("monocle.platform","Headless")
     Platform.startup {}
+    val supervisorJob = SupervisorJob()
     val tileSize = args[0].toInt()
     if (tileSize <= 0) throw IllegalArgumentException("tileSize shouldn't be zero or negative but was ${args[0]}")
-    val scope = CoroutineScope(Dispatchers.Default)
+    val scope = CoroutineScope(Dispatchers.Default).plus(supervisorJob)
     val svgDirectory = Paths.get("svg").toAbsolutePath().toFile()
     val metadataDirectory = Paths.get("metadata").toAbsolutePath().toFile()
     val out = Paths.get("out").toAbsolutePath().toFile()
     val outTextureRoot = out.resolve("assets").resolve("minecraft").resolve("textures")
-    val ioScope = CoroutineScope(Dispatchers.IO)
+    val ioScope = CoroutineScope(Dispatchers.IO).plus(supervisorJob)
     val cleanupJob = ioScope.launch(CoroutineName("Delete old outputs")) {out.deleteRecursively()}
     val ctx = ImageProcessingContext(
         name = "MainContext",
