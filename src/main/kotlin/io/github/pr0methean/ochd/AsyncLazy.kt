@@ -7,11 +7,10 @@ import javax.annotation.concurrent.GuardedBy
 
 abstract class AsyncLazy<T> {
     val mutex = Mutex()
-    val supervisorJob = SupervisorJob()
     @Volatile private var started: Boolean = false
 
     suspend fun get(): T {
-        return getNow() ?: withContext(currentCoroutineContext().plus(supervisorJob)) {
+        return getNow() ?: withContext(currentCoroutineContext().plus(SupervisorJob())) {
             return@withContext mutex.withLock {
                 getNow() ?: let {
                     started = true

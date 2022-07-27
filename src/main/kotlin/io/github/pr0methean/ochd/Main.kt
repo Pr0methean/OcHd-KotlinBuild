@@ -29,7 +29,7 @@ suspend fun main(args:Array<String>) {
     val supervisorJob = SupervisorJob()
     val tileSize = args[0].toInt()
     if (tileSize <= 0) throw IllegalArgumentException("tileSize shouldn't be zero or negative but was ${args[0]}")
-    val scope = CoroutineScope(Dispatchers.Default).plus(supervisorJob)
+    val scope = CoroutineScope(Dispatchers.Default)
     val svgDirectory = Paths.get("svg").toAbsolutePath().toFile()
     val metadataDirectory = Paths.get("metadata").toAbsolutePath().toFile()
     val out = Paths.get("out").toAbsolutePath().toFile()
@@ -74,7 +74,7 @@ suspend fun main(args:Array<String>) {
                 System.gc()
             }
             tasks = tasks.flowOn(Dispatchers.Default.limitedParallelism(1)).map {
-                scope.plus(CoroutineName(it.name)).launch { it.run() }
+                scope.plus(CoroutineName(it.name)).plus(SupervisorJob()).launch { it.run() }
                 it
             }.flowOn(Dispatchers.IO).filter {
                 val result = it.join()
