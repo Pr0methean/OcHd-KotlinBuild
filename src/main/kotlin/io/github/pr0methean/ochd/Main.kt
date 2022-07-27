@@ -75,7 +75,7 @@ suspend fun main(args:Array<String>) {
             tasks = tasks.flowOn(Dispatchers.Default.limitedParallelism(1)).map {
                 scope.plus(CoroutineName(it.name)).launch { it.run() }
                 it
-            }.filter {
+            }.flowOn(Dispatchers.IO).filter {
                 val result = it.join()
                 if (result.isFailure) {
                     it.clearFailure()
