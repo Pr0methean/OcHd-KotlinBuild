@@ -41,8 +41,8 @@ abstract class AbstractTextureTask(open val scope: CoroutineScope,
     /** Must be final to supersede the generated implementation for data classes */
     final override fun toString(): String = name
     protected abstract suspend fun createImage(): PackedImage
-    override fun clearResult() {
-        result.set(null)
+    override suspend fun clearResult() {
+        result.clearResult()
     }
 }
 

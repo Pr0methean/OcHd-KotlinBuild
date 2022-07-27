@@ -88,8 +88,8 @@ data class SvgImportTask(
     override fun dependencies(): Collection<Task<*>> = listOf()
 
     override suspend fun join(): Result<PackedImage> = result.get()
-    override fun clearResult() {
-        result.set(null)
+    override suspend fun clearResult() {
+        result.clearResult()
     }
 
     override suspend fun getImage(): PackedImage = result.get().getOrThrow()

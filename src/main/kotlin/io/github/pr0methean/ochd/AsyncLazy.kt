@@ -31,6 +31,13 @@ abstract class AsyncLazy<T> {
     @GuardedBy("mutex")
     abstract fun set(value: T?)
 
+    suspend fun clearResult() {
+        mutex.withLock {
+            started = false
+            set(null)
+        }
+    }
+
     @Suppress("unused")
     suspend fun mergeWithDuplicate(other: AsyncLazy<T>) {
         if (getNow() == null) {

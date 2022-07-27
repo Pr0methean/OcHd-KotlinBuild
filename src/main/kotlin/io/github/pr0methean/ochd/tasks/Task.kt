@@ -14,7 +14,7 @@ interface Task<out T> : StringBuilderFormattable {
 
     suspend fun join(): Result<T>
 
-    fun clearFailure() {
+    suspend fun clearFailure() {
         for (task in dependencies()) {
             task.clearFailure()
         }
@@ -23,5 +23,5 @@ interface Task<out T> : StringBuilderFormattable {
         }
     }
 
-    fun clearResult()
+    suspend fun clearResult()
 }

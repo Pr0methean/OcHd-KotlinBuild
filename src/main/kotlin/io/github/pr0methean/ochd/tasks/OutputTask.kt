@@ -46,8 +46,8 @@ class OutputTask(private val producer: TextureTask,
     override suspend fun run() = result.get().getOrThrow()
     override suspend fun join(): Result<Unit>  = result.get()
 
-    override fun clearResult() {
-        result.set(null)
+    override suspend fun clearResult() {
+        result.clearResult()
         started = false
     }
 
