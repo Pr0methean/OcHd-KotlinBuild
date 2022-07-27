@@ -54,7 +54,7 @@ class OutputTask(private val producer: TextureTask,
 
     override fun isStarted(): Boolean = started
 
-    override fun isFailed(): Boolean = result.getNow()?.isFailure != true
+    override fun isFailed(): Boolean = result.getNow()?.isFailure == true
 
     override fun dependencies(): Collection<Task<PackedImage>> = listOf(producer)
 
