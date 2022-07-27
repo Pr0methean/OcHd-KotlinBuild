@@ -3,10 +3,7 @@ package io.github.pr0methean.ochd.tasks
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.SoftAsyncLazy
 import io.github.pr0methean.ochd.packedimage.PackedImage
-import kotlinx.coroutines.CoroutineName
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import org.apache.logging.log4j.LogManager
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
@@ -39,17 +36,6 @@ abstract class AbstractTextureTask(open val scope: CoroutineScope,
 
     override suspend fun join(): Result<PackedImage> = result.get()
 
-    suspend fun getImageRetrying(): PackedImage {
-        var currentResult: Result<PackedImage>
-        do {
-            currentResult = result.get()
-            if (currentResult.isFailure) {
-                result.compareAndSet(currentResult, null)
-            }
-        } while (currentResult.isFailure)
-        return currentResult.getOrThrow()
-    }
-
     override fun getImageNow(): PackedImage? = result.getNow()?.getOrThrow()
 
     /** Must be final to supersede the generated implementation for data classes */
@@ -75,6 +61,8 @@ suspend fun <T> doJfx(name: String, jfxCode: CoroutineScope.() -> T): T {
             return result
         }
     } finally {
-        System.setErr(oldSystemErr)
+        withContext(NonCancellable) {
+            System.setErr(oldSystemErr)
+        }
     }
 }
