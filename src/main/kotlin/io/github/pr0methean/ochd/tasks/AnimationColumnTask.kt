@@ -23,7 +23,8 @@ data class AnimationColumnTask(
     val height = width * frames.size
     override suspend fun computeImage(): Image = withContext(MEMORY_INTENSE_COROUTINE_CONTEXT) {
         val frameImages = frames.asFlow()
-            .map(TextureTask::getImage)
+            .map(TextureTask::join)
+            .map(Result<PackedImage>::getOrThrow)
             .map(PackedImage::unpacked)
             .withIndex()
             .toList()

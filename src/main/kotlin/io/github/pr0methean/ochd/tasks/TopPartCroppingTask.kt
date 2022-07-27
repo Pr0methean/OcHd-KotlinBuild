@@ -19,7 +19,7 @@ data class TopPartCroppingTask(
 ): UnpackingTextureTask(packer, scope, stats) {
     private val height = (width * TOP_PORTION).toInt()
     override suspend fun computeImage(): Image = withContext(MEMORY_INTENSE_COROUTINE_CONTEXT) {
-        val pixelReader = base.getImage().unpacked().pixelReader
+        val pixelReader = base.join().getOrThrow().unpacked().pixelReader
         doJfx(name) {
             return@doJfx WritableImage(pixelReader, width, height)
         }

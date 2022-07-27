@@ -27,14 +27,14 @@ data class RepaintTask(
 
     override suspend fun createImage(): PackedImage {
         if (paint == null && alpha == 1.0) {
-            return base.getImage()
+            return base.join().getOrThrow()
         }
         return super.createImage()
     }
 
     override suspend fun computeImage(): Image {
         return withContext(MEMORY_INTENSE_COROUTINE_CONTEXT) {
-            val unpacked = base.getImage().unpacked()
+            val unpacked = base.join().getOrThrow().unpacked()
             val output = WritableImage(unpacked.width.toInt(), unpacked.height.toInt())
             return@withContext doJfx(name) {
                 val canvas = Canvas(unpacked.width, unpacked.height)

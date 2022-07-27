@@ -28,7 +28,11 @@ data class ImageStackingTask(
     override suspend fun computeImage(): Image {
         val name = layers.toString()
         return withContext(MEMORY_INTENSE_COROUTINE_CONTEXT) {
-            val layerImages = layers.layers.asFlow().map { it.getImage() }.map(PackedImage::unpacked).toList()
+            val layerImages = layers.layers.asFlow()
+                .map(TextureTask::join)
+                .map(Result<PackedImage>::getOrThrow)
+                .map(PackedImage::unpacked)
+                .toList()
             val output = WritableImage(size, size)
             return@withContext doJfx(name) {
                 val canvas = Canvas(width, height)

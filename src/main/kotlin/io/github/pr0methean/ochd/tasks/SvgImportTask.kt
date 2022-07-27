@@ -7,7 +7,6 @@ import io.github.pr0methean.ochd.packedimage.ImagePacker
 import io.github.pr0methean.ochd.packedimage.PackedImage
 import javafx.embed.swing.SwingFXUtils
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.asContextElement
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -94,7 +93,6 @@ data class SvgImportTask(
     }
 
     override suspend fun getImage(): PackedImage = result.get().getOrThrow()
-    @OptIn(ExperimentalCoroutinesApi::class)
     override fun getImageNow(): PackedImage? = result.getNow()?.getOrThrow()
 
     override fun toString(): String = name

@@ -24,12 +24,12 @@ class OutputTask(private val producer: TextureTask,
         stats.onTaskLaunched("OutputTask", name)
         started = true
         try {
-            val image = producer.getImage()
+            val image = producer.join().getOrThrow()
             withContext(Dispatchers.IO.plus(CoroutineName(name))) {
                 image.writePng(file)
             }
             if (!file.exists()) {
-                logger.error("OutputTask $name appeared to succeed, but $file still doesn't exist")
+                return@StrongAsyncLazy failure(RuntimeException("OutputTask $name appeared to succeed, but $file still doesn't exist"))
             }
             completed = true
             stats.onTaskCompleted("OutputTask", name)
@@ -48,6 +48,7 @@ class OutputTask(private val producer: TextureTask,
 
     override fun clearResult() {
         result.set(null)
+        started = false
     }
 
     override fun isComplete(): Boolean = completed
