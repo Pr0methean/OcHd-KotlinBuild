@@ -9,7 +9,7 @@ plugins {
 group = "org.example"
 version = "1.0-SNAPSHOT"
 
-const val mainClassName = "io.github.pr0methean.ochd.MainKt"
+val mainClassName = "io.github.pr0methean.ochd.MainKt"
 
 application {
     mainClass.set(mainClassName)
