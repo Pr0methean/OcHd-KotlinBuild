@@ -67,4 +67,4 @@ jobs:
       uses: actions/upload-artifact@v3
       with:
         name: OcHD ${{ matrix.size }}x${{ matrix.size }}
-        path: 'out/OcHD-${{ matrix.size}}x${{ matrix.size}}.zip'
+        path: 'pngout/OcHD-${{ matrix.size}}x${{ matrix.size}}.zip'
