@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd.texturebase
 
 import io.github.pr0methean.ochd.ImageProcessingContext
-import io.github.pr0methean.ochd.tasks.OutputTask
+import io.github.pr0methean.ochd.tasks.consumable.OutputConsumableTask
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow
@@ -12,7 +12,7 @@ open class MaterialGroup(val elements: Flow<Material>): Material {
     constructor(vararg elements: Material): this(elements.asFlow())
 
     @OptIn(FlowPreview::class)
-    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask>
+    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputConsumableTask>
             = elements.flatMapConcat { it.outputTasks(ctx) }
 }
 

@@ -2,7 +2,7 @@ package io.github.pr0methean.ochd.texturebase
 
 import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.LayerListBuilder
-import io.github.pr0methean.ochd.tasks.OutputTask
+import io.github.pr0methean.ochd.tasks.consumable.OutputConsumableTask
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
@@ -22,7 +22,7 @@ abstract class SingleLayerMaterial(
         layer(sourceFileName, color, alpha)
     }
 
-    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> {
+    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputConsumableTask> {
         return flowOf(ctx.out(name, ctx.outTextureRoot.resolve(directory).resolve("$name.png"),
             ctx.layer(sourceFileName, color, alpha)))
     }

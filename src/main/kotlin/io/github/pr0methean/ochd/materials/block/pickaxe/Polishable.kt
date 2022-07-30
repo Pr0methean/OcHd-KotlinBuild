@@ -3,7 +3,7 @@ package io.github.pr0methean.ochd.materials.block.pickaxe
 import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.c
-import io.github.pr0methean.ochd.tasks.OutputTask
+import io.github.pr0methean.ochd.tasks.consumable.OutputConsumableTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
@@ -55,7 +55,7 @@ push bigRingsTopLeftBottomRight ${andesite_s} a2*/
         layer("borderSolidTopLeft", highlight)
     }
 
-    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputConsumableTask> = flow {
         emit(ctx.out("block/$name", ctx.stack {createTextureLayersBase()}))
         emit(ctx.out("block/polished_$name", ctx.stack {createPolishedTexture()}))
     }

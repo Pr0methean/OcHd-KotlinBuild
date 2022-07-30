@@ -3,13 +3,13 @@ package io.github.pr0methean.ochd.materials.block.barehand
 import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.materials.block.axe.OverworldWood
 import io.github.pr0methean.ochd.materials.block.pickaxe.Ore
-import io.github.pr0methean.ochd.tasks.OutputTask
+import io.github.pr0methean.ochd.tasks.consumable.OutputConsumableTask
 import io.github.pr0methean.ochd.texturebase.Material
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
 object Torch: Material {
-    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputConsumableTask> = flow {
         /*
 
 push torchBase $wood_oak torch1

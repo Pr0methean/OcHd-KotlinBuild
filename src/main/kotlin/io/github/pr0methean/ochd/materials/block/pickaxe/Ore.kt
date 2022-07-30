@@ -4,8 +4,8 @@ import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.Companion.stoneExtremeHighlight
-import io.github.pr0methean.ochd.tasks.OutputTask
-import io.github.pr0methean.ochd.tasks.TextureTask
+import io.github.pr0methean.ochd.tasks.consumable.ConsumableImageTask
+import io.github.pr0methean.ochd.tasks.consumable.OutputConsumableTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Color
 import kotlinx.coroutines.flow.Flow
@@ -32,7 +32,7 @@ enum class Ore(
         color = c(0x2f2f2f),
         shadow = Color.BLACK,
         highlight = c(0x494949)) {
-        override fun oreBlock(ctx: ImageProcessingContext, oreBase: OreBase): TextureTask {
+        override fun oreBlock(ctx: ImageProcessingContext, oreBase: OreBase): ConsumableImageTask {
             if (oreBase == OreBase.DEEPSLATE) {
                 return ctx.stack {
                     copy(OreBase.DEEPSLATE)
@@ -78,7 +78,7 @@ enum class Ore(
         highlight = Color.WHITE,
         substrates = NETHER
     ) {
-        override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+        override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputConsumableTask> = flow {
             emit(ctx.out("item/quartz") { ingot() })
             emit(ctx.out("block/nether_quartz_ore", ctx.stack {
                     copy(OreBase.NETHERRACK)
@@ -185,7 +185,7 @@ enum class Ore(
         item()
     }
 
-    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputConsumableTask> = flow {
         substrates.forEach { oreBase ->
             emit(ctx.out("block/${oreBase.orePrefix}${name}_ore", oreBlock(ctx, oreBase)))
         }

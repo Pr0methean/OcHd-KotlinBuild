@@ -4,7 +4,7 @@ import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.materials.block.axe.Fungus
-import io.github.pr0methean.ochd.tasks.OutputTask
+import io.github.pr0methean.ochd.tasks.consumable.OutputConsumableTask
 import io.github.pr0methean.ochd.texturebase.Material
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.flow.Flow
@@ -61,7 +61,7 @@ enum class Crop(val numStages: Int, val color: Paint): Material {
         }
     };
 
-    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputConsumableTask> = flow {
         for (stage in 0 until numStages) {
             emit(ctx.out("block/${name}_stage${stage}", ctx.stack {createTextureForStage(stage)}))
         }

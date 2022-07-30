@@ -2,7 +2,7 @@ package io.github.pr0methean.ochd.texturebase
 
 import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.LayerListBuilder
-import io.github.pr0methean.ochd.tasks.OutputTask
+import io.github.pr0methean.ochd.tasks.consumable.OutputConsumableTask
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
@@ -19,7 +19,7 @@ interface GroundCoverBlock: Material {
     }
     fun LayerListBuilder.createTopLayers()
 
-    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputConsumableTask> = flow {
         emit(ctx.out("block/${nameOverrideTop ?: "${name}_top"}", ctx.stack { createTopLayers() }))
         emit(ctx.out("block/${nameOverrideSide ?: "${name}_side"}", ctx.stack {
             copy(base)

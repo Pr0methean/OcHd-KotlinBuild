@@ -1,12 +1,16 @@
 package io.github.pr0methean.ochd
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
-import io.github.pr0methean.ochd.tasks.doJfx
+import io.github.pr0methean.ochd.tasks.consumable.doJfx
 import javafx.application.Platform
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.toList
 import org.apache.logging.log4j.LogManager
+import org.apache.logging.log4j.util.Unbox
 import java.nio.file.Paths
-import java.util.concurrent.Executors
+import kotlin.Result.Companion.failure
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
@@ -14,10 +18,8 @@ private val logger = run {
     System.setProperty("java.util.logging.manager", "org.apache.logging.log4j.jul.LogManager")
     LogManager.getRootLogger()
 }
-var MEMORY_INTENSE_COROUTINE_CONTEXT: CoroutineDispatcher = Dispatchers.Unconfined
 
 @Suppress("UnstableApiUsage")
-@OptIn(ExperimentalCoroutinesApi::class)
 suspend fun main(args:Array<String>) {
     if (args.isEmpty()) {
         println("Usage: main <size>")
@@ -32,7 +34,7 @@ suspend fun main(args:Array<String>) {
     val scope = CoroutineScope(Dispatchers.Default)
     val svgDirectory = Paths.get("svg").toAbsolutePath().toFile()
     val metadataDirectory = Paths.get("metadata").toAbsolutePath().toFile()
-    val out = Paths.get("out").toAbsolutePath().toFile()
+    val out = Paths.get("pngout").toAbsolutePath().toFile()
     val outTextureRoot = out.resolve("assets").resolve("minecraft").resolve("textures")
     val ioScope = CoroutineScope(Dispatchers.IO).plus(supervisorJob)
     val cleanupJob = ioScope.launch(CoroutineName("Delete old outputs")) {out.deleteRecursively()}
@@ -43,7 +45,6 @@ suspend fun main(args:Array<String>) {
         svgDirectory = svgDirectory,
         outTextureRoot = outTextureRoot
     )
-    MEMORY_INTENSE_COROUTINE_CONTEXT = Executors.newFixedThreadPool(1.shl(24) / (tileSize * tileSize)).asCoroutineDispatcher()
     doJfx("Increase rendering thread priority") {
         Thread.currentThread().priority = Thread.MAX_PRIORITY
     }
@@ -67,27 +68,38 @@ suspend fun main(args:Array<String>) {
         var tasks = ALL_MATERIALS.outputTasks(ctx)
         stats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupJob.join()
-        var retrying = false
         while (tasks.firstOrNull() != null) {
-            if (retrying) {
-                logger.info("Retrying these failed tasks: {}", tasks.toList())
+            tasks.collect {
+                withContext(scope.coroutineContext.plus(CoroutineName(it.name))) {
+                    it.startAsync()
+                }
+            }
+            val tasksToRetry = tasks.filter {
+                withContext(scope.coroutineContext.plus(CoroutineName(it.name))) {
+                    logger.info("Joining {}", it)
+                    val result = try {
+                        it.await()
+                    } catch (t: Throwable) {
+                        failure(t)
+                    }
+                    logger.info("Joined {} with result of {}", it, result)
+                    if (result.isFailure) {
+                        stats.retries.increment()
+                        logger.info("Clearing failure in {}", it)
+                        it.clearFailure()
+                        logger.info("Cleared failure in {}", it)
+                        logger.error("Error in {}", it, result.exceptionOrNull())
+                        true
+                    } else {
+                        false
+                    }
+                }
+            }.toList()
+            if (tasksToRetry.isNotEmpty()) {
+                logger.info("Retrying {} failed tasks", Unbox.box(tasksToRetry.size))
                 System.gc()
             }
-            tasks = tasks.flowOn(Dispatchers.Default.limitedParallelism(1)).map {
-                scope.plus(CoroutineName(it.name)).plus(SupervisorJob()).launch { it.run() }
-                it
-            }.flowOn(Dispatchers.IO).filter {
-                val result = it.join()
-                if (result.isFailure) {
-                    it.clearFailure()
-                    stats.retries.increment()
-                    logger.error("Error in {}", it, result.exceptionOrNull())
-                    true
-                } else {
-                    false
-                }
-            }.toList().asFlow()
-            retrying = true
+            tasks = tasksToRetry.asFlow()
         }
         copyMetadata.join()
     }

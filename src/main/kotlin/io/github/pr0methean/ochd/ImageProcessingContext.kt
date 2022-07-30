@@ -1,7 +1,9 @@
 package io.github.pr0methean.ochd
 
-import io.github.pr0methean.ochd.packedimage.ImagePacker
-import io.github.pr0methean.ochd.tasks.*
+import io.github.pr0methean.ochd.tasks.consumable.*
+import io.github.pr0methean.ochd.tasks.consumable.caching.NoopTaskCache
+import io.github.pr0methean.ochd.tasks.consumable.caching.SoftTaskCache
+import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.CoroutineScope
@@ -22,9 +24,8 @@ class ImageProcessingContext(
 ) {
     override fun toString(): String = name
     private val svgTasks: Map<String, SvgImportTask>
-    private val taskDeduplicationMap = ConcurrentHashMap<TextureTask, TextureTask>()
+    private val taskDeduplicationMap = ConcurrentHashMap<ConsumableImageTask, ConsumableImageTask>()
     val stats = ImageProcessingStats()
-    val packer = ImagePacker(scope, stats)
 
     init {
         val builder = mutableMapOf<String, SvgImportTask>()
@@ -34,22 +35,24 @@ class ImageProcessingContext(
                 shortName,
                 tileSize,
                 svgDirectory.resolve("$shortName.svg"),
-                scope,
-                stats,
-                packer
-            )
+                stats)
         }
         svgTasks = builder.toMap()
     }
 
-    fun deduplicate(task: TextureTask): TextureTask {
+    fun deduplicate(task: ConsumableImageTask): ConsumableImageTask {
         if (task is SvgImportTask) {
             return task // SvgImportTask duplication is impossible because svgTasks is populated eagerly
         }
-        if (task is RepaintTask && (task.paint == null || task.paint == Color.BLACK) && task.alpha == 1.0) {
+        if (task is RepaintTask
+            && (task.paint == null || task.paint == Color.BLACK)
+            && task.alpha == 1.0
+            && task.base is ConsumableImageTask) {
             return deduplicate(task.base)
         }
-        if (task is ImageStackingTask && task.layers.layers.size == 1 && task.layers.background == Color.TRANSPARENT) {
+        if (task is ImageStackingConsumableTask
+            && task.layers.layers.size == 1
+            && task.layers.background == Color.TRANSPARENT) {
             return deduplicate(task.layers.layers[0])
         }
         val className = task::class.simpleName ?: "[unnamed class]"
@@ -61,28 +64,25 @@ class ImageProcessingContext(
         }
     }
 
-    fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): TextureTask
-            = layer(svgTasks[name] ?: throw IllegalArgumentException("No SVG task called $name"), paint, alpha)
+    fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): ConsumableImageTask
+            = layer(svgTasks[name]?.unpacked ?: throw IllegalArgumentException("No SVG task called $name"), paint, alpha)
 
-    fun layer(source: TextureTask, paint: Paint? = null, alpha: Double = 1.0): TextureTask {
-       // NB: This means we can't create a black version of a precolored layer except by making it a separate SVG!
-        if ((paint == Color.BLACK || paint == null) && alpha == 1.0) {
-            return source
-        }
-        return deduplicate(RepaintTask(paint, source, alpha, packer, scope, stats))
+    fun layer(source: ConsumableTask<Image>, paint: Paint? = null, alpha: Double = 1.0): ConsumableImageTask {
+        return deduplicate(RepaintTask(source, paint, alpha, SoftTaskCache(), stats))
     }
 
-    fun stack(init: LayerListBuilder.() -> Unit): TextureTask {
-        val layerTasks = LayerListBuilder(this)
-        layerTasks.init()
-        return deduplicate(ImageStackingTask(layerTasks.build(), tileSize, packer, scope, stats))
+    fun stack(init: LayerListBuilder.() -> Unit): ConsumableImageTask {
+        val layerTasksBuilder = LayerListBuilder(this)
+        layerTasksBuilder.init()
+        val layerTasks = layerTasksBuilder.build()
+        return deduplicate(ImageStackingConsumableTask(layerTasks, tileSize, tileSize, layerTasks.toString(), SoftTaskCache(), stats))
     }
 
-    fun animate(frames: List<TextureTask>): TextureTask {
-        return deduplicate(AnimationColumnTask(frames, tileSize, packer, scope, stats))
+    fun animate(frames: List<ConsumableImageTask>): ConsumableImageTask {
+        return deduplicate(AnimationConsumableTask(frames, tileSize, tileSize, frames.toString(), NoopTaskCache(), stats))
     }
 
-    fun out(name: String, source: TextureTask): OutputTask {
+    fun out(name: String, source: ConsumableImageTask): OutputConsumableTask {
         val lowercaseName = name.lowercase(Locale.ENGLISH)
         return out(lowercaseName, outTextureRoot.resolve("$lowercaseName.png"), source)
     }
@@ -90,9 +90,9 @@ class ImageProcessingContext(
     fun out(
         lowercaseName: String,
         destination: File,
-        source: TextureTask
-    ): OutputTask {
-        return OutputTask(source, lowercaseName, destination, stats)
+        source: ConsumableImageTask
+    ): OutputConsumableTask {
+        return OutputConsumableTask(source.asPng, lowercaseName, destination, stats)
     }
 
     fun out(name: String, source: LayerListBuilder.() -> Unit) = out(name, stack {source()})

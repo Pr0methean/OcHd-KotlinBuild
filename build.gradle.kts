@@ -1,6 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
+    application
     kotlin("jvm") version "1.7.0"
     id("org.openjfx.javafxplugin") version "0.0.13"
 }
@@ -8,9 +9,15 @@ plugins {
 group = "org.example"
 version = "1.0-SNAPSHOT"
 
+const val mainClassName = "io.github.pr0methean.ochd.MainKt"
+
+application {
+    mainClass.set(mainClassName)
+}
+
 tasks.jar {
     manifest {
-        attributes("Main-Class" to "io.github.pr0methean.ochd.MainKt")
+        attributes("Main-Class" to mainClassName)
     }
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
     from (
