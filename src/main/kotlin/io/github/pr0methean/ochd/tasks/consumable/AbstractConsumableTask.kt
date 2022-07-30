@@ -6,11 +6,9 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import org.apache.logging.log4j.LogManager
 import java.util.*
 import java.util.concurrent.atomic.AtomicReference
 
-private val logger = LogManager.getLogger("AbstractConsumableTask")
 abstract class AbstractConsumableTask<T>(override val name: String, private val cache: TaskCache<T>) : ConsumableTask<T> {
     val mutex = Mutex()
     override fun toString(): String = name
@@ -51,7 +49,13 @@ abstract class AbstractConsumableTask<T>(override val name: String, private val 
     protected abstract suspend fun createCoroutineAsync(): Deferred<Result<T>>
 
     suspend fun emit(result: Result<T>) {
-        set(result)
+        val oldCoroutine = mutex.withLock {
+            set(result)
+            coroutine.getAndSet(null)
+        }
+        if (oldCoroutine?.isCompleted == false) {
+            oldCoroutine.cancel()
+        }
         consumers.forEach { it(result) }
     }
 
@@ -79,6 +83,7 @@ abstract class AbstractConsumableTask<T>(override val name: String, private val 
         }
     }
 
+    @Suppress("DeferredResultUnused")
     override suspend fun consume(block: suspend (Result<T>) -> Unit) {
         val resultNow = getNow()
         if (resultNow != null) {
