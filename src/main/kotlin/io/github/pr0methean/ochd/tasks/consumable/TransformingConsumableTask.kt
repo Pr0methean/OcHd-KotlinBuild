@@ -28,6 +28,11 @@ open class TransformingConsumableTask<T, U>(
         return super.getNow()
     }
 
+    override suspend fun startAsync(): Deferred<Result<U>> {
+        base.startAsync()
+        return super.startAsync()
+    }
+
     override suspend fun createCoroutineAsync(): Deferred<Result<U>>
             = CoroutineScope(currentCoroutineContext().plus(CoroutineName(name)).plus(SupervisorJob()))
         .async {

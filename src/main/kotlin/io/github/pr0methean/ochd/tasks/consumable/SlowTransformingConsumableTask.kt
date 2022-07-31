@@ -25,7 +25,7 @@ open class SlowTransformingConsumableTask<T, U>(
     }
 
     override suspend fun startAsync(): Deferred<Result<U>> {
-        base.consume {emit(wrappingTransform(it))}
+        base.startAsync()
         return super.startAsync()
     }
 
