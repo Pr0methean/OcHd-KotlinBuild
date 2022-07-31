@@ -17,9 +17,6 @@ data class TopPartCroppingTask(override val base: ConsumableTask<Image>, overrid
 }), ConsumableImageTask {
     override val unpacked: ConsumableTask<Image> = this
     override val asPng: ConsumableTask<ByteArray> = PngCompressionTask(this, StrongTaskCache(), stats)
-    override suspend fun clearFailure() {
-        super<SlowTransformingConsumableTask>.clearFailure()
-    }
 
     override fun equals(other: Any?): Boolean {
         return (other === this) || (other is TopPartCroppingTask && other.base == base)
