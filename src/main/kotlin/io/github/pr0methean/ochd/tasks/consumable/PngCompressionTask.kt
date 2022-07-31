@@ -9,9 +9,9 @@ import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
 
 private val logger = LogManager.getLogger("PngCompressionTask")
-data class PngCompressionTask(
+class PngCompressionTask(
     override val base: AbstractConsumableTask<Image>, override val cache: TaskCache<ByteArray>, val stats: ImageProcessingStats
-): TransformingConsumableTask<Image, ByteArray>(base = base, cache = cache, transform = { image ->
+): TransformingConsumableTask<Image, ByteArray>("PNG compression of $base", base = base, cache = cache, transform = { image ->
     ByteArrayOutputStream().use {
         stats.onCompressPngImage(base.name)
         @Suppress("BlockingMethodInNonBlockingContext")

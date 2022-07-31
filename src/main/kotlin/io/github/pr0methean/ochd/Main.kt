@@ -19,7 +19,7 @@ private val logger = run {
     LogManager.getRootLogger()
 }
 
-@Suppress("UnstableApiUsage")
+@Suppress("UnstableApiUsage", "DeferredResultUnused")
 suspend fun main(args:Array<String>) {
     if (args.isEmpty()) {
         println("Usage: main <size>")
@@ -31,7 +31,7 @@ suspend fun main(args:Array<String>) {
     val supervisorJob = SupervisorJob()
     val tileSize = args[0].toInt()
     if (tileSize <= 0) throw IllegalArgumentException("tileSize shouldn't be zero or negative but was ${args[0]}")
-    val scope = CoroutineScope(Dispatchers.Default)
+    val scope = CoroutineScope(Dispatchers.Default).plus(supervisorJob)
     val svgDirectory = Paths.get("svg").toAbsolutePath().toFile()
     val metadataDirectory = Paths.get("metadata").toAbsolutePath().toFile()
     val out = Paths.get("pngout").toAbsolutePath().toFile()
@@ -70,12 +70,10 @@ suspend fun main(args:Array<String>) {
         cleanupJob.join()
         while (tasks.firstOrNull() != null) {
             tasks.collect {
-                withContext(scope.coroutineContext.plus(CoroutineName(it.name))) {
-                    it.startAsync()
-                }
+                it.startAsync()
             }
             val tasksToRetry = tasks.filter {
-                withContext(scope.coroutineContext.plus(CoroutineName(it.name))) {
+                withContext(scope.coroutineContext.plus(CoroutineName("Joining ${it.name}"))) {
                     logger.info("Joining {}", it)
                     val result = try {
                         it.await()

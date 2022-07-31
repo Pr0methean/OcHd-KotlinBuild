@@ -7,6 +7,7 @@ import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -50,18 +51,19 @@ class ImageProcessingContext(
             && task.base is ConsumableImageTask) {
             return deduplicate(task.base)
         }
-        if (task is ImageStackingConsumableTask
+        if (task is ImageStackingTask
             && task.layers.layers.size == 1
             && task.layers.background == Color.TRANSPARENT) {
             return deduplicate(task.layers.layers[0])
         }
         val className = task::class.simpleName ?: "[unnamed class]"
         stats.dedupeSuccesses.add(className)
-        return taskDeduplicationMap.computeIfAbsent(task) {
+        val deduped = taskDeduplicationMap.computeIfAbsent(task) {
             stats.dedupeSuccesses.remove(className)
             stats.dedupeFailures.add(className)
             task
         }
+        return if (deduped === task) task else runBlocking {deduped.mergeWithDuplicate(task)}
     }
 
     fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): ConsumableImageTask
@@ -75,7 +77,7 @@ class ImageProcessingContext(
         val layerTasksBuilder = LayerListBuilder(this)
         layerTasksBuilder.init()
         val layerTasks = layerTasksBuilder.build()
-        return deduplicate(ImageStackingConsumableTask(layerTasks, tileSize, tileSize, layerTasks.toString(), SoftTaskCache(), stats))
+        return deduplicate(ImageStackingTask(layerTasks, tileSize, tileSize, layerTasks.toString(), SoftTaskCache(), stats))
     }
 
     fun animate(frames: List<ConsumableImageTask>): ConsumableImageTask {

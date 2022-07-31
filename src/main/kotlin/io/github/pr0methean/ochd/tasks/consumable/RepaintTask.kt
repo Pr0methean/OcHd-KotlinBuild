@@ -11,15 +11,16 @@ import javafx.scene.effect.ColorInput
 import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
 import javafx.scene.paint.Paint
+import kotlinx.coroutines.Deferred
 import java.util.*
 
-data class RepaintTask(
+class RepaintTask(
     override val base: ConsumableTask<Image>,
     val paint: Paint?,
     val alpha: Double = 1.0,
     override val cache: TaskCache<Image>,
     val stats: ImageProcessingStats
-): SlowTransformingConsumableTask<Image, Image>(base, cache, { baseImage ->
+): SlowTransformingConsumableTask<Image, Image>("$base@$paint@$alpha", base, cache, { baseImage ->
     val output = WritableImage(baseImage.width.toInt(), baseImage.height.toInt())
     doJfx("Repaint $base with $paint") {
         val canvas = Canvas(baseImage.width, baseImage.height)
@@ -44,8 +45,15 @@ data class RepaintTask(
 }), ConsumableImageTask {
     override val unpacked: ConsumableTask<Image> = this
     override val asPng: ConsumableTask<ByteArray> = PngCompressionTask(this, StrongTaskCache(), stats)
-    override suspend fun clearFailure() {
-        super<SlowTransformingConsumableTask>.clearFailure()
+    override suspend fun checkSanity() {
+        super<SlowTransformingConsumableTask>.checkSanity()
+        asPng.checkSanity()
+    }
+
+    @Suppress("DeferredResultUnused")
+    override suspend fun startAsync(): Deferred<Result<Image>> {
+        base.startAsync()
+        return super.startAsync()
     }
 
     override fun equals(other: Any?): Boolean {

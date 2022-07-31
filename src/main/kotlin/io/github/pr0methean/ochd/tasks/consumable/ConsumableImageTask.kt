@@ -33,4 +33,17 @@ interface ConsumableImageTask: StringBuilderFormattable {
     val unpacked: ConsumableTask<Image>
 
     val asPng: ConsumableTask<ByteArray>
+
+    suspend fun checkSanity() {
+        unpacked.checkSanity()
+        asPng.checkSanity()
+    }
+
+    @Suppress("DeferredResultUnused")
+    suspend fun startAsync(): Deferred<Result<Image>>
+    suspend fun mergeWithDuplicate(other: ConsumableImageTask): ConsumableImageTask {
+        asPng.mergeWithDuplicate(other.asPng)
+        unpacked.mergeWithDuplicate(other.unpacked)
+        return this
+    }
 }

@@ -5,7 +5,7 @@ import org.apache.logging.log4j.util.StringBuilderFormattable
 
 interface ConsumableTask<T>: StringBuilderFormattable {
     val name: String
-    suspend fun consume(block: suspend (Result<T>) -> Unit)
+    suspend fun <R> consumeAsync(block: suspend (Result<T>) -> R): Deferred<R>
 
     fun getNow(): Result<T>?
 
@@ -14,4 +14,6 @@ interface ConsumableTask<T>: StringBuilderFormattable {
     suspend fun await(): Result<T>
 
     suspend fun clearFailure()
+    suspend fun checkSanity()
+    suspend fun mergeWithDuplicate(other: ConsumableTask<T>)
 }

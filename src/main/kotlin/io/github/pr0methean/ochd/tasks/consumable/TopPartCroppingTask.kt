@@ -5,11 +5,12 @@ import io.github.pr0methean.ochd.tasks.consumable.caching.StrongTaskCache
 import io.github.pr0methean.ochd.tasks.consumable.caching.TaskCache
 import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
+import kotlinx.coroutines.Deferred
 
 const val TOP_PORTION = 11.0/32
-data class TopPartCroppingTask(override val base: ConsumableTask<Image>, override val name: String,
+class TopPartCroppingTask(override val base: ConsumableTask<Image>, override val name: String,
                                override val cache: TaskCache<Image>,
-                               val stats: ImageProcessingStats): SlowTransformingConsumableTask<Image, Image>(base, cache, { image ->
+                               val stats: ImageProcessingStats): SlowTransformingConsumableTask<Image, Image>("Top part of $base", base, cache, { image ->
     val pixelReader = image.pixelReader
     doJfx(name) {
         return@doJfx WritableImage(pixelReader, image.width.toInt(), (image.height * TOP_PORTION).toInt())
@@ -17,6 +18,16 @@ data class TopPartCroppingTask(override val base: ConsumableTask<Image>, overrid
 }), ConsumableImageTask {
     override val unpacked: ConsumableTask<Image> = this
     override val asPng: ConsumableTask<ByteArray> = PngCompressionTask(this, StrongTaskCache(), stats)
+    override suspend fun checkSanity() {
+        super<SlowTransformingConsumableTask>.checkSanity()
+        asPng.checkSanity()
+    }
+
+    @Suppress("DeferredResultUnused")
+    override suspend fun startAsync(): Deferred<Result<Image>> {
+        base.startAsync()
+        return super.startAsync()
+    }
 
     override fun equals(other: Any?): Boolean {
         return (other === this) || (other is TopPartCroppingTask && other.base == base)

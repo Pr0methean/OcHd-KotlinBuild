@@ -2,46 +2,82 @@ package io.github.pr0methean.ochd.tasks.consumable
 
 import com.google.common.collect.MapMaker
 import io.github.pr0methean.ochd.tasks.consumable.caching.TaskCache
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import org.apache.logging.log4j.LogManager
 import java.util.*
+import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
+import javax.annotation.concurrent.GuardedBy
+import kotlin.Result.Companion.failure
+import kotlin.coroutines.CoroutineContext
 
+private val logger = LogManager.getLogger("AbstractConsumableTask")
 abstract class AbstractConsumableTask<T>(override val name: String, private val cache: TaskCache<T>) : ConsumableTask<T> {
-    val mutex = Mutex()
-    override fun toString(): String = name
+    private val mutex = Mutex()
+    @Suppress("LeakingThis")
+    protected val exceptionHandler = ExceptionHandler(this)
+    protected val attemptNumber = AtomicLong()
+    @Volatile
+    protected var runningAttemptNumber = -1L
+    class ExceptionHandler(val task: AbstractConsumableTask<*>) : CoroutineExceptionHandler {
+        override val key: CoroutineContext.Key<*> = CoroutineExceptionHandler.Key
+        override fun handleException(context: CoroutineContext, exception: Throwable) {
+            val thisAttempt = context[AttemptNumberKey]?.attempt ?: -2
+            CoroutineScope(context.plus(SupervisorJob())).launch {
+                task.mutex.withLock {
+                    if (task.runningAttemptNumber == thisAttempt) {
+                        task.emit(failure(exception))
+                    }
+                }
+            }
+        }
+    }
+
+    class AttemptNumberCtx(val attempt: Long): CoroutineContext.Element {
+        override val key = AttemptNumberKey
+    }
+
+    object AttemptNumberKey: CoroutineContext.Key<AttemptNumberCtx>
+
+    final override fun toString(): String = name
 
     override fun formatTo(buffer: StringBuilder) {
         buffer.append(name)
     }
 
-    @Volatile
-    var coroutine: AtomicReference<Deferred<Result<T>>?> = AtomicReference(null)
+    val coroutine: AtomicReference<Deferred<Result<T>>?> = AtomicReference(null)
     val consumers: MutableSet<suspend (Result<T>) -> Unit> = Collections.newSetFromMap(MapMaker().weakKeys().makeMap())
     @OptIn(ExperimentalCoroutinesApi::class)
     override fun getNow(): Result<T>? {
         val cached = cache.getNow()
         if (cached != null) {
+            logger.debug("Retrieved {} from cache", cached)
             return cached
         }
         val coroutine = coroutine.get()
         if (coroutine?.isCompleted == true) {
             val result = coroutine.getCompleted()
-            set(result)
+            logger.debug("Retrieved {} from coroutine in getNow", result)
+            CoroutineScope(Dispatchers.Default).launch {emit(result)}
             return result
         }
         return null
     }
-    protected fun set(value: Result<T>?) = cache.set(value)
+    private fun set(value: Result<T>?) = cache.set(value)
 
+    @GuardedBy("mutex")
     override suspend fun startAsync(): Deferred<Result<T>> {
         val newCoroutine = createCoroutineAsync()
         val oldCoroutine = coroutine.compareAndExchange(null, newCoroutine)
         if (oldCoroutine == null) {
+            logger.debug("Starting {}", name)
+            runningAttemptNumber = attemptNumber.get()
             newCoroutine.start()
             return newCoroutine
+        } else {
+            logger.debug("Already started: {}", name)
         }
         return oldCoroutine
     }
@@ -49,14 +85,18 @@ abstract class AbstractConsumableTask<T>(override val name: String, private val 
     protected abstract suspend fun createCoroutineAsync(): Deferred<Result<T>>
 
     suspend fun emit(result: Result<T>) {
-        val oldCoroutine = mutex.withLock {
+        val (oldCoroutine, oldConsumers) = mutex.withLock {
             set(result)
-            coroutine.getAndSet(null)
+            runningAttemptNumber = -1
+            val oldCoroutine = coroutine.getAndSet(null)
+            val oldConsumers = consumers.toList()
+            consumers.clear()
+            oldCoroutine to oldConsumers
         }
         if (oldCoroutine?.isCompleted == false) {
             oldCoroutine.cancel()
         }
-        consumers.forEach { it(result) }
+        oldConsumers.forEach { it(result) }
     }
 
     override suspend fun await(): Result<T> {
@@ -71,31 +111,78 @@ abstract class AbstractConsumableTask<T>(override val name: String, private val 
             }
             startAsync()
         }
+        logger.debug("Awaiting {}", name)
         return coroutine.await()
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     override suspend fun clearFailure() {
         mutex.withLock {
-            if (getNow()?.isFailure == true) {
+            if (getNow()?.isFailure == true || coroutine.get()?.isCancelled == true || coroutine.get()?.getCompleted()?.isFailure == true) {
                 set(null)
                 coroutine.set(null)
+                runningAttemptNumber = -1
             }
         }
     }
 
     @Suppress("DeferredResultUnused")
-    override suspend fun consume(block: suspend (Result<T>) -> Unit) {
+    override suspend fun <R> consumeAsync(block: suspend (Result<T>) -> R): Deferred<R> {
         val resultNow = getNow()
         if (resultNow != null) {
-            return block(resultNow)
+            return CompletableDeferred(block(resultNow))
         }
-        mutex.withLock {
-            val resultAfterLocking = getNow()
-            if (resultAfterLocking != null) {
-                return block(resultAfterLocking)
+        val resultAfterLocking = mutex.withLock {
+            val result = getNow()
+            if (result == null) {
+                val deferred = CompletableDeferred<R>()
+                consumers.add {
+                    deferred.complete(block(it))
+                }
+                startAsync()
+                return deferred
             }
-            consumers.add(block)
-            startAsync()
+            result
+        }
+        return CompletableDeferred(block(resultAfterLocking))
+    }
+
+    override suspend fun checkSanity() {
+        mutex.withLock {
+            if (consumers.isNotEmpty() && coroutine.get()?.isActive != true) {
+                logger.error("{} has consumers {} waiting but is not running", name, consumers)
+            }
+        }
+    }
+
+    protected open suspend fun createCoroutineScope(attempt: Long) = CoroutineScope(
+        currentCoroutineContext()
+            .plus(CoroutineName(name))
+            .plus(AttemptNumberCtx(attempt))
+            .plus(exceptionHandler)
+            .plus(SupervisorJob())
+    )
+
+    override suspend fun mergeWithDuplicate(other: ConsumableTask<T>) {
+        mutex.withLock {
+            if (getNow() != null) {
+                return@withLock
+            }
+            val result = other.getNow()
+            if (result != null) {
+                emit(result)
+                return@withLock
+            }
+            if (coroutine.get() == null && other is AbstractConsumableTask) {
+                other.mutex.withLock {
+                    val resultWithLock = other.getNow()
+                    if (resultWithLock != null) {
+                        emit(resultWithLock)
+                        return
+                    }
+                    coroutine.set(other.coroutine.get())
+                }
+            }
         }
     }
 }

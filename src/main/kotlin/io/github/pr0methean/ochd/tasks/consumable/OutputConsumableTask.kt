@@ -14,8 +14,9 @@ data class OutputConsumableTask(
     override val name: String,
     private val file: File,
     val stats: ImageProcessingStats,
-): SlowTransformingConsumableTask<ByteArray, Unit>(source, StrongTaskCache(), transform = { bytes ->
+): SlowTransformingConsumableTask<ByteArray, Unit>("Output $name", source, StrongTaskCache(), transform = { bytes ->
     withContext(Dispatchers.IO.plus(CoroutineName(name))) {
+        stats.onTaskLaunched("OutputTask", name)
         file.parentFile?.mkdirs()
         FileOutputStream(file).use { it.write(bytes) }
     }

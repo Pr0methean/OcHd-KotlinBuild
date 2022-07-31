@@ -6,10 +6,12 @@ import io.github.pr0methean.ochd.tasks.consumable.caching.TaskCache
 import javafx.scene.canvas.Canvas
 import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.joinAll
 import java.util.*
 
-data class AnimationConsumableTask(
+class AnimationConsumableTask(
     val frames: List<ConsumableImageTask>,
     val width: Int, val height: Int, override val name: String,
     val cache: TaskCache<Image>,
@@ -20,6 +22,16 @@ data class AnimationConsumableTask(
     override suspend fun clearFailure() {
         frames.map(ConsumableImageTask::unpacked).asFlow().collect(ConsumableTask<Image>::clearFailure)
         super.clearFailure()
+    }
+
+    override suspend fun checkSanity() {
+        frames.asFlow().collect(ConsumableImageTask::checkSanity)
+        super.checkSanity()
+    }
+
+    override suspend fun startAsync(): Deferred<Result<Image>> {
+        frames.asFlow().collect(ConsumableImageTask::startAsync)
+        return super.startAsync()
     }
 
     override fun equals(other: Any?): Boolean {
@@ -38,12 +50,13 @@ data class AnimationConsumableTask(
         val canvas = Canvas(width.toDouble(), totalHeight.toDouble())
         canvas.isCache = true
         val canvasCtx = canvas.graphicsContext2D
-        frames.map(ConsumableImageTask::unpacked).forEachIndexed {index, frameTask -> frameTask.consume {
+        val frameTasks = frames.map(ConsumableImageTask::unpacked).mapIndexed {index, frameTask -> frameTask.consumeAsync {
             doJfx("Frame $index of $name") {
                 canvasCtx.drawImage(it.getOrThrow(), 0.0, (height * index).toDouble())
             }
         }}
-        frames.map(ConsumableImageTask::unpacked).asFlow().collect(ConsumableTask<Image>::await)
+        frames.asFlow().collect { it.startAsync() }
+        frameTasks.joinAll()
         val output = WritableImage(width, totalHeight)
         return doJfx("snapshot for $name") {
             canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
