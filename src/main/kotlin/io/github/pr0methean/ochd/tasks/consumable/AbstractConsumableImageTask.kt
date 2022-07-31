@@ -10,7 +10,4 @@ abstract class AbstractConsumableImageTask(override val name: String, cache: Tas
     : SimpleConsumableTask<Image>(name, cache), ConsumableImageTask {
     override val unpacked = this
     override val asPng by lazy {PngCompressionTask(this, StrongTaskCache(), stats)}
-    override suspend fun clearFailure() {
-        super<SimpleConsumableTask>.clearFailure()
-    }
 }
