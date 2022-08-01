@@ -4,7 +4,6 @@ import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.tasks.consumable.caching.StrongTaskCache
 import io.github.pr0methean.ochd.tasks.consumable.caching.TaskCache
 import javafx.scene.image.Image
-import kotlinx.coroutines.Deferred
 
 abstract class AbstractConsumableImageTask(override val name: String, cache: TaskCache<Image>,
                                            open val stats: ImageProcessingStats)
@@ -14,7 +13,4 @@ abstract class AbstractConsumableImageTask(override val name: String, cache: Tas
     override suspend fun checkSanity() {
         super<ConsumableImageTask>.checkSanity()
     }
-
-    @Suppress("DeferredResultUnused")
-    override suspend fun startAsync(): Deferred<Result<Image>> = super.startAsync()
 }

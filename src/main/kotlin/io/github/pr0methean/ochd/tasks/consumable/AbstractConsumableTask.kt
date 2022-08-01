@@ -12,28 +12,14 @@ import java.util.concurrent.atomic.AtomicReference
 import javax.annotation.concurrent.GuardedBy
 import kotlin.Result.Companion.failure
 import kotlin.coroutines.CoroutineContext
+import kotlin.math.max
 
 private val logger = LogManager.getLogger("AbstractConsumableTask")
 abstract class AbstractConsumableTask<T>(override val name: String, private val cache: TaskCache<T>) : ConsumableTask<T> {
     private val mutex = Mutex()
-    @Suppress("LeakingThis")
-    protected val exceptionHandler = ExceptionHandler(this)
     protected val attemptNumber = AtomicLong()
     @Volatile
     protected var runningAttemptNumber = -1L
-    class ExceptionHandler(val task: AbstractConsumableTask<*>) : CoroutineExceptionHandler {
-        override val key: CoroutineContext.Key<*> = CoroutineExceptionHandler.Key
-        override fun handleException(context: CoroutineContext, exception: Throwable) {
-            val thisAttempt = context[AttemptNumberKey]?.attempt ?: -2
-            CoroutineScope(context.plus(SupervisorJob())).launch {
-                task.mutex.withLock {
-                    if (task.runningAttemptNumber == thisAttempt) {
-                        task.emit(failure(exception))
-                    }
-                }
-            }
-        }
-    }
 
     class AttemptNumberCtx(val attempt: Long): CoroutineContext.Element {
         override val key = AttemptNumberKey
@@ -48,7 +34,7 @@ abstract class AbstractConsumableTask<T>(override val name: String, private val 
     }
 
     val coroutine: AtomicReference<Deferred<Result<T>>?> = AtomicReference(null)
-    val consumers: MutableSet<suspend (Result<T>) -> Unit> = Collections.newSetFromMap(MapMaker().weakKeys().makeMap())
+    private val consumers: MutableSet<suspend (Result<T>) -> Unit> = Collections.newSetFromMap(MapMaker().weakKeys().makeMap())
     @OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
     override fun getNow(): Result<T>? {
         val cached = cache.getNow()
@@ -60,24 +46,27 @@ abstract class AbstractConsumableTask<T>(override val name: String, private val 
         if (coroutine?.isCompleted == true) {
             val result = coroutine.getCompleted()
             logger.debug("Retrieved {} from coroutine in getNow", result)
-            GlobalScope.launch {emit(result)}
+            runBlocking {createCoroutineScope(coroutine[AttemptNumberKey]?.attempt ?: -2L)}.launch {emit(result)}
             return result
         }
         return null
     }
     private fun set(value: Result<T>?) = cache.set(value)
 
-    @OptIn(DelicateCoroutinesApi::class)
+    @OptIn(DelicateCoroutinesApi::class, InternalCoroutinesApi::class)
     @GuardedBy("mutex")
     override suspend fun startAsync(): Deferred<Result<T>> {
-        val newCoroutine = createCoroutineAsync()
+        val attemptNumber = attemptNumber.incrementAndGet()
+        val scope = createCoroutineScope(attemptNumber)
+        val newCoroutine = createCoroutineAsync(scope)
         val oldCoroutine = coroutine.compareAndExchange(null, newCoroutine)
         if (oldCoroutine == null) {
             logger.debug("Starting {}", name)
-            runningAttemptNumber = attemptNumber.get()
-            newCoroutine.invokeOnCompletion {
+            runningAttemptNumber = attemptNumber
+            newCoroutine.invokeOnCompletion(onCancelling = true) {
                 if (it != null) {
-                    GlobalScope.launch { emit(failure(it)) }
+                    logger.error("Handling exception in invokeOnCompletion", it)
+                    scope.launch { emit(failure(it)) }
                 }
             }
             newCoroutine.start()
@@ -88,10 +77,21 @@ abstract class AbstractConsumableTask<T>(override val name: String, private val 
         return oldCoroutine
     }
 
-    protected abstract suspend fun createCoroutineAsync(): Deferred<Result<T>>
+    private suspend fun createCoroutineAsync(): Deferred<Result<T>> {
+        val attempt = attemptNumber.incrementAndGet()
+        return createCoroutineAsync(createCoroutineScope(attempt))
+    }
+
+    protected abstract suspend fun createCoroutineAsync(coroutineScope: CoroutineScope): Deferred<Result<T>>
 
     suspend fun emit(result: Result<T>) {
+        val thisAttempt = currentCoroutineContext()[AttemptNumberKey]?.attempt ?: -2
         val (oldCoroutine, oldConsumers) = mutex.withLock {
+            if (runningAttemptNumber != thisAttempt && thisAttempt != -2L) {
+                logger.debug("Wrong attempt number (expected {}, was {}) for result {}",
+                    thisAttempt, runningAttemptNumber, result)
+                return
+            }
             set(result)
             runningAttemptNumber = -1
             val oldCoroutine = coroutine.getAndSet(null)
@@ -169,7 +169,6 @@ abstract class AbstractConsumableTask<T>(override val name: String, private val 
         currentCoroutineContext()
             .plus(CoroutineName(name))
             .plus(AttemptNumberCtx(attempt))
-            .plus(exceptionHandler)
             .plus(SupervisorJob())
     )
 
@@ -184,16 +183,18 @@ abstract class AbstractConsumableTask<T>(override val name: String, private val 
             }
             val result = other.getNow()
             if (result != null) {
-                emit(result)
+                GlobalScope.launch {emit(result)}
                 return@withLock
             }
             if (coroutine.get() == null && other is AbstractConsumableTask) {
                 other.mutex.withLock {
                     val resultWithLock = other.getNow()
+                    runningAttemptNumber = other.runningAttemptNumber
                     if (resultWithLock != null) {
-                        GlobalScope.launch {emit(resultWithLock)}
+                        createCoroutineScope(other.runningAttemptNumber).launch {emit(resultWithLock)}
                         return this
                     }
+                    attemptNumber.updateAndGet {max(it, other.attemptNumber.get())}
                     coroutine.set(other.coroutine.get())
                 }
             }

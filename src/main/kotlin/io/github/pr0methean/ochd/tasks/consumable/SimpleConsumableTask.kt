@@ -1,6 +1,7 @@
 package io.github.pr0methean.ochd.tasks.consumable
 
 import io.github.pr0methean.ochd.tasks.consumable.caching.TaskCache
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
@@ -10,9 +11,8 @@ abstract class SimpleConsumableTask<T>(name: String, cache: TaskCache<T>) : Abst
 ) {
     abstract suspend fun perform(): T
 
-    override suspend fun createCoroutineAsync(): Deferred<Result<T>> {
-        val attempt = attemptNumber.incrementAndGet()
-        return createCoroutineScope(attempt).async(start = CoroutineStart.LAZY) {
+    override suspend fun createCoroutineAsync(coroutineScope: CoroutineScope): Deferred<Result<T>> {
+        return coroutineScope.async(start = CoroutineStart.LAZY) {
                 val result = try {
                     Result.success(perform())
                 } catch (t: Throwable) {

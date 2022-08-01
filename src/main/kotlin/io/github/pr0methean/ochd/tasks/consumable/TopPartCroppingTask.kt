@@ -5,7 +5,6 @@ import io.github.pr0methean.ochd.tasks.consumable.caching.StrongTaskCache
 import io.github.pr0methean.ochd.tasks.consumable.caching.TaskCache
 import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
-import kotlinx.coroutines.Deferred
 
 const val TOP_PORTION = 11.0/32
 class TopPartCroppingTask(override val base: ConsumableTask<Image>, override val name: String,
@@ -21,12 +20,6 @@ class TopPartCroppingTask(override val base: ConsumableTask<Image>, override val
     override suspend fun checkSanity() {
         super<SlowTransformingConsumableTask>.checkSanity()
         asPng.checkSanity()
-    }
-
-    @Suppress("DeferredResultUnused")
-    override suspend fun startAsync(): Deferred<Result<Image>> {
-        base.startAsync()
-        return super.startAsync()
     }
 
     override fun equals(other: Any?): Boolean {

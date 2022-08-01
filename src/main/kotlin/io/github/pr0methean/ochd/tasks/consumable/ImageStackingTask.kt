@@ -31,6 +31,11 @@ class ImageStackingTask(val layers: LayerList,
         super.clearFailure()
     }
 
+    override suspend fun startAsync(): Deferred<Result<Image>> {
+        layers.layers.map(ConsumableImageTask::unpacked).asFlow().collect(ConsumableTask<Image>::startAsync)
+        return super.startAsync()
+    }
+
     override suspend fun checkSanity() {
         layers.layers.asFlow().collect(ConsumableImageTask::checkSanity)
         super.checkSanity()
@@ -45,6 +50,7 @@ class ImageStackingTask(val layers: LayerList,
 
     override fun hashCode(): Int = Objects.hash(layers, width, height)
 
+    @Suppress("DeferredResultUnused")
     override suspend fun perform(): Image {
         stats.onTaskLaunched("ImageStackingTask", name)
         val canvas = Canvas(width.toDouble(), height.toDouble())
@@ -52,9 +58,7 @@ class ImageStackingTask(val layers: LayerList,
         val layersList = layers.layers.map(ConsumableImageTask::unpacked)
         var previousLayerTask: Deferred<Unit>? = null
         val snapshotRef = AtomicReference<Image>(null)
-        logger.debug("Starting layer tasks for {}", name)
-        layersList.asFlow().collect(ConsumableTask<*>::startAsync)
-        logger.debug("Waiting for layer tasks for {}", name)
+        logger.debug("Creating layer tasks for {}", name)
         layersList.forEachIndexed { index, layerTask ->
             logger.debug("Creating consumer for layer $index ($layerTask)")
             val myPreviousLayerTask = previousLayerTask
@@ -85,7 +89,10 @@ class ImageStackingTask(val layers: LayerList,
                     }
                 }
             }
+            layerTask.startAsync()
         }
+        previousLayerTask!!.start()
+        logger.debug("Waiting for layer tasks for {}", name)
         previousLayerTask!!.await()
         stats.onTaskCompleted("ImageStackingConsumableTask", name)
         return snapshotRef.get()

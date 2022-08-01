@@ -1,6 +1,7 @@
 package io.github.pr0methean.ochd.tasks.consumable
 
 import io.github.pr0methean.ochd.tasks.consumable.caching.TaskCache
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
@@ -33,9 +34,8 @@ open class TransformingConsumableTask<T, U>(
         return super.startAsync()
     }
 
-    override suspend fun createCoroutineAsync(): Deferred<Result<U>> {
-        val attempt = attemptNumber.incrementAndGet()
-        return createCoroutineScope(attempt).async(start = CoroutineStart.LAZY) {
+    override suspend fun createCoroutineAsync(coroutineScope: CoroutineScope): Deferred<Result<U>> {
+        return coroutineScope.async(start = CoroutineStart.LAZY) {
             val result = try {
                 wrappingTransform(base.await())
             } catch (t: Throwable) {

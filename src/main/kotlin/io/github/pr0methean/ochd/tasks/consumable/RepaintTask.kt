@@ -11,7 +11,6 @@ import javafx.scene.effect.ColorInput
 import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
 import javafx.scene.paint.Paint
-import kotlinx.coroutines.Deferred
 import java.util.*
 
 class RepaintTask(
@@ -48,12 +47,6 @@ class RepaintTask(
     override suspend fun checkSanity() {
         super<SlowTransformingConsumableTask>.checkSanity()
         asPng.checkSanity()
-    }
-
-    @Suppress("DeferredResultUnused")
-    override suspend fun startAsync(): Deferred<Result<Image>> {
-        base.startAsync()
-        return super.startAsync()
     }
 
     override fun equals(other: Any?): Boolean {
