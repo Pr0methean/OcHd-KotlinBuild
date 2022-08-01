@@ -67,6 +67,7 @@ abstract class AbstractConsumableTask<T>(override val name: String, private val 
     }
     private fun set(value: Result<T>?) = cache.set(value)
 
+    @OptIn(DelicateCoroutinesApi::class)
     @GuardedBy("mutex")
     override suspend fun startAsync(): Deferred<Result<T>> {
         val newCoroutine = createCoroutineAsync()
@@ -74,6 +75,11 @@ abstract class AbstractConsumableTask<T>(override val name: String, private val 
         if (oldCoroutine == null) {
             logger.debug("Starting {}", name)
             runningAttemptNumber = attemptNumber.get()
+            newCoroutine.invokeOnCompletion {
+                if (it != null) {
+                    GlobalScope.launch { emit(failure(it)) }
+                }
+            }
             newCoroutine.start()
             return newCoroutine
         } else {
