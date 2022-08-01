@@ -4,11 +4,9 @@ import io.github.pr0methean.ochd.tasks.consumable.caching.TaskCache
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
-import org.apache.logging.log4j.LogManager
 import kotlin.Result.Companion.failure
 import kotlin.Result.Companion.success
 
-private val logger = LogManager.getLogger("SlowTransformingConsumableTask")
 open class SlowTransformingConsumableTask<T, U>(
     name: String,
     open val base: ConsumableTask<T>,
@@ -52,6 +50,16 @@ open class SlowTransformingConsumableTask<T, U>(
     override fun getNow(): Result<U>? {
         base.getNow()
         return super.getNow()
+    }
+
+    @Suppress("UNCHECKED_CAST")
+    override suspend fun mergeWithDuplicate(other: ConsumableTask<U>): ConsumableTask<U> {
+        return if (other is SlowTransformingConsumableTask<*, *> && System.identityHashCode(this) < System.identityHashCode(other)) {
+            base.mergeWithDuplicate(other.base as ConsumableTask<T>)
+            this
+        } else {
+            super.mergeWithDuplicate(other)
+        }
     }
 
     override suspend fun clearFailure() {

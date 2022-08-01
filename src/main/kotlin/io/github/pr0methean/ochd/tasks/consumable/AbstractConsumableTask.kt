@@ -49,7 +49,7 @@ abstract class AbstractConsumableTask<T>(override val name: String, private val 
 
     val coroutine: AtomicReference<Deferred<Result<T>>?> = AtomicReference(null)
     val consumers: MutableSet<suspend (Result<T>) -> Unit> = Collections.newSetFromMap(MapMaker().weakKeys().makeMap())
-    @OptIn(ExperimentalCoroutinesApi::class)
+    @OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
     override fun getNow(): Result<T>? {
         val cached = cache.getNow()
         if (cached != null) {
@@ -60,7 +60,7 @@ abstract class AbstractConsumableTask<T>(override val name: String, private val 
         if (coroutine?.isCompleted == true) {
             val result = coroutine.getCompleted()
             logger.debug("Retrieved {} from coroutine in getNow", result)
-            CoroutineScope(Dispatchers.Default).launch {emit(result)}
+            GlobalScope.launch {emit(result)}
             return result
         }
         return null
@@ -117,11 +117,15 @@ abstract class AbstractConsumableTask<T>(override val name: String, private val 
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override suspend fun clearFailure() {
+        logger.debug("Waiting for mutex so we can clear failure from {}", name)
         mutex.withLock {
             if (getNow()?.isFailure == true || coroutine.get()?.isCancelled == true || coroutine.get()?.getCompleted()?.isFailure == true) {
+                logger.debug("Clearing failure from {}", name)
                 set(null)
                 coroutine.set(null)
                 runningAttemptNumber = -1
+            } else {
+                logger.debug("No failure to clear for {}", name)
             }
         }
     }
@@ -163,7 +167,11 @@ abstract class AbstractConsumableTask<T>(override val name: String, private val 
             .plus(SupervisorJob())
     )
 
-    override suspend fun mergeWithDuplicate(other: ConsumableTask<T>) {
+    @OptIn(DelicateCoroutinesApi::class)
+    override suspend fun mergeWithDuplicate(other: ConsumableTask<T>): ConsumableTask<T> {
+        if (getNow() != null) {
+            return this
+        }
         mutex.withLock {
             if (getNow() != null) {
                 return@withLock
@@ -177,12 +185,13 @@ abstract class AbstractConsumableTask<T>(override val name: String, private val 
                 other.mutex.withLock {
                     val resultWithLock = other.getNow()
                     if (resultWithLock != null) {
-                        emit(resultWithLock)
-                        return
+                        GlobalScope.launch {emit(resultWithLock)}
+                        return this
                     }
                     coroutine.set(other.coroutine.get())
                 }
             }
         }
+        return this
     }
 }

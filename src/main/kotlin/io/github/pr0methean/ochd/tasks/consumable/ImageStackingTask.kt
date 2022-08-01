@@ -60,6 +60,7 @@ class ImageStackingTask(val layers: LayerList,
             val myPreviousLayerTask = previousLayerTask
             previousLayerTask = layerTask.consumeAsync {
                 logger.debug("Fetching layer $index ($layerTask)")
+                myPreviousLayerTask?.start()
                 val layerImage = it.getOrThrow()
                 myPreviousLayerTask?.await()
                 logger.debug("Rendering layer $index ($layerTask) onto the stack")

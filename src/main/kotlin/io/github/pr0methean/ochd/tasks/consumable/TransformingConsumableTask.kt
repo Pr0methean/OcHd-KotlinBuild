@@ -46,6 +46,16 @@ open class TransformingConsumableTask<T, U>(
         }
     }
 
+    @Suppress("UNCHECKED_CAST")
+    override suspend fun mergeWithDuplicate(other: ConsumableTask<U>): ConsumableTask<U> {
+        return if (other is TransformingConsumableTask<*, *> && System.identityHashCode(this) < System.identityHashCode(other)) {
+            base.mergeWithDuplicate(other.base as ConsumableTask<T>)
+            this
+        } else {
+            super.mergeWithDuplicate(other)
+        }
+    }
+
     override suspend fun checkSanity() {
         base.checkSanity()
         super.checkSanity()

@@ -41,7 +41,6 @@ suspend fun main(args:Array<String>) {
     val ctx = ImageProcessingContext(
         name = "MainContext",
         tileSize = tileSize,
-        scope = scope,
         svgDirectory = svgDirectory,
         outTextureRoot = outTextureRoot
     )
@@ -82,10 +81,6 @@ suspend fun main(args:Array<String>) {
                     }
                     logger.info("Joined {} with result of {}", it, result)
                     if (result.isFailure) {
-                        stats.retries.increment()
-                        logger.info("Clearing failure in {}", it)
-                        it.clearFailure()
-                        logger.info("Cleared failure in {}", it)
                         logger.error("Error in {}", it, result.exceptionOrNull())
                         true
                     } else {
@@ -94,6 +89,8 @@ suspend fun main(args:Array<String>) {
                 }
             }.toList()
             if (tasksToRetry.isNotEmpty()) {
+                logger.info("Clearing {} failures in order to retry", Unbox.box(tasksToRetry.size))
+                tasksToRetry.forEach {it.clearFailure()}
                 logger.info("Retrying {} failed tasks", Unbox.box(tasksToRetry.size))
                 System.gc()
             }

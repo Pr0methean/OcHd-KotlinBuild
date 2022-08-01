@@ -15,5 +15,5 @@ interface ConsumableTask<T>: StringBuilderFormattable {
 
     suspend fun clearFailure()
     suspend fun checkSanity()
-    suspend fun mergeWithDuplicate(other: ConsumableTask<T>)
+    suspend fun mergeWithDuplicate(other: ConsumableTask<T>): ConsumableTask<T>
 }

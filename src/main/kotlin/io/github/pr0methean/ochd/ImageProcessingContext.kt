@@ -6,8 +6,6 @@ import io.github.pr0methean.ochd.tasks.consumable.caching.SoftTaskCache
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -19,7 +17,6 @@ fun color(web: String, alpha: Double): Color = Color.web(web, alpha)
 class ImageProcessingContext(
     val name: String,
     val tileSize: Int,
-    val scope: CoroutineScope,
     val svgDirectory: File,
     val outTextureRoot: File
 ) {
@@ -63,7 +60,8 @@ class ImageProcessingContext(
             stats.dedupeFailures.add(className)
             task
         }
-        return if (deduped === task) task else runBlocking {deduped.mergeWithDuplicate(task)}
+        return if (deduped === task) task
+        else DelegatingConsumableImageTask(deduped)
     }
 
     fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): ConsumableImageTask
