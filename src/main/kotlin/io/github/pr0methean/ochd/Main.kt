@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.toList
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox
 import java.nio.file.Paths
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.Result.Companion.failure
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
@@ -49,6 +50,7 @@ suspend fun main(args:Array<String>) {
     }
     val stats = ctx.stats
     startMonitoring(stats, scope)
+    var attemptNumber = 1
     val time = measureNanoTime {
         val copyMetadata = ioScope.plus(CoroutineName("Copy metadata files")).launch {
             cleanupJob.join()
@@ -68,6 +70,7 @@ suspend fun main(args:Array<String>) {
         stats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupJob.join()
         while (tasks.firstOrNull() != null) {
+            val tasksRun = AtomicLong(0)
             val tasksToRetry = tasks.filter {
                 withContext(scope.coroutineContext.plus(CoroutineName("Joining $it"))) {
                     logger.info("Joining {}", it)
@@ -77,6 +80,7 @@ suspend fun main(args:Array<String>) {
                         failure(t)
                     }
                     logger.info("Joined {} with result of {}", it, result)
+                    tasksRun.incrementAndGet()
                     if (result.isFailure) {
                         logger.error("Error in {}", it, result.exceptionOrNull())
                         true
@@ -92,8 +96,10 @@ suspend fun main(args:Array<String>) {
                     it.clearFailure()
                     logger.debug("Done clearing failure in {}", it)
                 }
-                logger.info("Retrying {} failed tasks", Unbox.box(tasksToRetry.size))
                 System.gc()
+                logger.warn("{} tasks succeeded and {} failed on attempt {}",
+                    Unbox.box(tasksRun.get() - tasksToRetry.size), Unbox.box(tasksToRetry.size), Unbox.box(attemptNumber))
+                attemptNumber++
             }
             tasks = tasksToRetry.asFlow()
         }

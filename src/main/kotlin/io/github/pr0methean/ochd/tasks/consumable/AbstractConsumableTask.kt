@@ -164,6 +164,7 @@ abstract class AbstractConsumableTask<T>(override val name: String, private val 
             set(result)
             runningAttemptNumber = -1
             coroutine.getAndSet(null)
+            coroutineHandle.get()?.dispose()
             val oldConsumers = mutableListOf<suspend (Result<T>) -> Unit>()
             consumers.forEach(oldConsumers::add)
             oldConsumers
@@ -199,6 +200,7 @@ abstract class AbstractConsumableTask<T>(override val name: String, private val 
                 val oldCoroutine = coroutine.getAndSet(null)
                 if (oldCoroutine?.isCompleted == false) {
                     logger.debug("Canceling failed coroutine for {}", this)
+                    coroutineHandle.getAndSet(null)?.dispose()
                     oldCoroutine.cancel(cancelBecauseReplacing)
                 }
             } else {
@@ -226,11 +228,15 @@ abstract class AbstractConsumableTask<T>(override val name: String, private val 
             } else {
                 val deferred = CompletableDeferred<R>()
                 consumers.add {
-                    deferred.complete(block(it))
+                    try {
+                        deferred.complete(block(it))
+                    } catch (t: Throwable) {
+                        deferred.completeExceptionally(t)
+                    }
                 }
-                logger.debug("Unlocking {} for consumeAsync after adding consumer; new set of consumers is {}", this, consumers)
                 startWhileLockedAsync()
                 newDeferred = deferred
+                logger.debug("Unlocking {} for consumeAsync after adding consumer; new set of consumers is {}", this, consumers)
             }
         }
         if (resultAfterLocking != null) {

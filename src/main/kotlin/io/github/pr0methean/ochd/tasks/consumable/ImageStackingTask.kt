@@ -9,10 +9,12 @@ import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
 import javafx.scene.paint.Color
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.asFlow
 import org.apache.logging.log4j.LogManager
 import java.util.*
 import java.util.concurrent.atomic.AtomicReference
+import kotlin.Result.Companion.success
 
 private val logger = LogManager.getLogger("ImageStackingTask")
 class ImageStackingTask(val layers: LayerList,
@@ -65,18 +67,21 @@ class ImageStackingTask(val layers: LayerList,
         val canvas = Canvas(width.toDouble(), height.toDouble())
         val canvasCtx = canvas.graphicsContext2D
         val layersList = layers.layers.map(ConsumableImageTask::unpacked)
-        var previousLayerTask: Deferred<Unit>? = null
         val snapshotRef = AtomicReference<Image>(null)
         logger.debug("Creating layer tasks for {}", this)
+        val layerRenderTasks = mutableListOf<Deferred<Result<Unit>>>()
         layersList.forEachIndexed { index, layerTask ->
             logger.debug("Creating consumer for layer $index ($layerTask)")
-            val myPreviousLayerTask = previousLayerTask
-            previousLayerTask = layerTask.consumeAsync {
-                myPreviousLayerTask?.start()
+            val previousLayerTask = layerRenderTasks.getOrNull(index - 1)
+            layerRenderTasks.add(layerTask.consumeAsync {
+                previousLayerTask?.start()
                 logger.debug("Fetching layer $index ($layerTask)")
                 val layerImage = it.getOrThrow()
-                logger.debug("Awaiting previous layer ($myPreviousLayerTask) if needed")
-                myPreviousLayerTask?.await()
+                logger.debug("Awaiting previous layer ($previousLayerTask) if needed")
+                val previousResult = previousLayerTask?.await()
+                if (previousResult?.isFailure == true) {
+                    throw previousResult.exceptionOrNull()!!
+                }
                 logger.debug("Rendering layer $index ($layerTask) onto the stack")
                 doJfx("Layer $index: $layerTask") {
                     if (index == 0) {
@@ -98,11 +103,16 @@ class ImageStackingTask(val layers: LayerList,
                         snapshotRef.set(snapshot)
                     }
                 }
-            }
+                return@consumeAsync success(Unit)
+            })
         }
-        previousLayerTask!!.start()
+        layerRenderTasks.forEach(Job::start)
+        val finalRenderTask = layerRenderTasks.last()
         logger.debug("Waiting for layer tasks for {}", this)
-        previousLayerTask!!.await()
+        val result = finalRenderTask.await()
+        if (result.isFailure) {
+            throw result.exceptionOrNull()!!
+        }
         logger.debug("Layer tasks done for {}", this)
         stats.onTaskCompleted("ImageStackingTask", name)
         return snapshotRef.get()
