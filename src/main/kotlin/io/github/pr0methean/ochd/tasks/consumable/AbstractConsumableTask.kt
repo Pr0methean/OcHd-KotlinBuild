@@ -2,7 +2,6 @@ package io.github.pr0methean.ochd.tasks.consumable
 
 import io.github.pr0methean.ochd.tasks.consumable.caching.TaskCache
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.apache.logging.log4j.LogManager
@@ -143,6 +142,7 @@ abstract class AbstractConsumableTask<T>(override val name: String, private val 
 
     protected abstract suspend fun createCoroutineAsync(coroutineScope: CoroutineScope): Deferred<Result<T>>
 
+    @Suppress("DeferredResultUnused")
     suspend fun emit(result: Result<T>) {
         val thisAttempt = currentCoroutineContext()[AttemptNumberKey]?.attempt ?: -2
         if (result.isFailure && runningAttemptNumber != thisAttempt && thisAttempt != -2L) {
@@ -153,7 +153,7 @@ abstract class AbstractConsumableTask<T>(override val name: String, private val 
             return
         }
         logger.debug("Locking {} to emit {}", this, result)
-        @Suppress("DeferredResultUnused") val oldConsumers = mutex.withLock(result) {
+        mutex.withLock(result) {
             if (result.isFailure && runningAttemptNumber != thisAttempt && thisAttempt != -2L) {
                 logger.debug("Unlocking {}: Wrong attempt number (expected {}, was {}) for result {}",
                     this, thisAttempt, runningAttemptNumber, result)
@@ -165,17 +165,19 @@ abstract class AbstractConsumableTask<T>(override val name: String, private val 
             runningAttemptNumber = -1
             coroutine.getAndSet(null)
             coroutineHandle.get()?.dispose()
-            val oldConsumers = mutableListOf<suspend (Result<T>) -> Unit>()
-            consumers.forEach(oldConsumers::add)
-            oldConsumers
         }
         logger.debug("Unlocking {} after emitting {}", this, result)
-        logger.debug("Invoking {} consumers of {} with result {}", Unbox.box(oldConsumers.size), this, result)
-        oldConsumers.asFlow().collect {
-            logger.debug("Invoking {} (consumer of {}) with result {}", it, this, result)
-            it(result)
-            consumers.remove(it)
-            logger.debug("Done running {} (consumer of {}) with result {}", it, this, result)
+        logger.debug("Invoking {} consumers of {} with result {}", Unbox.box(consumers.size), this, result)
+        while (true) {
+            val nextConsumer = mutex.withLock { consumers.firstOrNull() } ?: return
+            logger.debug("Invoking {} (consumer of {}) with result {}", nextConsumer, this, result)
+            try {
+                nextConsumer(result)
+            } catch (t: Throwable) {
+                logger.error("Error emitting a result", t)
+            }
+            consumers.remove(nextConsumer)
+            logger.debug("Done running {} (consumer of {}) with result {}", nextConsumer, this, result)
         }
     }
 

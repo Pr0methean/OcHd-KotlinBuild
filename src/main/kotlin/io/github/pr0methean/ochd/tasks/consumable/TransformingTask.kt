@@ -17,13 +17,6 @@ open class TransformingTask<T, U>(
     val transform: (T) -> U
 )
         : AbstractConsumableTask<U>(name, cache) {
-    private fun wrappingTransform(it: Result<T>): Result<U> {
-        return if (it.isSuccess) {
-            success(transform(it.getOrThrow()))
-        } else {
-            failure(it.exceptionOrNull()!!)
-        }
-    }
 
     override fun getNow(): Result<U>? {
         base.getNow()
@@ -41,7 +34,11 @@ open class TransformingTask<T, U>(
                 logger.debug("Awaiting {} to transform it in {}", base, this)
                 val input = base.await()
                 logger.debug("Got {} from {}; transforming it in {}", input, base, this)
-                wrappingTransform(input)
+                if (input.isSuccess) {
+                    success(transform(input.getOrThrow()))
+                } else {
+                    failure(input.exceptionOrNull()!!)
+                }
             } catch (t: Throwable) {
                 logger.error("Exception in {}", this, t)
                 failure(t)
