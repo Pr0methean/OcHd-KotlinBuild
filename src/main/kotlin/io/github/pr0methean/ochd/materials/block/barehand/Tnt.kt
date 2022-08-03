@@ -2,7 +2,7 @@ package io.github.pr0methean.ochd.materials.block.barehand
 
 import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.c
-import io.github.pr0methean.ochd.tasks.consumable.OutputConsumableTask
+import io.github.pr0methean.ochd.tasks.consumable.OutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Color
 import kotlinx.coroutines.flow.Flow
@@ -26,7 +26,7 @@ object Tnt: ShadowHighlightMaterial {
     override val shadow = c(0x912d00)
     override val highlight = c(0xff4300)
 
-    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputConsumableTask> = flow {
+    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
         val tntBottom = ctx.stack {
             background(Color.BLACK)
             layer("tntSticksEnd", color)

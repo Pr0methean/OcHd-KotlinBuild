@@ -5,18 +5,19 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
+import org.apache.logging.log4j.LogManager
 import kotlin.Result.Companion.failure
 import kotlin.Result.Companion.success
 
-open class SlowTransformingConsumableTask<T, U>(
+private val logger = LogManager.getLogger("TransformingTask")
+open class TransformingTask<T, U>(
     name: String,
     open val base: ConsumableTask<T>,
     open val cache: TaskCache<U>,
-    val transform: suspend (T) -> U
+    val transform: (T) -> U
 )
         : AbstractConsumableTask<U>(name, cache) {
-
-    private suspend fun wrappingTransform(it: Result<T>): Result<U> {
+    private fun wrappingTransform(it: Result<T>): Result<U> {
         return if (it.isSuccess) {
             success(transform(it.getOrThrow()))
         } else {
@@ -24,46 +25,45 @@ open class SlowTransformingConsumableTask<T, U>(
         }
     }
 
-    override suspend fun checkSanity() {
-        base.checkSanity()
-        super.checkSanity()
-    }
-
-    override suspend fun createCoroutineAsync(coroutineScope: CoroutineScope): Deferred<Result<U>> {
-        return coroutineScope.async(start = CoroutineStart.LAZY) {
-            val result = try {
-                wrappingTransform(base.await())
-            } catch (t: Throwable) {
-                failure(t)
-            }
-            emit(result)
-            result
-        }
-    }
-
-    @Suppress("DeferredResultUnused")
-    override suspend fun startAsync(): Deferred<Result<U>> {
-        base.startAsync()
-        return super.startAsync()
-    }
-
     override fun getNow(): Result<U>? {
         base.getNow()
         return super.getNow()
     }
 
-    @Suppress("UNCHECKED_CAST")
-    override suspend fun mergeWithDuplicate(other: ConsumableTask<U>): ConsumableTask<U> {
-        return if (other is SlowTransformingConsumableTask<*, *> && System.identityHashCode(this) < System.identityHashCode(other)) {
-            base.mergeWithDuplicate(other.base as ConsumableTask<T>)
-            this
-        } else {
-            super.mergeWithDuplicate(other)
+    @Suppress("DeferredResultUnused")
+    override suspend fun startPrerequisites() {
+        base.startAsync()
+    }
+
+    override suspend fun createCoroutineAsync(coroutineScope: CoroutineScope): Deferred<Result<U>> {
+        return coroutineScope.async(start = CoroutineStart.LAZY) {
+            val result = try {
+                logger.debug("Awaiting {} to transform it in {}", base, this)
+                val input = base.await()
+                logger.debug("Got {} from {}; transforming it in {}", input, base, this)
+                wrappingTransform(input)
+            } catch (t: Throwable) {
+                logger.error("Exception in {}", this, t)
+                failure(t)
+            }
+            result
         }
     }
 
-    override suspend fun clearFailure() {
+    @Suppress("UNCHECKED_CAST")
+    override suspend fun mergeWithDuplicate(other: ConsumableTask<U>): ConsumableTask<U> {
+        if (other is TransformingTask<*, *>) {
+            base.mergeWithDuplicate(other.base as ConsumableTask<T>)
+        }
+        return super.mergeWithDuplicate(other)
+    }
 
+    override suspend fun checkSanity() {
+        base.checkSanity()
+        super.checkSanity()
+    }
+
+    override suspend fun clearFailure() {
         base.clearFailure()
         super.clearFailure()
     }

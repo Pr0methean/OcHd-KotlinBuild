@@ -1,5 +1,5 @@
 package io.github.pr0methean.ochd
-import io.github.pr0methean.ochd.materials.item.ITEMS
+import io.github.pr0methean.ochd.materials.ALL_MATERIALS
 import io.github.pr0methean.ochd.tasks.consumable.doJfx
 import javafx.application.Platform
 import kotlinx.coroutines.*
@@ -64,15 +64,12 @@ suspend fun main(args:Array<String>) {
             stats.onTaskCompleted("Copy metadata files", "Copy metadata files")
         }
         stats.onTaskLaunched("Build task graph", "Build task graph")
-        var tasks = ITEMS.outputTasks(ctx) // = ALL_MATERIALS.outputTasks(ctx)
+        var tasks = ALL_MATERIALS.outputTasks(ctx)
         stats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupJob.join()
         while (tasks.firstOrNull() != null) {
-            tasks.collect {
-                it.startAsync()
-            }
             val tasksToRetry = tasks.filter {
-                withContext(scope.coroutineContext.plus(CoroutineName("Joining ${it.name}"))) {
+                withContext(scope.coroutineContext.plus(CoroutineName("Joining $it"))) {
                     logger.info("Joining {}", it)
                     val result = try {
                         it.await()
@@ -90,7 +87,11 @@ suspend fun main(args:Array<String>) {
             }.toList()
             if (tasksToRetry.isNotEmpty()) {
                 logger.info("Clearing {} failures in order to retry", Unbox.box(tasksToRetry.size))
-                tasksToRetry.forEach {it.clearFailure()}
+                tasksToRetry.forEach {
+                    logger.debug("Clearing failure in {}", it)
+                    it.clearFailure()
+                    logger.debug("Done clearing failure in {}", it)
+                }
                 logger.info("Retrying {} failed tasks", Unbox.box(tasksToRetry.size))
                 System.gc()
             }

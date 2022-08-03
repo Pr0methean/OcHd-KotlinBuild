@@ -3,7 +3,7 @@ package io.github.pr0methean.ochd.materials.block.indestructible
 import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.c
-import io.github.pr0methean.ochd.tasks.consumable.OutputConsumableTask
+import io.github.pr0methean.ochd.tasks.consumable.OutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
@@ -71,7 +71,7 @@ enum class CommandBlock(
 
     open fun LayerListBuilder.decorateBaseTexture() {}
 
-    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputConsumableTask> = flow {
+    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
         val baseTexture = ctx.stack {createBaseTexture()}
         for (sideType in SideType.values()) {
             val sideBase = ctx.stack {sideType.run {createBase()}}

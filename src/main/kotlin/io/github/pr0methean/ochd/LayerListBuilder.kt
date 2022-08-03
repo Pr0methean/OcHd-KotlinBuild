@@ -52,7 +52,10 @@ class LayerListBuilder(val ctx: ImageProcessingContext) {
             }
         }
         if (source.layers.size > 1) { // Don't flatten sub-stacks since we want to deduplicate them
-            copy(ctx.stack { addAll(source.layers) })
+            copy(ctx.stack {
+                background(source.background)
+                addAll(source.layers)
+            })
         } else {
             addAll(source.layers)
         }

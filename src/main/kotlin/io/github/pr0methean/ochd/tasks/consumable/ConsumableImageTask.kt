@@ -6,7 +6,6 @@ import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.StringBuilderFormattable
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
-import kotlin.time.Duration.Companion.seconds
 
 private val logger = LogManager.getLogger("ConsumableImageTask")
 @Suppress("BlockingMethodInNonBlockingContext")
@@ -17,7 +16,7 @@ suspend fun <T> doJfx(name: String, jfxCode: CoroutineScope.() -> T): T {
             System.setErr(PrintStream(errorCatcher, true, oldSystemErr.charset()))
             logger.info("Starting JFX task: {}", name)
             val result = withContext(Dispatchers.Main.plus(CoroutineName(name))) {
-                withTimeout(30.seconds) {jfxCode()}
+                jfxCode()
             }
             if (errorCatcher.size() > 0) {
                 throw RuntimeException(errorCatcher.toString(oldSystemErr.charset()))

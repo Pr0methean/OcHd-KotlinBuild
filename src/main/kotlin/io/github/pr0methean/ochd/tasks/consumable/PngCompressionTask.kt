@@ -11,13 +11,13 @@ import javax.imageio.ImageIO
 private val logger = LogManager.getLogger("PngCompressionTask")
 class PngCompressionTask(
     override val base: AbstractConsumableTask<Image>, override val cache: TaskCache<ByteArray>, val stats: ImageProcessingStats
-): TransformingConsumableTask<Image, ByteArray>("PNG compression of $base", base = base, cache = cache, transform = { image ->
+): TransformingTask<Image, ByteArray>("PNG compression of $base", base = base, cache = cache, transform = { image ->
     ByteArrayOutputStream().use {
         stats.onCompressPngImage(base.name)
         @Suppress("BlockingMethodInNonBlockingContext")
         ImageIO.write(SwingFXUtils.fromFXImage(image, null), "PNG", it)
         val packed = it.toByteArray()
-        logger.info("Done compressing {}", base.name)
+        logger.info("Done compressing {}", base)
         packed
     }
 }) {

@@ -19,7 +19,7 @@ class RepaintTask(
     val alpha: Double = 1.0,
     override val cache: TaskCache<Image>,
     val stats: ImageProcessingStats
-): SlowTransformingConsumableTask<Image, Image>("$base@$paint@$alpha", base, cache, { baseImage ->
+): SlowTransformingTask<Image, Image>("$base@$paint@$alpha", base, cache, { baseImage ->
     val output = WritableImage(baseImage.width.toInt(), baseImage.height.toInt())
     doJfx("Repaint $base with $paint") {
         val canvas = Canvas(baseImage.width, baseImage.height)
@@ -45,7 +45,7 @@ class RepaintTask(
     override val unpacked: ConsumableTask<Image> = this
     override val asPng: ConsumableTask<ByteArray> = PngCompressionTask(this, StrongTaskCache(), stats)
     override suspend fun checkSanity() {
-        super<SlowTransformingConsumableTask>.checkSanity()
+        super<SlowTransformingTask>.checkSanity()
         asPng.checkSanity()
     }
 

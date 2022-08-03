@@ -8,7 +8,7 @@ import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.Companion.stone
 import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.DEEPSLATE
 import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.STONE
 import io.github.pr0methean.ochd.materials.block.shovel.SimpleSoftEarth
-import io.github.pr0methean.ochd.tasks.consumable.OutputConsumableTask
+import io.github.pr0methean.ochd.tasks.consumable.OutputTask
 import io.github.pr0methean.ochd.texturebase.Block
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
@@ -372,7 +372,7 @@ enum class SimplePickaxeBlock(
     }
     ;
 
-    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputConsumableTask> =
+    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> =
         if (hasOutput) super<SingleTextureMaterial>.outputTasks(ctx) else flowOf()
 
     constructor(base: ShadowHighlightMaterial, hasOutput: Boolean = true):

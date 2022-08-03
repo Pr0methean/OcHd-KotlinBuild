@@ -6,7 +6,6 @@ import io.github.pr0methean.ochd.tasks.consumable.caching.TaskCache
 import javafx.scene.canvas.Canvas
 import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.joinAll
 import java.util.*
@@ -29,9 +28,9 @@ class AnimationConsumableTask(
         super.checkSanity()
     }
 
-    override suspend fun startAsync(): Deferred<Result<Image>> {
+    @Suppress("DeferredResultUnused")
+    override suspend fun startPrerequisites() {
         frames.asFlow().collect(ConsumableImageTask::startAsync)
-        return super.startAsync()
     }
 
     override fun equals(other: Any?): Boolean {
@@ -46,7 +45,20 @@ class AnimationConsumableTask(
         return Objects.hash(frames, width, height)
     }
 
+    override suspend fun mergeWithDuplicate(other: ConsumableTask<Image>): ConsumableTask<Image> {
+        if (other is AnimationConsumableTask) {
+            for ((index, frame) in frames.withIndex()) {
+                if (frame == other.frames[index]) {
+                    frame.mergeWithDuplicate(other.frames[index])
+                }
+            }
+        }
+        return super.mergeWithDuplicate(other)
+    }
+
+    @Suppress("DeferredResultUnused")
     override suspend fun perform(): Image {
+        stats.onTaskLaunched("AnimationConsumableTask", name)
         val canvas = Canvas(width.toDouble(), totalHeight.toDouble())
         canvas.isCache = true
         val canvasCtx = canvas.graphicsContext2D

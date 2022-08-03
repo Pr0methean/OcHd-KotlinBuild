@@ -6,6 +6,7 @@ import io.github.pr0methean.ochd.tasks.consumable.caching.SoftTaskCache
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
+import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -60,8 +61,10 @@ class ImageProcessingContext(
             stats.dedupeFailures.add(className)
             task
         }
-        return if (deduped === task) task
-        else DelegatingConsumableImageTask(deduped)
+        if (task !== deduped) {
+            runBlocking {deduped.mergeWithDuplicate(task)}
+        }
+        return deduped
     }
 
     fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): ConsumableImageTask
@@ -82,7 +85,7 @@ class ImageProcessingContext(
         return deduplicate(AnimationConsumableTask(frames, tileSize, tileSize, frames.toString(), NoopTaskCache(), stats))
     }
 
-    fun out(name: String, source: ConsumableImageTask): OutputConsumableTask {
+    fun out(name: String, source: ConsumableImageTask): OutputTask {
         val lowercaseName = name.lowercase(Locale.ENGLISH)
         return out(lowercaseName, outTextureRoot.resolve("$lowercaseName.png"), source)
     }
@@ -91,8 +94,8 @@ class ImageProcessingContext(
         lowercaseName: String,
         destination: File,
         source: ConsumableImageTask
-    ): OutputConsumableTask {
-        return OutputConsumableTask(source.asPng, lowercaseName, destination, stats)
+    ): OutputTask {
+        return OutputTask(source.asPng, lowercaseName, destination, stats)
     }
 
     fun out(name: String, source: LayerListBuilder.() -> Unit) = out(name, stack {source()})

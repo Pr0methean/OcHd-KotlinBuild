@@ -5,7 +5,7 @@ import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.STONE
 import io.github.pr0methean.ochd.materials.block.shovel.DirtGroundCover
-import io.github.pr0methean.ochd.tasks.consumable.OutputConsumableTask
+import io.github.pr0methean.ochd.tasks.consumable.OutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
@@ -34,7 +34,7 @@ sealed interface Wood: ShadowHighlightMaterial {
     fun LayerListBuilder.leaves()
     fun LayerListBuilder.sapling()
 
-    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputConsumableTask> = flow {
+    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
         emit(ctx.out("block/${name}_${logSynonym}", ctx.stack { bark() }))
         emit(ctx.out("block/${name}_${logSynonym}_top", ctx.stack { logTop() }))
         emit(ctx.out("block/stripped_${name}_${logSynonym}", ctx.stack { strippedLogSide() }))

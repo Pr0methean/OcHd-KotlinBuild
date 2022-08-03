@@ -26,14 +26,23 @@ class ImageStackingTask(val layers: LayerList,
             throw IllegalArgumentException("Empty layer list")
         }
     }
+
+    override suspend fun mergeWithDuplicate(other: ConsumableTask<Image>): ConsumableTask<Image> {
+        super.mergeWithDuplicate(other)
+        if (other is ImageStackingTask) {
+            layers.mergeWithDuplicate(other.layers)
+        }
+        return this
+    }
+
     override suspend fun clearFailure() {
         layers.layers.map(ConsumableImageTask::unpacked).asFlow().collect(ConsumableTask<Image>::clearFailure)
         super.clearFailure()
     }
 
-    override suspend fun startAsync(): Deferred<Result<Image>> {
+    @Suppress("DeferredResultUnused")
+    override suspend fun startPrerequisites() {
         layers.layers.map(ConsumableImageTask::unpacked).asFlow().collect(ConsumableTask<Image>::startAsync)
-        return super.startAsync()
     }
 
     override suspend fun checkSanity() {
@@ -58,14 +67,15 @@ class ImageStackingTask(val layers: LayerList,
         val layersList = layers.layers.map(ConsumableImageTask::unpacked)
         var previousLayerTask: Deferred<Unit>? = null
         val snapshotRef = AtomicReference<Image>(null)
-        logger.debug("Creating layer tasks for {}", name)
+        logger.debug("Creating layer tasks for {}", this)
         layersList.forEachIndexed { index, layerTask ->
             logger.debug("Creating consumer for layer $index ($layerTask)")
             val myPreviousLayerTask = previousLayerTask
             previousLayerTask = layerTask.consumeAsync {
-                logger.debug("Fetching layer $index ($layerTask)")
                 myPreviousLayerTask?.start()
+                logger.debug("Fetching layer $index ($layerTask)")
                 val layerImage = it.getOrThrow()
+                logger.debug("Awaiting previous layer ($myPreviousLayerTask) if needed")
                 myPreviousLayerTask?.await()
                 logger.debug("Rendering layer $index ($layerTask) onto the stack")
                 doJfx("Layer $index: $layerTask") {
@@ -89,12 +99,12 @@ class ImageStackingTask(val layers: LayerList,
                     }
                 }
             }
-            layerTask.startAsync()
         }
         previousLayerTask!!.start()
-        logger.debug("Waiting for layer tasks for {}", name)
+        logger.debug("Waiting for layer tasks for {}", this)
         previousLayerTask!!.await()
-        stats.onTaskCompleted("ImageStackingConsumableTask", name)
+        logger.debug("Layer tasks done for {}", this)
+        stats.onTaskCompleted("ImageStackingTask", name)
         return snapshotRef.get()
     }
 }

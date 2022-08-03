@@ -3,7 +3,7 @@ package io.github.pr0methean.ochd.materials.block.shovel
 import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.c
-import io.github.pr0methean.ochd.tasks.consumable.OutputConsumableTask
+import io.github.pr0methean.ochd.tasks.consumable.OutputTask
 import io.github.pr0methean.ochd.texturebase.GroundCoverBlock
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Color
@@ -19,6 +19,7 @@ grass_item_s='64a43a'
  */
 private val grassItemColor = c(0x83b253)
 private val grassItemShadow = c(0x64a43a)
+@Suppress("unused")
 private val grassItemHighlight = c(0x9ccb6c)
 
 @Suppress("unused")
@@ -46,7 +47,7 @@ enum class DirtGroundCover(
             layer("veesTop", grassItemShadow)
         }
 
-        override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputConsumableTask>
+        override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask>
                 = merge(super.outputTasks(ctx), flowOf(ctx.out("block/grass_block_side_overlay", ctx.stack {
             layer("topPart", color)
             layer("veesTop", shadow)

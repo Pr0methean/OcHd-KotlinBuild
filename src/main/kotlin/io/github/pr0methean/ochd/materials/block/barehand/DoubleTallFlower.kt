@@ -3,7 +3,7 @@ package io.github.pr0methean.ochd.materials.block.barehand
 import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.c
-import io.github.pr0methean.ochd.tasks.consumable.OutputConsumableTask
+import io.github.pr0methean.ochd.tasks.consumable.OutputTask
 import io.github.pr0methean.ochd.texturebase.DoubleTallBlock
 import javafx.scene.paint.Color
 import kotlinx.coroutines.flow.Flow
@@ -29,7 +29,7 @@ enum class DoubleTallFlower: DoubleTallBlock {
             layer("flowerStemBottomBorder", stemShadow)
         }
 
-        override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputConsumableTask> = merge(super.outputTasks(ctx), flow {
+        override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = merge(super.outputTasks(ctx), flow {
             emit(ctx.out("block/sunflower_back", ctx.layer("sunflowerPetals")))
             emit(ctx.out("block/sunflower_front", ctx.stack {
                 layer("sunflowerPetals", Color.YELLOW)

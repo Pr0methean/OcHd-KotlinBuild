@@ -5,7 +5,7 @@ import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.Companion.stoneExtremeHighlight
 import io.github.pr0methean.ochd.tasks.consumable.ConsumableImageTask
-import io.github.pr0methean.ochd.tasks.consumable.OutputConsumableTask
+import io.github.pr0methean.ochd.tasks.consumable.OutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Color
 import kotlinx.coroutines.flow.Flow
@@ -78,7 +78,7 @@ enum class Ore(
         highlight = Color.WHITE,
         substrates = NETHER
     ) {
-        override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputConsumableTask> = flow {
+        override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
             emit(ctx.out("item/quartz") { ingot() })
             emit(ctx.out("block/nether_quartz_ore", ctx.stack {
                     copy(OreBase.NETHERRACK)
@@ -185,7 +185,7 @@ enum class Ore(
         item()
     }
 
-    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputConsumableTask> = flow {
+    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
         substrates.forEach { oreBase ->
             emit(ctx.out("block/${oreBase.orePrefix}${name}_ore", oreBlock(ctx, oreBase)))
         }

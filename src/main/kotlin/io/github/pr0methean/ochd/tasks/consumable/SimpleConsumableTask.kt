@@ -5,7 +5,9 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
+import org.apache.logging.log4j.LogManager
 
+private val logger = LogManager.getLogger("SimpleConsumableTask")
 abstract class SimpleConsumableTask<T>(name: String, cache: TaskCache<T>) : AbstractConsumableTask<T>(
     name, cache
 ) {
@@ -16,9 +18,9 @@ abstract class SimpleConsumableTask<T>(name: String, cache: TaskCache<T>) : Abst
                 val result = try {
                     Result.success(perform())
                 } catch (t: Throwable) {
+                    logger.error("Exception in {}", this, t)
                     Result.failure(t)
                 }
-                emit(result)
                 result
             }
     }

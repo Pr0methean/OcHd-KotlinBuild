@@ -9,7 +9,7 @@ import javafx.scene.image.WritableImage
 const val TOP_PORTION = 11.0/32
 class TopPartCroppingTask(override val base: ConsumableTask<Image>, override val name: String,
                                override val cache: TaskCache<Image>,
-                               val stats: ImageProcessingStats): SlowTransformingConsumableTask<Image, Image>("Top part of $base", base, cache, { image ->
+                               val stats: ImageProcessingStats): SlowTransformingTask<Image, Image>("Top part of $base", base, cache, { image ->
     val pixelReader = image.pixelReader
     doJfx(name) {
         return@doJfx WritableImage(pixelReader, image.width.toInt(), (image.height * TOP_PORTION).toInt())
@@ -18,7 +18,7 @@ class TopPartCroppingTask(override val base: ConsumableTask<Image>, override val
     override val unpacked: ConsumableTask<Image> = this
     override val asPng: ConsumableTask<ByteArray> = PngCompressionTask(this, StrongTaskCache(), stats)
     override suspend fun checkSanity() {
-        super<SlowTransformingConsumableTask>.checkSanity()
+        super<SlowTransformingTask>.checkSanity()
         asPng.checkSanity()
     }
 
