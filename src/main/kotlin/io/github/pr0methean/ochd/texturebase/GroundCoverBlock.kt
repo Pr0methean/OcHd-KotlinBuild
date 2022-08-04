@@ -14,9 +14,7 @@ interface GroundCoverBlock: Material {
     val nameOverrideSide: String?
             get() = null
 
-    suspend fun LayerListBuilder.createCoverSideLayers() {
-        copyTopOf {createTopLayers()}
-    }
+    suspend fun LayerListBuilder.createCoverSideLayers()
     suspend fun LayerListBuilder.createTopLayers()
 
     override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {

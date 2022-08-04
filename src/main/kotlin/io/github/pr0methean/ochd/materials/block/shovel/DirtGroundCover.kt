@@ -73,6 +73,13 @@ enum class DirtGroundCover(
             layer("diagonalOutlineChecksTopLeftBottomRight", highlight)
             layer("diagonalOutlineChecksBottomLeftTopRight", shadow)
         }
+        override suspend fun LayerListBuilder.createCoverSideLayers() {
+            layer("topPart", color)
+            layer("diagonalChecksTopLeft", shadow)
+            layer("diagonalChecksTopRight", highlight)
+            layer("diagonalOutlineChecksTopLeft", highlight)
+            layer("diagonalOutlineChecksTopRight", shadow)
+        }
     },
     SNOW(Color.WHITE,  c(0xcfcfdf), Color.WHITE, nameOverrideTop = "snow", nameOverrideSide = "grass_block_snow") {
         override suspend fun LayerListBuilder.createCoverSideLayers() {

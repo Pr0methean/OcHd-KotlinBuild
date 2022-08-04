@@ -2,8 +2,6 @@ package io.github.pr0methean.ochd
 
 import io.github.pr0methean.ochd.tasks.consumable.ImageTask
 import io.github.pr0methean.ochd.tasks.consumable.Task
-import io.github.pr0methean.ochd.tasks.consumable.TopPartCroppingTask
-import io.github.pr0methean.ochd.tasks.consumable.caching.noopTaskCache
 import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
@@ -65,9 +63,7 @@ class LayerListBuilder(val ctx: ImageProcessingContext) {
     }
     suspend fun copy(source: SingleTextureMaterial)
             = copy(LayerListBuilder(ctx).also {source.run {createTextureLayers()}}.build())
-    suspend fun copyTopOf(source: Task<Image>) = copy(TopPartCroppingTask(source, "Top part of $source", noopTaskCache(), ctx.stats))
-    suspend fun copyTopOf(source: ImageTask) = copyTopOf(source.unpacked)
-    suspend fun copyTopOf(source: suspend LayerListBuilder.() -> Unit) = copyTopOf(ctx.stack(source))
+
     suspend fun copy(element: ImageTask) = layers.add(ctx.deduplicate(element))
     suspend fun addAll(elements: Collection<ImageTask>) = layers.addAll(elements.asFlow().map(ctx::deduplicate).toList())
     fun build() = LayerList(layers.toList(), background)
