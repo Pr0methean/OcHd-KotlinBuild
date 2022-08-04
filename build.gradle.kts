@@ -42,7 +42,6 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.3")
     runtimeOnly("org.jetbrains.kotlinx:kotlinx-coroutines-javafx:1.6.4")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-debug:1.6.4")
-    implementation("com.michael-bull.kotlin-result:kotlin-result-coroutines-jvm:1.1.16")
     implementation("com.google.guava:guava:31.1-jre")
     implementation("org.testfx:openjfx-monocle:jdk-12.0.1+2")
     implementation("org.apache.xmlgraphics:batik-transcoder:1.14")
