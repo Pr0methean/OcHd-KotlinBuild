@@ -95,7 +95,7 @@ enum class SimplePickaxeBlock(
     CUT_SANDSTONE(SimpleSoftEarth.SAND) {
         override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
-            layer("checksLarge", highlight)
+            layer("checksLargeOutline", highlight)
             layer("borderSolid", shadow)
             layer("borderSolidTopLeft", highlight)
         }
@@ -109,7 +109,7 @@ enum class SimplePickaxeBlock(
     RED_SAND_BASE(SimpleSoftEarth.RED_SAND, hasOutput = false) {
         override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
-            layer("checksLarge", highlight)
+            layer("checksLargeOutline", highlight)
         }
     },
     RED_SANDSTONE_BOTTOM(SimpleSoftEarth.RED_SAND) {
