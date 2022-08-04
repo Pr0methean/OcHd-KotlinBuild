@@ -71,7 +71,6 @@ suspend fun main(args:Array<String>) {
         cleanupJob.join()
         val tasksRun = LongAdder()
         while (tasks.firstOrNull() != null) {
-            tasks.collect {it.startAsync()}
             val tasksToRetry = tasks.filter { task ->
                 withContext(scope.coroutineContext.plus(CoroutineName("Joining $task"))) {
                     logger.info("Joining {}", task)
