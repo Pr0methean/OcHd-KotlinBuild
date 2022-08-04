@@ -263,7 +263,7 @@ enum class SimplePickaxeBlock(
     },
     CHISELED_STONE_BRICKS(STONE_BRICKS) {
         override suspend fun LayerListBuilder.createTextureLayers() {
-            background(shadow)
+            background(color)
             layer("checksLarge", highlight)
             layer("ringsCentralBullseye", stoneExtremeHighlight)
             layer("rings2", stoneExtremeShadow)
