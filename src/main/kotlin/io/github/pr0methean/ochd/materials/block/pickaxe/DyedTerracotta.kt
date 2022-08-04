@@ -10,7 +10,8 @@ object DyedTerracotta: DyedBlock("terracotta") {
         background(color)
         copy {
             layer("bigRingsTopLeftBottomRight", TERRACOTTA.highlight)
-            layer("bigRingsBottomLeftTopRight", TERRACOTTA.shadow)
+            layer("bigDotsBottomLeftTopRight", TERRACOTTA.shadow)
+            layer("bigRingsBottomLeftTopRight", TERRACOTTA.highlight)
             layer("borderRoundDots", TERRACOTTA.color)
         }
     }
