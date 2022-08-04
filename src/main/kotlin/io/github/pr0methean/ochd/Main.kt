@@ -97,6 +97,7 @@ suspend fun main(args:Array<String>) {
                 logger.warn("{} tasks succeeded and {} failed on attempt {}",
                     box(tasksRun.sumThenReset() - tasksToRetry.size), box(tasksToRetry.size), box(attemptNumber)
                 )
+                stats.recordRetries(tasksToRetry.size.toLong())
                 attemptNumber++
             }
         }

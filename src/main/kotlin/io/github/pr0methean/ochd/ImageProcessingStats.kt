@@ -70,12 +70,12 @@ fun stopMonitoring() {
 }
 
 class ImageProcessingStats {
-    val taskLaunches: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
+    private val taskLaunches: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val taskCompletions: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val dedupeSuccesses: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val dedupeFailures: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
-    val compressions = LongAdder()
-    val retries = LongAdder()
+    private val compressions = LongAdder()
+    private val retries = LongAdder()
 
     fun log() {
         logger.info("")
@@ -108,5 +108,9 @@ class ImageProcessingStats {
     fun onTaskCompleted(typename: String, name: String) {
         logger.info("Completed: {}", name)
         taskCompletions.add(typename)
+    }
+
+    fun recordRetries(howMany: Long) {
+        retries.add(howMany)
     }
 }
