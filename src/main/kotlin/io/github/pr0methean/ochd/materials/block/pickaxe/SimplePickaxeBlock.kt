@@ -183,8 +183,8 @@ enum class SimplePickaxeBlock(
             background(color)
             layer("ringsCentralBullseye", shadow)
             layer("rings", highlight)
-            layer("cutInQuarters1", shadow)
-            layer("cutInQuarters2", highlight)
+            layer("cutInQuarters1", highlight)
+            layer("cutInQuarters2", shadow)
             layer("borderSolid", shadow)
             layer("borderSolidTopLeft", highlight)
         }
