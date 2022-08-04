@@ -18,10 +18,10 @@ import kotlin.time.Duration.Companion.minutes
 private fun Multiset<*>.log() {
     toSet().forEach { logger.info("{}: {}", it, count(it)) }
 }
-private val NEED_THREAD_MONITORING = false
-private val NEED_COROUTINE_DEBUG = true
-private val REPORTING_INTERVAL: Duration = 1.minutes
 private val logger = LogManager.getLogger("ImageProcessingStats")
+private val NEED_THREAD_MONITORING = false
+private val NEED_COROUTINE_DEBUG = logger.isDebugEnabled
+private val REPORTING_INTERVAL: Duration = 1.minutes
 val threadMxBean = ManagementFactory.getThreadMXBean()
 var monitoringJob: Job? = null
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -92,11 +92,6 @@ class ImageProcessingStats {
         logger.info("PNG compressions: {}", compressions.sum())
         logger.info("PNG decompressions: {}", decompressions.sum())
         logger.info("Retries of failed tasks: {}", retries.sum())
-    }
-
-    fun onDecompressPngImage(name: String) {
-        logger.info("Decompressing {} from PNG", name)
-        decompressions.increment()
     }
 
     fun onCompressPngImage(name: String) {
