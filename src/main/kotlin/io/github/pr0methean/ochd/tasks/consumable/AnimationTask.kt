@@ -53,7 +53,7 @@ class AnimationTask(
 
     @Suppress("DeferredResultUnused")
     override suspend fun perform(): Image {
-        stats.onTaskLaunched("AnimationConsumableTask", name)
+        stats.onTaskLaunched("AnimationTask", name)
         val canvas = Canvas(width.toDouble(), totalHeight.toDouble())
         canvas.isCache = true
         val canvasCtx = canvas.graphicsContext2D
@@ -63,14 +63,15 @@ class AnimationTask(
         frames.asFlow().collect { it.startAsync() }
         frameTasks.joinAll()
         val output = WritableImage(width, totalHeight)
-        return doJfx("Snapshot of $name") {
+        doJfx("Snapshot of $name") {
             canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
             canvas.isCache = false
-            if (output.isError) {
-                throw output.exception
-            }
-            output
         }
+        if (output.isError) {
+            throw output.exception
+        }
+        stats.onTaskCompleted("AnimationTask", name)
+        return output
     }
 
 }
