@@ -14,12 +14,12 @@ interface SingleTextureMaterial: Material {
     val nameOverride: String?
         get() = null
 
-    fun LayerListBuilder.createTextureLayers()
+    suspend fun LayerListBuilder.createTextureLayers()
 
-    fun copyTo(dest: LayerListBuilder) {
+    suspend fun copyTo(dest: LayerListBuilder) {
         dest.copy(LayerListBuilder(dest.ctx).apply {createTextureLayers()}.build())
     }
-    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flowOf(
+    override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flowOf(
         ctx.out("$directory/${nameOverride ?: name}", ctx.stack { createTextureLayers() })
     )
 }

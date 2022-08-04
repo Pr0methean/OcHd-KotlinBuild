@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
 
 object Concrete: Material {
-    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = DYES.entries.asFlow().map {
+    override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = DYES.entries.asFlow().map {
         val name = it.key
         val color = it.value
         ctx.out("block/${name}_concrete", ctx.stack {

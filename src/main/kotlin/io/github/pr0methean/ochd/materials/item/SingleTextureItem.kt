@@ -14,7 +14,7 @@ enum class SingleTextureItem(
     override val highlight: Paint
 ): SingleTextureMaterial, ShadowHighlightMaterial, Item {
     AMETHYST_SHARD(SimplePickaxeBlock.AMETHYST_BLOCK) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             layer("trianglesSmallCenter1", highlight)
             layer("trianglesSmallCenter2", color)
         }

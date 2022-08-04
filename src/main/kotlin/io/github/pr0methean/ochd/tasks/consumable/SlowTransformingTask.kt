@@ -2,7 +2,6 @@ package io.github.pr0methean.ochd.tasks.consumable
 
 import io.github.pr0methean.ochd.tasks.consumable.caching.TaskCache
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import org.apache.logging.log4j.LogManager
@@ -18,26 +17,19 @@ open class SlowTransformingTask<T, U>(
 )
         : AbstractConsumableTask<U>(name, cache) {
 
-    private suspend fun wrappingTransform(it: Result<T>): Result<U> {
-        return if (it.isSuccess) {
-            success(transform(it.getOrThrow()))
-        } else {
-            failure(it.exceptionOrNull()!!)
-        }
-    }
-
-    override suspend fun checkSanity() {
-        base.checkSanity()
-        super.checkSanity()
-    }
-
     override suspend fun createCoroutineAsync(coroutineScope: CoroutineScope): Deferred<Result<U>> {
-        return coroutineScope.async(start = CoroutineStart.LAZY) {
+        val myBase = base
+        val myTransform = transform
+        return coroutineScope.async {
             val result = try {
-                logger.debug("Awaiting {} to transform it in {}", base, this)
-                val input = base.await()
-                logger.debug("Got {} from {}; transforming it in {}", input, base, this)
-                wrappingTransform(input)
+                logger.debug("Awaiting {} to transform it in {}", myBase, this)
+                val input = myBase.await()
+                logger.debug("Got {} from {}; transforming it in {}", input, myBase, this)
+                if (input.isSuccess) {
+                    success(myTransform(input.getOrThrow()))
+                } else {
+                    failure(input.exceptionOrNull()!!)
+                }
             } catch (t: Throwable) {
                 logger.error("Exception in {}", this, t)
                 failure(t)

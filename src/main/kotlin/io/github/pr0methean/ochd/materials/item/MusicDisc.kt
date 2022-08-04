@@ -27,7 +27,7 @@ enum class MusicDisc(val labelDyeName: String): SingleTextureMaterial, Item {
     OTHERSIDE("orange"),
     CHIRP("gray"),
     `11`("") {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             layer("musicDiscBroken", musicDiscShadow)
             layer("musicDiscGrooveBroken", musicDiscHighlight)
         }
@@ -36,7 +36,7 @@ enum class MusicDisc(val labelDyeName: String): SingleTextureMaterial, Item {
     override val nameOverride: String?
         get() = "music_disc_$name"
 
-    override fun LayerListBuilder.createTextureLayers() {
+    override suspend fun LayerListBuilder.createTextureLayers() {
         copy {
             layer("musicDisc", musicDiscColor)
             layer("musicDiscGroove", musicDiscShadow)

@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
 object Torch: Material {
-    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+    override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
         /*
 
 push torchBase $wood_oak torch1

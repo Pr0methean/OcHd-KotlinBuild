@@ -5,5 +5,5 @@ import io.github.pr0methean.ochd.tasks.consumable.OutputTask
 import kotlinx.coroutines.flow.Flow
 
 interface Material {
-    fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask>
+    suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask>
 }

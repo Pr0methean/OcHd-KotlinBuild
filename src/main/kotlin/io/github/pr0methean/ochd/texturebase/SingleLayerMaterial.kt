@@ -18,11 +18,11 @@ abstract class SingleLayerMaterial(
     override val name: String
         get() = nameOverride ?: this::class.simpleName!!
 
-    override fun LayerListBuilder.createTextureLayers() {
+    override suspend fun LayerListBuilder.createTextureLayers() {
         layer(sourceFileName, color, alpha)
     }
 
-    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> {
+    override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> {
         return flowOf(ctx.out(name, ctx.outTextureRoot.resolve(directory).resolve("$name.png"),
             ctx.layer(sourceFileName, color, alpha)))
     }

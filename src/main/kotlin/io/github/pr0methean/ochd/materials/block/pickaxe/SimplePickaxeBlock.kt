@@ -26,13 +26,13 @@ enum class SimplePickaxeBlock(
     val hasOutput: Boolean = true
 ): SingleTextureMaterial, ShadowHighlightMaterial, Block {
     SMOOTH_STONE(STONE) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("borderSolid", stoneExtremeShadow)
         }
     },
     COBBLESTONE(STONE) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(highlight)
             layer("checksLarge",shadow)
             layer("checksSmall",color)
@@ -41,7 +41,7 @@ enum class SimplePickaxeBlock(
         }
     },
     MOSSY_COBBLESTONE(SimpleSoftEarth.MOSS_BLOCK) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             copy(COBBLESTONE)
             layer("dots3",highlight)
             layer("dots2",shadow)
@@ -51,40 +51,40 @@ enum class SimplePickaxeBlock(
         }
     },
     COBBLED_DEEPSLATE(DEEPSLATE) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(shadow)
             layer("checksLarge", highlight)
             layer("checksSmall",color)
         }
     },
     DEEPSLATE_TOP(DEEPSLATE) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             copy(DEEPSLATE)
             layer("cross", shadow)
             layer("borderSolid", highlight)
         }
     },
     SANDSTONE_BASE(SimpleSoftEarth.SAND, hasOutput = false) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("checksLarge", shadow)
         }
     },
     SANDSTONE_BOTTOM(SimpleSoftEarth.SAND) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             copy(SANDSTONE_BASE)
             layer("borderLongDashes", highlight)
         }
     },
     SANDSTONE_TOP(SimpleSoftEarth.SAND) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             copy(SANDSTONE_BASE)
             layer("borderSolidThick", shadow)
             layer("borderSolid", highlight)
         }
     },
     SANDSTONE(SimpleSoftEarth.SAND) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("topPart", shadow)
             layer("borderSolid", shadow)
@@ -93,7 +93,7 @@ enum class SimplePickaxeBlock(
         }
     },
     CUT_SANDSTONE(SimpleSoftEarth.SAND) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("checksLarge", highlight)
             layer("borderSolid", shadow)
@@ -101,32 +101,32 @@ enum class SimplePickaxeBlock(
         }
     },
     CHISELED_SANDSTONE(SimpleSoftEarth.SAND) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             copy(CUT_SANDSTONE)
             layer("creeperFaceSmall", shadow)
         }
     },
     RED_SAND_BASE(SimpleSoftEarth.RED_SAND, hasOutput = false) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("checksLarge", highlight)
         }
     },
     RED_SANDSTONE_BOTTOM(SimpleSoftEarth.RED_SAND) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             copy(RED_SAND_BASE)
             layer("borderLongDashes", shadow)
         }
     },
     RED_SANDSTONE_TOP(SimpleSoftEarth.RED_SAND) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             copy(RED_SAND_BASE)
             layer("borderSolidThick", highlight)
             layer("borderSolid", shadow)
         }
     },
     RED_SANDSTONE(SimpleSoftEarth.RED_SAND) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("topPart",shadow)
             layer("borderSolid", highlight)
@@ -135,33 +135,33 @@ enum class SimplePickaxeBlock(
         }
     },
     CUT_RED_SANDSTONE(SimpleSoftEarth.RED_SAND) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             copy(RED_SAND_BASE)
             layer("borderSolid", shadow)
             layer("borderSolidTopLeft", highlight)
         }
     },
     CHISELED_RED_SANDSTONE(SimpleSoftEarth.RED_SAND) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             copy(CUT_RED_SANDSTONE)
             layer("witherSymbol", shadow)
         }
     },
     BLACKSTONE_TOP(Polishable.BLACKSTONE) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(shadow)
             layer("bigRingsBottomLeftTopRight", color)
             layer("bigRingsTopLeftBottomRight", highlight)
         }
     },
     GILDED_BLACKSTONE(Ore.GOLD) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             copy{Polishable.BLACKSTONE.run {createPolishedTexture()}}
             layer("bigRingsBottomLeftTopRight", color)
         }
     },
     BASALT_TOP(c(0x4e4e4e), c(0x002632), c(0x747474)) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("borderSolid", shadow)
             layer("borderLongDashes", highlight)
@@ -172,14 +172,14 @@ enum class SimplePickaxeBlock(
         }
     },
     BASALT_SIDE(BASALT_TOP) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(shadow)
             layer("stripesVerticalThick", color)
             layer("borderLongDashes", highlight)
         }
     },
     POLISHED_BASALT_TOP(BASALT_TOP) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("ringsCentralBullseye", shadow)
             layer("rings", highlight)
@@ -190,7 +190,7 @@ enum class SimplePickaxeBlock(
         }
     },
     POLISHED_BASALT_SIDE(BASALT_SIDE) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("stripesVerticalThick", highlight)
             layer("borderSolid", shadow)
@@ -198,7 +198,7 @@ enum class SimplePickaxeBlock(
         }
     },
     GLOWSTONE(c(0xcc8654), c(0x6f4522), c(0xffda74)) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("borderSolid", shadow)
             layer("checksSmall", highlight)
@@ -206,14 +206,14 @@ enum class SimplePickaxeBlock(
         }
     },
     END_STONE(c(0xdeffa4),c(0xc5be8b),c(0xffffb4)) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("checksLargeOutline", shadow)
             layer("bigDotsTopLeftBottomRight", highlight)
         }
     },
     QUARTZ_PILLAR(Ore.QUARTZ) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(shadow)
             layer("tntSticksSide", color)
             layer("borderSolid", shadow)
@@ -221,7 +221,7 @@ enum class SimplePickaxeBlock(
         }
     },
     QUARTZ_PILLAR_TOP(QUARTZ_PILLAR) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("rings", highlight)
             layer("borderSolid", shadow)
@@ -229,7 +229,7 @@ enum class SimplePickaxeBlock(
         }
     },
     MUD_BRICKS(SimpleSoftEarth.PACKED_MUD) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("strokeTopLeftBottomRight2", highlight)
             layer("strokeBottomLeftTopRight2", shadow)
@@ -238,7 +238,7 @@ enum class SimplePickaxeBlock(
         }
     },
     STONE_BRICKS(STONE) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("checksLarge", highlight)
             layer("bricks", stoneExtremeShadow)
@@ -246,13 +246,13 @@ enum class SimplePickaxeBlock(
         }
     },
     CRACKED_STONE_BRICKS(STONE_BRICKS) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             copy(STONE_BRICKS)
             layer("streaks", stoneExtremeShadow)
         }
     },
     MOSSY_STONE_BRICKS(SimpleSoftEarth.MOSS_BLOCK) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             copy(STONE_BRICKS)
             layer("dots3", shadow)
             layer("dots2", highlight)
@@ -262,7 +262,7 @@ enum class SimplePickaxeBlock(
         }
     },
     CHISELED_STONE_BRICKS(STONE_BRICKS) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(shadow)
             layer("checksLarge", highlight)
             layer("ringsCentralBullseye", stoneExtremeHighlight)
@@ -272,21 +272,21 @@ enum class SimplePickaxeBlock(
         }
     },
     TERRACOTTA(c(0x965d43), c(0x945b43), c(0x9b6045)) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(shadow)
             layer("bigRingsTopLeftBottomRight", highlight)
             layer("borderRoundDots", highlight)
         }
     },
     BRICKS(mortarColor, TERRACOTTA.shadow,  mortarColor) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(shadow)
             layer("bricksSmall", highlight)
             layer("borderDotted", highlight, 0.5)
         }
     },
     QUARTZ_BRICKS(Ore.QUARTZ) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("streaks", highlight)
             layer("bricks", shadow)
@@ -294,14 +294,14 @@ enum class SimplePickaxeBlock(
         }
     },
     POLISHED_BLACKSTONE_BRICKS(Polishable.BLACKSTONE) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("bricksSmall", shadow)
             layer("borderDotted", highlight)
         }
     },
     DEEPSLATE_BRICKS(DEEPSLATE) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             copy(DEEPSLATE)
             layer("bricksSmall", shadow)
             layer("borderDotted", highlight)
@@ -309,14 +309,14 @@ enum class SimplePickaxeBlock(
         }
     },
     END_STONE_BRICKS(END_STONE) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             copy(END_STONE)
             layer("bricksSmall", shadow)
             layer("borderShortDashes", highlight)
         }
     },
     NETHER_BRICKS(c(0x302020), Color.BLACK, c(0x442727)) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("bricksSmall", highlight)
             layer("borderDotted", highlight)
@@ -324,7 +324,7 @@ enum class SimplePickaxeBlock(
         }
     },
     RED_NETHER_BRICKS(c(0x440000),c(0x2e0000),c(0x730000)) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("bricksSmall", shadow)
             layer("borderDotted", highlight)
@@ -332,47 +332,47 @@ enum class SimplePickaxeBlock(
         }
     },
     AMETHYST_BLOCK(c(0xc890ff),c(0x7a5bb5),c(0xffcbff)) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(shadow)
             layer("triangles1", highlight)
             layer("triangles2", color)
         }
     },
     BUDDING_AMETHYST(AMETHYST_BLOCK.color,c(0x462b7d),AMETHYST_BLOCK.highlight) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             copy(AMETHYST_BLOCK)
             layer("buddingAmethystCenter", shadow)
         }
     },
     AMETHYST_CLUSTER(AMETHYST_BLOCK) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             layer("amethystCluster1", highlight)
             layer("amethystCluster2", color)
         }
     },
     LARGE_AMETHYST_BUD(AMETHYST_BLOCK) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             layer("largeAmethystBud1", color)
             layer("largeAmethystBud2", shadow)
             layer("largeAmethystBud3", highlight)
         }
     },
     MEDIUM_AMETHYST_BUD(AMETHYST_BLOCK) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             layer("mediumAmethystBud1", color)
             layer("mediumAmethystBud2", shadow)
             layer("largeAmethystBud3", highlight)
         }
     },
     SMALL_AMETHYST_BUD(AMETHYST_BLOCK) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             layer("smallAmethystBud1", color)
             layer("smallAmethystBud2", shadow)
         }
     }
     ;
 
-    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> =
+    override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> =
         if (hasOutput) super<SingleTextureMaterial>.outputTasks(ctx) else flowOf()
 
     constructor(base: ShadowHighlightMaterial, hasOutput: Boolean = true):

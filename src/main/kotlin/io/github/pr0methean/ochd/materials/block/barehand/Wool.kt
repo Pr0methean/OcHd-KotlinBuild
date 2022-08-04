@@ -6,7 +6,7 @@ import io.github.pr0methean.ochd.texturebase.DyedBlock
 import javafx.scene.paint.Color
 
 object Wool : DyedBlock("wool") {
-    override fun LayerListBuilder.createTextureLayers(color: Color) {
+    override suspend fun LayerListBuilder.createTextureLayers(color: Color) {
         background(color)
         layer("zigzagBroken", DYES["gray"], 0.25)
         layer("zigzagBroken2", DYES["light_gray"], 0.25)

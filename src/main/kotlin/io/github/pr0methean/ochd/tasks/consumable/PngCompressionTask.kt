@@ -17,7 +17,7 @@ class PngCompressionTask(
         @Suppress("BlockingMethodInNonBlockingContext")
         ImageIO.write(SwingFXUtils.fromFXImage(image, null), "PNG", it)
         val packed = it.toByteArray()
-        logger.info("Done compressing {}", base)
+        logger.info("Done compressing {}", base.name)
         packed
     }
 }) {

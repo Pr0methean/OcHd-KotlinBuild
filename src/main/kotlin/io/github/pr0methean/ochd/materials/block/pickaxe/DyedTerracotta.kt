@@ -6,7 +6,7 @@ import io.github.pr0methean.ochd.texturebase.DyedBlock
 import javafx.scene.paint.Color
 
 object DyedTerracotta: DyedBlock("terracotta") {
-    override fun LayerListBuilder.createTextureLayers(color: Color) {
+    override suspend fun LayerListBuilder.createTextureLayers(color: Color) {
         background(color)
         copy {
             layer("bigRingsTopLeftBottomRight", TERRACOTTA.highlight)

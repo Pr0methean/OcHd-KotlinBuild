@@ -19,48 +19,48 @@ enum class CommandBlock(
 ): ShadowHighlightMaterial {
     COMMAND_BLOCK(c(0xc77e4f),c(0xa66030),c(0xd7b49d)),
     CHAIN_COMMAND_BLOCK(c(0x76b297),c(0x5f8f7a),c(0xa1c3b4)) {
-        override fun LayerListBuilder.decorateBaseTexture() {
+        override suspend fun LayerListBuilder.decorateBaseTexture() {
             layer("commandBlockChains")
         }
     },
     REPEATING_COMMAND_BLOCK(c(0x6a4fc7),c(0x553b9b),c(0x9b8bcf)) {
-        override fun LayerListBuilder.decorateBaseTexture() {
+        override suspend fun LayerListBuilder.decorateBaseTexture() {
             layer("loopArrow")
         }
     };
     private enum class SideType {
         FRONT {
-            override fun LayerListBuilder.createBase() {
+            override suspend fun LayerListBuilder.createBase() {
                 layer("commandBlockOctagon", Color.BLACK)
                 layer("craftingGridSpacesCross", Color.WHITE)
             }
 
-            override fun LayerListBuilder.createFrame(i: Int) {
+            override suspend fun LayerListBuilder.createFrame(i: Int) {
                 layer("dotsInCross$i", commandBlockDotColor)
             }
         }, BACK {
-            override fun LayerListBuilder.createBase() {
+            override suspend fun LayerListBuilder.createBase() {
                 layer("commandBlockSquare", Color.BLACK)
                 layer("craftingGridSpaces", Color.WHITE)
             }
         }, SIDE {
-            override fun LayerListBuilder.createBase() {
+            override suspend fun LayerListBuilder.createBase() {
                 layer("commandBlockArrowUnconditional", Color.BLACK)
                 layer("craftingGridSpaces", Color.WHITE)
             }
         }, CONDITIONAL {
-            override fun LayerListBuilder.createBase() {
+            override suspend fun LayerListBuilder.createBase() {
                 layer("commandBlockArrow", Color.BLACK)
                 layer("craftingGridSpaces", Color.WHITE)
             }
         };
-        abstract fun LayerListBuilder.createBase()
-        open fun LayerListBuilder.createFrame(i: Int) {
+        abstract suspend fun LayerListBuilder.createBase()
+        open suspend fun LayerListBuilder.createFrame(i: Int) {
             layer("glider$i", commandBlockDotColor)
         }
     }
 
-    fun LayerListBuilder.createBaseTexture() {
+    suspend fun LayerListBuilder.createBaseTexture() {
         background(color)
         layer("diagonalChecksTopLeftBottomRight", highlight)
         layer("diagonalChecksBottomLeftTopRight", highlight)
@@ -69,9 +69,9 @@ enum class CommandBlock(
         decorateBaseTexture()
     }
 
-    open fun LayerListBuilder.decorateBaseTexture() {}
+    open suspend fun LayerListBuilder.decorateBaseTexture() {}
 
-    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+    override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
         val baseTexture = ctx.stack {createBaseTexture()}
         for (sideType in SideType.values()) {
             val sideBase = ctx.stack {sideType.run {createBase()}}

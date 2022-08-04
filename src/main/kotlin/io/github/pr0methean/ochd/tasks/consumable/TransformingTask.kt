@@ -2,7 +2,6 @@ package io.github.pr0methean.ochd.tasks.consumable
 
 import io.github.pr0methean.ochd.tasks.consumable.caching.TaskCache
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import org.apache.logging.log4j.LogManager
@@ -29,13 +28,15 @@ open class TransformingTask<T, U>(
     }
 
     override suspend fun createCoroutineAsync(coroutineScope: CoroutineScope): Deferred<Result<U>> {
-        return coroutineScope.async(start = CoroutineStart.LAZY) {
+        val myBase = base
+        val myTransform = transform
+        return coroutineScope.async {
             val result = try {
-                logger.debug("Awaiting {} to transform it in {}", base, this)
-                val input = base.await()
-                logger.debug("Got {} from {}; transforming it in {}", input, base, this)
+                logger.debug("Awaiting {} to transform it in {}", myBase, this)
+                val input = myBase.await()
+                logger.debug("Got {} from {}; transforming it in {}", input, myBase, this)
                 if (input.isSuccess) {
-                    success(transform(input.getOrThrow()))
+                    success(myTransform(input.getOrThrow()))
                 } else {
                     failure(input.exceptionOrNull()!!)
                 }
@@ -53,11 +54,6 @@ open class TransformingTask<T, U>(
             base.mergeWithDuplicate(other.base as ConsumableTask<T>)
         }
         return super.mergeWithDuplicate(other)
-    }
-
-    override suspend fun checkSanity() {
-        base.checkSanity()
-        super.checkSanity()
     }
 
     override suspend fun clearFailure() {

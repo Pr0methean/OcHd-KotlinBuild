@@ -9,7 +9,7 @@ import javafx.scene.paint.Color
 @Suppress("unused")
 enum class SimpleShearBlock: SingleTextureMaterial, Block {
     COBWEB {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             /*
             push ringsCentralBullseye ${white} cobweb1
 push x ${white} cobweb2

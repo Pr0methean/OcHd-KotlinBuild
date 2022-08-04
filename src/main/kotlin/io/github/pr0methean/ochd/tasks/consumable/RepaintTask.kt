@@ -21,7 +21,7 @@ class RepaintTask(
     val stats: ImageProcessingStats
 ): SlowTransformingTask<Image, Image>("$base@$paint@$alpha", base, cache, { baseImage ->
     val output = WritableImage(baseImage.width.toInt(), baseImage.height.toInt())
-    doJfx("Repaint $base with $paint") {
+    doJfx("$base@$paint@$alpha") {
         val canvas = Canvas(baseImage.width, baseImage.height)
         canvas.isCache = true
         val gfx = canvas.graphicsContext2D
@@ -43,10 +43,9 @@ class RepaintTask(
     }
 }), ConsumableImageTask {
     override val unpacked: ConsumableTask<Image> = this
-    override val asPng: ConsumableTask<ByteArray> = PngCompressionTask(this, StrongTaskCache(), stats)
-    override suspend fun checkSanity() {
-        super<SlowTransformingTask>.checkSanity()
-        asPng.checkSanity()
+    override val asPng: ConsumableTask<ByteArray> by lazy {PngCompressionTask(this, StrongTaskCache(), stats)}
+    override suspend fun mergeWithDuplicate(other: ConsumableTask<Image>): ConsumableImageTask {
+        return super.mergeWithDuplicate(other) as ConsumableImageTask
     }
 
     override fun equals(other: Any?): Boolean {

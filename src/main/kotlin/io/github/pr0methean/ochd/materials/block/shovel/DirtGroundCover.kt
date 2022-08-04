@@ -36,37 +36,37 @@ enum class DirtGroundCover(
     GRASS_BLOCK(c(0x9d9d9d), c(0x828282), c(0xbababa)) {
         val extremeShadow = c(0x757575)
         val extremeHighlight = c(0xc3c3c3)
-        override fun LayerListBuilder.createTopLayers() {
+        override suspend fun LayerListBuilder.createTopLayers() {
             background(highlight)
             layer("borderShortDashes", color)
             layer("vees", shadow)
         }
 
-        override fun LayerListBuilder.createCoverSideLayers() {
+        override suspend fun LayerListBuilder.createCoverSideLayers() {
             layer("topPart", grassItemColor)
             layer("veesTop", grassItemShadow)
         }
 
-        override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask>
+        override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask>
                 = merge(super.outputTasks(ctx), flowOf(ctx.out("block/grass_block_side_overlay", ctx.stack {
             layer("topPart", color)
             layer("veesTop", shadow)
         })))
     },
     PODZOL(c(0x6a4418),c(0x4a3018),c(0x8b5920)) {
-        override fun LayerListBuilder.createCoverSideLayers() {
+        override suspend fun LayerListBuilder.createCoverSideLayers() {
             layer("topPart", color)
             layer("zigzagBrokenTopPart", highlight)
         }
 
-        override fun LayerListBuilder.createTopLayers() {
+        override suspend fun LayerListBuilder.createTopLayers() {
             background(color)
             layer("zigzagBroken", highlight)
             layer("borderDotted", shadow)
         }
     },
     MYCELIUM(c(0x6a656a),c(0x5a5952),c(0x7b6d73)) {
-        override fun LayerListBuilder.createTopLayers() {
+        override suspend fun LayerListBuilder.createTopLayers() {
             background(color)
             layer("diagonalChecksTopLeftBottomRight", shadow)
             layer("diagonalChecksBottomLeftTopRight", highlight)
@@ -75,12 +75,12 @@ enum class DirtGroundCover(
         }
     },
     SNOW(Color.WHITE,  c(0xcfcfdf), Color.WHITE, nameOverrideTop = "snow", nameOverrideSide = "grass_block_snow") {
-        override fun LayerListBuilder.createCoverSideLayers() {
+        override suspend fun LayerListBuilder.createCoverSideLayers() {
             layer("topPart", color)
             layer("snowTopPart", shadow)
         }
 
-        override fun LayerListBuilder.createTopLayers() {
+        override suspend fun LayerListBuilder.createTopLayers() {
             background(color)
             layer("snow", shadow)
         }

@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
 object Furnace: Material {
-    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+    override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
         val furnaceSide = ctx.stack {
             background(OreBase.STONE.color)
             layer("bottomHalf", OreBase.STONE.highlight)

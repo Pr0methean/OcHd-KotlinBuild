@@ -22,13 +22,13 @@ push borderSolid ${wood_oak} compostBottom2
 out_stack "block/composter_bottom"
      */
     LADDER {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             layer("rail", color)
             layer("railTies", highlight)
         }
     },
     CRAFTING_TABLE_TOP {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("waves", highlight)
             layer("craftingGrid", shadow)
@@ -37,25 +37,25 @@ out_stack "block/composter_bottom"
         }
     },
     CRAFTING_TABLE_SIDE {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             OverworldWood.OAK.run {planks()}
             layer("borderSolid", highlight)
             layer("craftingSide", OverworldWood.DARK_OAK.color)
         }
     },
     CRAFTING_TABLE_FRONT {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             copy(CRAFTING_TABLE_SIDE)
         }
     },
     BOOKSHELF {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("bookShelves")
         }
     },
     JUKEBOX_SIDE {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("strokeTopLeftBottomRight4", highlight)
             layer("strokeBottomLeftTopRight4", shadow)
@@ -64,7 +64,7 @@ out_stack "block/composter_bottom"
         }
     },
     JUKEBOX_TOP {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("borderSolidThick", highlight)
             layer("borderDotted", shadow)
@@ -72,25 +72,25 @@ out_stack "block/composter_bottom"
         }
     },
     NOTE_BLOCK {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             copy(JUKEBOX_SIDE)
             layer("note", OverworldWood.DARK_OAK.shadow)
         }
     },
     COMPOSTER_TOP {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             layer("borderSolidThick", color)
         }
     },
     COMPOSTER_SIDE {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("stripesThick", shadow)
             layer("borderDotted", highlight)
         }
     },
     COMPOSTER_BOTTOM {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(shadow)
             layer("planksTopVertical", color)
             layer("borderSolidThick", shadow)
@@ -98,12 +98,12 @@ out_stack "block/composter_bottom"
         }
     },
     COMPOSTER_COMPOST {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             copy {DirtGroundCover.PODZOL.run {createTopLayers()}}
         }
     },
     COMPOSTER_READY {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             copy(COMPOSTER_COMPOST)
             layer("bonemealSmallNoBorder")
         }

@@ -14,21 +14,21 @@ enum class OreBase(
 ) : Block, ShadowHighlightMaterial {
 
     STONE(c(0x888888), c(0x6d6d6d), c(0xa6a6a6), "") {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(STONE.shadow)
             layer("checksLarge", STONE.highlight)
             layer("borderDotted", STONE.color)
         }
     },
     DEEPSLATE(c(0x515151), c(0x2f2f37), c(0x797979), "deepslate_") {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("diagonalChecksBottomLeftTopRight", DEEPSLATE.highlight)
             layer("diagonalChecksTopLeftBottomRight", DEEPSLATE.shadow)
         }
     },
     NETHERRACK(c(0x723232), c(0x411616), c(0x854242), "nether_") {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("diagonalOutlineChecksTopLeftBottomRight", NETHERRACK.shadow)
             layer("diagonalOutlineChecksBottomLeftTopRight", NETHERRACK.highlight)

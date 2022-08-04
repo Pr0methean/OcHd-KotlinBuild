@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
 object MiscRedstone: Material {
-    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+    override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
         val repeaterComparatorCommonBase = ctx.stack {
             copy(SimplePickaxeBlock.SMOOTH_STONE)
             layer("repeaterSideInputs", OreBase.STONE.shadow)

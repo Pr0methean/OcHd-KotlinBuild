@@ -12,7 +12,7 @@ open class MaterialGroup(val elements: Flow<Material>): Material {
     constructor(vararg elements: Material): this(elements.asFlow())
 
     @OptIn(FlowPreview::class)
-    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask>
+    override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask>
             = elements.flatMapConcat { it.outputTasks(ctx) }
 }
 

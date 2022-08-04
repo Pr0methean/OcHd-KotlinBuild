@@ -46,11 +46,7 @@ interface ConsumableImageTask: StringBuilderFormattable, ConsumableTask<Image> {
     val unpacked: ConsumableTask<Image>
 
     val asPng: ConsumableTask<ByteArray>
-
-    override suspend fun checkSanity() {
-        unpacked.checkSanity()
-        asPng.checkSanity()
-    }
+    override suspend fun mergeWithDuplicate(other: ConsumableTask<Image>): ConsumableImageTask
 
     @Suppress("DeferredResultUnused")
     override suspend fun startAsync(): Deferred<Result<Image>>

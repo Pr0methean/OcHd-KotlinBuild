@@ -29,22 +29,22 @@ enum class CopperOxide(
         shadow = c(0x3b5c5c),
         highlight = c(0x6ec59f)
     );
-    fun LayerListBuilder.commonLayers() {
+    suspend fun LayerListBuilder.commonLayers() {
         background(color)
         layer("streaks", highlight)
         layer("borderSolid", shadow)
         layer("borderSolidTopLeft", highlight)
     }
-    fun LayerListBuilder.uncut() {
+    suspend fun LayerListBuilder.uncut() {
         copy {commonLayers()}
         layer("copper2oxide", shadow)
     }
-    fun LayerListBuilder.cut() {
+    suspend fun LayerListBuilder.cut() {
         copy {commonLayers()}
         layer("cutInQuarters1", shadow)
         layer("cutInQuarters2", highlight)
     }
-    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+    override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
         emit(ctx.out("block/${name}_copper") { uncut() })
         emit(ctx.out("block/cut_${name}_copper") { cut() })
     }

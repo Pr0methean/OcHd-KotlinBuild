@@ -7,13 +7,13 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
 interface DoubleTallBlock: Material {
-    fun LayerListBuilder.createBottomLayers()
+    suspend fun LayerListBuilder.createBottomLayers()
 
-    fun LayerListBuilder.createTopLayers()
+    suspend fun LayerListBuilder.createTopLayers()
 
     val name: String
 
-    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+    override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
         emit(ctx.out("block/${name}_bottom", ctx.stack { createBottomLayers() }))
         emit(ctx.out("block/${name}_top", ctx.stack { createTopLayers() }))
     }

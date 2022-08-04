@@ -17,19 +17,19 @@ val stemHighlight = c(0x55ab2d)
 @Suppress("unused")
 enum class DoubleTallFlower: DoubleTallBlock {
     SUNFLOWER {
-        override fun LayerListBuilder.createBottomLayers() {
+        override suspend fun LayerListBuilder.createBottomLayers() {
             layer("flowerStemTall", stemColor)
             layer("flowerStemTallBorder", stemHighlight)
             layer("flowerStemBottomBorder", stemShadow)
         }
 
-        override fun LayerListBuilder.createTopLayers() {
+        override suspend fun LayerListBuilder.createTopLayers() {
             layer("flowerStemShort", stemColor)
             layer("flowerStemShortBorder", stemHighlight)
             layer("flowerStemBottomBorder", stemShadow)
         }
 
-        override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = merge(super.outputTasks(ctx), flow {
+        override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = merge(super.outputTasks(ctx), flow {
             emit(ctx.out("block/sunflower_back", ctx.layer("sunflowerPetals")))
             emit(ctx.out("block/sunflower_front", ctx.stack {
                 layer("sunflowerPetals", Color.YELLOW)

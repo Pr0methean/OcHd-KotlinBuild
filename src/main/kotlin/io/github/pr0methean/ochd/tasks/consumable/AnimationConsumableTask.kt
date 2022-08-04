@@ -16,16 +16,11 @@ class AnimationConsumableTask(
     val cache: TaskCache<Image>,
     override val stats: ImageProcessingStats
 ): AbstractConsumableImageTask(name, cache, stats) {
-    val totalHeight = height * frames.size
+    private val totalHeight = height * frames.size
 
     override suspend fun clearFailure() {
         frames.map(ConsumableImageTask::unpacked).asFlow().collect(ConsumableTask<Image>::clearFailure)
         super.clearFailure()
-    }
-
-    override suspend fun checkSanity() {
-        frames.asFlow().collect(ConsumableImageTask::checkSanity)
-        super.checkSanity()
     }
 
     @Suppress("DeferredResultUnused")
@@ -45,7 +40,7 @@ class AnimationConsumableTask(
         return Objects.hash(frames, width, height)
     }
 
-    override suspend fun mergeWithDuplicate(other: ConsumableTask<Image>): ConsumableTask<Image> {
+    override suspend fun mergeWithDuplicate(other: ConsumableTask<Image>): ConsumableImageTask {
         if (other is AnimationConsumableTask) {
             for ((index, frame) in frames.withIndex()) {
                 if (frame == other.frames[index]) {
@@ -70,8 +65,9 @@ class AnimationConsumableTask(
         frames.asFlow().collect { it.startAsync() }
         frameTasks.joinAll()
         val output = WritableImage(width, totalHeight)
-        return doJfx("snapshot for $name") {
+        return doJfx("Snapshot of $name") {
             canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
+            canvas.isCache = false
             if (output.isError) {
                 throw output.exception
             }

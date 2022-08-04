@@ -9,8 +9,9 @@ abstract class AbstractConsumableImageTask(override val name: String, cache: Tas
                                            open val stats: ImageProcessingStats)
     : SimpleConsumableTask<Image>(name, cache), ConsumableImageTask {
     override val unpacked = this
-    override val asPng by lazy { PngCompressionTask(this, SoftTaskCache(), stats) }
-    override suspend fun checkSanity() {
-        super<ConsumableImageTask>.checkSanity()
+    override suspend fun mergeWithDuplicate(other: ConsumableTask<Image>): ConsumableImageTask {
+        return super.mergeWithDuplicate(other) as ConsumableImageTask
     }
+
+    override val asPng by lazy { PngCompressionTask(this, SoftTaskCache(), stats) }
 }

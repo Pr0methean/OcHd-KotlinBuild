@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
 object Glass: Material {
-    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+    override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
         emit(ctx.out("block/glass_pane_top", ctx.layer("paneTop", c(0xa8d0d9))))
         emit(ctx.out("block/glass", ctx.stack {
             layer("borderSolid", Color.WHITE)

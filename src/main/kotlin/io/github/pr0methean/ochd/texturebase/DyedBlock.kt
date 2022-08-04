@@ -9,9 +9,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
 abstract class DyedBlock(val name: String): Material {
-    abstract fun LayerListBuilder.createTextureLayers(color: Color)
+    abstract suspend fun LayerListBuilder.createTextureLayers(color: Color)
 
-    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+    override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
         DYES.forEach {
             val dyeName = it.key
             val color = it.value

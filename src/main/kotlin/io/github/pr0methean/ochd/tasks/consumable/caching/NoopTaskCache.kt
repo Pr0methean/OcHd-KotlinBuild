@@ -4,10 +4,13 @@ package io.github.pr0methean.ochd.tasks.consumable.caching
  * If a task uses this, results will not be stored. Any requests for the result of the task will
  * trigger a new computation if there isn't already one in progress.
  */
-class NoopTaskCache<T>: TaskCache<T> {
-    override fun getNow(): Result<T>? = null
+object NoopTaskCache: TaskCache<Any> {
+    override fun getNow(): Result<Nothing>? = null
 
-    override fun set(value: Result<T>?) {
+    override fun set(value: Result<Any>?) {
         // No-op.
     }
 }
+
+@Suppress("UNCHECKED_CAST")
+fun <T> noopTaskCache(): TaskCache<T> = NoopTaskCache as TaskCache<T>

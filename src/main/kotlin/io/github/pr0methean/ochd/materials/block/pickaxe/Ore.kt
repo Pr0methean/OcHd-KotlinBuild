@@ -32,7 +32,7 @@ enum class Ore(
         color = c(0x2f2f2f),
         shadow = Color.BLACK,
         highlight = c(0x494949)) {
-        override fun oreBlock(ctx: ImageProcessingContext, oreBase: OreBase): ConsumableImageTask {
+        override suspend fun oreBlock(ctx: ImageProcessingContext, oreBase: OreBase): ConsumableImageTask {
             if (oreBase == OreBase.DEEPSLATE) {
                 return ctx.stack {
                     copy(OreBase.DEEPSLATE)
@@ -61,7 +61,7 @@ enum class Ore(
         shadow=c(0xca0000),
         highlight = c(0xff5e5e)
     ) {
-        override fun LayerListBuilder.itemForOutput() {
+        override suspend fun LayerListBuilder.itemForOutput() {
             rawOre()
         }
     },
@@ -78,7 +78,7 @@ enum class Ore(
         highlight = Color.WHITE,
         substrates = NETHER
     ) {
-        override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+        override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
             emit(ctx.out("item/quartz") { ingot() })
             emit(ctx.out("block/nether_quartz_ore", ctx.stack {
                     copy(OreBase.NETHERRACK)
@@ -101,13 +101,13 @@ enum class Ore(
         highlight = c(0x6995ff),
         itemNameOverride = "lapis_lazuli"
     ) {
-        override fun LayerListBuilder.item() {
+        override suspend fun LayerListBuilder.item() {
             layer("lapis", color)
             layer("lapisHighlight", highlight)
             layer("lapisShadow", shadow)
         }
 
-        override fun LayerListBuilder.block() {
+        override suspend fun LayerListBuilder.block() {
             background(highlight)
             layer("checksLarge", shadow)
             layer("checksSmall", color)
@@ -121,12 +121,12 @@ enum class Ore(
         highlight=c(0x77e7d1)
     ) {
         val extremeHighlight = c(0xd5ffff)
-        override fun LayerListBuilder.item() {
+        override suspend fun LayerListBuilder.item() {
             layer("diamond1", extremeHighlight)
             layer("diamond2", shadow)
         }
 
-        override fun LayerListBuilder.block() {
+        override suspend fun LayerListBuilder.block() {
             background(color)
             layer("streaks", highlight)
             copy {item()}
@@ -140,12 +140,12 @@ enum class Ore(
         highlight=c(0x1cdd62)
     ) {
         val extremeHighlight = c(0xd9ffeb)
-        override fun LayerListBuilder.item() {
+        override suspend fun LayerListBuilder.item() {
             layer("emeraldTopLeft", highlight)
             layer("emeraldBottomRight", shadow)
         }
 
-        override fun LayerListBuilder.block() {
+        override suspend fun LayerListBuilder.block() {
             background(highlight)
             layer("emeraldTopLeft", extremeHighlight)
             layer("emeraldBottomRight", shadow)
@@ -154,38 +154,38 @@ enum class Ore(
         }
     };
     private val svgName = name.lowercase(Locale.ENGLISH)
-    open fun LayerListBuilder.item() {
+    open suspend fun LayerListBuilder.item() {
         layer(svgName, color)
     }
 
-    open fun LayerListBuilder.block() {
+    open suspend fun LayerListBuilder.block() {
         background(color)
         layer("streaks", refinedHighlight)
         layer(svgName, refinedShadow)
         layer("borderSolid", refinedShadow)
         layer("borderSolidTopLeft", refinedHighlight)
     }
-    open fun LayerListBuilder.ingot() {
+    open suspend fun LayerListBuilder.ingot() {
         layer("ingotMask", refinedColor)
         layer("ingotBorder", refinedShadow)
         layer("ingotBorderTopLeft", refinedHighlight)
         layer(svgName, shadow)
     }
-    open fun LayerListBuilder.rawOre() {
+    open suspend fun LayerListBuilder.rawOre() {
         layer("bigCircle", shadow)
         layer(svgName, highlight)
     }
-    open fun LayerListBuilder.rawBlock() {
+    open suspend fun LayerListBuilder.rawBlock() {
         background(color)
         layer("checksSmall", highlight)
         layer(svgName, shadow)
     }
 
-    open fun LayerListBuilder.itemForOutput() {
+    open suspend fun LayerListBuilder.itemForOutput() {
         item()
     }
 
-    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+    override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
         substrates.forEach { oreBase ->
             emit(ctx.out("block/${oreBase.orePrefix}${name}_ore", oreBlock(ctx, oreBase)))
         }
@@ -199,7 +199,7 @@ enum class Ore(
         }
     }
 
-    protected open fun oreBlock(
+    protected open suspend fun oreBlock(
         ctx: ImageProcessingContext,
         oreBase: OreBase
     ) = ctx.stack {

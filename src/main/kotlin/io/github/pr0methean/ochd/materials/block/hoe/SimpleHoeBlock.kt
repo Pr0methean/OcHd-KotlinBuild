@@ -16,7 +16,7 @@ enum class SimpleHoeBlock(
     override val highlight: Paint
 ): SingleTextureMaterial, ShadowHighlightMaterial, Block {
     SHROOMLIGHT(c(0xffac6d), c(0xd75100), c(0xffffb4)) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("borderSolid", highlight)
             layer("checksSmall", shadow)
@@ -33,14 +33,14 @@ out_stack block/shroomlight
         }
     },
     TARGET_SIDE(c(0xffd7ba), Ore.REDSTONE.shadow, WHITE) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("grassTall", highlight)
             layer("ringsCentralBullseye", shadow)
         }
     },
     TARGET_TOP(c(0xffd7ba), Ore.REDSTONE.shadow, WHITE) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("checksSmall", highlight)
             layer("ringsCentralBullseye", shadow)

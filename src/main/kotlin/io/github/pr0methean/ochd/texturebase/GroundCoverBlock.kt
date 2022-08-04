@@ -14,12 +14,12 @@ interface GroundCoverBlock: Material {
     val nameOverrideSide: String?
             get() = null
 
-    fun LayerListBuilder.createCoverSideLayers() {
+    suspend fun LayerListBuilder.createCoverSideLayers() {
         copyTopOf {createTopLayers()}
     }
-    fun LayerListBuilder.createTopLayers()
+    suspend fun LayerListBuilder.createTopLayers()
 
-    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+    override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
         emit(ctx.out("block/${nameOverrideTop ?: "${name}_top"}", ctx.stack { createTopLayers() }))
         emit(ctx.out("block/${nameOverrideSide ?: "${name}_side"}", ctx.stack {
             copy(base)

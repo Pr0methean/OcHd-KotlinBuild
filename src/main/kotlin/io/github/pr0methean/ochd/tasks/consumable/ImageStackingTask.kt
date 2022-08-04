@@ -31,7 +31,7 @@ class ImageStackingTask(val layers: LayerList,
         }
     }
 
-    override suspend fun mergeWithDuplicate(other: ConsumableTask<Image>): ConsumableTask<Image> {
+    override suspend fun mergeWithDuplicate(other: ConsumableTask<Image>): ConsumableImageTask {
         super.mergeWithDuplicate(other)
         if (other is ImageStackingTask) {
             layers.mergeWithDuplicate(other.layers)
@@ -47,11 +47,6 @@ class ImageStackingTask(val layers: LayerList,
     @Suppress("DeferredResultUnused")
     override suspend fun startPrerequisites() {
         layers.layers.map(ConsumableImageTask::unpacked).asFlow().collect(ConsumableTask<Image>::startAsync)
-    }
-
-    override suspend fun checkSanity() {
-        layers.layers.asFlow().collect(ConsumableImageTask::checkSanity)
-        super.checkSanity()
     }
 
     override fun equals(other: Any?): Boolean {
@@ -105,6 +100,7 @@ class ImageStackingTask(val layers: LayerList,
                             if (snapshot.isError) {
                                 throw snapshot.exception
                             }
+                            canvas.isCache = false
                             snapshotRef.set(snapshot)
                         }
                     }

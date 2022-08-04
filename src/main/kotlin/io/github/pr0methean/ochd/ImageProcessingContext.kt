@@ -1,12 +1,11 @@
 package io.github.pr0methean.ochd
 
 import io.github.pr0methean.ochd.tasks.consumable.*
-import io.github.pr0methean.ochd.tasks.consumable.caching.NoopTaskCache
 import io.github.pr0methean.ochd.tasks.consumable.caching.SoftTaskCache
+import io.github.pr0methean.ochd.tasks.consumable.caching.noopTaskCache
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
-import kotlinx.coroutines.runBlocking
 import java.io.File
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -39,7 +38,7 @@ class ImageProcessingContext(
         svgTasks = builder.toMap()
     }
 
-    fun deduplicate(task: ConsumableImageTask): ConsumableImageTask {
+    suspend fun deduplicate(task: ConsumableImageTask): ConsumableImageTask {
         if (task is SvgImportTask) {
             return task // SvgImportTask duplication is impossible because svgTasks is populated eagerly
         }
@@ -61,28 +60,25 @@ class ImageProcessingContext(
             stats.dedupeFailures.add(className)
             task
         }
-        if (task !== deduped) {
-            runBlocking {deduped.mergeWithDuplicate(task)}
-        }
-        return deduped
+        return deduped.mergeWithDuplicate(task)
     }
 
-    fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): ConsumableImageTask
+    suspend fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): ConsumableImageTask
             = layer(svgTasks[name]?.unpacked ?: throw IllegalArgumentException("No SVG task called $name"), paint, alpha)
 
-    fun layer(source: ConsumableTask<Image>, paint: Paint? = null, alpha: Double = 1.0): ConsumableImageTask {
+    suspend fun layer(source: ConsumableTask<Image>, paint: Paint? = null, alpha: Double = 1.0): ConsumableImageTask {
         return deduplicate(RepaintTask(source, paint, alpha, SoftTaskCache(), stats))
     }
 
-    fun stack(init: LayerListBuilder.() -> Unit): ConsumableImageTask {
+    suspend fun stack(init: suspend LayerListBuilder.() -> Unit): ConsumableImageTask {
         val layerTasksBuilder = LayerListBuilder(this)
         layerTasksBuilder.init()
         val layerTasks = layerTasksBuilder.build()
         return deduplicate(ImageStackingTask(layerTasks, tileSize, tileSize, layerTasks.toString(), SoftTaskCache(), stats))
     }
 
-    fun animate(frames: List<ConsumableImageTask>): ConsumableImageTask {
-        return deduplicate(AnimationConsumableTask(frames, tileSize, tileSize, frames.toString(), NoopTaskCache(), stats))
+    suspend fun animate(frames: List<ConsumableImageTask>): ConsumableImageTask {
+        return deduplicate(AnimationConsumableTask(frames, tileSize, tileSize, frames.toString(), noopTaskCache(), stats))
     }
 
     fun out(name: String, source: ConsumableImageTask): OutputTask {
@@ -98,5 +94,5 @@ class ImageProcessingContext(
         return OutputTask(source.asPng, lowercaseName, destination, stats)
     }
 
-    fun out(name: String, source: LayerListBuilder.() -> Unit) = out(name, stack {source()})
+    suspend fun out(name: String, source: suspend LayerListBuilder.() -> Unit) = out(name, stack {source()})
 }

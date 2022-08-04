@@ -9,12 +9,12 @@ import javafx.scene.paint.Color
 import kotlinx.coroutines.flow.Flow
 
 object StainedGlassFront: DyedBlock("stained_glass") {
-    override fun LayerListBuilder.createTextureLayers(color: Color) {
+    override suspend fun LayerListBuilder.createTextureLayers(color: Color) {
         layer(masterTask, color)
     }
     @Volatile lateinit var masterTask: ConsumableImageTask
 
-    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> {
+    override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> {
         masterTask = ctx.stack {
             background(Color.BLACK, 0.25)
             layer("borderSolid", Color.BLACK)

@@ -15,27 +15,27 @@ enum class GiantMushroom(
     override val highlight: Paint,
     ) : SingleTextureMaterial, ShadowHighlightMaterial, Block {
     RED_MUSHROOM_BLOCK(Color.RED, Color.BLACK, Color.WHITE) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("mushroomSpots", highlight)
             layer("borderRoundDots", highlight)
         }
     },
     BROWN_MUSHROOM_BLOCK(c(0x977251), c(0x8d6850), c(0x9c795a)) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(shadow)
             layer("rings", highlight)
         }
     },
     MUSHROOM_STEM(c(0xc7c1b4), c(0xc2bcac), c(0xd3ccc4)) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(highlight)
             layer("stripesThick", shadow)
             layer("borderShortDashes", color)
         }
     },
     MUSHROOM_BLOCK_INSIDE(c(0xc7a877), c(0xab9066), c(0xd7b680)) {
-        override fun LayerListBuilder.createTextureLayers() {
+        override suspend fun LayerListBuilder.createTextureLayers() {
             background(highlight)
             layer("dots0", shadow)
             layer("borderRoundDotsVaryingSize", shadow)

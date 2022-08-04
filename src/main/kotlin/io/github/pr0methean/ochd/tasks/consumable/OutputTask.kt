@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd.tasks.consumable
 
 import io.github.pr0methean.ochd.ImageProcessingStats
-import io.github.pr0methean.ochd.tasks.consumable.caching.StrongTaskCache
+import io.github.pr0methean.ochd.tasks.consumable.caching.noopTaskCache
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -14,7 +14,7 @@ data class OutputTask(
     override val name: String,
     private val file: File,
     val stats: ImageProcessingStats,
-): SlowTransformingTask<ByteArray, Unit>("Output $name", source, StrongTaskCache(), transform = { bytes ->
+): SlowTransformingTask<ByteArray, Unit>("Output $name", source, noopTaskCache(), transform = { bytes ->
     withContext(Dispatchers.IO.plus(CoroutineName(name))) {
         stats.onTaskLaunched("OutputTask", name)
         file.parentFile?.mkdirs()

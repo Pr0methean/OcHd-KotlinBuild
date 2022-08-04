@@ -26,7 +26,7 @@ object Tnt: ShadowHighlightMaterial {
     override val shadow = c(0x912d00)
     override val highlight = c(0xff4300)
 
-    override fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+    override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
         val tntBottom = ctx.stack {
             background(Color.BLACK)
             layer("tntSticksEnd", color)

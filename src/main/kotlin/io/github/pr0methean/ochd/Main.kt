@@ -66,42 +66,38 @@ suspend fun main(args:Array<String>) {
             stats.onTaskCompleted("Copy metadata files", "Copy metadata files")
         }
         stats.onTaskLaunched("Build task graph", "Build task graph")
-        var tasks = ALL_MATERIALS.outputTasks(ctx)
+        var tasks = ALL_MATERIALS.outputTasks(ctx).toList().asFlow()
         stats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupJob.join()
         while (tasks.firstOrNull() != null) {
             val tasksRun = AtomicLong(0)
-            val tasksToRetry = tasks.filter {
-                withContext(scope.coroutineContext.plus(CoroutineName("Joining $it"))) {
-                    logger.info("Joining {}", it)
+            val tasksToRetry = tasks.filter { task ->
+                withContext(scope.coroutineContext.plus(CoroutineName("Joining $task"))) {
+                    logger.info("Joining {}", task)
                     val result = try {
-                        it.await()
+                        task.await()
                     } catch (t: Throwable) {
                         failure(t)
                     }
-                    logger.info("Joined {} with result of {}", it, result)
+                    logger.info("Joined {} with result of {}", task, result)
                     tasksRun.incrementAndGet()
                     if (result.isFailure) {
-                        logger.error("Error in {}", it, result.exceptionOrNull())
+                        logger.error("Error in {}", task, result.exceptionOrNull())
+                        task.clearFailure()
+                        logger.debug("Cleared failure in {}", task)
                         true
                     } else {
                         false
                     }
                 }
             }.toList()
+            tasks = tasksToRetry.asFlow()
             if (tasksToRetry.isNotEmpty()) {
-                logger.info("Clearing {} failures in order to retry", Unbox.box(tasksToRetry.size))
-                tasksToRetry.forEach {
-                    logger.debug("Clearing failure in {}", it)
-                    it.clearFailure()
-                    logger.debug("Done clearing failure in {}", it)
-                }
                 System.gc()
                 logger.warn("{} tasks succeeded and {} failed on attempt {}",
                     Unbox.box(tasksRun.get() - tasksToRetry.size), Unbox.box(tasksToRetry.size), Unbox.box(attemptNumber))
                 attemptNumber++
             }
-            tasks = tasksToRetry.asFlow()
         }
         copyMetadata.join()
     }
