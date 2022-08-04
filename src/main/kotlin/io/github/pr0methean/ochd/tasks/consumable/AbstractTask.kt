@@ -12,9 +12,9 @@ import kotlin.Result.Companion.failure
 import kotlin.coroutines.CoroutineContext
 import kotlin.math.max
 
-private val logger = LogManager.getLogger("AbstractConsumableTask")
+private val logger = LogManager.getLogger("AbstractTask")
 private val cancelBecauseReplacing = CancellationException("Being replaced")
-abstract class AbstractConsumableTask<T>(override val name: String, private val cache: TaskCache<T>) : ConsumableTask<T> {
+abstract class AbstractTask<T>(override val name: String, private val cache: TaskCache<T>) : Task<T> {
     private val mutex = Mutex()
     protected val attemptNumber = AtomicLong()
     @Volatile
@@ -171,7 +171,7 @@ abstract class AbstractConsumableTask<T>(override val name: String, private val 
 
     override suspend fun clearFailure() {
         logger.debug("Locking {} to clear failure", this)
-        mutex.withLock(this@AbstractConsumableTask) {
+        mutex.withLock(this@AbstractTask) {
             if (getNow()?.isFailure == true) {
                 logger.debug("Clearing failure from {}", this)
                 runningAttemptNumber = -1
@@ -203,7 +203,7 @@ abstract class AbstractConsumableTask<T>(override val name: String, private val 
     )
 
     @OptIn(DelicateCoroutinesApi::class)
-    override suspend fun mergeWithDuplicate(other: ConsumableTask<T>): ConsumableTask<T> {
+    override suspend fun mergeWithDuplicate(other: Task<T>): Task<T> {
         if (other === this) {
             return this
         }
@@ -211,8 +211,8 @@ abstract class AbstractConsumableTask<T>(override val name: String, private val 
             return this
         }
         logger.debug("Locking {} to merge with a duplicate", this)
-        if (other is AbstractConsumableTask) {
-            mutex.withLock(this@AbstractConsumableTask) {
+        if (other is AbstractTask) {
+            mutex.withLock(this@AbstractTask) {
                 if (getNow() != null) {
                     return@withLock
                 }
@@ -223,7 +223,7 @@ abstract class AbstractConsumableTask<T>(override val name: String, private val 
                 }
                 if (coroutine.get() == null) {
                     logger.debug("Locking {} to merge into {}", other, this)
-                    other.mutex.withLock(this@AbstractConsumableTask) {
+                    other.mutex.withLock(this@AbstractTask) {
                         val resultWithLock = other.getNow()
                         if (resultWithLock != null) {
                             emit(resultWithLock)

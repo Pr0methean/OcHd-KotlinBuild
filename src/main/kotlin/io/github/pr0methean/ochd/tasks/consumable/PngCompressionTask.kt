@@ -10,7 +10,7 @@ import javax.imageio.ImageIO
 
 private val logger = LogManager.getLogger("PngCompressionTask")
 class PngCompressionTask(
-    override val base: AbstractConsumableTask<Image>, override val cache: TaskCache<ByteArray>, val stats: ImageProcessingStats
+    override val base: AbstractTask<Image>, override val cache: TaskCache<ByteArray>, val stats: ImageProcessingStats
 ): TransformingTask<Image, ByteArray>("PNG compression of $base", base = base, cache = cache, transform = { image ->
     ByteArrayOutputStream().use {
         stats.onCompressPngImage(base.name)

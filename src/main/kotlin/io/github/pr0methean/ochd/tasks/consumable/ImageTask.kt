@@ -42,11 +42,11 @@ suspend fun <T> doJfx(name: String, jfxCode: CoroutineScope.() -> T): T {
     }
 }
 
-interface ConsumableImageTask: StringBuilderFormattable, ConsumableTask<Image> {
-    val unpacked: ConsumableTask<Image>
+interface ImageTask: StringBuilderFormattable, Task<Image> {
+    val unpacked: Task<Image>
 
-    val asPng: ConsumableTask<ByteArray>
-    override suspend fun mergeWithDuplicate(other: ConsumableTask<Image>): ConsumableImageTask
+    val asPng: Task<ByteArray>
+    override suspend fun mergeWithDuplicate(other: Task<Image>): ImageTask
 
     @Suppress("DeferredResultUnused")
     override suspend fun startAsync(): Deferred<Result<Image>>

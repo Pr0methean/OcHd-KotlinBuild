@@ -7,8 +7,8 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import org.apache.logging.log4j.LogManager
 
-private val logger = LogManager.getLogger("SimpleConsumableTask")
-abstract class SimpleConsumableTask<T>(name: String, cache: TaskCache<T>) : AbstractConsumableTask<T>(
+private val logger = LogManager.getLogger("SimpleTask")
+abstract class SimpleTask<T>(name: String, cache: TaskCache<T>) : AbstractTask<T>(
     name, cache
 ) {
     abstract suspend fun perform(): T

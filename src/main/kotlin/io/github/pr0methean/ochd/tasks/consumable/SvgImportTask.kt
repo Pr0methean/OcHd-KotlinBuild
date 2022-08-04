@@ -37,7 +37,7 @@ class SvgImportTask(
     private val tileSize: Int,
     val file: File,
     override val stats: ImageProcessingStats
-): AbstractConsumableImageTask(name, SoftTaskCache(), stats) {
+): AbstractImageTask(name, SoftTaskCache(), stats) {
     override suspend fun createCoroutineScope(attempt: Long): CoroutineScope {
         return super.createCoroutineScope(attempt).plus(batikTranscoder.asContextElement())
     }

@@ -14,7 +14,7 @@ import javafx.scene.paint.Paint
 import java.util.*
 
 class RepaintTask(
-    override val base: ConsumableTask<Image>,
+    override val base: Task<Image>,
     val paint: Paint?,
     val alpha: Double = 1.0,
     override val cache: TaskCache<Image>,
@@ -43,11 +43,11 @@ class RepaintTask(
         stats.onTaskCompleted("RepaintTask", "$base@$paint@$alpha")
         return@doJfx output
     }
-}), ConsumableImageTask {
-    override val unpacked: ConsumableTask<Image> = this
-    override val asPng: ConsumableTask<ByteArray> by lazy {PngCompressionTask(this, StrongTaskCache(), stats)}
-    override suspend fun mergeWithDuplicate(other: ConsumableTask<Image>): ConsumableImageTask {
-        return super.mergeWithDuplicate(other) as ConsumableImageTask
+}), ImageTask {
+    override val unpacked: Task<Image> = this
+    override val asPng: Task<ByteArray> by lazy {PngCompressionTask(this, StrongTaskCache(), stats)}
+    override suspend fun mergeWithDuplicate(other: Task<Image>): ImageTask {
+        return super.mergeWithDuplicate(other) as ImageTask
     }
 
     override fun equals(other: Any?): Boolean {

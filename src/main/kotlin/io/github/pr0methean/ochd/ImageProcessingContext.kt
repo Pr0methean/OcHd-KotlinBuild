@@ -22,7 +22,7 @@ class ImageProcessingContext(
 ) {
     override fun toString(): String = name
     private val svgTasks: Map<String, SvgImportTask>
-    private val taskDeduplicationMap = ConcurrentHashMap<ConsumableImageTask, ConsumableImageTask>()
+    private val taskDeduplicationMap = ConcurrentHashMap<ImageTask, ImageTask>()
     val stats = ImageProcessingStats()
 
     init {
@@ -38,14 +38,14 @@ class ImageProcessingContext(
         svgTasks = builder.toMap()
     }
 
-    suspend fun deduplicate(task: ConsumableImageTask): ConsumableImageTask {
+    suspend fun deduplicate(task: ImageTask): ImageTask {
         if (task is SvgImportTask) {
             return task // SvgImportTask duplication is impossible because svgTasks is populated eagerly
         }
         if (task is RepaintTask
             && (task.paint == null || task.paint == Color.BLACK)
             && task.alpha == 1.0
-            && task.base is ConsumableImageTask) {
+            && task.base is ImageTask) {
             return deduplicate(task.base)
         }
         if (task is ImageStackingTask
@@ -63,25 +63,25 @@ class ImageProcessingContext(
         return deduped.mergeWithDuplicate(task)
     }
 
-    suspend fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): ConsumableImageTask
+    suspend fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): ImageTask
             = layer(svgTasks[name]?.unpacked ?: throw IllegalArgumentException("No SVG task called $name"), paint, alpha)
 
-    suspend fun layer(source: ConsumableTask<Image>, paint: Paint? = null, alpha: Double = 1.0): ConsumableImageTask {
+    suspend fun layer(source: Task<Image>, paint: Paint? = null, alpha: Double = 1.0): ImageTask {
         return deduplicate(RepaintTask(source, paint, alpha, SoftTaskCache(), stats))
     }
 
-    suspend fun stack(init: suspend LayerListBuilder.() -> Unit): ConsumableImageTask {
+    suspend fun stack(init: suspend LayerListBuilder.() -> Unit): ImageTask {
         val layerTasksBuilder = LayerListBuilder(this)
         layerTasksBuilder.init()
         val layerTasks = layerTasksBuilder.build()
         return deduplicate(ImageStackingTask(layerTasks, tileSize, tileSize, layerTasks.toString(), SoftTaskCache(), stats))
     }
 
-    suspend fun animate(frames: List<ConsumableImageTask>): ConsumableImageTask {
-        return deduplicate(AnimationConsumableTask(frames, tileSize, tileSize, frames.toString(), noopTaskCache(), stats))
+    suspend fun animate(frames: List<ImageTask>): ImageTask {
+        return deduplicate(AnimationTask(frames, tileSize, tileSize, frames.toString(), noopTaskCache(), stats))
     }
 
-    fun out(name: String, source: ConsumableImageTask): OutputTask {
+    fun out(name: String, source: ImageTask): OutputTask {
         val lowercaseName = name.lowercase(Locale.ENGLISH)
         return out(lowercaseName, outTextureRoot.resolve("$lowercaseName.png"), source)
     }
@@ -89,7 +89,7 @@ class ImageProcessingContext(
     fun out(
         lowercaseName: String,
         destination: File,
-        source: ConsumableImageTask
+        source: ImageTask
     ): OutputTask {
         return OutputTask(source.asPng, lowercaseName, destination, stats)
     }

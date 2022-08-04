@@ -24,14 +24,14 @@ class ImageStackingTask(val layers: LayerList,
                              val height: Int,
                              override val name: String,
                              val cache: TaskCache<Image>,
-                             override val stats: ImageProcessingStats) : AbstractConsumableImageTask(name, cache ,stats) {
+                             override val stats: ImageProcessingStats) : AbstractImageTask(name, cache ,stats) {
     init {
         if (layers.layers.isEmpty()) {
             throw IllegalArgumentException("Empty layer list")
         }
     }
 
-    override suspend fun mergeWithDuplicate(other: ConsumableTask<Image>): ConsumableImageTask {
+    override suspend fun mergeWithDuplicate(other: Task<Image>): ImageTask {
         super.mergeWithDuplicate(other)
         if (other is ImageStackingTask) {
             layers.mergeWithDuplicate(other.layers)
@@ -40,13 +40,13 @@ class ImageStackingTask(val layers: LayerList,
     }
 
     override suspend fun clearFailure() {
-        layers.layers.map(ConsumableImageTask::unpacked).asFlow().collect(ConsumableTask<Image>::clearFailure)
+        layers.layers.map(ImageTask::unpacked).asFlow().collect(Task<Image>::clearFailure)
         super.clearFailure()
     }
 
     @Suppress("DeferredResultUnused")
     override suspend fun startPrerequisites() {
-        layers.layers.map(ConsumableImageTask::unpacked).asFlow().collect(ConsumableTask<Image>::startAsync)
+        layers.layers.map(ImageTask::unpacked).asFlow().collect(Task<Image>::startAsync)
     }
 
     override fun equals(other: Any?): Boolean {
@@ -63,7 +63,7 @@ class ImageStackingTask(val layers: LayerList,
         stats.onTaskLaunched("ImageStackingTask", name)
         val canvas = Canvas(width.toDouble(), height.toDouble())
         val canvasCtx = canvas.graphicsContext2D
-        val layersList = layers.layers.map(ConsumableImageTask::unpacked)
+        val layersList = layers.layers.map(ImageTask::unpacked)
         val snapshotRef = AtomicReference<Image>(null)
         logger.debug("Creating layer tasks for {}", this)
         val layerRenderTasks = mutableListOf<Deferred<Result<Unit>>>()

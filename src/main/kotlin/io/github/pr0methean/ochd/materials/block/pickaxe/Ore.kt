@@ -4,7 +4,7 @@ import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.Companion.stoneExtremeHighlight
-import io.github.pr0methean.ochd.tasks.consumable.ConsumableImageTask
+import io.github.pr0methean.ochd.tasks.consumable.ImageTask
 import io.github.pr0methean.ochd.tasks.consumable.OutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Color
@@ -32,7 +32,7 @@ enum class Ore(
         color = c(0x2f2f2f),
         shadow = Color.BLACK,
         highlight = c(0x494949)) {
-        override suspend fun oreBlock(ctx: ImageProcessingContext, oreBase: OreBase): ConsumableImageTask {
+        override suspend fun oreBlock(ctx: ImageProcessingContext, oreBase: OreBase): ImageTask {
             if (oreBase == OreBase.DEEPSLATE) {
                 return ctx.stack {
                     copy(OreBase.DEEPSLATE)

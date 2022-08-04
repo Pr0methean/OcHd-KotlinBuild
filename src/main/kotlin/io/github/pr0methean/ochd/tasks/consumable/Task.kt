@@ -3,7 +3,7 @@ package io.github.pr0methean.ochd.tasks.consumable
 import kotlinx.coroutines.Deferred
 import org.apache.logging.log4j.util.StringBuilderFormattable
 
-interface ConsumableTask<T>: StringBuilderFormattable {
+interface Task<T>: StringBuilderFormattable {
     val name: String
     suspend fun <R> consumeAsync(block: suspend (Result<T>) -> R): Deferred<R>
 
@@ -14,5 +14,5 @@ interface ConsumableTask<T>: StringBuilderFormattable {
     suspend fun await(): Result<T>
 
     suspend fun clearFailure()
-    suspend fun mergeWithDuplicate(other: ConsumableTask<T>): ConsumableTask<T>
+    suspend fun mergeWithDuplicate(other: Task<T>): Task<T>
 }

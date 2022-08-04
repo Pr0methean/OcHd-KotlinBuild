@@ -10,7 +10,7 @@ import java.io.FileOutputStream
 
 @Suppress("BlockingMethodInNonBlockingContext")
 data class OutputTask(
-    val source: ConsumableTask<ByteArray>,
+    val source: Task<ByteArray>,
     override val name: String,
     private val file: File,
     val stats: ImageProcessingStats,

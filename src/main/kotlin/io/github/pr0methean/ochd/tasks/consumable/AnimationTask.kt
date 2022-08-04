@@ -10,27 +10,27 @@ import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.joinAll
 import java.util.*
 
-class AnimationConsumableTask(
-    val frames: List<ConsumableImageTask>,
+class AnimationTask(
+    val frames: List<ImageTask>,
     val width: Int, val height: Int, override val name: String,
     val cache: TaskCache<Image>,
     override val stats: ImageProcessingStats
-): AbstractConsumableImageTask(name, cache, stats) {
+): AbstractImageTask(name, cache, stats) {
     private val totalHeight = height * frames.size
 
     override suspend fun clearFailure() {
-        frames.map(ConsumableImageTask::unpacked).asFlow().collect(ConsumableTask<Image>::clearFailure)
+        frames.map(ImageTask::unpacked).asFlow().collect(Task<Image>::clearFailure)
         super.clearFailure()
     }
 
     @Suppress("DeferredResultUnused")
     override suspend fun startPrerequisites() {
-        frames.asFlow().collect(ConsumableImageTask::startAsync)
+        frames.asFlow().collect(ImageTask::startAsync)
     }
 
     override fun equals(other: Any?): Boolean {
         return (this === other) || (
-                other is AnimationConsumableTask
+                other is AnimationTask
                         && other.frames == frames
                         && other.width == width
                         && other.height == height)
@@ -40,8 +40,8 @@ class AnimationConsumableTask(
         return Objects.hash(frames, width, height)
     }
 
-    override suspend fun mergeWithDuplicate(other: ConsumableTask<Image>): ConsumableImageTask {
-        if (other is AnimationConsumableTask) {
+    override suspend fun mergeWithDuplicate(other: Task<Image>): ImageTask {
+        if (other is AnimationTask) {
             for ((index, frame) in frames.withIndex()) {
                 if (frame == other.frames[index]) {
                     frame.mergeWithDuplicate(other.frames[index])
@@ -57,7 +57,7 @@ class AnimationConsumableTask(
         val canvas = Canvas(width.toDouble(), totalHeight.toDouble())
         canvas.isCache = true
         val canvasCtx = canvas.graphicsContext2D
-        val frameTasks = frames.map(ConsumableImageTask::unpacked).mapIndexed {index, frameTask -> frameTask.consumeAsync {
+        val frameTasks = frames.map(ImageTask::unpacked).mapIndexed { index, frameTask -> frameTask.consumeAsync {
             doJfx("Frame $index of $name") {
                 canvasCtx.drawImage(it.getOrThrow(), 0.0, (height * index).toDouble())
             }

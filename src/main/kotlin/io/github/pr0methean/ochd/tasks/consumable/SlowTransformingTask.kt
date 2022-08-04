@@ -11,11 +11,11 @@ import kotlin.Result.Companion.success
 private val logger = LogManager.getLogger("SlowTransformingTask")
 open class SlowTransformingTask<T, U>(
     name: String,
-    open val base: ConsumableTask<T>,
+    open val base: Task<T>,
     open val cache: TaskCache<U>,
     val transform: suspend (T) -> U
 )
-        : AbstractConsumableTask<U>(name, cache) {
+        : AbstractTask<U>(name, cache) {
 
     override suspend fun createCoroutineAsync(coroutineScope: CoroutineScope): Deferred<Result<U>> {
         val myBase = base
@@ -49,9 +49,9 @@ open class SlowTransformingTask<T, U>(
     }
 
     @Suppress("UNCHECKED_CAST")
-    override suspend fun mergeWithDuplicate(other: ConsumableTask<U>): ConsumableTask<U> {
+    override suspend fun mergeWithDuplicate(other: Task<U>): Task<U> {
         if (other is SlowTransformingTask<*, *>) {
-            base.mergeWithDuplicate(other.base as ConsumableTask<T>)
+            base.mergeWithDuplicate(other.base as Task<T>)
         }
         return super.mergeWithDuplicate(other)
     }
