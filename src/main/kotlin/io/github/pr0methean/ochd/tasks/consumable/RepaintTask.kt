@@ -22,20 +22,20 @@ class RepaintTask(
 ): SlowTransformingTask<Image, Image>("$base@$paint@$alpha", base, cache, { baseImage ->
     stats.onTaskLaunched("RepaintTask", "$base@$paint@$alpha")
     val output = WritableImage(baseImage.width.toInt(), baseImage.height.toInt())
+    val canvas = Canvas(baseImage.width, baseImage.height)
+    canvas.isCache = true
+    val gfx = canvas.graphicsContext2D
+    canvas.opacity = alpha
+    if (paint != null) {
+        val colorLayer = ColorInput(0.0, 0.0, baseImage.width, baseImage.height, paint)
+        val blend = Blend()
+        blend.mode = BlendMode.SRC_ATOP
+        blend.topInput = colorLayer
+        blend.bottomInput = null
+        gfx.setEffect(blend)
+    }
+    gfx.drawImage(baseImage, 0.0, 0.0)
     doJfx("$base@$paint@$alpha") {
-        val canvas = Canvas(baseImage.width, baseImage.height)
-        canvas.isCache = true
-        val gfx = canvas.graphicsContext2D
-        canvas.opacity = alpha
-        if (paint != null) {
-            val colorLayer = ColorInput(0.0, 0.0, baseImage.width, baseImage.height, paint)
-            val blend = Blend()
-            blend.mode = BlendMode.SRC_ATOP
-            blend.topInput = colorLayer
-            blend.bottomInput = null
-            gfx.setEffect(blend)
-        }
-        gfx.drawImage(baseImage, 0.0, 0.0)
         canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
         if (output.isError) {
             throw output.exception

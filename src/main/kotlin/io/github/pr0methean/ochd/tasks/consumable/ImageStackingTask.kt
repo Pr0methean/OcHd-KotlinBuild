@@ -83,16 +83,16 @@ class ImageStackingTask(val layers: LayerList,
                         throw previousResult.exceptionOrNull()!!
                     }
                     logger.debug("Rendering layer {} ({}) onto the stack", box(index), layerTask)
-                    doJfx("Layer $index: $layerTask") {
-                        if (index == 0) {
-                            canvas.isCache = true
-                            if (layers.background != Color.TRANSPARENT) {
-                                canvasCtx.fill = layers.background
-                                canvasCtx.fillRect(0.0, 0.0, width.toDouble(), height.toDouble())
-                            }
+
+                    if (index == 0) {
+                        canvas.isCache = true
+                        if (layers.background != Color.TRANSPARENT) {
+                            canvasCtx.fill = layers.background
+                            canvasCtx.fillRect(0.0, 0.0, width.toDouble(), height.toDouble())
                         }
-                        canvasCtx.drawImage(layerImage, 0.0, 0.0)
                     }
+                    canvasCtx.drawImage(layerImage, 0.0, 0.0)
+
                     if (index == layersList.lastIndex) {
                         val output = WritableImage(width, height)
                         doJfx("Snapshot of $name") {

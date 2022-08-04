@@ -58,9 +58,7 @@ class AnimationTask(
         canvas.isCache = true
         val canvasCtx = canvas.graphicsContext2D
         val frameTasks = frames.map(ImageTask::unpacked).mapIndexed { index, frameTask -> frameTask.consumeAsync {
-            doJfx("Frame $index of $name") {
-                canvasCtx.drawImage(it.getOrThrow(), 0.0, (height * index).toDouble())
-            }
+            canvasCtx.drawImage(it.getOrThrow(), 0.0, (height * index).toDouble())
         }}
         frames.asFlow().collect { it.startAsync() }
         frameTasks.joinAll()

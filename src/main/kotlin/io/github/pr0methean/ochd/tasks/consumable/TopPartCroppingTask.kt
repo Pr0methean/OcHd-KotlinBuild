@@ -11,9 +11,7 @@ class TopPartCroppingTask(override val base: Task<Image>, override val name: Str
                           override val cache: TaskCache<Image>,
                           val stats: ImageProcessingStats): SlowTransformingTask<Image, Image>("Top part of $base", base, cache, { image ->
     val pixelReader = image.pixelReader
-    doJfx(name) {
-        return@doJfx WritableImage(pixelReader, image.width.toInt(), (image.height * TOP_PORTION).toInt())
-    }
+    WritableImage(pixelReader, image.width.toInt(), (image.height * TOP_PORTION).toInt())
 }), ImageTask {
     override val unpacked: Task<Image> = this
     override val asPng: Task<ByteArray> = PngCompressionTask(this, SoftTaskCache(), stats)

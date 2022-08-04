@@ -129,9 +129,9 @@ abstract class AbstractTask<T>(override val name: String, private val cache: Tas
             return newCoroutine
         } else {
             logger.debug("Already started {}", this)
+            newCoroutine.cancel("Not started because a copy is already running")
+            return oldCoroutine
         }
-        newCoroutine.cancel("Not started because a copy is already running")
-        return oldCoroutine
     }
 
     private suspend fun createCoroutineAsync(): Deferred<Result<T>> {
