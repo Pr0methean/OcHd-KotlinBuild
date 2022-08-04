@@ -20,6 +20,7 @@ class RepaintTask(
     override val cache: TaskCache<Image>,
     val stats: ImageProcessingStats
 ): SlowTransformingTask<Image, Image>("$base@$paint@$alpha", base, cache, { baseImage ->
+    stats.onTaskLaunched("RepaintTask", "$base@$paint@$alpha")
     val output = WritableImage(baseImage.width.toInt(), baseImage.height.toInt())
     doJfx("$base@$paint@$alpha") {
         val canvas = Canvas(baseImage.width, baseImage.height)
@@ -39,6 +40,7 @@ class RepaintTask(
         if (output.isError) {
             throw output.exception
         }
+        stats.onTaskCompleted("RepaintTask", "$base@$paint@$alpha")
         return@doJfx output
     }
 }), ConsumableImageTask {
