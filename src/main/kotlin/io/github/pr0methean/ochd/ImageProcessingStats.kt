@@ -75,7 +75,6 @@ class ImageProcessingStats {
     val dedupeSuccesses: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val dedupeFailures: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val compressions = LongAdder()
-    val decompressions = LongAdder()
     val retries = LongAdder()
 
     fun log() {
@@ -90,7 +89,6 @@ class ImageProcessingStats {
         dedupeFailures.log()
         logger.info("")
         logger.info("PNG compressions: {}", compressions.sum())
-        logger.info("PNG decompressions: {}", decompressions.sum())
         logger.info("Retries of failed tasks: {}", retries.sum())
     }
 

@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.toList
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox
 import java.nio.file.Paths
-import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.atomic.LongAdder
 import kotlin.Result.Companion.failure
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
@@ -69,8 +69,8 @@ suspend fun main(args:Array<String>) {
         var tasks = ALL_MATERIALS.outputTasks(ctx).toList().asFlow()
         stats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupJob.join()
+        val tasksRun = LongAdder()
         while (tasks.firstOrNull() != null) {
-            val tasksRun = AtomicLong(0)
             val tasksToRetry = tasks.filter { task ->
                 withContext(scope.coroutineContext.plus(CoroutineName("Joining $task"))) {
                     logger.info("Joining {}", task)
@@ -80,7 +80,7 @@ suspend fun main(args:Array<String>) {
                         failure(t)
                     }
                     logger.info("Joined {} with result of {}", task, result)
-                    tasksRun.incrementAndGet()
+                    tasksRun.increment()
                     if (result.isFailure) {
                         logger.error("Error in {}", task, result.exceptionOrNull())
                         task.clearFailure()
@@ -95,7 +95,7 @@ suspend fun main(args:Array<String>) {
             if (tasksToRetry.isNotEmpty()) {
                 System.gc()
                 logger.warn("{} tasks succeeded and {} failed on attempt {}",
-                    Unbox.box(tasksRun.get() - tasksToRetry.size), Unbox.box(tasksToRetry.size), Unbox.box(attemptNumber))
+                    Unbox.box(tasksRun.sumThenReset() - tasksToRetry.size), Unbox.box(tasksToRetry.size), Unbox.box(attemptNumber))
                 attemptNumber++
             }
         }
