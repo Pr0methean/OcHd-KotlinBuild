@@ -42,6 +42,15 @@ enum class Ore(
             }
             return super.oreBlock(ctx, oreBase)
         }
+
+        override suspend fun LayerListBuilder.block() {
+            background(color)
+            layer("streaks", refinedHighlight)
+            layer("coal", refinedShadow)
+            layer("coalBorder", refinedHighlight)
+            layer("borderSolid", refinedShadow)
+            layer("borderSolidTopLeft", refinedHighlight)
+        }
     },
     COPPER(
         color = c(0xe0734d),
