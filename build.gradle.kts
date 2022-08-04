@@ -17,7 +17,7 @@ application {
 
 tasks.jar {
     manifest {
-        attributes("Main-Class" to mainClassName)
+        attributes("Main-Class" to mainClassName, "Multi-Release" to true)
     }
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
     from (
