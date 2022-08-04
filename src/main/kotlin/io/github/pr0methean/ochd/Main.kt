@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.toList
 import org.apache.logging.log4j.LogManager
-import org.apache.logging.log4j.util.Unbox
+import org.apache.logging.log4j.util.Unbox.box
 import java.nio.file.Paths
 import java.util.concurrent.atomic.LongAdder
 import kotlin.Result.Companion.failure
@@ -79,7 +79,6 @@ suspend fun main(args:Array<String>) {
                     } catch (t: Throwable) {
                         failure(t)
                     }
-                    logger.info("Joined {} with result of {}", task, result)
                     tasksRun.increment()
                     if (result.isFailure) {
                         logger.error("Error in {}", task, result.exceptionOrNull())
@@ -87,6 +86,7 @@ suspend fun main(args:Array<String>) {
                         logger.debug("Cleared failure in {}", task)
                         true
                     } else {
+                        logger.info("Joined {} with result of {}", task, result)
                         false
                     }
                 }
@@ -95,7 +95,8 @@ suspend fun main(args:Array<String>) {
             if (tasksToRetry.isNotEmpty()) {
                 System.gc()
                 logger.warn("{} tasks succeeded and {} failed on attempt {}",
-                    Unbox.box(tasksRun.sumThenReset() - tasksToRetry.size), Unbox.box(tasksToRetry.size), Unbox.box(attemptNumber))
+                    box(tasksRun.sumThenReset() - tasksToRetry.size), box(tasksToRetry.size), box(attemptNumber)
+                )
                 attemptNumber++
             }
         }
