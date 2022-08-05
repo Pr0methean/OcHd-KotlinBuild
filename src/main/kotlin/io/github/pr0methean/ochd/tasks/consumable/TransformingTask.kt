@@ -35,11 +35,7 @@ open class TransformingTask<T, U>(
                 logger.debug("Awaiting {} to transform it in {}", myBase, this)
                 val input = myBase.await()
                 logger.debug("Got {} from {}; transforming it in {}", input, myBase, this)
-                if (input.isSuccess) {
-                    success(myTransform(input.getOrThrow()))
-                } else {
-                    failure(input.exceptionOrNull()!!)
-                }
+                success(myTransform(input.getOrThrow()))
             } catch (t: Throwable) {
                 logger.error("Exception in {}", this, t)
                 failure(t)

@@ -12,7 +12,7 @@ private val logger = LogManager.getLogger("SlowTransformingTask")
 open class SlowTransformingTask<T, U>(
     name: String,
     open val base: Task<T>,
-    open val cache: TaskCache<U>,
+    cache: TaskCache<U>,
     val transform: suspend (T) -> U
 )
         : AbstractTask<U>(name, cache) {
@@ -25,11 +25,7 @@ open class SlowTransformingTask<T, U>(
                 logger.debug("Awaiting {} to transform it in {}", myBase, this)
                 val input = myBase.await()
                 logger.debug("Got {} from {}; transforming it in {}", input, myBase, this)
-                if (input.isSuccess) {
-                    success(myTransform(input.getOrThrow()))
-                } else {
-                    failure(input.exceptionOrNull()!!)
-                }
+                success(myTransform(input.getOrThrow()))
             } catch (t: Throwable) {
                 logger.error("Exception in {}", this, t)
                 failure(t)

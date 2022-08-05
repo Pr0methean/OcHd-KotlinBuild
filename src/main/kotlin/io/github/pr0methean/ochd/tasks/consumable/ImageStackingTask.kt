@@ -23,7 +23,7 @@ class ImageStackingTask(val layers: LayerList,
                              val width: Int,
                              val height: Int,
                              override val name: String,
-                             val cache: TaskCache<Image>,
+                             cache: TaskCache<Image>,
                              override val stats: ImageProcessingStats) : AbstractImageTask(name, cache ,stats) {
     init {
         if (layers.layers.isEmpty()) {
@@ -78,10 +78,7 @@ class ImageStackingTask(val layers: LayerList,
                     logger.debug("Fetching layer {} ({})", index, layerTask)
                     val layerImage = it.getOrThrow()
                     logger.debug("Awaiting previous layer ({}) if needed", previousLayerName)
-                    val previousResult = previousLayerTask?.await()
-                    if (previousResult?.isFailure == true) {
-                        throw previousResult.exceptionOrNull()!!
-                    }
+                    previousLayerTask?.await()?.getOrThrow()
                     logger.debug("Rendering layer {} ({}) onto the stack", box(index), layerTask)
 
                     if (index == 0) {
@@ -118,10 +115,7 @@ class ImageStackingTask(val layers: LayerList,
             task.await()
         }
         val finalRenderTask = layerRenderTasks.last()
-        val result = finalRenderTask.await()
-        if (result.isFailure) {
-            throw result.exceptionOrNull()!!
-        }
+        finalRenderTask.await().getOrThrow()
         logger.debug("Layer tasks done for {}", this)
         stats.onTaskCompleted("ImageStackingTask", name)
         return snapshotRef.get()
