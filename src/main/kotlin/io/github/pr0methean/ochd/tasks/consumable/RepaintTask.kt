@@ -35,14 +35,15 @@ class RepaintTask(
         gfx.setEffect(blend)
     }
     gfx.drawImage(baseImage, 0.0, 0.0)
-    doJfx("$base@$paint@$alpha") {
+    val snapshot = doJfx("$base@$paint@$alpha") {
         canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
         if (output.isError) {
             throw output.exception
         }
-        stats.onTaskCompleted("RepaintTask", "$base@$paint@$alpha")
         return@doJfx output
     }
+    stats.onTaskCompleted("RepaintTask", "$base@$paint@$alpha")
+    snapshot
 }), ImageTask {
     override val unpacked: Task<Image> = this
     override val asPng: Task<ByteArray> by lazy {PngCompressionTask(this, SoftTaskCache(), stats)}
