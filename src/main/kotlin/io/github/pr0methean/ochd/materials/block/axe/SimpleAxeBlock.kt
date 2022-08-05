@@ -8,18 +8,13 @@ import javafx.scene.paint.Color
 
 @Suppress("unused")
 enum class SimpleAxeBlock: SingleTextureMaterial, ShadowHighlightMaterial, Block {
-    /*
-out_layer borderSolidThick ${wood_oak} "block/composter_top"
-
-push stripesThick ${wood_oak_s} compostSide0 ${wood_oak}
-push borderDotted ${wood_oak_h} compostSide1
-out_stack "block/composter_side"
-
-push planksTopVertical ${wood_oak} compostBottom0 ${wood_oak_s}
-push borderSolidThick ${wood_oak_s} compostBottom1
-push borderSolid ${wood_oak} compostBottom2
-out_stack "block/composter_bottom"
-     */
+    CRAFTING_TABLE_SIDE {
+        override suspend fun LayerListBuilder.createTextureLayers() {
+            OverworldWood.OAK.run {planks()}
+            layer("borderSolid", highlight)
+            layer("craftingSide", OverworldWood.DARK_OAK.color)
+        }
+    },
     LADDER {
         override suspend fun LayerListBuilder.createTextureLayers() {
             layer("rail", color)
@@ -35,13 +30,6 @@ out_stack "block/composter_bottom"
             layer("cornersTri", highlight)
         }
     },
-    CRAFTING_TABLE_SIDE {
-        override suspend fun LayerListBuilder.createTextureLayers() {
-            OverworldWood.OAK.run {planks()}
-            layer("borderSolid", highlight)
-            layer("craftingSide", OverworldWood.DARK_OAK.color)
-        }
-    },
     CRAFTING_TABLE_FRONT {
         override suspend fun LayerListBuilder.createTextureLayers() {
             copy(CRAFTING_TABLE_SIDE)
@@ -53,6 +41,14 @@ out_stack "block/composter_bottom"
             layer("bookShelves")
         }
     },
+    JUKEBOX_TOP {
+        override suspend fun LayerListBuilder.createTextureLayers() {
+            background(color)
+            layer("borderSolidThick", highlight)
+            layer("borderDotted", shadow)
+            layer("thirdRail", Color.BLACK)
+        }
+    },
     JUKEBOX_SIDE {
         override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
@@ -60,14 +56,6 @@ out_stack "block/composter_bottom"
             layer("strokeBottomLeftTopRight4", shadow)
             layer("borderSolidThick", color)
             layer("borderDotted", shadow)
-        }
-    },
-    JUKEBOX_TOP {
-        override suspend fun LayerListBuilder.createTextureLayers() {
-            background(color)
-            layer("borderSolidThick", highlight)
-            layer("borderDotted", shadow)
-            layer("thirdRail", Color.BLACK)
         }
     },
     NOTE_BLOCK {
@@ -96,14 +84,7 @@ out_stack "block/composter_bottom"
             layer("borderSolidThick", shadow)
             layer("borderSolid", color)
         }
-    }
-    /*
-
-push_copy block/jukebox_side noteblock1
-push note ${wood_oak_s} noteblock4
-out_stack "block/note_block"
-     */
-    ;
+    };
     override val color = OverworldWood.OAK.color
     override val shadow = OverworldWood.OAK.shadow
     override val highlight = OverworldWood.OAK.highlight
