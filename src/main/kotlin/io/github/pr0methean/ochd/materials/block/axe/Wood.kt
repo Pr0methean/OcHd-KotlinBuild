@@ -302,6 +302,44 @@ enum class OverworldWood(
             layer("flowerStemBottomBorder", c(0x748241))
         }
     },
+    SPRUCE(
+        color = c(0x70522e),
+        highlight = c(0x886539),
+        shadow = c(0x5a4424),
+        barkColor = c(0x3b2700),
+        barkHighlight = c(0x553a1f),
+        barkShadow = c(0x2e1c00)
+    ) {
+        override suspend fun LayerListBuilder.trapdoor() {
+            background(shadow)
+            layer("planksTopVertical", color)
+            layer("borderSolidThick", shadow)
+            layer("borderLongDashes", highlight)
+            layer("trapdoorHingesBig", STONE.color)
+            layer("trapdoorHinges", STONE.shadow)
+        }
+
+        override suspend fun LayerListBuilder.doorTop() {
+            copy {doorBottom()}
+            doorknob()
+        }
+
+        override suspend fun LayerListBuilder.doorBottom() {
+            copy {planks()}
+            layer("doorHingesBig", STONE.color)
+            layer("doorHinges", STONE.shadow)
+        }
+
+        override suspend fun LayerListBuilder.leaves() {
+            layer("leaves3", leavesHighlight)
+            layer("leaves3b", leavesShadow)
+        }
+
+        override suspend fun LayerListBuilder.sapling() {
+            layer("saplingStem", barkHighlight)
+            layer("spruceSapling", c(0x2e492e))
+        }
+    },
     OAK(
         color = c(0xaf8f55),
         highlight = c(0xc29d62),
@@ -355,44 +393,6 @@ enum class OverworldWood(
             layer("saplingStem", barkColor)
             layer("bigCircle", c(0x006500))
             layer("mushroomSpots", c(0x57ad3f))
-        }
-    },
-    SPRUCE(
-        color = c(0x70522e),
-        highlight = c(0x886539),
-        shadow = c(0x5a4424),
-        barkColor = c(0x3b2700),
-        barkHighlight = c(0x553a1f),
-        barkShadow = c(0x2e1c00)
-    ) {
-        override suspend fun LayerListBuilder.trapdoor() {
-            background(shadow)
-            layer("planksTopVertical", color)
-            layer("borderSolidThick", shadow)
-            layer("borderLongDashes", highlight)
-            layer("trapdoorHingesBig", STONE.color)
-            layer("trapdoorHinges", STONE.shadow)
-        }
-
-        override suspend fun LayerListBuilder.doorTop() {
-            copy {doorBottom()}
-            doorknob()
-        }
-
-        override suspend fun LayerListBuilder.doorBottom() {
-            copy {planks()}
-            layer("doorHingesBig", STONE.color)
-            layer("doorHinges", STONE.shadow)
-        }
-
-        override suspend fun LayerListBuilder.leaves() {
-            layer("leaves3", leavesHighlight)
-            layer("leaves3b", leavesShadow)
-        }
-
-        override suspend fun LayerListBuilder.sapling() {
-            layer("saplingStem", barkHighlight)
-            layer("spruceSapling", c(0x2e492e))
         }
     };
 
