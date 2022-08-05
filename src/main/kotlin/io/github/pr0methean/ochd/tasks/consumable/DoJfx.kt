@@ -8,33 +8,39 @@ import java.io.PrintStream
 
 private val logger = LogManager.getLogger("doJfx")
 @Suppress("BlockingMethodInNonBlockingContext")
-suspend fun <T> doJfx(name: String, jfxCode: CoroutineScope.() -> T): T {
-    return withContext(Dispatchers.Main.plus(CoroutineName(name))) {
-        val oldSystemErr = System.err
-        try {
-            ByteArrayOutputStream().use { errorCatcher ->
-                System.setErr(PrintStream(errorCatcher, true, oldSystemErr.charset()))
-                logger.info("Starting JFX task: {}", name)
-                val result = jfxCode()
-                if (errorCatcher.size() > 0) {
-                    throw RuntimeException(errorCatcher.toString(oldSystemErr.charset()))
+suspend fun <T> doJfx(name: String, jfxCode: CoroutineScope.() -> T): T = try {
+    ByteArrayOutputStream().use { errorCatcher ->
+        PrintStream(errorCatcher, true, System.err.charset()).use { tempStderr ->
+            val result = withContext(Dispatchers.Main.plus(CoroutineName(name))) {
+                val oldSystemErr = System.err
+                try {
+                    System.setErr(tempStderr)
+                    logger.info("Starting JFX task: {}", name)
+                    jfxCode()
+                } finally {
+                    withContext(NonCancellable) {
+                        System.setErr(oldSystemErr)
+                    }
                 }
-                logger.info("Finished JFX task: {}", name)
-                return@use result
             }
-        } catch (t: Throwable) {
-            logger.error("Error from JFX task", t)
-            // Start a new JFX thread if the old one crashed
-            try {
-                Platform.startup {}
-            } catch (e: IllegalStateException) {
-                logger.debug("Error trying to restart JFX thread", e)
+            if (errorCatcher.size() > 0) {
+                val interceptedStdout = errorCatcher.toString(System.err.charset())
+                if (interceptedStdout.contains("Exception:") || interceptedStdout.contains("Error:")) {
+                    throw RuntimeException(interceptedStdout)
+                }
+                System.err.print(interceptedStdout)
             }
-            throw t
-        } finally {
-            withContext(NonCancellable) {
-                System.setErr(oldSystemErr)
-            }
+            logger.info("Finished JFX task: {}", name)
+            result
         }
     }
+} catch (t: Throwable) {
+    logger.error("Error from JFX task", t)
+    // Start a new JFX thread if the old one crashed
+    try {
+        Platform.startup {}
+    } catch (e: IllegalStateException) {
+        logger.debug("Error trying to restart JFX thread", e)
+    }
+    throw t
 }
