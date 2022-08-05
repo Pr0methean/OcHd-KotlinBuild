@@ -40,6 +40,7 @@ class ImageProcessingContext(
 
     suspend fun deduplicate(task: ImageTask): ImageTask {
         if (task is SvgImportTask) {
+            stats.dedupeSuccesses.add("SvgImportTask")
             return task // SvgImportTask duplication is impossible because svgTasks is populated eagerly
         }
         if (task is RepaintTask
