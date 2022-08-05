@@ -13,14 +13,6 @@ enum class SimpleSoftEarth(
     override val shadow: Color,
     override val highlight: Color,
 ) : ShadowHighlightMaterial, Block {
-    DIRT(c(0x966c4a), c(0x593d29), c(0xb9855c)) {
-        override suspend fun LayerListBuilder.createTextureLayers() {
-            background(color)
-            layer("dots3", shadow)
-            layer("dots2", highlight)
-            layer("borderDotted", highlight)
-        }
-    },
     SAND(c(0xdfd5aa), c(0xd1ba8a), c(0xedebcb)) {
         override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
@@ -110,6 +102,14 @@ enum class SimpleSoftEarth(
             layer("soulHeads", color)
             layer("soulTopLeftFace", highlight)
             layer("soulBottomRightFace", shadow)
+        }
+    },
+    DIRT(c(0x966c4a), c(0x593d29), c(0xb9855c)) {
+        override suspend fun LayerListBuilder.createTextureLayers() {
+            background(color)
+            layer("dots3", shadow)
+            layer("dots2", highlight)
+            layer("borderDotted", highlight)
         }
     };
 }
