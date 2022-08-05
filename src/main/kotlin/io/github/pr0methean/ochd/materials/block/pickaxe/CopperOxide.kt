@@ -29,17 +29,17 @@ enum class CopperOxide(
         shadow = c(0x3b5c5c),
         highlight = c(0x6ec59f)
     );
-    suspend fun LayerListBuilder.commonLayers() {
+    private suspend fun LayerListBuilder.commonLayers() {
         background(color)
         layer("streaks", highlight)
         layer("borderSolid", shadow)
         layer("borderSolidTopLeft", highlight)
     }
-    suspend fun LayerListBuilder.uncut() {
+    private suspend fun LayerListBuilder.uncut() {
         copy {commonLayers()}
         layer("copper2oxide", shadow)
     }
-    suspend fun LayerListBuilder.cut() {
+    private suspend fun LayerListBuilder.cut() {
         copy {commonLayers()}
         layer("cutInQuarters1", shadow)
         layer("cutInQuarters2", highlight)

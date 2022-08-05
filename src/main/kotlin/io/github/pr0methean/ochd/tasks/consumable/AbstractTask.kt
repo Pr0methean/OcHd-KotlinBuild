@@ -35,9 +35,9 @@ abstract class AbstractTask<T>(override val name: String, private val cache: Tas
     }
 
     val coroutine: AtomicReference<Deferred<Result<T>>?> = AtomicReference(null)
-    val coroutineHandle: AtomicReference<DisposableHandle?> = AtomicReference(null)
+    private val coroutineHandle: AtomicReference<DisposableHandle?> = AtomicReference(null)
 
-    @OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class, InternalCoroutinesApi::class)
+    @OptIn(ExperimentalCoroutinesApi::class, InternalCoroutinesApi::class)
     override fun getNow(): Result<T>? {
         val cached = cache.getNow()
         if (cached != null) {
@@ -63,7 +63,6 @@ abstract class AbstractTask<T>(override val name: String, private val cache: Tas
 
     protected open suspend fun startPrerequisites() {}
 
-    @OptIn(DelicateCoroutinesApi::class, InternalCoroutinesApi::class, ExperimentalCoroutinesApi::class)
     override suspend fun startAsync(): Deferred<Result<T>> {
         val result = getNow()
         if (result != null) {
@@ -202,7 +201,6 @@ abstract class AbstractTask<T>(override val name: String, private val cache: Tas
             .plus(SupervisorJob())
     )
 
-    @OptIn(DelicateCoroutinesApi::class)
     override suspend fun mergeWithDuplicate(other: Task<T>): Task<T> {
         if (other === this) {
             return this

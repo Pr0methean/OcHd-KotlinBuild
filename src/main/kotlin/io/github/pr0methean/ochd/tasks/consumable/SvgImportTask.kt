@@ -35,7 +35,7 @@ private class ToImageTranscoder: PNGTranscoder() {
 class SvgImportTask(
     override val name: String,
     private val tileSize: Int,
-    val file: File,
+    private val file: File,
     override val stats: ImageProcessingStats
 ): AbstractImageTask(name, SoftTaskCache(), stats) {
     override suspend fun createCoroutineScope(attempt: Long): CoroutineScope {

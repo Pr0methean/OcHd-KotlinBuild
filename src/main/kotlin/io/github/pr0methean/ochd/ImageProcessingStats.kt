@@ -11,6 +11,7 @@ import org.apache.logging.log4j.io.IoBuilder
 import org.apache.logging.log4j.util.Unbox
 import java.lang.management.ManagementFactory
 import java.lang.management.ThreadInfo
+import java.lang.management.ThreadMXBean
 import java.util.concurrent.atomic.LongAdder
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
@@ -19,10 +20,10 @@ private fun Multiset<*>.log() {
     toSet().forEach { logger.info("{}: {}", it, count(it)) }
 }
 private val logger = LogManager.getLogger("ImageProcessingStats")
-private val NEED_THREAD_MONITORING = false
+private const val NEED_THREAD_MONITORING = false
 private val NEED_COROUTINE_DEBUG = logger.isDebugEnabled
 private val REPORTING_INTERVAL: Duration = 1.minutes
-val threadMxBean = ManagementFactory.getThreadMXBean()
+val threadMxBean: ThreadMXBean = ManagementFactory.getThreadMXBean()
 var monitoringJob: Job? = null
 @OptIn(ExperimentalCoroutinesApi::class)
 @Suppress("DeferredResultUnused")

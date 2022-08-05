@@ -37,7 +37,7 @@ private val wheatShadow = c(0x5b6b0f)
 private val wheatHighlight = c(0xdcbb65)
 
 @Suppress("unused")
-enum class Crop(val numStages: Int, val color: Paint): Material {
+enum class Crop(private val numStages: Int, val color: Paint): Material {
     NETHER_WART(3, Fungus.CRIMSON.leavesShadow) {
         override suspend fun LayerListBuilder.createTextureForStage(stage: Int) {
             layer("wart$stage", color)

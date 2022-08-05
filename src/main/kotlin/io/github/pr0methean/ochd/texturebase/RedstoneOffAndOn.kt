@@ -1,4 +1,4 @@
-package io.github.pr0methean.ochd.tasks
+package io.github.pr0methean.ochd.texturebase
 
 import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.LayerListBuilder

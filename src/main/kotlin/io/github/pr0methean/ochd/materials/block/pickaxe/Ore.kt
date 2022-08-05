@@ -129,7 +129,7 @@ enum class Ore(
         shadow=c(0x239698),
         highlight=c(0x77e7d1)
     ) {
-        val extremeHighlight = c(0xd5ffff)
+        private val extremeHighlight = c(0xd5ffff)
         override suspend fun LayerListBuilder.item() {
             layer("diamond1", extremeHighlight)
             layer("diamond2", shadow)
@@ -148,7 +148,7 @@ enum class Ore(
         shadow=c(0x007b18),
         highlight=c(0x1cdd62)
     ) {
-        val extremeHighlight = c(0xd9ffeb)
+        private val extremeHighlight = c(0xd9ffeb)
         override suspend fun LayerListBuilder.item() {
             layer("emeraldTopLeft", highlight)
             layer("emeraldBottomRight", shadow)

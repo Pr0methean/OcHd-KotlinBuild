@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 
 class LayerListBuilder(val ctx: ImageProcessingContext) {
-    internal val layers = mutableListOf<ImageTask>()
+    private val layers = mutableListOf<ImageTask>()
     var background: Paint = Color.TRANSPARENT
     fun background(color: Color, opacity: Double = 1.0) {
         background = if (opacity == 1.0) color else Color(color.red, color.green, color.blue, opacity * color.opacity)
@@ -65,6 +65,6 @@ class LayerListBuilder(val ctx: ImageProcessingContext) {
             = copy(LayerListBuilder(ctx).also {source.run {createTextureLayers()}}.build())
 
     suspend fun copy(element: ImageTask) = layers.add(ctx.deduplicate(element))
-    suspend fun addAll(elements: Collection<ImageTask>) = layers.addAll(elements.asFlow().map(ctx::deduplicate).toList())
+    private suspend fun addAll(elements: Collection<ImageTask>) = layers.addAll(elements.asFlow().map(ctx::deduplicate).toList())
     fun build() = LayerList(layers.toList(), background)
 }

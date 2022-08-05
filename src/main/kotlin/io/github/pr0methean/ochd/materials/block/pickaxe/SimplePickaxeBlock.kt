@@ -23,7 +23,7 @@ enum class SimplePickaxeBlock(
     override val color: Paint,
     override val shadow: Paint,
     override val highlight: Paint,
-    val hasOutput: Boolean = true
+    private val hasOutput: Boolean = true
 ): SingleTextureMaterial, ShadowHighlightMaterial, Block {
     SMOOTH_STONE(STONE) {
         override suspend fun LayerListBuilder.createTextureLayers() {

@@ -60,7 +60,7 @@ enum class CommandBlock(
         }
     }
 
-    suspend fun LayerListBuilder.createBaseTexture() {
+    private suspend fun LayerListBuilder.createBaseTexture() {
         background(color)
         layer("diagonalChecksTopLeftBottomRight", highlight)
         layer("diagonalChecksBottomLeftTopRight", highlight)

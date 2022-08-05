@@ -8,6 +8,7 @@ import javafx.scene.image.Image
 abstract class AbstractImageTask(override val name: String, cache: TaskCache<Image>,
                                  open val stats: ImageProcessingStats)
     : SimpleTask<Image>(name, cache), ImageTask {
+    @Suppress("LeakingThis")
     override val unpacked = this
     override suspend fun mergeWithDuplicate(other: Task<Image>): ImageTask {
         return super.mergeWithDuplicate(other) as ImageTask

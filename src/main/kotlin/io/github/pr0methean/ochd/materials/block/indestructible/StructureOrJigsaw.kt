@@ -7,7 +7,7 @@ import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
 
 @Suppress("unused")
-enum class StructureOrJigsaw(val foregroundLayer: String?): SingleTextureMaterial, ShadowHighlightMaterial, Block {
+enum class StructureOrJigsaw(private val foregroundLayer: String?): SingleTextureMaterial, ShadowHighlightMaterial, Block {
     JIGSAW_BOTTOM(null),
     JIGSAW_TOP("jigsaw"),
     JIGSAW_SIDE("arrowUp"),

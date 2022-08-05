@@ -8,7 +8,7 @@ import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flatMapConcat
 
 @OptIn(FlowPreview::class)
-open class MaterialGroup(val elements: Flow<Material>): Material {
+open class MaterialGroup(private val elements: Flow<Material>): Material {
     constructor(vararg elements: Material): this(elements.asFlow())
 
     @OptIn(FlowPreview::class)
