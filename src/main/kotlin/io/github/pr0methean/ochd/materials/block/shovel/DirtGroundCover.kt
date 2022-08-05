@@ -9,6 +9,7 @@ import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.merge
 
@@ -63,6 +64,20 @@ enum class DirtGroundCover(
             background(color)
             layer("zigzagBroken", highlight)
             layer("borderDotted", shadow)
+        }
+
+        override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+            val top = ctx.stack { createTopLayers() }
+            emit(ctx.out("block/podzol_top", top))
+            emit(ctx.out("block/composter_compost", top))
+            emit(ctx.out("block/composter_ready", ctx.stack {
+                copy(top)
+                layer("bonemealSmallNoBorder")
+            }))
+            emit(ctx.out("block/podzol_side", ctx.stack {
+                copy(base)
+                createCoverSideLayers()
+            }))
         }
     },
     MYCELIUM(c(0x6a656a),c(0x5a5952),c(0x7b6d73)) {

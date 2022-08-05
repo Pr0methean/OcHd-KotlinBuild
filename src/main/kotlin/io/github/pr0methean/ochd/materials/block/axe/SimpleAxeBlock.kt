@@ -1,7 +1,6 @@
 package io.github.pr0methean.ochd.materials.block.axe
 
 import io.github.pr0methean.ochd.LayerListBuilder
-import io.github.pr0methean.ochd.materials.block.shovel.DirtGroundCover
 import io.github.pr0methean.ochd.texturebase.Block
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
@@ -77,6 +76,7 @@ out_stack "block/composter_bottom"
             layer("note", OverworldWood.DARK_OAK.shadow)
         }
     },
+    // Compost textures are part of DirtGroundCover.PODZOL
     COMPOSTER_TOP {
         override suspend fun LayerListBuilder.createTextureLayers() {
             layer("borderSolidThick", color)
@@ -95,17 +95,6 @@ out_stack "block/composter_bottom"
             layer("planksTopVertical", color)
             layer("borderSolidThick", shadow)
             layer("borderSolid", color)
-        }
-    },
-    COMPOSTER_COMPOST {
-        override suspend fun LayerListBuilder.createTextureLayers() {
-            copy {DirtGroundCover.PODZOL.run {createTopLayers()}}
-        }
-    },
-    COMPOSTER_READY {
-        override suspend fun LayerListBuilder.createTextureLayers() {
-            copy(COMPOSTER_COMPOST)
-            layer("bonemealSmallNoBorder")
         }
     }
     /*
