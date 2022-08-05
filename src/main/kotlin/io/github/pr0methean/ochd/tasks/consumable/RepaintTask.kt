@@ -17,7 +17,7 @@ class RepaintTask(
     override val base: Task<Image>,
     val paint: Paint?,
     val alpha: Double = 1.0,
-    override val cache: TaskCache<Image>,
+    cache: TaskCache<Image>,
     val stats: ImageProcessingStats
 ): SlowTransformingTask<Image, Image>("$base@$paint@$alpha", base, cache, { baseImage ->
     stats.onTaskLaunched("RepaintTask", "$base@$paint@$alpha")
