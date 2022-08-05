@@ -10,12 +10,12 @@ private val logger = LogManager.getLogger("doJfx")
 @Suppress("BlockingMethodInNonBlockingContext")
 suspend fun <T> doJfx(name: String, jfxCode: CoroutineScope.() -> T): T = try {
     ByteArrayOutputStream().use { errorCatcher ->
-        PrintStream(errorCatcher, true, System.err.charset()).use { tempStderr ->
-            val result = withContext(Dispatchers.Main.plus(CoroutineName(name))) {
+        logger.info("Starting JFX task: {}", name)
+        val result = PrintStream(errorCatcher, true, System.err.charset()).use { tempStderr ->
+            withContext(Dispatchers.Main.plus(CoroutineName(name))) {
                 val oldSystemErr = System.err
                 try {
                     System.setErr(tempStderr)
-                    logger.info("Starting JFX task: {}", name)
                     jfxCode()
                 } finally {
                     withContext(NonCancellable) {
@@ -23,16 +23,16 @@ suspend fun <T> doJfx(name: String, jfxCode: CoroutineScope.() -> T): T = try {
                     }
                 }
             }
-            if (errorCatcher.size() > 0) {
-                val interceptedStdout = errorCatcher.toString(System.err.charset())
-                if (interceptedStdout.contains("Exception:") || interceptedStdout.contains("Error:")) {
-                    throw RuntimeException(interceptedStdout)
-                }
-                System.err.print(interceptedStdout)
-            }
-            logger.info("Finished JFX task: {}", name)
-            result
         }
+        if (errorCatcher.size() > 0) {
+            val interceptedStdout = errorCatcher.toString(System.err.charset())
+            if (interceptedStdout.contains("Exception:") || interceptedStdout.contains("Error:")) {
+                throw RuntimeException(interceptedStdout)
+            }
+            System.err.print(interceptedStdout)
+        }
+        logger.info("Finished JFX task: {}", name)
+        result
     }
 } catch (t: Throwable) {
     logger.error("Error from JFX task", t)
