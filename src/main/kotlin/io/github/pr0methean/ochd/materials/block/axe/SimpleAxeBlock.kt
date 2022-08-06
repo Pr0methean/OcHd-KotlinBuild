@@ -15,10 +15,9 @@ enum class SimpleAxeBlock: SingleTextureMaterial, ShadowHighlightMaterial, Block
             layer("craftingSide", OverworldWood.DARK_OAK.color)
         }
     },
-    LADDER {
+    CRAFTING_TABLE_FRONT {
         override suspend fun LayerListBuilder.createTextureLayers() {
-            layer("rail", color)
-            layer("railTies", highlight)
+            copy(CRAFTING_TABLE_SIDE)
         }
     },
     CRAFTING_TABLE_TOP {
@@ -30,9 +29,10 @@ enum class SimpleAxeBlock: SingleTextureMaterial, ShadowHighlightMaterial, Block
             layer("cornersTri", highlight)
         }
     },
-    CRAFTING_TABLE_FRONT {
+    LADDER {
         override suspend fun LayerListBuilder.createTextureLayers() {
-            copy(CRAFTING_TABLE_SIDE)
+            layer("rail", color)
+            layer("railTies", highlight)
         }
     },
     BOOKSHELF {
