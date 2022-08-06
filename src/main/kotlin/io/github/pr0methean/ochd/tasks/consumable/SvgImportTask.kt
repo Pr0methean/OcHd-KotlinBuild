@@ -12,16 +12,18 @@ import kotlinx.coroutines.sync.withLock
 import org.apache.batik.transcoder.SVGAbstractTranscoder
 import org.apache.batik.transcoder.TranscoderInput
 import org.apache.batik.transcoder.TranscoderOutput
-import org.apache.batik.transcoder.image.PNGTranscoder
+import org.apache.batik.transcoder.image.ImageTranscoder
 import java.awt.image.BufferedImage
 import java.io.File
 
 private val batikTranscoder: ThreadLocal<ToImageTranscoder> = ThreadLocal.withInitial { ToImageTranscoder() }
 /** SVG decoder that stores the last image it decoded, rather than passing it to an encoder. */
-private class ToImageTranscoder: PNGTranscoder() {
+private class ToImageTranscoder: ImageTranscoder() {
     val mutex = Mutex()
     @Volatile
     private var lastImage: BufferedImage? = null
+    override fun createImage(width: Int, height: Int): BufferedImage = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
+
     override fun writeImage(img: BufferedImage?, output: TranscoderOutput?) {
         lastImage = img
     }
