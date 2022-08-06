@@ -147,19 +147,6 @@ enum class SimplePickaxeBlock(
             layer("borderShortDashes", shadow)
         }
     },
-    BLACKSTONE_TOP(Polishable.BLACKSTONE) {
-        override suspend fun LayerListBuilder.createTextureLayers() {
-            background(shadow)
-            layer("bigRingsBottomLeftTopRight", color)
-            layer("bigRingsTopLeftBottomRight", highlight)
-        }
-    },
-    GILDED_BLACKSTONE(Ore.GOLD) {
-        override suspend fun LayerListBuilder.createTextureLayers() {
-            copy{Polishable.BLACKSTONE.run {createPolishedTexture()}}
-            layer("bigRingsBottomLeftTopRight", color)
-        }
-    },
     BASALT_TOP(c(0x4e4e4e), c(0x002632), c(0x747474)) {
         override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
@@ -210,6 +197,13 @@ enum class SimplePickaxeBlock(
             background(color)
             layer("checksLargeOutline", shadow)
             layer("bigDotsTopLeftBottomRight", highlight)
+        }
+    },
+    END_STONE_BRICKS(END_STONE) {
+        override suspend fun LayerListBuilder.createTextureLayers() {
+            copy(END_STONE)
+            layer("bricksSmall", shadow)
+            layer("borderShortDashes", highlight)
         }
     },
     QUARTZ_PILLAR(Ore.QUARTZ) {
@@ -298,21 +292,6 @@ enum class SimplePickaxeBlock(
             background(color)
             layer("bricksSmall", shadow)
             layer("borderDotted", highlight)
-        }
-    },
-    DEEPSLATE_BRICKS(DEEPSLATE) {
-        override suspend fun LayerListBuilder.createTextureLayers() {
-            copy(DEEPSLATE)
-            layer("bricksSmall", shadow)
-            layer("borderDotted", highlight)
-            layer("borderDottedBottomRight", shadow)
-        }
-    },
-    END_STONE_BRICKS(END_STONE) {
-        override suspend fun LayerListBuilder.createTextureLayers() {
-            copy(END_STONE)
-            layer("bricksSmall", shadow)
-            layer("borderShortDashes", highlight)
         }
     },
     NETHER_BRICKS(c(0x302020), Color.BLACK, c(0x442727)) {

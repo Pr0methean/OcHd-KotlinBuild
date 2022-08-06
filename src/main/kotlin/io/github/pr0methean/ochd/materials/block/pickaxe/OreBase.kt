@@ -1,10 +1,14 @@
 package io.github.pr0methean.ochd.materials.block.pickaxe
 
+import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.c
+import io.github.pr0methean.ochd.tasks.consumable.OutputTask
 import io.github.pr0methean.ochd.texturebase.Block
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Color
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 
 enum class OreBase(
     override val color: Color,
@@ -25,6 +29,17 @@ enum class OreBase(
             background(color)
             layer("diagonalChecksBottomLeftTopRight", DEEPSLATE.highlight)
             layer("diagonalChecksTopLeftBottomRight", DEEPSLATE.shadow)
+        }
+
+        override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+            val baseTexture = ctx.stack {createTextureLayers()}
+            emit(ctx.out("block/deepslate", baseTexture))
+            emit(ctx.out("block/deepslate_bricks", ctx.stack {
+                copy(baseTexture)
+                layer("bricksSmall", shadow)
+                layer("borderDotted", highlight)
+                layer("borderDottedBottomRight", shadow)
+            }))
         }
     },
     NETHERRACK(c(0x723232), c(0x411616), c(0x854242), "nether_") {

@@ -47,6 +47,21 @@ push bigRingsTopLeftBottomRight ${andesite_s} a2*/
             layer("bigDotsBottomLeftTopRight", highlight)
             layer("bigDotsTopLeftBottomRight", color)
         }
+        override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+
+            emit(ctx.out("block/blackstone", ctx.stack { createTextureLayersBase() }))
+            val polishedTextureTask = ctx.stack { createPolishedTexture() }
+            emit(ctx.out("block/polished_blackstone", polishedTextureTask))
+            emit(ctx.out("block/gilded_blackstone", ctx.stack {
+                copy(polishedTextureTask)
+                layer("bigRingsBottomLeftTopRight", color)
+            }))
+            emit(ctx.out("block/blackstone_top", ctx.stack {
+                background(shadow)
+                layer("bigRingsBottomLeftTopRight", color)
+                layer("bigRingsTopLeftBottomRight", highlight)
+            }))
+        }
     };
 
     abstract suspend fun LayerListBuilder.createTextureLayersBase()
