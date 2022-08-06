@@ -26,8 +26,6 @@ suspend fun main(args:Array<String>) {
         println("Usage: main <size>")
         return
     }
-    System.setProperty("glass.platform","Monocle")
-    System.setProperty("monocle.platform","Headless")
     Platform.startup {}
     val supervisorJob = SupervisorJob()
     val tileSize = args[0].toInt()
