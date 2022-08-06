@@ -40,6 +40,11 @@ enum class OreBase(
                 layer("borderDotted", highlight)
                 layer("borderDottedBottomRight", shadow)
             }))
+            emit(ctx.out("block/deepslate_top", ctx.stack {
+                copy(baseTexture)
+                layer("cross", shadow)
+                layer("borderSolid", highlight)
+            }))
         }
     },
     NETHERRACK(c(0x723232), c(0x411616), c(0x854242), "nether_") {

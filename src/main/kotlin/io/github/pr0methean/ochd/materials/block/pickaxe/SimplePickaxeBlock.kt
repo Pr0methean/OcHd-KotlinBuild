@@ -57,13 +57,6 @@ enum class SimplePickaxeBlock(
             layer("checksSmall",color)
         }
     },
-    DEEPSLATE_TOP(DEEPSLATE) {
-        override suspend fun LayerListBuilder.createTextureLayers() {
-            copy(DEEPSLATE)
-            layer("cross", shadow)
-            layer("borderSolid", highlight)
-        }
-    },
     SANDSTONE_BASE(SimpleSoftEarth.SAND, hasOutput = false) {
         override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
