@@ -47,7 +47,6 @@ class SvgImportTask(
     override suspend fun perform(): Image {
         stats.onTaskLaunched("SvgImportTask", name)
         val transcoder = batikTranscoder.get()
-        val output = TranscoderOutput()
         val input = TranscoderInput(file.toURI().toString())
         val image = SwingFXUtils.toFXImage(transcoder.mutex.withLock {
             transcoder.setTranscodingHints(
@@ -56,7 +55,7 @@ class SvgImportTask(
                     SVGAbstractTranscoder.KEY_HEIGHT to tileSize.toFloat()
                 )
             )
-            transcoder.transcode(input, output)
+            transcoder.transcode(input, null)
             transcoder.takeLastImage()!!
         }, null)
         stats.onTaskCompleted("SvgImportTask", name)
