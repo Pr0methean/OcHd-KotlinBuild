@@ -27,9 +27,9 @@ class ImageProcessingContext(
 ) {
     override fun toString(): String = name
     private val svgTasks: Map<String, SvgImportTask>
-    private val unusedSvgTasks: MutableSet<String>
     private val taskDeduplicationMap = ConcurrentHashMap<ImageTask, ImageTask>()
     val stats = ImageProcessingStats()
+    private val dedupedSvgTasks = ConcurrentHashMap.newKeySet<String>()
 
     init {
         val builder = mutableMapOf<String, SvgImportTask>()
@@ -42,8 +42,6 @@ class ImageProcessingContext(
                 stats)
         }
         svgTasks = builder.toMap()
-        unusedSvgTasks = ConcurrentHashMap.newKeySet()
-        unusedSvgTasks.addAll(builder.keys)
     }
 
     suspend fun deduplicate(task: Task<Image>): ImageTask {
@@ -51,7 +49,7 @@ class ImageProcessingContext(
             // svgTasks is populated eagerly
             val match = svgTasks[task.name] ?: throw RuntimeException("Missing SvgImportTask for $name")
             if (match === task) {
-                if (unusedSvgTasks.remove(task.name)) {
+                if (dedupedSvgTasks.add(task.name)) {
                     stats.dedupeFailures.add("SvgImportTask")
                 }
             } else {
