@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd.tasks.consumable
 
 import io.github.pr0methean.ochd.ImageProcessingStats
-import io.github.pr0methean.ochd.tasks.consumable.caching.SoftTaskCache
+import io.github.pr0methean.ochd.tasks.consumable.caching.TaskCache
 import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
 import kotlinx.coroutines.CoroutineScope
@@ -38,10 +38,19 @@ class SvgImportTask(
     override val name: String,
     private val tileSize: Int,
     private val file: File,
-    override val stats: ImageProcessingStats
-): AbstractImageTask(name, SoftTaskCache(), stats) {
+    override val stats: ImageProcessingStats,
+    taskCache: TaskCache<Image>
+): AbstractImageTask(name, taskCache, stats) {
     override suspend fun createCoroutineScope(attempt: Long): CoroutineScope {
         return super.createCoroutineScope(attempt).plus(batikTranscoder.asContextElement())
+    }
+
+    override fun equals(other: Any?): Boolean {
+        return (other === this) || other is SvgImportTask && other.file == file
+    }
+
+    override fun hashCode(): Int {
+        return file.hashCode()
     }
 
     override suspend fun perform(): Image {
