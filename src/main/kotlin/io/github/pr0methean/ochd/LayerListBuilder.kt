@@ -64,7 +64,7 @@ class LayerListBuilder(val ctx: ImageProcessingContext) {
     suspend fun copy(source: SingleTextureMaterial)
             = copy(LayerListBuilder(ctx).also {source.run {createTextureLayers()}}.build())
 
-    suspend fun copy(element: ImageTask) = layers.add(ctx.deduplicate(element))
-    private suspend fun addAll(elements: Collection<ImageTask>) = layers.addAll(elements.asFlow().map(ctx::deduplicate).toList())
-    fun build() = LayerList(layers.toList(), background)
+    fun copy(element: ImageTask) = layers.add(element)
+    private fun addAll(elements: Collection<ImageTask>) = layers.addAll(elements)
+    suspend fun build() = LayerList(layers.asFlow().map(ctx::deduplicate).toList(), background)
 }
