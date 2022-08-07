@@ -3,10 +3,7 @@ import io.github.pr0methean.ochd.materials.ALL_MATERIALS
 import io.github.pr0methean.ochd.tasks.consumable.doJfx
 import javafx.application.Platform
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.filter
-import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.flow.*
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox.box
 import java.nio.file.Paths
@@ -69,7 +66,7 @@ suspend fun main(args:Array<String>) {
         cleanupJob.join()
         val tasksRun = LongAdder()
         while (tasks.firstOrNull() != null) {
-            val tasksToRetry = tasks.filter { task ->
+            val tasksToRetry = tasks.flowOn(scope.coroutineContext).filter { task ->
                 withContext(scope.coroutineContext.plus(CoroutineName("Joining $task"))) {
                     logger.info("Joining {}", task)
                     val result = try {
