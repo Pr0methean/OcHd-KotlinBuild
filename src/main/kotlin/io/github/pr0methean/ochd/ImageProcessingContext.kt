@@ -2,6 +2,7 @@ package io.github.pr0methean.ochd
 
 import io.github.pr0methean.ochd.tasks.consumable.*
 import io.github.pr0methean.ochd.tasks.consumable.caching.SoftTaskCache
+import io.github.pr0methean.ochd.tasks.consumable.caching.WeakTaskCache
 import io.github.pr0methean.ochd.tasks.consumable.caching.noopTaskCache
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
@@ -96,7 +97,7 @@ class ImageProcessingContext(
         val layerTasksBuilder = LayerListBuilder(this)
         layerTasksBuilder.init()
         val layerTasks = layerTasksBuilder.build()
-        return deduplicate(ImageStackingTask(layerTasks, tileSize, tileSize, layerTasks.toString(), SoftTaskCache(), stats))
+        return deduplicate(ImageStackingTask(layerTasks, tileSize, tileSize, layerTasks.toString(), WeakTaskCache(), stats))
     }
 
     suspend fun animate(frames: List<ImageTask>): ImageTask {
