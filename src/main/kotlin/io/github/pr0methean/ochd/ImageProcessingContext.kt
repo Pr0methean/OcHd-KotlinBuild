@@ -29,6 +29,7 @@ class ImageProcessingContext(
     private val svgTasks: Map<String, SvgImportTask>
     private val taskDeduplicationMap = ConcurrentHashMap<ImageTask, ImageTask>()
     val stats = ImageProcessingStats()
+    private val dedupedSvgTasks = ConcurrentHashMap.newKeySet<String>()
 
     init {
         val builder = mutableMapOf<String, SvgImportTask>()
@@ -47,7 +48,13 @@ class ImageProcessingContext(
         if (task is SvgImportTask) {
             // svgTasks is populated eagerly
             val match = svgTasks[task.name] ?: throw RuntimeException("Missing SvgImportTask for $name")
-            (if (match === task) stats.dedupeFailures else stats.dedupeSuccesses).add("SvgImportTask")
+            if (match === task) {
+                if (dedupedSvgTasks.add(task.name)) {
+                    stats.dedupeFailures.add("SvgImportTask")
+                }
+            } else {
+                stats.dedupeSuccesses.add("SvgImportTask")
+            }
             return match
         }
         if (task is RepaintTask
