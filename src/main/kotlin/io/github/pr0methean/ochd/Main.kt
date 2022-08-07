@@ -3,6 +3,9 @@ import io.github.pr0methean.ochd.materials.ALL_MATERIALS
 import io.github.pr0methean.ochd.tasks.consumable.doJfx
 import javafx.application.Platform
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.toList
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox.box
@@ -61,7 +64,7 @@ suspend fun main(args:Array<String>) {
             stats.onTaskCompleted("Copy metadata files", "Copy metadata files")
         }
         stats.onTaskLaunched("Build task graph", "Build task graph")
-        var tasks = ALL_MATERIALS.outputTasks(ctx).toList()
+        var tasks = ALL_MATERIALS.outputTasks(ctx).toList().asFlow()
         stats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupJob.join()
         val tasksRun = LongAdder()
@@ -86,7 +89,7 @@ suspend fun main(args:Array<String>) {
                     }
                 }
             }.toList()
-            tasks = tasksToRetry
+            tasks = tasksToRetry.asFlow()
             if (tasksToRetry.isNotEmpty()) {
                 System.gc()
                 logger.warn("{} tasks succeeded and {} failed on attempt {}",
