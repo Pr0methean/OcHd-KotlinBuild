@@ -2,7 +2,7 @@ package io.github.pr0methean.ochd.tasks.consumable
 
 import io.github.pr0methean.ochd.DEFAULT_SNAPSHOT_PARAMS
 import io.github.pr0methean.ochd.ImageProcessingStats
-import io.github.pr0methean.ochd.tasks.consumable.caching.StrongTaskCache
+import io.github.pr0methean.ochd.tasks.consumable.caching.SoftTaskCache
 import io.github.pr0methean.ochd.tasks.consumable.caching.TaskCache
 import javafx.scene.canvas.Canvas
 import javafx.scene.effect.Blend
@@ -45,7 +45,7 @@ class RepaintTask(
     snapshot
 }), ImageTask {
     override val unpacked: Task<Image> = this
-    override val asPng: Task<ByteArray> by lazy {PngCompressionTask(this, StrongTaskCache(), stats)}
+    override val asPng: Task<ByteArray> by lazy {PngCompressionTask(this, SoftTaskCache(), stats)}
     override suspend fun mergeWithDuplicate(other: Task<Image>): ImageTask {
         return super.mergeWithDuplicate(other) as ImageTask
     }

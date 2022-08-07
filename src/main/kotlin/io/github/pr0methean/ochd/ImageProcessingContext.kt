@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd
 
 import io.github.pr0methean.ochd.tasks.consumable.*
-import io.github.pr0methean.ochd.tasks.consumable.caching.StrongTaskCache
+import io.github.pr0methean.ochd.tasks.consumable.caching.SoftTaskCache
 import io.github.pr0methean.ochd.tasks.consumable.caching.noopTaskCache
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
@@ -71,7 +71,7 @@ class ImageProcessingContext(
         if (task !is ImageTask) {
             logger.warn("Tried to deduplicate a task that's not an ImageTask")
             stats.dedupeFailures.add(task::class.simpleName ?: "[unnamed non-ImageTask class]")
-            return object: AbstractImageTask(task.name, StrongTaskCache(), stats) {
+            return object: AbstractImageTask(task.name, SoftTaskCache(), stats) {
                 override suspend fun perform(): Image = task.await().getOrThrow()
             }
         }
@@ -89,14 +89,14 @@ class ImageProcessingContext(
             = layer(svgTasks[name]?.unpacked ?: throw IllegalArgumentException("No SVG task called $name"), paint, alpha)
 
     suspend fun layer(source: Task<Image>, paint: Paint? = null, alpha: Double = 1.0): ImageTask {
-        return deduplicate(RepaintTask(deduplicate(source), paint, alpha, StrongTaskCache(), stats))
+        return deduplicate(RepaintTask(deduplicate(source), paint, alpha, SoftTaskCache(), stats))
     }
 
     suspend fun stack(init: suspend LayerListBuilder.() -> Unit): ImageTask {
         val layerTasksBuilder = LayerListBuilder(this)
         layerTasksBuilder.init()
         val layerTasks = layerTasksBuilder.build()
-        return deduplicate(ImageStackingTask(layerTasks, tileSize, tileSize, layerTasks.toString(), StrongTaskCache(), stats))
+        return deduplicate(ImageStackingTask(layerTasks, tileSize, tileSize, layerTasks.toString(), SoftTaskCache(), stats))
     }
 
     suspend fun animate(frames: List<ImageTask>): ImageTask {
