@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd.tasks.consumable
 
 import io.github.pr0methean.ochd.ImageProcessingStats
-import io.github.pr0methean.ochd.tasks.consumable.caching.noopTaskCache
+import io.github.pr0methean.ochd.tasks.consumable.caching.SoftTaskCache
 import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
 import kotlinx.coroutines.CoroutineScope
@@ -39,7 +39,7 @@ class SvgImportTask(
     private val tileSize: Int,
     private val file: File,
     override val stats: ImageProcessingStats
-): AbstractImageTask(name, noopTaskCache(), stats) {
+): AbstractImageTask(name, SoftTaskCache(), stats) {
     override suspend fun createCoroutineScope(attempt: Long): CoroutineScope {
         return super.createCoroutineScope(attempt).plus(batikTranscoder.asContextElement())
     }
