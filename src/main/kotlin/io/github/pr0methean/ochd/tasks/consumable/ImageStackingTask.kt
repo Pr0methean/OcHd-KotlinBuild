@@ -82,7 +82,6 @@ class ImageStackingTask(val layers: LayerList,
                     logger.debug("Rendering layer {} ({}) onto the stack", box(index), layerTask)
 
                     if (index == 0) {
-                        canvas.isCache = true
                         if (layers.background != Color.TRANSPARENT) {
                             canvasCtx.fill = layers.background
                             canvasCtx.fillRect(0.0, 0.0, width.toDouble(), height.toDouble())
@@ -97,7 +96,6 @@ class ImageStackingTask(val layers: LayerList,
                             if (snapshot.isError) {
                                 throw snapshot.exception
                             }
-                            canvas.isCache = false
                             snapshotRef.set(snapshot)
                         }
                     }

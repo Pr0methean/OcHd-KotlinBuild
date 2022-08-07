@@ -23,7 +23,6 @@ class RepaintTask(
     stats.onTaskLaunched("RepaintTask", "$base@$paint@$alpha")
     val output = WritableImage(baseImage.width.toInt(), baseImage.height.toInt())
     val canvas = Canvas(baseImage.width, baseImage.height)
-    canvas.isCache = true
     val gfx = canvas.graphicsContext2D
     canvas.opacity = alpha
     if (paint != null) {

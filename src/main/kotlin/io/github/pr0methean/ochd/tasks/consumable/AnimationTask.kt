@@ -13,7 +13,7 @@ import java.util.*
 class AnimationTask(
     val frames: List<ImageTask>,
     val width: Int, val height: Int, override val name: String,
-    val cache: TaskCache<Image>,
+    cache: TaskCache<Image>,
     override val stats: ImageProcessingStats
 ): AbstractImageTask(name, cache, stats) {
     private val totalHeight = height * frames.size
@@ -55,7 +55,6 @@ class AnimationTask(
     override suspend fun perform(): Image {
         stats.onTaskLaunched("AnimationTask", name)
         val canvas = Canvas(width.toDouble(), totalHeight.toDouble())
-        canvas.isCache = true
         val canvasCtx = canvas.graphicsContext2D
         val frameTasks = frames.map(ImageTask::unpacked).mapIndexed { index, frameTask -> frameTask.consumeAsync {
             canvasCtx.drawImage(it.getOrThrow(), 0.0, (height * index).toDouble())
@@ -65,7 +64,6 @@ class AnimationTask(
         val output = WritableImage(width, totalHeight)
         doJfx("Snapshot of $name") {
             canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
-            canvas.isCache = false
         }
         if (output.isError) {
             throw output.exception
