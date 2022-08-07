@@ -1,10 +1,14 @@
 package io.github.pr0methean.ochd.materials.block.axe
 
+import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.LayerListBuilder
+import io.github.pr0methean.ochd.tasks.consumable.OutputTask
 import io.github.pr0methean.ochd.texturebase.Block
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
 import javafx.scene.paint.Color
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 
 @Suppress("unused")
 enum class SimpleAxeBlock: SingleTextureMaterial, ShadowHighlightMaterial, Block {
@@ -14,10 +18,11 @@ enum class SimpleAxeBlock: SingleTextureMaterial, ShadowHighlightMaterial, Block
             layer("borderSolid", highlight)
             layer("craftingSide", OverworldWood.DARK_OAK.color)
         }
-    },
-    CRAFTING_TABLE_FRONT {
-        override suspend fun LayerListBuilder.createTextureLayers() {
-            copy(CRAFTING_TABLE_SIDE)
+
+        override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+            val layers = ctx.stack {createTextureLayers()}
+            emit(ctx.out("block/crafting_table_side", layers))
+            emit(ctx.out("block/crafting_table_front", layers))
         }
     },
     CRAFTING_TABLE_TOP {
