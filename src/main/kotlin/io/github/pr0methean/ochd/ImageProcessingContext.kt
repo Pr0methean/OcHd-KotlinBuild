@@ -103,17 +103,17 @@ class ImageProcessingContext(
         return deduplicate(AnimationTask(frames.asFlow().map(::deduplicate).toList(), tileSize, tileSize, frames.toString(), noopTaskCache(), stats))
     }
 
-    fun out(name: String, source: ImageTask): OutputTask {
+    suspend fun out(name: String, source: ImageTask): OutputTask {
         val lowercaseName = name.lowercase(Locale.ENGLISH)
         return out(lowercaseName, outTextureRoot.resolve("$lowercaseName.png"), source)
     }
 
-    fun out(
+    suspend fun out(
         lowercaseName: String,
         destination: File,
         source: ImageTask
     ): OutputTask {
-        return OutputTask(source.asPng, lowercaseName, destination, stats)
+        return OutputTask(deduplicate(source).asPng, lowercaseName, destination, stats)
     }
 
     suspend fun out(name: String, source: suspend LayerListBuilder.() -> Unit) = out(name, stack {source()})
