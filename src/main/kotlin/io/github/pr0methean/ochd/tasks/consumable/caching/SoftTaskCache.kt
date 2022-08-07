@@ -2,7 +2,7 @@ package io.github.pr0methean.ochd.tasks.consumable.caching
 
 import java.lang.ref.SoftReference
 
-
+@Suppress("UNUSED")
 class SoftTaskCache<T>: TaskCache<T> {
     @Volatile var result = SoftReference<Result<T>>(null)
     override fun getNow(): Result<T>? = result.get()
