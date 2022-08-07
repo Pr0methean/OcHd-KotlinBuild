@@ -1,15 +1,14 @@
 package io.github.pr0methean.ochd
+
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
 import io.github.pr0methean.ochd.tasks.consumable.OutputTask
 import io.github.pr0methean.ochd.tasks.consumable.doJfx
 import javafx.application.Platform
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.firstOrNull
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox.box
+import java.lang.ref.WeakReference
 import java.nio.file.Paths
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.atomic.LongAdder
@@ -17,13 +16,14 @@ import kotlin.Result.Companion.failure
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
+val SKIP_RUNBLOCKING_BELOW_TILE_SIZE: Int = 32 // FIXME: Delete this once a value of 32 works reliably
 private val logger = run {
     System.setProperty("java.util.logging.manager", "org.apache.logging.log4j.jul.LogManager")
     LogManager.getRootLogger()
 }
 
 @Suppress("UnstableApiUsage", "DeferredResultUnused")
-suspend fun main(args:Array<String>) {
+suspend fun main(args: Array<String>) {
     if (args.isEmpty()) {
         println("Usage: main <size>")
         return
@@ -38,7 +38,7 @@ suspend fun main(args:Array<String>) {
     val out = Paths.get("pngout").toAbsolutePath().toFile()
     val outTextureRoot = out.resolve("assets").resolve("minecraft").resolve("textures")
     val ioScope = CoroutineScope(Dispatchers.IO).plus(supervisorJob)
-    val cleanupJob = ioScope.launch(CoroutineName("Delete old outputs")) {out.deleteRecursively()}
+    val cleanupJob = ioScope.launch(CoroutineName("Delete old outputs")) { out.deleteRecursively() }
     val ctx = ImageProcessingContext(
         name = "MainContext",
         tileSize = tileSize,
@@ -65,45 +65,52 @@ suspend fun main(args:Array<String>) {
             }
             stats.onTaskCompleted("Copy metadata files", "Copy metadata files")
         }
+        val copyMetadataWeakRef = WeakReference(copyMetadata)
         stats.onTaskLaunched("Build task graph", "Build task graph")
-        var tasks = ALL_MATERIALS.outputTasks(ctx).toList().asFlow()
+        var tasks = ALL_MATERIALS.outputTasks(ctx).toList()
         stats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupJob.join()
         val tasksRun = LongAdder()
         while (tasks.firstOrNull() != null) {
             val tasksToRetry = ConcurrentLinkedDeque<OutputTask>()
-            tasks.map { task ->
-                scope.launch {
+            tasks.forEach { task ->
+                val result = withContext(scope.coroutineContext) {
                     logger.info("Joining {}", task)
-                    val result = try {
+                    if (tileSize >= SKIP_RUNBLOCKING_BELOW_TILE_SIZE) {
                         runBlocking {
-                            task.await()
+                            try {
+                                task.await()
+                            } catch (t: Throwable) {
+                                failure(t)
+                            }
                         }
-                    } catch (t: Throwable) {
-                        failure(t)
-                    }
-                    tasksRun.increment()
-                    if (result.isFailure) {
-                        logger.error("Error in {}", task, result.exceptionOrNull())
-                        task.clearFailure()
-                        logger.debug("Cleared failure in {}", task)
-                        tasksToRetry.add(task)
                     } else {
-                        logger.info("Joined {} with result of {}", task, result)
+                        task.await()
                     }
                 }
-            }.toList().joinAll()
-            tasks = tasksToRetry.asFlow()
+                tasksRun.increment()
+                if (result.isFailure) {
+                    logger.error("Error in {}", task, result.exceptionOrNull())
+                    task.clearFailure()
+                    logger.debug("Cleared failure in {}", task)
+                    tasksToRetry.add(task)
+                } else {
+                    logger.info("Joined {} with result of {}", task, result)
+                }
+            }
+            tasks = tasksToRetry.toList()
             if (tasksToRetry.isNotEmpty()) {
+                copyMetadata.join()
                 System.gc()
-                logger.warn("{} tasks succeeded and {} failed on attempt {}",
+                logger.warn(
+                    "{} tasks succeeded and {} failed on attempt {}",
                     box(tasksRun.sumThenReset() - tasksToRetry.size), box(tasksToRetry.size), box(attemptNumber)
                 )
                 stats.recordRetries(tasksToRetry.size.toLong())
                 attemptNumber++
             }
         }
-        copyMetadata.join()
+        copyMetadataWeakRef.get()?.join()
     }
     stopMonitoring()
     Platform.exit()
