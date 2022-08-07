@@ -1,15 +1,17 @@
 package io.github.pr0methean.ochd
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
+import io.github.pr0methean.ochd.tasks.consumable.OutputTask
 import io.github.pr0methean.ochd.tasks.consumable.doJfx
 import javafx.application.Platform
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox.box
 import java.nio.file.Paths
+import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.atomic.LongAdder
 import kotlin.Result.Companion.failure
 import kotlin.system.exitProcess
@@ -69,11 +71,14 @@ suspend fun main(args:Array<String>) {
         cleanupJob.join()
         val tasksRun = LongAdder()
         while (tasks.firstOrNull() != null) {
-            val tasksToRetry = tasks.filter { task ->
-                withContext(scope.coroutineContext.plus(CoroutineName("Joining $task"))) {
+            val tasksToRetry = ConcurrentLinkedDeque<OutputTask>()
+            tasks.map { task ->
+                scope.launch {
                     logger.info("Joining {}", task)
                     val result = try {
-                        task.await()
+                        runBlocking {
+                            task.await()
+                        }
                     } catch (t: Throwable) {
                         failure(t)
                     }
@@ -82,13 +87,12 @@ suspend fun main(args:Array<String>) {
                         logger.error("Error in {}", task, result.exceptionOrNull())
                         task.clearFailure()
                         logger.debug("Cleared failure in {}", task)
-                        true
+                        tasksToRetry.add(task)
                     } else {
                         logger.info("Joined {} with result of {}", task, result)
-                        false
                     }
                 }
-            }.toList()
+            }.toList().joinAll()
             tasks = tasksToRetry.asFlow()
             if (tasksToRetry.isNotEmpty()) {
                 System.gc()
