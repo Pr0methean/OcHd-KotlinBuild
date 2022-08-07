@@ -6,6 +6,10 @@ import io.github.pr0methean.ochd.tasks.consumable.caching.noopTaskCache
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
+import kotlinx.coroutines.flow.asFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.toList
+import org.apache.logging.log4j.LogManager
 import java.io.File
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
@@ -14,6 +18,7 @@ fun color(web: String): Color = Color.web(web)
 
 fun color(web: String, alpha: Double): Color = Color.web(web, alpha)
 
+private val logger = LogManager.getLogger("ImageProcessingContext")
 class ImageProcessingContext(
     val name: String,
     val tileSize: Int,
@@ -38,11 +43,12 @@ class ImageProcessingContext(
         svgTasks = builder.toMap()
     }
 
-    suspend fun deduplicate(task: ImageTask): ImageTask {
+    suspend fun deduplicate(task: Task<Image>): ImageTask {
         if (task is SvgImportTask) {
             // svgTasks is populated eagerly
-            stats.dedupeSuccesses.add("SvgImportTask")
-            return svgTasks[task.name] ?: throw RuntimeException("Missing SvgImportTask for $name")
+            val match = svgTasks[task.name] ?: throw RuntimeException("Missing SvgImportTask for $name")
+            (if (match === task) stats.dedupeFailures else stats.dedupeSuccesses).add("SvgImportTask")
+            return match
         }
         if (task is RepaintTask
             && (task.paint == null || task.paint == Color.BLACK)
@@ -54,6 +60,13 @@ class ImageProcessingContext(
             && task.layers.layers.size == 1
             && task.layers.background == Color.TRANSPARENT) {
             return deduplicate(task.layers.layers[0])
+        }
+        if (task !is ImageTask) {
+            logger.warn("Tried to deduplicate a task that's not an ImageTask")
+            stats.dedupeFailures.add(task::class.simpleName ?: "[unnamed non-ImageTask class]")
+            return object: AbstractImageTask(task.name, SoftTaskCache(), stats) {
+                override suspend fun perform(): Image = task.await().getOrThrow()
+            }
         }
         val className = task::class.simpleName ?: "[unnamed class]"
         stats.dedupeSuccesses.add(className)
@@ -69,7 +82,7 @@ class ImageProcessingContext(
             = layer(svgTasks[name]?.unpacked ?: throw IllegalArgumentException("No SVG task called $name"), paint, alpha)
 
     suspend fun layer(source: Task<Image>, paint: Paint? = null, alpha: Double = 1.0): ImageTask {
-        return deduplicate(RepaintTask(source, paint, alpha, SoftTaskCache(), stats))
+        return deduplicate(RepaintTask(deduplicate(source), paint, alpha, SoftTaskCache(), stats))
     }
 
     suspend fun stack(init: suspend LayerListBuilder.() -> Unit): ImageTask {
@@ -80,7 +93,7 @@ class ImageProcessingContext(
     }
 
     suspend fun animate(frames: List<ImageTask>): ImageTask {
-        return deduplicate(AnimationTask(frames, tileSize, tileSize, frames.toString(), noopTaskCache(), stats))
+        return deduplicate(AnimationTask(frames.asFlow().map(::deduplicate).toList(), tileSize, tileSize, frames.toString(), noopTaskCache(), stats))
     }
 
     fun out(name: String, source: ImageTask): OutputTask {
