@@ -16,7 +16,6 @@ import kotlin.Result.Companion.failure
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
-val SKIP_RUNBLOCKING_BELOW_TILE_SIZE: Int = 32 // FIXME: Delete this once a value of 32 works reliably
 private val logger = run {
     System.setProperty("java.util.logging.manager", "org.apache.logging.log4j.jul.LogManager")
     LogManager.getRootLogger()
@@ -76,16 +75,12 @@ suspend fun main(args: Array<String>) {
             tasks.forEach { task ->
                 val result = withContext(scope.coroutineContext) {
                     logger.info("Joining {}", task)
-                    if (tileSize >= SKIP_RUNBLOCKING_BELOW_TILE_SIZE) {
-                        runBlocking {
-                            try {
-                                task.await()
-                            } catch (t: Throwable) {
-                                failure(t)
-                            }
+                    runBlocking {
+                        try {
+                            task.await()
+                        } catch (t: Throwable) {
+                            failure(t)
                         }
-                    } else {
-                        task.await()
                     }
                 }
                 tasksRun.increment()
