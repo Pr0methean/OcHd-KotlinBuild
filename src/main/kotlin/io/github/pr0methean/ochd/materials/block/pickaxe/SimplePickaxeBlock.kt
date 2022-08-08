@@ -115,14 +115,16 @@ enum class SimplePickaxeBlock(
         override suspend fun LayerListBuilder.createTextureLayers() {
             copy(RED_SAND_BASE)
             layer("borderSolidThick", highlight)
-            layer("borderSolid", shadow)
+            layer("borderLongDashes", shadow)
         }
     },
     CUT_RED_SANDSTONE(SimpleSoftEarth.RED_SAND) {
         override suspend fun LayerListBuilder.createTextureLayers() {
             copy(RED_SAND_BASE)
-            layer("borderSolid", shadow)
+            layer("borderSolidThick", shadow)
             layer("borderSolidTopLeft", highlight)
+            layer("borderSolid", highlight)
+            layer("borderLongDashes", shadow)
         }
     },
     CHISELED_RED_SANDSTONE(SimpleSoftEarth.RED_SAND) {
@@ -135,8 +137,8 @@ enum class SimplePickaxeBlock(
         override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("topPart",shadow)
-            layer("borderSolid", highlight)
             layer("topStripeThick", highlight)
+            layer("borderSolid", highlight)
             layer("borderShortDashes", shadow)
         }
     },
