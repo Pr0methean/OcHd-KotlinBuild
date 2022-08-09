@@ -16,9 +16,9 @@ private val logger = LogManager.getLogger("AbstractTask")
 private val cancelBecauseReplacing = CancellationException("Being replaced")
 abstract class AbstractTask<T>(override val name: String, private val cache: TaskCache<T>) : Task<T> {
     private val mutex = Mutex()
-    protected val attemptNumber = AtomicLong()
+    protected val attemptNumber: AtomicLong = AtomicLong()
     @Volatile
-    protected var runningAttemptNumber = -1L
+    protected var runningAttemptNumber: Long = -1L
 
     data class AttemptNumberCtx(val attempt: Long): CoroutineContext.Element {
         override val key = AttemptNumberKey
@@ -166,7 +166,7 @@ abstract class AbstractTask<T>(override val name: String, private val cache: Tas
         }
     }
 
-    override suspend fun await() = startAsync().await()
+    override suspend fun await(): Result<T> = startAsync().await()
 
     override suspend fun clearFailure() {
         logger.debug("Locking {} to clear failure", this)
@@ -194,7 +194,7 @@ abstract class AbstractTask<T>(override val name: String, private val cache: Tas
                 block(startAsync().await())
             }
 
-    protected open suspend fun createCoroutineScope(attempt: Long) = CoroutineScope(
+    protected open suspend fun createCoroutineScope(attempt: Long): CoroutineScope = CoroutineScope(
         currentCoroutineContext()
             .plus(CoroutineName(name))
             .plus(AttemptNumberCtx(attempt))

@@ -9,10 +9,10 @@ abstract class AbstractImageTask(override val name: String, cache: TaskCache<Ima
                                  open val stats: ImageProcessingStats)
     : SimpleTask<Image>(name, cache), ImageTask {
     @Suppress("LeakingThis")
-    override val unpacked = this
+    override val unpacked: AbstractImageTask = this
     override suspend fun mergeWithDuplicate(other: Task<Image>): ImageTask {
         return super.mergeWithDuplicate(other) as ImageTask
     }
 
-    override val asPng by lazy { PngCompressionTask(this, noopTaskCache(), stats) }
+    override val asPng: PngCompressionTask by lazy { PngCompressionTask(this, noopTaskCache(), stats) }
 }

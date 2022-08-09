@@ -70,7 +70,7 @@ suspend fun main(args: Array<String>) {
         stats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupJob.join()
         val tasksRun = LongAdder()
-        while (!tasks.isEmpty()) {
+        while (tasks.isNotEmpty()) {
             val tasksToRetry = ConcurrentLinkedDeque<OutputTask>()
             tasks.forEach { task ->
                 val result = withContext(scope.coroutineContext) {
