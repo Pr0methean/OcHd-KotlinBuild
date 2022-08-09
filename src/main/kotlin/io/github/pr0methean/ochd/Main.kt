@@ -21,6 +21,8 @@ private val logger = run {
     LogManager.getRootLogger()
 }
 
+const val CONCURRENT_OUTPUT_TASKS = 4
+@OptIn(DelicateCoroutinesApi::class)
 @Suppress("UnstableApiUsage", "DeferredResultUnused")
 suspend fun main(args: Array<String>) {
     if (args.isEmpty()) {
@@ -31,7 +33,7 @@ suspend fun main(args: Array<String>) {
     val supervisorJob = SupervisorJob()
     val tileSize = args[0].toInt()
     if (tileSize <= 0) throw IllegalArgumentException("tileSize shouldn't be zero or negative but was ${args[0]}")
-    val scope = CoroutineScope(Dispatchers.Default).plus(supervisorJob)
+    val scope = CoroutineScope(newFixedThreadPoolContext(CONCURRENT_OUTPUT_TASKS, "MainCtx")).plus(supervisorJob)
     val svgDirectory = Paths.get("svg").toAbsolutePath().toFile()
     val metadataDirectory = Paths.get("metadata").toAbsolutePath().toFile()
     val out = Paths.get("pngout").toAbsolutePath().toFile()
