@@ -4,7 +4,7 @@ import com.github.benmanes.caffeine.cache.Caffeine
 import java.lang.ref.Reference
 
 class SharedLruTaskCache(capacity: Long) {
-    val lruCache = Caffeine.newBuilder().weakKeys().softValues().maximumSize(capacity).build<TaskCache<*>, Result<*>>()
+    val lruCache = Caffeine.newBuilder().weakKeys().maximumSize(capacity).build<TaskCache<*>, Result<*>>()
     fun <T> newKey(): TaskCache<T> {
         return object : TaskCache<T> {
             @Suppress("UNCHECKED_CAST")

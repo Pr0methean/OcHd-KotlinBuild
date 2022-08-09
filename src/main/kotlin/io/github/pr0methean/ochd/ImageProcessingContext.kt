@@ -30,7 +30,7 @@ class ImageProcessingContext(
     private val taskDeduplicationMap = ConcurrentHashMap<ImageTask, ImageTask>()
     val stats = ImageProcessingStats()
     private val dedupedSvgTasks = ConcurrentHashMap.newKeySet<String>()
-    private val cacheCapacity = 1L.shl(34) / (tileSize * tileSize) // 1024 at 4096x4096
+    private val cacheCapacity = 1L.shl(30) / (tileSize * tileSize) // 64 at 4096x4096
     private val lruCache = SharedLruTaskCache(cacheCapacity)
 
     init {
