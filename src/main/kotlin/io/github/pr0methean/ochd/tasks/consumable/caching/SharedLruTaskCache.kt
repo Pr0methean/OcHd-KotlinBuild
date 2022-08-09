@@ -4,24 +4,23 @@ import com.github.benmanes.caffeine.cache.Caffeine
 import java.lang.ref.Reference
 
 class SharedLruTaskCache(capacity: Long) {
-    val lruCache = Caffeine.newBuilder().weakKeys().maximumSize(capacity).build<Any, Result<*>>()
+    val lruCache = Caffeine.newBuilder().weakKeys().maximumSize(capacity).build<TaskCache<*>, Result<*>>()
     fun <T> newKey(): TaskCache<T> {
-        val key = Object()
         return object : TaskCache<T> {
             @Suppress("UNCHECKED_CAST")
             override fun getNow(): Result<T>? {
-                val result = lruCache.getIfPresent(key) as Result<T>?
-                Reference.reachabilityFence(key)
+                val result = lruCache.getIfPresent(this) as Result<T>?
+                Reference.reachabilityFence(this)
                 return result
             }
 
             override fun set(value: Result<T>?) {
                 if (value != null) {
-                    lruCache.put(key, value)
+                    lruCache.put(this, value)
                 } else {
-                    lruCache.invalidate(key)
+                    lruCache.invalidate(this)
                 }
-                Reference.reachabilityFence(key)
+                Reference.reachabilityFence(this)
             }
 
         }
