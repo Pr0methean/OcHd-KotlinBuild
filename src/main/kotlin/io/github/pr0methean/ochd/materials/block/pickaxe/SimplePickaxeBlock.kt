@@ -165,10 +165,10 @@ enum class SimplePickaxeBlock(
             background(color)
             layer("ringsCentralBullseye", shadow)
             layer("rings", highlight)
-            layer("cross", highlight)
-            layer("crossDotted", shadow)
             layer("borderSolid", shadow)
             layer("borderSolidTopLeft", highlight)
+            layer("cross", highlight)
+            layer("crossDotted", shadow)
         }
     },
     POLISHED_BASALT_SIDE(BASALT_SIDE) {
