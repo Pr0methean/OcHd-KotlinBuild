@@ -21,7 +21,7 @@ private val logger = run {
     LogManager.getRootLogger()
 }
 
-const val CONCURRENT_OUTPUT_TASKS = 4
+const val CONCURRENT_OUTPUT_TASKS = 3
 @OptIn(DelicateCoroutinesApi::class)
 @Suppress("UnstableApiUsage", "DeferredResultUnused")
 suspend fun main(args: Array<String>) {
