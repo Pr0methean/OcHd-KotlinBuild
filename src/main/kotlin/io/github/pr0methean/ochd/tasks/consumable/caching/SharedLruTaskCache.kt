@@ -4,7 +4,7 @@ import com.github.benmanes.caffeine.cache.Caffeine
 import java.lang.ref.Reference
 
 class SharedLruTaskCache(capacity: Long) {
-    val lruCache = Caffeine.newBuilder().weakKeys().softValues().maximumSize(capacity).build<Any, Result<*>>()
+    val lruCache = Caffeine.newBuilder().weakKeys().maximumSize(capacity).build<Any, Result<*>>()
     fun <T> newKey(): TaskCache<T> {
         val key = Object()
         return object : TaskCache<T> {
