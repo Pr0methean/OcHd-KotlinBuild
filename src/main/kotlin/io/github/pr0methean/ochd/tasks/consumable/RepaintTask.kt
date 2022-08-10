@@ -33,6 +33,7 @@ class RepaintTask(
         blend.bottomInput = null
         gfx.setEffect(blend)
     }
+    gfx.isImageSmoothing = false
     gfx.drawImage(baseImage, 0.0, 0.0)
     val snapshot = doJfx("$base@$paint@$alpha") {
         canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)

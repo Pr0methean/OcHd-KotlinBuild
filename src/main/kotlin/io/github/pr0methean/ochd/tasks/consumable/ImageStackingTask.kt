@@ -1,13 +1,12 @@
 package io.github.pr0methean.ochd.tasks.consumable
 
-import io.github.pr0methean.ochd.DEFAULT_SNAPSHOT_PARAMS
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.LayerList
 import io.github.pr0methean.ochd.tasks.consumable.caching.TaskCache
+import javafx.scene.SnapshotParameters
 import javafx.scene.canvas.Canvas
 import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
-import javafx.scene.paint.Color
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.asFlow
@@ -80,19 +79,14 @@ class ImageStackingTask(val layers: LayerList,
                     logger.debug("Awaiting previous layer ({}) if needed", previousLayerName)
                     previousLayerTask?.await()?.getOrThrow()
                     logger.debug("Rendering layer {} ({}) onto the stack", box(index), layerTask)
-
-                    if (index == 0) {
-                        if (layers.background != Color.TRANSPARENT) {
-                            canvasCtx.fill = layers.background
-                            canvasCtx.fillRect(0.0, 0.0, width.toDouble(), height.toDouble())
-                        }
-                    }
                     canvasCtx.drawImage(layerImage, 0.0, 0.0)
 
                     if (index == layersList.lastIndex) {
+                        val params = SnapshotParameters()
+                        params.fill = layers.background
                         val output = WritableImage(width, height)
                         doJfx("Snapshot of $name") {
-                            val snapshot = canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
+                            val snapshot = canvas.snapshot(params, output)
                             if (snapshot.isError) {
                                 throw snapshot.exception
                             }
