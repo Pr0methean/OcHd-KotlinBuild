@@ -2,6 +2,7 @@ package io.github.pr0methean.ochd
 
 import io.github.pr0methean.ochd.tasks.consumable.*
 import io.github.pr0methean.ochd.tasks.consumable.caching.SoftTaskCache
+import io.github.pr0methean.ochd.tasks.consumable.caching.StrongTaskCache
 import io.github.pr0methean.ochd.tasks.consumable.caching.noopTaskCache
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
@@ -40,7 +41,7 @@ class ImageProcessingContext(
                 tileSize,
                 svgDirectory.resolve("$shortName.svg"),
                 stats,
-                SoftTaskCache()
+                if (shortName == "borderSolid") StrongTaskCache() else SoftTaskCache()
             )
         }
         svgTasks = builder.toMap()
