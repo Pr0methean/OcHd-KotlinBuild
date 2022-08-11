@@ -1,6 +1,7 @@
 package io.github.pr0methean.ochd
 
 import com.google.common.collect.ConcurrentHashMultiset
+import com.google.common.collect.HashMultiset
 import com.google.common.collect.Multiset
 import com.sun.glass.ui.Application
 import kotlinx.coroutines.*
@@ -23,6 +24,7 @@ private val logger = LogManager.getLogger("ImageProcessingStats")
 private const val NEED_THREAD_MONITORING = false
 private val NEED_COROUTINE_DEBUG = logger.isDebugEnabled
 private val REPORTING_INTERVAL: Duration = 1.minutes
+private val SVGS_BY_TIMES_IMPORTED = ConcurrentHashMultiset.create<String>()
 val threadMxBean: ThreadMXBean = ManagementFactory.getThreadMXBean()
 var monitoringJob: Job? = null
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -91,11 +93,18 @@ class ImageProcessingStats {
         logger.info("Non-deduplicated tasks:")
         dedupeFailures.log()
         logger.info("")
+        logger.info("Frequently imported SVGs:")
+        val reimportedSvgs = HashMultiset.create(SVGS_BY_TIMES_IMPORTED)
+        reimportedSvgs.retainAll { key -> SVGS_BY_TIMES_IMPORTED.count(key) >= 2 }
+        reimportedSvgs.log()
         logger.info("Retries of failed tasks: {}", retries.sum())
     }
 
     fun onTaskLaunched(typename: String, name: String) {
         logger.info("Launched: {}", name)
+        if (typename == "SvgImportTask") {
+            SVGS_BY_TIMES_IMPORTED.add(name)
+        }
         taskLaunches.add(typename)
     }
 
