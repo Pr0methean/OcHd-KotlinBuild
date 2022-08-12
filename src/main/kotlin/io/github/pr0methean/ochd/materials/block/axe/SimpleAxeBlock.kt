@@ -70,6 +70,14 @@ enum class SimpleAxeBlock: SingleTextureMaterial, ShadowHighlightMaterial, Block
         }
     },
     // Compost textures are part of DirtGroundCover.PODZOL
+    COMPOSTER_BOTTOM {
+        override suspend fun LayerListBuilder.createTextureLayers() {
+            background(shadow)
+            layer("planksTopVertical", color)
+            layer("borderSolidThick", shadow)
+            layer("borderSolid", color)
+        }
+    },
     COMPOSTER_TOP {
         override suspend fun LayerListBuilder.createTextureLayers() {
             layer("borderSolidThick", color)
@@ -80,14 +88,6 @@ enum class SimpleAxeBlock: SingleTextureMaterial, ShadowHighlightMaterial, Block
             background(color)
             layer("stripesThick", shadow)
             layer("borderDotted", highlight)
-        }
-    },
-    COMPOSTER_BOTTOM {
-        override suspend fun LayerListBuilder.createTextureLayers() {
-            background(shadow)
-            layer("planksTopVertical", color)
-            layer("borderSolidThick", shadow)
-            layer("borderSolid", color)
         }
     };
     override val color = OverworldWood.OAK.color

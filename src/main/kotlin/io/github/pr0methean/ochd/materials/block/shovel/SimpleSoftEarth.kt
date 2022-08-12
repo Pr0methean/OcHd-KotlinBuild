@@ -52,14 +52,6 @@ enum class SimpleSoftEarth(
             layer("borderDotted", shadow)
         }
     },
-    PACKED_MUD(c(0x8c674f),c(0x5e4841),c(0xab8661)) {
-        override suspend fun LayerListBuilder.createTextureLayers() {
-            background(color)
-            layer("strokeTopLeftBottomRight2", highlight)
-            layer("strokeBottomLeftTopRight2", shadow)
-            layer("borderDotted", MUD.highlight)
-        }
-    },
     MOSS_BLOCK(c(0x647233),c(0x42552d),c(0x70922d)) {
         override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
@@ -67,21 +59,6 @@ enum class SimpleSoftEarth(
             layer("strokeBottomLeftTopRight4", shadow)
             layer("borderSolid", highlight)
             layer("borderShortDashes", shadow)
-        }
-    },
-    FARMLAND(c(0x966c4a),c(0x593d29),c(0xb9855c)) {
-        override suspend fun LayerListBuilder.createTextureLayers() {
-            background(highlight)
-            layer("bambooThick", color)
-            layer("bambooThinMinusBorder", shadow)
-        }
-    },
-    FARMLAND_MOIST(c(0x552e00),c(0x341900),c(0x6e3c15)) {
-        override suspend fun LayerListBuilder.createTextureLayers() {
-            background(highlight)
-            layer("bambooThick", color)
-            layer("bambooThinMinusBorder", shadow)
-            layer("dots0", OreBase.STONE.shadow)
         }
     },
     SOUL_SAND(c(0x5b4538), c(0x352922), c(0x796152)) {
@@ -102,6 +79,29 @@ enum class SimpleSoftEarth(
             layer("soulHeads", color)
             layer("soulTopLeftFace", highlight)
             layer("soulBottomRightFace", shadow)
+        }
+    },
+    PACKED_MUD(c(0x8c674f),c(0x5e4841),c(0xab8661)) {
+        override suspend fun LayerListBuilder.createTextureLayers() {
+            background(color)
+            layer("strokeTopLeftBottomRight2", highlight)
+            layer("strokeBottomLeftTopRight2", shadow)
+            layer("borderDotted", MUD.highlight)
+        }
+    },
+    FARMLAND(c(0x966c4a),c(0x593d29),c(0xb9855c)) {
+        override suspend fun LayerListBuilder.createTextureLayers() {
+            background(highlight)
+            layer("bambooThick", color)
+            layer("bambooThinMinusBorder", shadow)
+        }
+    },
+    FARMLAND_MOIST(c(0x552e00),c(0x341900),c(0x6e3c15)) {
+        override suspend fun LayerListBuilder.createTextureLayers() {
+            background(highlight)
+            layer("bambooThick", color)
+            layer("bambooThinMinusBorder", shadow)
+            layer("dots0", OreBase.STONE.shadow)
         }
     },
     DIRT(c(0x966c4a), c(0x593d29), c(0xb9855c)) {

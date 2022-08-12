@@ -21,15 +21,6 @@ enum class SimpleHoeBlock(
             layer("borderSolid", highlight)
             layer("checksSmall", shadow)
             layer("shroomlightOn", highlight)
-            /*
-            shroomlight_h='ffffb4'
-shroomlight='ffac6d'
-shroomlight_s='d75100'
-            push borderSolid ${shroomlight_h} sl0 ${shroomlight}
-push checksSmall ${shroomlight_s} sl1
-push shroomlightOn ${shroomlight_h} sl2
-out_stack block/shroomlight
-             */
         }
     },
     TARGET_SIDE(c(0xffd7ba), Ore.REDSTONE.shadow, WHITE) {
