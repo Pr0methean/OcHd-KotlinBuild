@@ -5,6 +5,8 @@ package io.github.pr0methean.ochd.tasks.consumable.caching
  * trigger a new computation if there isn't already one in progress.
  */
 object NoopTaskCache: TaskCache<Any> {
+    override fun enable() {} // No-op.
+
     override fun getNow(): Result<Nothing>? = null
 
     override fun set(value: Result<Any>?) {

@@ -15,4 +15,6 @@ interface Task<T>: StringBuilderFormattable {
 
     suspend fun clearFailure()
     suspend fun mergeWithDuplicate(other: Task<T>): Task<T>
+
+    fun enableCaching()
 }

@@ -1,10 +1,11 @@
 package io.github.pr0methean.ochd.tasks.consumable.caching
 
-class StrongTaskCache<T>: TaskCache<T> {
+@Suppress("unused")
+class StrongTaskCache<T>: AbstractTaskCache<T>() {
     @Volatile var result: Result<T>? = null
     override fun getNow(): Result<T>? = result
 
-    override fun set(value: Result<T>?) {
+    override fun enabledSet(value: Result<T>?) {
         result = value
     }
 }

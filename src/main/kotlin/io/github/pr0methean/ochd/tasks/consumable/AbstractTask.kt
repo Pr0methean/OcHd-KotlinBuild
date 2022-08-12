@@ -188,6 +188,8 @@ abstract class AbstractTask<T>(override val name: String, private val cache: Tas
         logger.debug("Unlocking {} after clearing failure", this)
     }
 
+    override fun enableCaching() = cache.enable()
+
     @Suppress("DeferredResultUnused")
     override suspend fun <R> consumeAsync(block: suspend (Result<T>) -> R): Deferred<R>
             = createCoroutineScope(-1).async {

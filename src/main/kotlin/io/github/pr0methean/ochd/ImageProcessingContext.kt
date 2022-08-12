@@ -1,5 +1,6 @@
 package io.github.pr0methean.ochd
 
+import com.google.common.collect.ConcurrentHashMultiset
 import io.github.pr0methean.ochd.tasks.consumable.*
 import io.github.pr0methean.ochd.tasks.consumable.caching.SoftTaskCache
 import io.github.pr0methean.ochd.tasks.consumable.caching.noopTaskCache
@@ -29,7 +30,7 @@ class ImageProcessingContext(
     private val svgTasks: Map<String, SvgImportTask>
     private val taskDeduplicationMap = ConcurrentHashMap<ImageTask, ImageTask>()
     val stats = ImageProcessingStats()
-    private val dedupedSvgTasks = ConcurrentHashMap.newKeySet<String>()
+    private val dedupedSvgTasks = ConcurrentHashMultiset.create<String>()
 
     init {
         val builder = mutableMapOf<String, SvgImportTask>()
@@ -49,15 +50,8 @@ class ImageProcessingContext(
     suspend fun deduplicate(task: Task<Image>): ImageTask {
         if (task is SvgImportTask) {
             // svgTasks is populated eagerly
-            val match = svgTasks[task.name] ?: throw RuntimeException("Missing SvgImportTask for $name")
-            if (match === task) {
-                if (dedupedSvgTasks.add(task.name)) {
-                    stats.dedupeFailures.add("SvgImportTask")
-                }
-            } else {
-                stats.dedupeSuccesses.add("SvgImportTask")
-            }
-            return match
+            val name = task.name
+            return findSvgTask(name)
         }
         if (task is RepaintTask
             && (task.paint == null || task.paint == Color.BLACK)
@@ -84,11 +78,25 @@ class ImageProcessingContext(
             stats.dedupeFailures.add(className)
             task
         }
+        if (deduped !== task) {
+            deduped.enableCaching()
+        }
         return deduped.mergeWithDuplicate(task)
     }
 
+    private fun findSvgTask(name: String): SvgImportTask {
+        val task = svgTasks[name] ?: throw RuntimeException("Missing SvgImportTask for $name")
+        if (dedupedSvgTasks.add(name, 1) > 0) {
+            task.enableCaching()
+            stats.dedupeSuccesses.add("SvgImportTask")
+        } else {
+            stats.dedupeFailures.add("SvgImportTask")
+        }
+        return task
+    }
+
     suspend fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): ImageTask
-            = layer(svgTasks[name]?.unpacked ?: throw IllegalArgumentException("No SVG task called $name"), paint, alpha)
+            = layer(findSvgTask(name), paint, alpha)
 
     suspend fun layer(source: Task<Image>, paint: Paint? = null, alpha: Double = 1.0): ImageTask {
         return deduplicate(RepaintTask(deduplicate(source), paint, alpha, SoftTaskCache(), stats))
