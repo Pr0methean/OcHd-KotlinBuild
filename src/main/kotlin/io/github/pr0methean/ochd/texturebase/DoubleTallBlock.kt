@@ -14,7 +14,7 @@ interface DoubleTallBlock: Material {
     val name: String
 
     override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
-        emit(ctx.out("block/${name}_bottom", ctx.stack { createBottomLayers() }))
-        emit(ctx.out("block/${name}_top", ctx.stack { createTopLayers() }))
+        emit(ctx.out(ctx.stack { createBottomLayers() }, "block/${name}_bottom"))
+        emit(ctx.out(ctx.stack { createTopLayers() }, "block/${name}_top"))
     }
 }

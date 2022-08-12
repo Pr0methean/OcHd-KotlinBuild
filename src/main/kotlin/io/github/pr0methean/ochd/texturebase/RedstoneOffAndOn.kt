@@ -9,6 +9,6 @@ import kotlinx.coroutines.flow.FlowCollector
 
 suspend fun FlowCollector<OutputTask>.redstoneOffAndOn(ctx: ImageProcessingContext, baseName: String,
                                                        layers: suspend LayerListBuilder.(redstoneStateColor: Color) -> Unit) {
-    emit(ctx.out(baseName) {layers(Color.BLACK)})
-    emit(ctx.out(baseName + "_on") {layers(Ore.REDSTONE.highlight)})
+    emit(ctx.out({layers(Color.BLACK)}, baseName))
+    emit(ctx.out({layers(Ore.REDSTONE.highlight)}, baseName + "_on"))
 }

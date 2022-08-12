@@ -35,16 +35,16 @@ sealed interface Wood: ShadowHighlightMaterial {
     suspend fun LayerListBuilder.sapling()
 
     override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
-        emit(ctx.out("block/${name}_${logSynonym}", ctx.stack { bark() }))
-        emit(ctx.out("block/stripped_${name}_${logSynonym}", ctx.stack { strippedLogSide() }))
-        emit(ctx.out("block/stripped_${name}_${logSynonym}_top", ctx.stack { strippedLogTop() }))
-        emit(ctx.out("block/${name}_${logSynonym}_top", ctx.stack { logTop() }))
-        emit(ctx.out("block/${name}_trapdoor", ctx.stack { trapdoor() }))
-        emit(ctx.out("block/${name}_door_top", ctx.stack { doorTop() }))
-        emit(ctx.out("block/${name}_door_bottom", ctx.stack { doorBottom() }))
-        emit(ctx.out("block/${name}_${leavesSynonym}", ctx.stack { leaves() }))
-        emit(ctx.out("block/${name}_${saplingSynonym}", ctx.stack { sapling() }))
-        emit(ctx.out("block/${name}_planks", ctx.stack { planks() }))
+        emit(ctx.out(ctx.stack { bark() }, "block/${name}_${logSynonym}"))
+        emit(ctx.out(ctx.stack { strippedLogSide() }, "block/stripped_${name}_${logSynonym}"))
+        emit(ctx.out(ctx.stack { strippedLogTop() }, "block/stripped_${name}_${logSynonym}_top"))
+        emit(ctx.out(ctx.stack { logTop() }, "block/${name}_${logSynonym}_top"))
+        emit(ctx.out(ctx.stack { trapdoor() }, "block/${name}_trapdoor"))
+        emit(ctx.out(ctx.stack { doorTop() }, "block/${name}_door_top"))
+        emit(ctx.out(ctx.stack { doorBottom() }, "block/${name}_door_bottom"))
+        emit(ctx.out(ctx.stack { leaves() }, "block/${name}_${leavesSynonym}"))
+        emit(ctx.out(ctx.stack { sapling() }, "block/${name}_${saplingSynonym}"))
+        emit(ctx.out(ctx.stack { planks() }, "block/${name}_planks"))
     }
 
     suspend fun LayerListBuilder.planks() {

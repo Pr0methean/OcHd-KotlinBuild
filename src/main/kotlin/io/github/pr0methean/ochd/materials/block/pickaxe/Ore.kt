@@ -88,19 +88,19 @@ enum class Ore(
         substrates = NETHER
     ) {
         override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
-            emit(ctx.out("item/quartz") { ingot() })
-            emit(ctx.out("block/nether_quartz_ore", ctx.stack {
+            emit(ctx.out({ ingot() }, "item/quartz"))
+            emit(ctx.out(ctx.stack {
                     copy(OreBase.NETHERRACK)
                 copy {item()}
-                }))
-            emit(ctx.out("block/quartz_block_top") {
+                }, "block/nether_quartz_ore"))
+            emit(ctx.out({
                 background(color)
                 layer("streaks", highlight)
                 layer("borderSolid", shadow)
                 layer("borderSolidTopLeft", highlight)
-            })
-            emit(ctx.out("block/quartz_block_bottom") {rawBlock()})
-            emit(ctx.out("block/quartz_block_side") {block()})
+            }, "block/quartz_block_top"))
+            emit(ctx.out({rawBlock()}, "block/quartz_block_bottom"))
+            emit(ctx.out({block()}, "block/quartz_block_side"))
         }
 
     },
@@ -196,15 +196,15 @@ enum class Ore(
 
     override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
         substrates.forEach { oreBase ->
-            emit(ctx.out("block/${oreBase.orePrefix}${name}_ore", oreBlock(ctx, oreBase)))
+            emit(ctx.out(oreBlock(ctx, oreBase), "block/${oreBase.orePrefix}${name}_ore"))
         }
-        emit(ctx.out("block/${name}_block", ctx.stack { block() }))
+        emit(ctx.out(ctx.stack { block() }, "block/${name}_block"))
         if (needsRefining) {
-            emit(ctx.out("block/raw_${name}_block", ctx.stack { rawBlock() }))
-            emit(ctx.out("item/raw_${name}", ctx.stack { rawOre() }))
-            emit(ctx.out("item/${name}_ingot", ctx.stack { ingot() }))
+            emit(ctx.out(ctx.stack { rawBlock() }, "block/raw_${name}_block"))
+            emit(ctx.out(ctx.stack { rawOre() }, "item/raw_${name}"))
+            emit(ctx.out(ctx.stack { ingot() }, "item/${name}_ingot"))
         } else {
-            emit(ctx.out("item/${itemNameOverride ?: name}", ctx.stack {itemForOutput()}))
+            emit(ctx.out(ctx.stack {itemForOutput()}, "item/${itemNameOverride ?: name}"))
         }
     }
 

@@ -1,13 +1,17 @@
 package io.github.pr0methean.ochd.materials.block.barehand
 
+import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.materials.block.axe.GiantMushroom
+import io.github.pr0methean.ochd.tasks.consumable.OutputTask
 import io.github.pr0methean.ochd.texturebase.Block
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
 import javafx.scene.paint.Color.WHITE
 import javafx.scene.paint.Paint
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 
 @Suppress("unused")
 enum class SimpleBareHandBlock(
@@ -40,14 +44,16 @@ enum class SimpleBareHandBlock(
             layer("redstoneDot", color)
         }
     },
-    REDSTONE_DUST_LINE0(WHITE, WHITE, WHITE) {
+    REDSTONE_DUST_LINE(WHITE, WHITE, WHITE) {
         override suspend fun LayerListBuilder.createTextureLayers() {
             layer("redstoneLine", color)
         }
-    },
-    REDSTONE_DUST_LINE1(WHITE, WHITE, WHITE) {
-        override suspend fun LayerListBuilder.createTextureLayers() = copy(REDSTONE_DUST_LINE0)
-    }
-    ;
+
+        override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> {
+            val layers = ctx.stack {createTextureLayers()}
+            return flowOf(ctx.out(layers, "block/redstone_dust_line0", "block/redstone_dust_line1"))
+        }
+    };
+    
     constructor(base: ShadowHighlightMaterial) : this(base.color, base.shadow, base.highlight)
 }

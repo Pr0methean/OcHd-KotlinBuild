@@ -10,14 +10,14 @@ import kotlinx.coroutines.flow.flow
 
 object Rails: Material {
     override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
-        emit(ctx.out("block/rail") {
+        emit(ctx.out({
             layer("railTies", OverworldWood.OAK.color)
             layer("rail", Ore.IRON.refinedShadow)
-        })
-        emit(ctx.out("block/rail_corner") {
+        }, "block/rail"))
+        emit(ctx.out({
             layer("railTieCorner", OverworldWood.OAK.color)
             layer("railCorner", Ore.IRON.refinedShadow)
-        })
+        }, "block/rail_corner"))
         redstoneOffAndOn(ctx, "block/powered_rail") { stateColor ->
             layer("railTies", OverworldWood.OAK.shadow)
             layer("thirdRail", stateColor)

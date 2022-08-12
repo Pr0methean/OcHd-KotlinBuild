@@ -20,6 +20,6 @@ interface SingleTextureMaterial: Material {
         dest.copy(LayerListBuilder(dest.ctx).apply {createTextureLayers()}.build())
     }
     override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flowOf(
-        ctx.out("$directory/${nameOverride ?: name}", ctx.stack { createTextureLayers() })
+        ctx.out(ctx.stack { createTextureLayers() }, "$directory/${nameOverride ?: name}")
     )
 }

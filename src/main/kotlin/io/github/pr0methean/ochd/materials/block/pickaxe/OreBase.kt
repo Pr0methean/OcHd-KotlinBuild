@@ -33,18 +33,18 @@ enum class OreBase(
 
         override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
             val baseTexture = ctx.stack {createTextureLayers()}
-            emit(ctx.out("block/deepslate", baseTexture))
-            emit(ctx.out("block/deepslate_bricks", ctx.stack {
+            emit(ctx.out(baseTexture, "block/deepslate"))
+            emit(ctx.out(ctx.stack {
                 copy(baseTexture)
                 layer("bricksSmall", shadow)
                 layer("borderDotted", highlight)
                 layer("borderDottedBottomRight", shadow)
-            }))
-            emit(ctx.out("block/deepslate_top", ctx.stack {
+            }, "block/deepslate_bricks"))
+            emit(ctx.out(ctx.stack {
                 copy(baseTexture)
                 layer("cross", shadow)
                 layer("borderSolid", highlight)
-            }))
+            }, "block/deepslate_top"))
         }
     },
     NETHERRACK(c(0x723232), c(0x411616), c(0x854242), "nether_") {

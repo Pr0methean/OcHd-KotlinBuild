@@ -29,7 +29,7 @@ class ImageProcessingContext(
     override fun toString(): String = name
     private val svgTasks: Map<String, SvgImportTask>
     private val taskDeduplicationMap = ConcurrentHashMap<ImageTask, ImageTask>()
-    val stats = ImageProcessingStats()
+    val stats: ImageProcessingStats = ImageProcessingStats()
     private val dedupedSvgTasks = ConcurrentHashMultiset.create<String>()
 
     init {
@@ -113,18 +113,27 @@ class ImageProcessingContext(
         return deduplicate(AnimationTask(frames.asFlow().map(::deduplicate).toList(), tileSize, tileSize, frames.toString(), noopTaskCache(), stats))
     }
 
-    suspend fun out(name: String, source: ImageTask): OutputTask {
-        val lowercaseName = name.lowercase(Locale.ENGLISH)
-        return out(lowercaseName, outTextureRoot.resolve("$lowercaseName.png"), source)
+    suspend fun out(source: ImageTask, vararg name: String): OutputTask {
+        val lowercaseName = name.map {it.lowercase(Locale.ENGLISH)}
+        return out(lowercaseName[0], source, lowercaseName.map{outTextureRoot.resolve("$it.png")})
     }
 
     suspend fun out(
         lowercaseName: String,
-        destination: File,
-        source: ImageTask
+        source: ImageTask,
+        vararg destinations: File
     ): OutputTask {
-        return OutputTask(deduplicate(source).asPng, lowercaseName, destination, stats)
+        return OutputTask(deduplicate(source).asPng, lowercaseName, stats, destinations.asList())
     }
 
-    suspend fun out(name: String, source: suspend LayerListBuilder.() -> Unit) = out(name, stack {source()})
+    suspend fun out(
+        lowercaseName: String,
+        source: ImageTask,
+        destination: List<File>
+    ): OutputTask {
+        return OutputTask(deduplicate(source).asPng, lowercaseName, stats, destination)
+    }
+
+    suspend fun out(source: suspend LayerListBuilder.() -> Unit, vararg names: String): OutputTask
+            = out(stack {source()}, *names)
 }

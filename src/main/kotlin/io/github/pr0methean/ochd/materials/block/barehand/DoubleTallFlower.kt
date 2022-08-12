@@ -30,11 +30,11 @@ enum class DoubleTallFlower: DoubleTallBlock {
         }
 
         override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = merge(super.outputTasks(ctx), flow {
-            emit(ctx.out("block/sunflower_back", ctx.layer("sunflowerPetals")))
-            emit(ctx.out("block/sunflower_front", ctx.stack {
+            emit(ctx.out(ctx.layer("sunflowerPetals"), "block/sunflower_back"))
+            emit(ctx.out(ctx.stack {
                 layer("sunflowerPetals", Color.YELLOW)
                 layer("sunflowerPistil")
-            }))
+            }, "block/sunflower_front"))
         })
     };
 }

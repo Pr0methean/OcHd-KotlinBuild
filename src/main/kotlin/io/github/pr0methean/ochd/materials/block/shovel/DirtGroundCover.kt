@@ -49,10 +49,10 @@ enum class DirtGroundCover(
         }
 
         override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask>
-                = merge(super.outputTasks(ctx), flowOf(ctx.out("block/grass_block_side_overlay", ctx.stack {
+                = merge(super.outputTasks(ctx), flowOf(ctx.out(ctx.stack {
             layer("topPart", color)
             layer("veesTop", shadow)
-        })))
+        }, "block/grass_block_side_overlay")))
     },
     PODZOL(c(0x6a4418),c(0x4a3018),c(0x8b5920)) {
         override suspend fun LayerListBuilder.createCoverSideLayers() {
@@ -68,16 +68,15 @@ enum class DirtGroundCover(
 
         override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
             val top = ctx.stack { createTopLayers() }
-            emit(ctx.out("block/podzol_top", top))
-            emit(ctx.out("block/composter_compost", top))
-            emit(ctx.out("block/composter_ready", ctx.stack {
+            emit(ctx.out(top, "block/podzol_top", "block/composter_compost"))
+            emit(ctx.out(ctx.stack {
                 copy(top)
                 layer("bonemealSmallNoBorder")
-            }))
-            emit(ctx.out("block/podzol_side", ctx.stack {
+            }, "block/composter_ready"))
+            emit(ctx.out(ctx.stack {
                 copy(base)
                 createCoverSideLayers()
-            }))
+            }, "block/podzol_side"))
         }
     },
     MYCELIUM(c(0x6a656a),c(0x5a5952),c(0x7b6d73)) {

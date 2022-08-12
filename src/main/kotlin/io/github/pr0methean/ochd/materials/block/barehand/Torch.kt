@@ -37,22 +37,22 @@ out_stack block/redstone_torch
             layer("torchBase", OverworldWood.OAK.highlight)
             layer("torchShadow", OverworldWood.OAK.shadow)
         }
-        emit(ctx.out("block/torch", ctx.stack {
+        emit(ctx.out(ctx.stack {
             copy(torchBase)
             layer("torchFlameSmall")
-        }))
-        emit(ctx.out("block/soul_torch", ctx.stack {
+        }, "block/torch"))
+        emit(ctx.out(ctx.stack {
             copy(torchBase)
             layer("soulTorchFlameSmall")
-        }))
-        emit(ctx.out("block/redstone_torch_off", ctx.stack {
+        }, "block/soul_torch"))
+        emit(ctx.out(ctx.stack {
             copy(torchBase)
             layer("torchRedstoneHead")
-        }))
-        emit(ctx.out("block/redstone_torch", ctx.stack {
+        }, "block/redstone_torch_off"))
+        emit(ctx.out(ctx.stack {
             copy(torchBase)
             layer("torchRedstoneHead", Ore.REDSTONE.highlight)
             layer("torchRedstoneHeadShadow", Ore.REDSTONE.shadow)
-        }))
+        }, "block/redstone_torch"))
     }
 }

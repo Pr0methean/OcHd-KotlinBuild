@@ -49,18 +49,18 @@ push bigRingsTopLeftBottomRight ${andesite_s} a2*/
         }
         override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
 
-            emit(ctx.out("block/blackstone", ctx.stack { createTextureLayersBase() }))
+            emit(ctx.out(ctx.stack { createTextureLayersBase() }, "block/blackstone"))
             val polishedTextureTask = ctx.stack { createPolishedTexture() }
-            emit(ctx.out("block/polished_blackstone", polishedTextureTask))
-            emit(ctx.out("block/gilded_blackstone", ctx.stack {
+            emit(ctx.out(polishedTextureTask, "block/polished_blackstone"))
+            emit(ctx.out(ctx.stack {
                 copy(polishedTextureTask)
                 layer("bigRingsBottomLeftTopRight", color)
-            }))
-            emit(ctx.out("block/blackstone_top", ctx.stack {
+            }, "block/gilded_blackstone"))
+            emit(ctx.out(ctx.stack {
                 background(shadow)
                 layer("bigRingsBottomLeftTopRight", color)
                 layer("bigRingsTopLeftBottomRight", highlight)
-            }))
+            }, "block/blackstone_top"))
         }
     };
 
@@ -71,8 +71,8 @@ push bigRingsTopLeftBottomRight ${andesite_s} a2*/
     }
 
     override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
-        emit(ctx.out("block/$name", ctx.stack {createTextureLayersBase()}))
-        emit(ctx.out("block/polished_$name", ctx.stack {createPolishedTexture()}))
+        emit(ctx.out(ctx.stack {createTextureLayersBase()}, "block/$name"))
+        emit(ctx.out(ctx.stack {createPolishedTexture()}, "block/polished_$name"))
     }
 
     internal suspend fun LayerListBuilder.createPolishedTexture() {

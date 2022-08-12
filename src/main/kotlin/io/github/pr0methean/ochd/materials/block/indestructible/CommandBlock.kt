@@ -80,7 +80,7 @@ enum class CommandBlock(
                 copy(sideBase)
                 sideType.run {createFrame(index)}
             }}.asList()
-            emit(ctx.out("block/${name}_${sideType}", ctx.animate(frames)))
+            emit(ctx.out(ctx.animate(frames), "block/${name}_${sideType}"))
         }
     }
 }

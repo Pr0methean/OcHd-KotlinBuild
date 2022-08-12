@@ -12,17 +12,17 @@ object BoneBlock: Material {
     val shadow = c(0xc3bfa1)
     val highlight = c(0xe9e6d4)
     override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
-        emit(ctx.out("block/bone_block_top") {
+        emit(ctx.out({
             background(shadow)
             layer("borderSolid", highlight)
             layer("bonesXor", highlight)
-        })
-        emit(ctx.out("block/bone_block_side") {
+        }, "block/bone_block_top"))
+        emit(ctx.out({
             background(color)
             layer("borderSolid", shadow)
             layer("borderDotted", highlight)
             layer("boneBottomLeftTopRight", shadow)
             layer("boneTopLeftBottomRight", highlight)
-        })
+        }, "block/bone_block_side"))
     }
 }

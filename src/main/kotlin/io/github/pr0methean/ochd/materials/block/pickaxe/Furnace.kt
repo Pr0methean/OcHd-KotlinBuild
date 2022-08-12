@@ -14,14 +14,14 @@ object Furnace: Material {
             layer("bottomHalf", OreBase.STONE.highlight)
             layer("borderSolid", OreBase.stoneExtremeShadow)
         }
-        emit(ctx.out("block/furnace_side", furnaceSide))
-        emit(ctx.out("block/furnace_front") {
+        emit(ctx.out(furnaceSide, "block/furnace_side"))
+        emit(ctx.out({
             copy(furnaceSide)
             layer("furnaceFront", Color.BLACK)
-        })
-        emit(ctx.out("block/furnace_front_on") {
+        }, "block/furnace_front"))
+        emit(ctx.out({
             copy(furnaceSide)
             layer("furnaceFrontLit")
-        })
+        }, "block/furnace_front_on"))
     }
 }

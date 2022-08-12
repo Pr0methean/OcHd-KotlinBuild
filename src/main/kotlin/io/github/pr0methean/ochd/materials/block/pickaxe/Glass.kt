@@ -11,16 +11,16 @@ import kotlinx.coroutines.flow.flow
 
 object Glass: Material {
     override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
-        emit(ctx.out("block/glass_pane_top", ctx.layer("paneTop", c(0xa8d0d9))))
-        emit(ctx.out("block/glass", ctx.stack {
+        emit(ctx.out(ctx.layer("paneTop", c(0xa8d0d9)), "block/glass_pane_top"))
+        emit(ctx.out(ctx.stack {
             layer("borderSolid", Color.WHITE)
             layer("borderSolidBottomRight", DYES["gray"])
             layer("streaks", Color.WHITE)
-        }))
-        emit(ctx.out("block/tinted_glass", ctx.stack {
+        }, "block/glass"))
+        emit(ctx.out(ctx.stack {
             background(Color.BLACK,0.25)
             layer("borderSolid", Color.WHITE, 0.25)
             layer("streaks", Color.WHITE, 0.25)
-        }))
+        }, "block/tinted_glass"))
     }
 }

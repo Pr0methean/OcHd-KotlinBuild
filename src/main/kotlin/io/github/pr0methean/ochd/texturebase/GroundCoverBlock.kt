@@ -18,10 +18,10 @@ interface GroundCoverBlock: Material {
     suspend fun LayerListBuilder.createTopLayers()
 
     override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
-        emit(ctx.out("block/${nameOverrideTop ?: "${name}_top"}", ctx.stack { createTopLayers() }))
-        emit(ctx.out("block/${nameOverrideSide ?: "${name}_side"}", ctx.stack {
+        emit(ctx.out(ctx.stack { createTopLayers() }, "block/${nameOverrideTop ?: "${name}_top"}"))
+        emit(ctx.out(ctx.stack {
             copy(base)
             createCoverSideLayers()
-        }))
+        }, "block/${nameOverrideSide ?: "${name}_side"}"))
     }
 }

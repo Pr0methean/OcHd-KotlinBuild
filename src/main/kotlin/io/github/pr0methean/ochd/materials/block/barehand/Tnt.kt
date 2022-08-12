@@ -31,17 +31,17 @@ object Tnt: ShadowHighlightMaterial {
             background(Color.BLACK)
             layer("tntSticksEnd", color)
         }
-        emit(ctx.out("block/tnt_side", ctx.stack {
+        emit(ctx.out(ctx.stack {
             background(shadow)
             layer("tntSticksSide", color)
             layer("borderDotted", highlight)
             layer("tntStripe", Color.WHITE)
             layer("tntSign", Color.BLACK)
-        }))
-        emit(ctx.out("block/tnt_bottom", tntBottom))
-        emit(ctx.out("block/tnt_top", ctx.stack {
+        }, "block/tnt_side"))
+        emit(ctx.out(tntBottom, "block/tnt_bottom"))
+        emit(ctx.out(ctx.stack {
             copy(tntBottom)
             layer("tntFuzes", Color.BLACK)
-        }))
+        }, "block/tnt_top"))
     }
 }

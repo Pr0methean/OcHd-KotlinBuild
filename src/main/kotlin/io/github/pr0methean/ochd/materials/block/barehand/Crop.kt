@@ -64,7 +64,7 @@ enum class Crop(private val numStages: Int, val color: Paint): Material {
 
     override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
         for (stage in 0 until numStages) {
-            emit(ctx.out("block/${name}_stage${stage}", ctx.stack {createTextureForStage(stage)}))
+            emit(ctx.out(ctx.stack {createTextureForStage(stage)}, "block/${name}_stage${stage}"))
         }
     }
 

@@ -45,7 +45,7 @@ enum class CopperOxide(
         layer("cutInQuarters2", highlight)
     }
     override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
-        emit(ctx.out("block/${name}_copper") { uncut() })
-        emit(ctx.out("block/cut_${name}_copper") { cut() })
+        emit(ctx.out({ uncut() }, "block/${name}_copper"))
+        emit(ctx.out({ cut() }, "block/cut_${name}_copper"))
     }
 }

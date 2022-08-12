@@ -15,7 +15,7 @@ abstract class DyedBlock(val name: String): Material {
         DYES.forEach {
             val dyeName = it.key
             val color = it.value
-            emit(ctx.out("block/${dyeName}_$name", ctx.stack {createTextureLayers(color)}))
+            emit(ctx.out(ctx.stack {createTextureLayers(color)}, "block/${dyeName}_$name"))
         }
     }
 }
