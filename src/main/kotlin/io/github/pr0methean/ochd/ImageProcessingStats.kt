@@ -29,6 +29,7 @@ private val NEED_COROUTINE_DEBUG = logger.isDebugEnabled
 private val REPORTING_INTERVAL: Duration = 1.minutes
 val threadMxBean: ThreadMXBean = ManagementFactory.getThreadMXBean()
 var monitoringJob: Job? = null
+
 @OptIn(ExperimentalCoroutinesApi::class)
 @Suppress("DeferredResultUnused")
 fun startMonitoring(stats: ImageProcessingStats, scope: CoroutineScope) {
