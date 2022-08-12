@@ -20,6 +20,9 @@ import kotlin.time.Duration.Companion.minutes
 private fun Multiset<*>.log() {
     toSet().forEach { logger.info("{}: {}", it, count(it)) }
 }
+private fun <T> Multiset<T>.logIf(predicate: (T) -> Boolean) {
+    toSet().forEach { if (predicate(it)) {logger.info("{}: {}", it, count(it))} }
+}
 private val logger = LogManager.getLogger("ImageProcessingStats")
 private const val NEED_THREAD_MONITORING = false
 private val NEED_COROUTINE_DEBUG = logger.isDebugEnabled
@@ -96,8 +99,7 @@ class ImageProcessingStats {
         logger.info("")
         logger.info("Frequently imported SVGs:")
         val reimportedSvgs = Multisets.copyHighestCountFirst(SVGS_BY_TIMES_IMPORTED)
-        reimportedSvgs.retainAll { key -> SVGS_BY_TIMES_IMPORTED.count(key) >= 2 }
-        reimportedSvgs.log()
+        reimportedSvgs.logIf {reimportedSvgs.count(it) >= 2}
         logger.info("")
         logger.info("Retries of failed tasks: {}", retries.sum())
     }
