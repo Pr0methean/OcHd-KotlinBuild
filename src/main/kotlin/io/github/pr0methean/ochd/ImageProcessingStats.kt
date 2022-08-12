@@ -1,8 +1,8 @@
 package io.github.pr0methean.ochd
 
 import com.google.common.collect.ConcurrentHashMultiset
-import com.google.common.collect.HashMultiset
 import com.google.common.collect.Multiset
+import com.google.common.collect.Multisets
 import com.sun.glass.ui.Application
 import kotlinx.coroutines.*
 import kotlinx.coroutines.debug.DebugProbes
@@ -79,6 +79,7 @@ class ImageProcessingStats {
     val dedupeFailures: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     private val retries = LongAdder()
 
+    @Suppress("UnstableApiUsage")
     fun log() {
         logger.info("")
         logger.info("Task launches:")
@@ -94,9 +95,10 @@ class ImageProcessingStats {
         dedupeFailures.log()
         logger.info("")
         logger.info("Frequently imported SVGs:")
-        val reimportedSvgs = HashMultiset.create(SVGS_BY_TIMES_IMPORTED)
+        val reimportedSvgs = Multisets.copyHighestCountFirst(SVGS_BY_TIMES_IMPORTED)
         reimportedSvgs.retainAll { key -> SVGS_BY_TIMES_IMPORTED.count(key) >= 2 }
         reimportedSvgs.log()
+        logger.info("")
         logger.info("Retries of failed tasks: {}", retries.sum())
     }
 
