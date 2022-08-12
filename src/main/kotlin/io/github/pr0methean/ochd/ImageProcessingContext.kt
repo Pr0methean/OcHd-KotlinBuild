@@ -2,7 +2,6 @@ package io.github.pr0methean.ochd
 
 import io.github.pr0methean.ochd.tasks.consumable.*
 import io.github.pr0methean.ochd.tasks.consumable.caching.SoftTaskCache
-import io.github.pr0methean.ochd.tasks.consumable.caching.StrongTaskCache
 import io.github.pr0methean.ochd.tasks.consumable.caching.noopTaskCache
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
@@ -19,22 +18,6 @@ fun color(web: String): Color = Color.web(web)
 
 fun color(web: String, alpha: Double): Color = Color.web(web, alpha)
 
-/** SvgImportTask instances that were rerun more often than any non-SvgImportTask Task when they were softly cached. */
-private val SUPER_COMMON_SVG_TASKS = setOf(
-    "borderSolid",
-    "borderDotted",
-    "borderShortDashes",
-    "diagonalChecksBottomLeftTopRight",
-    "diagonalChecksTopLeftBottomRight",
-    "diagonalOutlineChecksBottomLeftTopRight",
-    "diagonalOutlineChecksTopLeftBottomRight",
-    "waves",
-    "borderSolidTopLeft",
-    "ringsCentralBullseye",
-    "checksLarge",
-    "checksSmall",
-    "rings",
-    "streaks")
 private val logger = LogManager.getLogger("ImageProcessingContext")
 class ImageProcessingContext(
     val name: String,
@@ -57,7 +40,7 @@ class ImageProcessingContext(
                 tileSize,
                 svgDirectory.resolve("$shortName.svg"),
                 stats,
-                if (SUPER_COMMON_SVG_TASKS.contains(shortName)) StrongTaskCache() else SoftTaskCache()
+                SoftTaskCache()
             )
         }
         svgTasks = builder.toMap()
