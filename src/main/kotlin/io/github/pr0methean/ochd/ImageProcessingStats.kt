@@ -27,7 +27,6 @@ private val logger = LogManager.getLogger("ImageProcessingStats")
 private const val NEED_THREAD_MONITORING = false
 private val NEED_COROUTINE_DEBUG = logger.isDebugEnabled
 private val REPORTING_INTERVAL: Duration = 1.minutes
-private val SVGS_BY_TIMES_IMPORTED = ConcurrentHashMultiset.create<String>()
 val threadMxBean: ThreadMXBean = ManagementFactory.getThreadMXBean()
 var monitoringJob: Job? = null
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -81,6 +80,7 @@ class ImageProcessingStats {
     val dedupeSuccesses: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val dedupeFailures: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     private val retries = LongAdder()
+    private val tasksByRunCount = ConcurrentHashMultiset.create<Pair<String, String>>()
 
     @Suppress("UnstableApiUsage")
     fun log() {
@@ -97,18 +97,16 @@ class ImageProcessingStats {
         logger.info("Non-deduplicated tasks:")
         dedupeFailures.log()
         logger.info("")
-        logger.info("Frequently imported SVGs:")
-        val reimportedSvgs = Multisets.copyHighestCountFirst(SVGS_BY_TIMES_IMPORTED)
-        reimportedSvgs.logIf {reimportedSvgs.count(it) >= 2}
+        logger.info("Repeated tasks:")
+        val repeatedTasks = Multisets.copyHighestCountFirst(tasksByRunCount)
+        repeatedTasks.logIf {repeatedTasks.count(it) >= 2}
         logger.info("")
         logger.info("Retries of failed tasks: {}", retries.sum())
     }
 
     fun onTaskLaunched(typename: String, name: String) {
         logger.info("Launched: {}", name)
-        if (typename == "SvgImportTask") {
-            SVGS_BY_TIMES_IMPORTED.add(name)
-        }
+        tasksByRunCount.add(typename to name)
         taskLaunches.add(typename)
     }
 
