@@ -25,6 +25,7 @@ class OutputTask(
             return@withContext
         }
         val firstFile = files[0]
+        firstFile.parentFile?.mkdirs()
         FileOutputStream(firstFile).use {it.write(bytes)}
         if (!firstFile.exists()) {
             throw RuntimeException("OutputTask $name appeared to succeed, but $firstFile still doesn't exist")
