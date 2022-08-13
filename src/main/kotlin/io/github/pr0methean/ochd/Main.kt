@@ -69,6 +69,7 @@ suspend fun main(args: Array<String>) {
         var tasks = ALL_MATERIALS.outputTasks(ctx).toList()
         stats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupJob.join()
+        System.gc()
         val tasksRun = LongAdder()
         while (tasks.isNotEmpty()) {
             val tasksToRetry = ConcurrentLinkedDeque<OutputTask>()
