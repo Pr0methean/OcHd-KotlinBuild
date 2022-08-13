@@ -204,10 +204,10 @@ abstract class AbstractTask<T>(override val name: String, private val cache: Tas
     )
 
     override suspend fun mergeWithDuplicate(other: Task<T>): Task<T> {
-        cache.enable()
         if (other === this) {
             return this
         }
+        cache.enable()
         if (getNow() != null) {
             return this
         }
