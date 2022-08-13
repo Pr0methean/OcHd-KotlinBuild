@@ -31,11 +31,11 @@ class ImageStackingTask(val layers: LayerList,
     }
 
     override suspend fun mergeWithDuplicate(other: Task<Image>): ImageTask {
-        super.mergeWithDuplicate(other)
-        if (other is ImageStackingTask) {
-            layers.mergeWithDuplicate(other.layers)
+        val deduped = super.mergeWithDuplicate(other)
+        if (deduped is ImageStackingTask && deduped !== this) {
+            deduped.layers.mergeWithDuplicate(layers)
         }
-        return this
+        return deduped
     }
 
     override suspend fun clearFailure() {

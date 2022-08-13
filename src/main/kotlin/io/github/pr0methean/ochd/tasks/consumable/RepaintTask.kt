@@ -19,7 +19,7 @@ class RepaintTask(
     val alpha: Double = 1.0,
     cache: TaskCache<Image>,
     val stats: ImageProcessingStats
-): SlowTransformingTask<Image, Image>("$base@$paint@$alpha", base, cache, { baseImage ->
+): AsyncTransformingTask<Image, Image>("$base@$paint@$alpha", base, cache, { baseImage ->
     stats.onTaskLaunched("RepaintTask", "$base@$paint@$alpha")
     val output = WritableImage(baseImage.width.toInt(), baseImage.height.toInt())
     val canvas = Canvas(baseImage.width, baseImage.height)
@@ -46,9 +46,6 @@ class RepaintTask(
     snapshot
 }), ImageTask {
     override val asPng: Task<ByteArray> by lazy {PngCompressionTask(this, noopTaskCache(), stats)}
-    override suspend fun mergeWithDuplicate(other: Task<Image>): ImageTask {
-        return super.mergeWithDuplicate(other) as ImageTask
-    }
 
     override fun equals(other: Any?): Boolean {
         return (this === other) || (other is RepaintTask

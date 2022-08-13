@@ -10,7 +10,7 @@ import kotlin.Result.Companion.failure
 import kotlin.Result.Companion.success
 
 private val logger = LogManager.getLogger("SlowTransformingTask")
-open class SlowTransformingTask<T, U>(
+open class AsyncTransformingTask<T, U>(
     name: String,
     open val base: Task<T>,
     cache: TaskCache<U>,
@@ -47,10 +47,11 @@ open class SlowTransformingTask<T, U>(
 
     @Suppress("UNCHECKED_CAST")
     override suspend fun mergeWithDuplicate(other: Task<U>): Task<U> {
-        if (other is SlowTransformingTask<*, *>) {
-            base.mergeWithDuplicate(other.base as Task<T>)
+        val deduped = super.mergeWithDuplicate(other)
+        if (deduped is AsyncTransformingTask<*, U> && deduped !== this) {
+            (deduped as AsyncTransformingTask<T, U>).base.mergeWithDuplicate(base)
         }
-        return super.mergeWithDuplicate(other)
+        return deduped
     }
 
     override suspend fun clearFailure() {

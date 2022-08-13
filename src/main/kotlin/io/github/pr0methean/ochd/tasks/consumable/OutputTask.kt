@@ -17,7 +17,7 @@ class OutputTask(
     override val name: String,
     val stats: ImageProcessingStats,
     private val files: List<File>,
-): SlowTransformingTask<ByteArray, Unit>("Output $name", source, noopTaskCache(), transform = { bytes ->
+): AsyncTransformingTask<ByteArray, Unit>("Output $name", source, noopTaskCache(), transform = { bytes ->
     withContext(Dispatchers.IO.plus(CoroutineName(name))) {
         stats.onTaskLaunched("OutputTask", name)
         if (files.isEmpty()) {
