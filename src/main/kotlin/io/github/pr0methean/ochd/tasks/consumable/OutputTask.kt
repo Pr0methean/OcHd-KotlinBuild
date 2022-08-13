@@ -29,10 +29,10 @@ class OutputTask(
         if (!firstFile.exists()) {
             throw RuntimeException("OutputTask $name appeared to succeed, but $firstFile still doesn't exist")
         }
-        val firstFilePath = firstFile.toPath()
+        val firstFilePath = firstFile.absoluteFile.toPath()
         for (file in files.subList(1, files.size)) {
             file.parentFile?.mkdirs()
-            Files.copy(firstFilePath, file.toPath())
+            Files.copy(firstFilePath, file.absoluteFile.toPath())
             if (!file.exists()) {
                 throw RuntimeException("OutputTask $name appeared to succeed, but $file still doesn't exist")
             }
