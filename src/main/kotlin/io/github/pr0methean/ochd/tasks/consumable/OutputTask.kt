@@ -5,9 +5,12 @@ import io.github.pr0methean.ochd.tasks.consumable.caching.noopTaskCache
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import org.apache.logging.log4j.LogManager
 import java.io.File
 import java.io.FileOutputStream
+import java.nio.file.Files
 
+private val logger = LogManager.getLogger("OutputTask")
 @Suppress("BlockingMethodInNonBlockingContext")
 class OutputTask(
     source: Task<ByteArray>,
@@ -17,11 +20,21 @@ class OutputTask(
 ): SlowTransformingTask<ByteArray, Unit>("Output $name", source, noopTaskCache(), transform = { bytes ->
     withContext(Dispatchers.IO.plus(CoroutineName(name))) {
         stats.onTaskLaunched("OutputTask", name)
-        for (file in files) {
+        if (files.isEmpty()) {
+            logger.warn("OutputTask $name has no files to write to!")
+            return@withContext
+        }
+        val firstFile = files[0]
+        FileOutputStream(firstFile).use {it.write(bytes)}
+        if (!firstFile.exists()) {
+            throw RuntimeException("OutputTask $name appeared to succeed, but $firstFile still doesn't exist")
+        }
+        val firstFilePath = firstFile.toPath()
+        for (file in files.subList(1, files.size)) {
             file.parentFile?.mkdirs()
-            FileOutputStream(file).use { it.write(bytes) }
+            Files.copy(firstFilePath, file.toPath())
             if (!file.exists()) {
-                throw RuntimeException("OutputTask $this appeared to succeed, but $file still doesn't exist")
+                throw RuntimeException("OutputTask $name appeared to succeed, but $file still doesn't exist")
             }
         }
     }
