@@ -5,7 +5,6 @@ import kotlinx.coroutines.Deferred
 import org.apache.logging.log4j.util.StringBuilderFormattable
 
 interface ImageTask: StringBuilderFormattable, Task<Image> {
-    val unpacked: Task<Image>
 
     val asPng: Task<ByteArray>
     override suspend fun mergeWithDuplicate(other: Task<Image>): ImageTask

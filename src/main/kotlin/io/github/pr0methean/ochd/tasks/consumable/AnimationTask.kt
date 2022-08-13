@@ -19,7 +19,7 @@ class AnimationTask(
     private val totalHeight = height * frames.size
 
     override suspend fun clearFailure() {
-        frames.map(ImageTask::unpacked).asFlow().collect(Task<Image>::clearFailure)
+        frames.asFlow().collect(Task<Image>::clearFailure)
         super.clearFailure()
     }
 
@@ -56,7 +56,7 @@ class AnimationTask(
         stats.onTaskLaunched("AnimationTask", name)
         val canvas = Canvas(width.toDouble(), totalHeight.toDouble())
         val canvasCtx = canvas.graphicsContext2D
-        val frameTasks = frames.map(ImageTask::unpacked).mapIndexed { index, frameTask -> frameTask.consumeAsync {
+        val frameTasks = frames.map { it }.mapIndexed { index, frameTask -> frameTask.consumeAsync {
             canvasCtx.drawImage(it.getOrThrow(), 0.0, (height * index).toDouble())
         }}
         frames.asFlow().collect { it.startAsync() }

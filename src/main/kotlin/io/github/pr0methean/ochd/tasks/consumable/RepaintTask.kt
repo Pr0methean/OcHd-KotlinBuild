@@ -45,7 +45,6 @@ class RepaintTask(
     stats.onTaskCompleted("RepaintTask", "$base@$paint@$alpha")
     snapshot
 }), ImageTask {
-    override val unpacked: Task<Image> = this
     override val asPng: Task<ByteArray> by lazy {PngCompressionTask(this, noopTaskCache(), stats)}
     override suspend fun mergeWithDuplicate(other: Task<Image>): ImageTask {
         return super.mergeWithDuplicate(other) as ImageTask

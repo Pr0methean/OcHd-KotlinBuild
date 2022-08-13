@@ -39,13 +39,13 @@ class ImageStackingTask(val layers: LayerList,
     }
 
     override suspend fun clearFailure() {
-        layers.layers.map(ImageTask::unpacked).asFlow().collect(Task<Image>::clearFailure)
+        layers.layers.asFlow().collect(Task<Image>::clearFailure)
         super.clearFailure()
     }
 
     @Suppress("DeferredResultUnused")
     override suspend fun startPrerequisites() {
-        layers.layers.map(ImageTask::unpacked).asFlow().collect(Task<Image>::startAsync)
+        layers.layers.asFlow().collect(Task<Image>::startAsync)
     }
 
     override fun equals(other: Any?): Boolean {
@@ -62,7 +62,7 @@ class ImageStackingTask(val layers: LayerList,
         stats.onTaskLaunched("ImageStackingTask", name)
         val canvas = Canvas(width.toDouble(), height.toDouble())
         val canvasCtx = canvas.graphicsContext2D
-        val layersList = layers.layers.map(ImageTask::unpacked)
+        val layersList = layers.layers.map { it }
         val snapshotRef = AtomicReference<Image>(null)
         logger.debug("Creating layer tasks for {}", this)
         val layerRenderTasks = mutableListOf<Deferred<Result<Unit>>>()

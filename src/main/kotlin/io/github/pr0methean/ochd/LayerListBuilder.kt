@@ -38,8 +38,6 @@ class LayerListBuilder(val ctx: ImageProcessingContext) {
         return layer
     }
 
-    suspend fun layer(source: ImageTask, paint: Paint? = null, alpha: Double = 1.0) = layer(source.unpacked, paint, alpha)
-
     suspend fun copy(sourceInit: suspend LayerListBuilder.() -> Unit) =
         copy(LayerListBuilder(ctx).also {sourceInit()}.build())
     suspend fun copy(source: LayerList) {
