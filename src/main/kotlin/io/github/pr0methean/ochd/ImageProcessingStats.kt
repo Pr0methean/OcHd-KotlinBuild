@@ -97,11 +97,11 @@ class ImageProcessingStats {
         logger.info("Non-deduplicated tasks:")
         dedupeFailures.log()
         logger.info("")
-        logger.info("Repeated tasks:")
+        logger.info("Retries of failed tasks: {}", retries.sum())
+        logger.info("Tasks repeated due to cache misses:")
         val repeatedTasks = Multisets.copyHighestCountFirst(tasksByRunCount)
         repeatedTasks.logIf {repeatedTasks.count(it) >= 2}
         logger.info("")
-        logger.info("Retries of failed tasks: {}", retries.sum())
     }
 
     fun onTaskLaunched(typename: String, name: String) {
