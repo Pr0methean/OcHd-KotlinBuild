@@ -46,6 +46,9 @@ class RepaintTask(
     snapshot
 }), ImageTask {
     override val asPng: Task<ByteArray> by lazy {PngCompressionTask(this, noopTaskCache(), stats)}
+    override suspend fun mergeWithDuplicate(other: Task<Image>): ImageTask {
+        return super.mergeWithDuplicate(other) as ImageTask
+    }
 
     override fun equals(other: Any?): Boolean {
         return (this === other) || (other is RepaintTask
