@@ -53,6 +53,26 @@ enum class SimpleBareHandBlock(
             val layers = ctx.stack {createTextureLayers()}
             return flowOf(ctx.out(layers, "block/redstone_dust_line0", "block/redstone_dust_line1"))
         }
+    },
+    TWISTING_VINES_PLANT(c(0x007e86), c(0x00b485), c(0x005e5e)) {
+        override suspend fun LayerListBuilder.createTextureLayers() {
+            layer("zigzagSolid", color)
+        }
+    },
+    TWISTING_VINES(TWISTING_VINES_PLANT) {
+        override suspend fun LayerListBuilder.createTextureLayers() {
+            layer("zigzagSolidBottomPart", color)
+        }
+    },
+    WEEPING_VINES_PLANT(c(0x7b0000), c(0xff6500), c(0x5a0000)) {
+        override suspend fun LayerListBuilder.createTextureLayers() {
+            layer("zigzagSolid", color)
+        }
+    },
+    WEEPING_VINES(WEEPING_VINES_PLANT) {
+        override suspend fun LayerListBuilder.createTextureLayers() {
+            layer("zigzagSolidTopPart", color)
+        }
     };
     
     constructor(base: ShadowHighlightMaterial) : this(base.color, base.shadow, base.highlight)
