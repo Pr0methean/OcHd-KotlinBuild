@@ -9,7 +9,11 @@ class SemisoftTaskCache<T>(private val backingCache: Cache<SemisoftTaskCache<*>,
     }
 
     override fun enabledSet(value: Result<T>?) {
-        backingCache.put(this, value)
+        if (value == null) {
+            backingCache.invalidate(this)
+        } else {
+            backingCache.put(this, value)
+        }
         super.enabledSet(value)
     }
 }

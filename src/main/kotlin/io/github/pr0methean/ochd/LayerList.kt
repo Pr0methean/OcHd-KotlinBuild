@@ -21,9 +21,7 @@ data class LayerList(val layers: List<ImageTask>, val background: Paint):
             return
         }
         for ((index, layer) in layers.withIndex()) {
-            if (layer == other.layers[index]) {
-                layer.mergeWithDuplicate(other.layers[index])
-            }
+            layer.mergeWithDuplicate(other.layers[index])
         }
     }
 }

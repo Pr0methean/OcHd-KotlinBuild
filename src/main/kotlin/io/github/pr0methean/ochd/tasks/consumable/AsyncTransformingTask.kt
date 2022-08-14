@@ -55,7 +55,6 @@ open class AsyncTransformingTask<T, U>(
     }
 
     override suspend fun clearFailure() {
-
         base.clearFailure()
         super.clearFailure()
     }

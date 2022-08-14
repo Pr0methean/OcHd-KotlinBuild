@@ -38,7 +38,7 @@ class ImageProcessingContext(
     private val backingCache = Caffeine.newBuilder().weakKeys().maximumSize(1L.shl(27) / (tileSize * tileSize))
         .build<SemisoftTaskCache<*>,Result<*>>()
 
-    private fun <T> createSoftTaskCache() = SemisoftTaskCache<T>(backingCache)
+    private fun <T> createSemiSoftTaskCache() = SemisoftTaskCache<T>(backingCache)
 
     init {
         val builder = mutableMapOf<String, SvgImportTask>()
@@ -49,7 +49,7 @@ class ImageProcessingContext(
                 tileSize,
                 svgDirectory.resolve("$shortName.svg"),
                 stats,
-                createSoftTaskCache()
+                createSemiSoftTaskCache()
             )
         }
         svgTasks = builder.toMap()
@@ -75,7 +75,7 @@ class ImageProcessingContext(
         if (task !is ImageTask) {
             logger.warn("Tried to deduplicate a task that's not an ImageTask")
             stats.dedupeFailures.add(task::class.simpleName ?: "[unnamed non-ImageTask class]")
-            return object: AbstractImageTask(task.name, createSoftTaskCache(), stats) {
+            return object: AbstractImageTask(task.name, createSemiSoftTaskCache(), stats) {
                 override suspend fun perform(): Image = task.await().getOrThrow()
             }
         }
@@ -107,7 +107,7 @@ class ImageProcessingContext(
             = layer(findSvgTask(name), paint, alpha)
 
     suspend fun layer(source: Task<Image>, paint: Paint? = null, alpha: Double = 1.0): ImageTask {
-        return deduplicate(RepaintTask(deduplicate(source), paint, alpha, createSoftTaskCache(), stats))
+        return deduplicate(RepaintTask(deduplicate(source), paint, alpha, createSemiSoftTaskCache(), stats))
     }
 
     suspend fun stack(init: suspend LayerListBuilder.() -> Unit): ImageTask {
