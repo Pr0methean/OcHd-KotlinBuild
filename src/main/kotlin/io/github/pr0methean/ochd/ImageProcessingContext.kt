@@ -81,10 +81,12 @@ class ImageProcessingContext(
         }
         val className = task::class.simpleName ?: "[unnamed class]"
         val deduped = taskDeduplicationMap.computeIfAbsent(task) {
+            logger.info("Failed to deduplicate: {}", task)
             stats.dedupeFailures.add(className)
             task
         }
         if (deduped !== task) {
+            logger.info("Deduplicated: {}", task)
             stats.dedupeSuccesses.add(className)
             deduped.enableCaching()
             return deduped.mergeWithDuplicate(task)
