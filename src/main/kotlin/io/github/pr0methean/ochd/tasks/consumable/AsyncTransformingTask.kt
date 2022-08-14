@@ -35,6 +35,11 @@ open class AsyncTransformingTask<T, U>(
         }
     }
 
+    @Suppress("DeferredResultUnused")
+    override suspend fun startPrerequisites() {
+        base.startAsync()
+    }
+
     override fun getNow(): Result<U>? {
         base.getNow()
         return super.getNow()

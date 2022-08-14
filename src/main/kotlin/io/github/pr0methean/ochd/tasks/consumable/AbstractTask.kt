@@ -61,11 +61,14 @@ abstract class AbstractTask<T>(override val name: String, private val cache: Tas
     }
     private fun set(value: Result<T>?) = cache.set(value)
 
+    protected open suspend fun startPrerequisites() {}
+
     override suspend fun startAsync(): Deferred<Result<T>> {
         val result = getNow()
         if (result != null) {
             return CompletableDeferred(result)
         }
+        startPrerequisites()
         val attemptNumber = attemptNumber.incrementAndGet()
         val scope = createCoroutineScope(attemptNumber)
         val newCoroutine = createCoroutineAsync(scope)
@@ -83,6 +86,7 @@ abstract class AbstractTask<T>(override val name: String, private val cache: Tas
         if (result != null) {
             return CompletableDeferred(result)
         }
+        startPrerequisites()
         val attemptNumber = attemptNumber.incrementAndGet()
         val scope = createCoroutineScope(attemptNumber)
         val newCoroutine = createCoroutineAsync(scope)
