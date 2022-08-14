@@ -16,12 +16,12 @@ data class LayerList(val layers: List<ImageTask>, val background: Paint):
     }
 
     suspend fun mergeWithDuplicate(other: LayerList) {
-        if (background != other.background
-            || layers.size != other.layers.size) {
-            return
-        }
-        for ((index, layer) in layers.withIndex()) {
-            layer.mergeWithDuplicate(other.layers[index])
+        if (layers !== other.layers) {
+            for ((index, layer) in layers.withIndex()) {
+                if (layer !== other.layers[index]) {
+                    layer.mergeWithDuplicate(other.layers[index])
+                }
+            }
         }
     }
 }
