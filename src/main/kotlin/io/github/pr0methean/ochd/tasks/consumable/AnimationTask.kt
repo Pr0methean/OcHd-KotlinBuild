@@ -37,11 +37,9 @@ class AnimationTask(
 
     override suspend fun mergeWithDuplicate(other: Task<Image>): ImageTask {
         val deduped = super.mergeWithDuplicate(other)
-        if (deduped is AnimationTask && frames.size == deduped.frames.size) {
+        if (deduped is AnimationTask) {
             for ((index, frame) in frames.withIndex()) {
-                if (frame == deduped.frames[index]) {
-                    frame.mergeWithDuplicate(deduped.frames[index])
-                }
+                frame.mergeWithDuplicate(deduped.frames[index])
             }
         }
         return deduped

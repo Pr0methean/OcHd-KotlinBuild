@@ -213,6 +213,7 @@ abstract class AbstractTask<T>(override val name: String, private val cache: Tas
                 if (getNow() != null) {
                     return@withLock
                 }
+                other.cache.enable()
                 val result = other.getNow()
                 if (result != null) {
                     emit(result)

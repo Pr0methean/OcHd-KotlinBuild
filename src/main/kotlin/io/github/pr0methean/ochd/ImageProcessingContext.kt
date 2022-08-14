@@ -88,7 +88,6 @@ class ImageProcessingContext(
         if (deduped !== task) {
             logger.info("Deduplicated: {}", task)
             stats.dedupeSuccesses.add(className)
-            deduped.enableCaching()
             return deduped.mergeWithDuplicate(task)
         }
         return task
