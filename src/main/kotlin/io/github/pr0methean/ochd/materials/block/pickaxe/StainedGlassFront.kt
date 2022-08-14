@@ -18,6 +18,7 @@ object StainedGlassFront: Material {
             layer("borderSolid", Color.BLACK)
             layer("streaks", Color.BLACK)
         }
+        masterTask.enableCaching()
         DYES.forEach { (name, color) ->
             emit(ctx.out("block/${name}_stained_glass", RepaintTask(masterTask, color, 1.0, noopTaskCache(), ctx.stats)))
         }
