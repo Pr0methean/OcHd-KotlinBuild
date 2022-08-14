@@ -43,8 +43,8 @@ open class TransformingTask<T, U>(
     @Suppress("UNCHECKED_CAST")
     override suspend fun mergeWithDuplicate(other: Task<U>): Task<U> {
         val deduped = super.mergeWithDuplicate(other)
-        if (deduped is TransformingTask<*, U> && deduped !== this) {
-            (deduped as TransformingTask<T, U>).base.mergeWithDuplicate(base)
+        if (other !== deduped && other is TransformingTask<*, U>) {
+            (deduped as TransformingTask<T, U>).base.mergeWithDuplicate(other.base as Task<T>)
         }
         return deduped
     }
