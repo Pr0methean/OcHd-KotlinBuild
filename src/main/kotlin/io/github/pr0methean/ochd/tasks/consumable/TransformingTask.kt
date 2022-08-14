@@ -23,11 +23,6 @@ open class TransformingTask<T, U>(
         return super.getNow()
     }
 
-    @Suppress("DeferredResultUnused")
-    override suspend fun startPrerequisites() {
-        base.startAsync()
-    }
-
     override suspend fun createCoroutineAsync(coroutineScope: CoroutineScope): Deferred<Result<U>> {
         val myBase = base
         val myTransform = transform
