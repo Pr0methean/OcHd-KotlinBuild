@@ -62,15 +62,14 @@ class ImageStackingTask(val layers: LayerList,
         stats.onTaskLaunched("ImageStackingTask", name)
         val canvas = Canvas(width.toDouble(), height.toDouble())
         val canvasCtx = canvas.graphicsContext2D
-        val layersList = layers.layers.map { it }
         val snapshotRef = AtomicReference<Image>(null)
         logger.debug("Creating layer tasks for {}", this)
         val layerRenderTasks = mutableListOf<Deferred<Result<Unit>>>()
-        layersList.forEachIndexed { index, layerTask ->
+        layers.layers.forEachIndexed { index, layerTask ->
             layerTask.startAsync()
             logger.debug("Creating consumer for layer {} ({})", index, layerTask)
             val previousLayerTask = layerRenderTasks.getOrNull(index - 1)
-            val previousLayerName = layersList.getOrNull(index - 1).toString()
+            val previousLayerName = layers.layers.getOrNull(index - 1).toString()
             layerRenderTasks.add(layerTask.consumeAsync {
                 try {
                     previousLayerTask?.start()
@@ -81,7 +80,7 @@ class ImageStackingTask(val layers: LayerList,
                     logger.debug("Rendering layer {} ({}) onto the stack", box(index), layerTask)
                     canvasCtx.drawImage(layerImage, 0.0, 0.0)
 
-                    if (index == layersList.lastIndex) {
+                    if (index == layers.layers.lastIndex) {
                         val params = SnapshotParameters()
                         params.fill = layers.background
                         val output = WritableImage(width, height)
