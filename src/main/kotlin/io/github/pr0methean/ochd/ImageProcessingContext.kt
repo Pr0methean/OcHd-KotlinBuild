@@ -87,8 +87,9 @@ class ImageProcessingContext(
         if (deduped !== task) {
             stats.dedupeSuccesses.add(className)
             deduped.enableCaching()
+            return deduped.mergeWithDuplicate(task)
         }
-        return deduped.mergeWithDuplicate(task)
+        return task
     }
 
     private fun findSvgTask(name: String): SvgImportTask {
