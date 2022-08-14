@@ -114,7 +114,7 @@ class ImageProcessingContext(
         val layerTasksBuilder = LayerListBuilder(this)
         layerTasksBuilder.init()
         val layerTasks = layerTasksBuilder.build()
-        return deduplicate(ImageStackingTask(layerTasks, tileSize, tileSize, layerTasks.toString(), createSoftTaskCache(), stats))
+        return deduplicate(ImageStackingTask(layerTasks, tileSize, tileSize, layerTasks.toString(), createSemiSoftTaskCache(), stats))
     }
 
     suspend fun animate(frames: List<ImageTask>): ImageTask {
@@ -144,4 +144,6 @@ class ImageProcessingContext(
 
     suspend fun out(source: suspend LayerListBuilder.() -> Unit, vararg names: String): OutputTask
             = out(stack {source()}, *names)
+
+    suspend fun stack(layers: LayerList): ImageTask = deduplicate(ImageStackingTask(layers, tileSize, tileSize, layers.toString(), createSemiSoftTaskCache(), stats))
 }

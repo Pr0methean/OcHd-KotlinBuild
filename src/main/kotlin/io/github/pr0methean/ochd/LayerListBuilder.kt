@@ -38,7 +38,7 @@ class LayerListBuilder(val ctx: ImageProcessingContext) {
         return layer
     }
 
-    suspend fun copy(sourceInit: suspend LayerListBuilder.() -> Unit) =
+    suspend fun copy(sourceInit: suspend LayerListBuilder.() -> Unit): Unit =
         copy(LayerListBuilder(ctx).also {sourceInit()}.build())
     suspend fun copy(source: LayerList) {
         if (source.background != Color.TRANSPARENT) {
@@ -51,10 +51,7 @@ class LayerListBuilder(val ctx: ImageProcessingContext) {
             }
         }
         if (source.layers.size > 1) { // Don't flatten sub-stacks since we want to deduplicate them
-            copy(ctx.stack {
-                background(source.background)
-                addAll(source.layers)
-            })
+            copy(ctx.stack(source))
         } else {
             addAll(source.layers)
         }
@@ -63,5 +60,5 @@ class LayerListBuilder(val ctx: ImageProcessingContext) {
 
     fun copy(element: ImageTask): Boolean = layers.add(element)
     private fun addAll(elements: Collection<ImageTask>) = layers.addAll(elements)
-    suspend fun build() = LayerList(layers.asFlow().map(ctx::deduplicate).toList(), background)
+    suspend fun build(): LayerList = LayerList(layers.asFlow().map(ctx::deduplicate).toList(), background)
 }
