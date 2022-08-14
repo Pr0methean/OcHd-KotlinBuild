@@ -59,14 +59,14 @@ enum class SimpleBareHandBlock(
             layer("zigzagSolid", color)
         }
     },
-    TWISTING_VINES(TWISTING_VINES_PLANT) {
-        override suspend fun LayerListBuilder.createTextureLayers() {
-            layer("zigzagSolidBottomPart", color)
-        }
-    },
     WEEPING_VINES_PLANT(c(0x7b0000), c(0xff6500), c(0x5a0000)) {
         override suspend fun LayerListBuilder.createTextureLayers() {
             layer("zigzagSolid", color)
+        }
+    },
+    TWISTING_VINES(TWISTING_VINES_PLANT) {
+        override suspend fun LayerListBuilder.createTextureLayers() {
+            layer("zigzagSolidBottomPart", color)
         }
     },
     WEEPING_VINES(WEEPING_VINES_PLANT) {
