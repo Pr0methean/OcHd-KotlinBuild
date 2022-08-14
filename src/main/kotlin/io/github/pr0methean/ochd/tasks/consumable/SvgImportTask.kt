@@ -41,8 +41,8 @@ class SvgImportTask(
     override val stats: ImageProcessingStats,
     taskCache: TaskCache<Image>
 ): AbstractImageTask(name, taskCache, stats) {
-    override suspend fun createCoroutineScope(attempt: Long): CoroutineScope {
-        return super.createCoroutineScope(attempt).plus(batikTranscoder.asContextElement())
+    override suspend fun createCoroutineScope(): CoroutineScope {
+        return super.createCoroutineScope().plus(batikTranscoder.asContextElement())
     }
 
     override fun equals(other: Any?): Boolean {
