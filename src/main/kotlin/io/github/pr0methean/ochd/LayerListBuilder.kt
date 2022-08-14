@@ -58,10 +58,11 @@ class LayerListBuilder(val ctx: ImageProcessingContext) {
     }
     suspend fun copy(source: SingleTextureMaterial): Unit = copy(LayerListBuilder(ctx).also {source.run {createTextureLayers()}}.build())
 
-    fun copy(element: ImageTask): Boolean {
-        val isAdded = layers.add(element)
+    suspend fun copy(element: ImageTask): Boolean {
+        val deduped = ctx.deduplicate(element)
+        val isAdded = layers.add(deduped)
         if (isAdded) {
-            element.enableCaching()
+            deduped.enableCaching()
         }
         return isAdded
     }
