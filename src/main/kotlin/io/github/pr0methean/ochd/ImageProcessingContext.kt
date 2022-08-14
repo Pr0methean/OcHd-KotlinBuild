@@ -34,8 +34,8 @@ class ImageProcessingContext(
     val stats: ImageProcessingStats = ImageProcessingStats()
     private val dedupedSvgTasks = ConcurrentHashMultiset.create<String>()
 
-    // 16 "hard" entries at 4096x4096
-    private val backingCache = Caffeine.newBuilder().weakKeys().maximumSize(1L.shl(28) / (tileSize * tileSize))
+    // 32 "hard" entries at 4096x4096
+    private val backingCache = Caffeine.newBuilder().weakKeys().maximumSize(1L.shl(29) / (tileSize * tileSize))
         .build<SemisoftTaskCache<*>,Result<*>>()
 
     private fun <T> createSoftTaskCache() = SemisoftTaskCache<T>(backingCache)
