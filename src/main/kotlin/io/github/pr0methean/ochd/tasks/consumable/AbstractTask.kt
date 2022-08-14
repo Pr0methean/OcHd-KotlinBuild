@@ -203,6 +203,7 @@ abstract class AbstractTask<T>(override val name: String, private val cache: Tas
             .plus(SupervisorJob())
     )
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     override suspend fun mergeWithDuplicate(other: Task<T>): Task<T> {
         if (other === this) {
             return this
@@ -217,7 +218,6 @@ abstract class AbstractTask<T>(override val name: String, private val cache: Tas
                 if (getNow() != null) {
                     return@withLock
                 }
-                other.cache.enable()
                 val result = other.getNow()
                 if (result != null) {
                     emit(result)
@@ -233,9 +233,13 @@ abstract class AbstractTask<T>(override val name: String, private val cache: Tas
                         }
                         val otherCoroutine = other.coroutine.get()
                         if (otherCoroutine != null) {
-                            runningAttemptNumber = other.runningAttemptNumber
-                            attemptNumber.updateAndGet { max(it, other.attemptNumber.get()) }
-                            coroutine.set(createCoroutineScope(runningAttemptNumber).async {otherCoroutine.await()})
+                            if (otherCoroutine.isCompleted) {
+                                emit(otherCoroutine.getCompleted())
+                            } else {
+                                runningAttemptNumber = other.runningAttemptNumber
+                                attemptNumber.updateAndGet { max(it, other.attemptNumber.get()) }
+                                coroutine.set(createCoroutineScope(runningAttemptNumber).async { otherCoroutine.await() })
+                            }
                             return this
                         }
                     }
