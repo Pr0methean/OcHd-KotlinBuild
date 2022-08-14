@@ -1,8 +1,9 @@
 package io.github.pr0methean.ochd
 
+import com.github.benmanes.caffeine.cache.Caffeine
 import com.google.common.collect.ConcurrentHashMultiset
 import io.github.pr0methean.ochd.tasks.consumable.*
-import io.github.pr0methean.ochd.tasks.consumable.caching.SoftTaskCache
+import io.github.pr0methean.ochd.tasks.consumable.caching.SemisoftTaskCache
 import io.github.pr0methean.ochd.tasks.consumable.caching.noopTaskCache
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
@@ -32,6 +33,12 @@ class ImageProcessingContext(
     val stats: ImageProcessingStats = ImageProcessingStats()
     private val dedupedSvgTasks = ConcurrentHashMultiset.create<String>()
 
+    // 16 "hard" entries at 4096x4096
+    private val backingCache = Caffeine.newBuilder().maximumSize(1L.shl(28) / (tileSize * tileSize))
+        .build<SemisoftTaskCache<*>,Result<*>>()
+
+    private fun <T> createSoftTaskCache() = SemisoftTaskCache<T>(backingCache)
+
     init {
         val builder = mutableMapOf<String, SvgImportTask>()
         svgDirectory.list()!!.forEach { svgFile ->
@@ -41,7 +48,7 @@ class ImageProcessingContext(
                 tileSize,
                 svgDirectory.resolve("$shortName.svg"),
                 stats,
-                SoftTaskCache()
+                createSoftTaskCache()
             )
         }
         svgTasks = builder.toMap()
@@ -67,7 +74,7 @@ class ImageProcessingContext(
         if (task !is ImageTask) {
             logger.warn("Tried to deduplicate a task that's not an ImageTask")
             stats.dedupeFailures.add(task::class.simpleName ?: "[unnamed non-ImageTask class]")
-            return object: AbstractImageTask(task.name, SoftTaskCache(), stats) {
+            return object: AbstractImageTask(task.name, createSoftTaskCache(), stats) {
                 override suspend fun perform(): Image = task.await().getOrThrow()
             }
         }
@@ -99,14 +106,14 @@ class ImageProcessingContext(
             = layer(findSvgTask(name), paint, alpha)
 
     suspend fun layer(source: Task<Image>, paint: Paint? = null, alpha: Double = 1.0): ImageTask {
-        return deduplicate(RepaintTask(deduplicate(source), paint, alpha, SoftTaskCache(), stats))
+        return deduplicate(RepaintTask(deduplicate(source), paint, alpha, createSoftTaskCache(), stats))
     }
 
     suspend fun stack(init: suspend LayerListBuilder.() -> Unit): ImageTask {
         val layerTasksBuilder = LayerListBuilder(this)
         layerTasksBuilder.init()
         val layerTasks = layerTasksBuilder.build()
-        return deduplicate(ImageStackingTask(layerTasks, tileSize, tileSize, layerTasks.toString(), SoftTaskCache(), stats))
+        return deduplicate(ImageStackingTask(layerTasks, tileSize, tileSize, layerTasks.toString(), createSoftTaskCache(), stats))
     }
 
     suspend fun animate(frames: List<ImageTask>): ImageTask {

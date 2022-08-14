@@ -3,7 +3,7 @@ package io.github.pr0methean.ochd.tasks.consumable.caching
 import java.lang.ref.SoftReference
 
 
-class SoftTaskCache<T>: AbstractTaskCache<T>() {
+open class SoftTaskCache<T>: AbstractTaskCache<T>() {
     @Volatile var result = SoftReference<Result<T>>(null)
     override fun getNow(): Result<T>? = result.get()
 
