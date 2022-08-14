@@ -21,8 +21,6 @@ fun color(web: String): Color = Color.web(web)
 fun color(web: String, alpha: Double): Color = Color.web(web, alpha)
 
 private val logger = LogManager.getLogger("ImageProcessingContext")
-// Hard-ref cache will be able to contain MINIMUM_IMAGE_CACHE_4096x4096*64MiB of uncompressed pixels
-private const val MINIMUM_IMAGE_CACHE_4096x4096 = 16L
 class ImageProcessingContext(
     val name: String,
     val tileSize: Int,
@@ -35,7 +33,8 @@ class ImageProcessingContext(
     val stats: ImageProcessingStats = ImageProcessingStats()
     private val dedupedSvgTasks = ConcurrentHashMultiset.create<String>()
 
-    private val backingCache = Caffeine.newBuilder().weakKeys().maximumSize(MINIMUM_IMAGE_CACHE_4096x4096.shl(24) / (tileSize * tileSize))
+    // 8 "hard" entries at 4096x4096
+    private val backingCache = Caffeine.newBuilder().weakKeys().maximumSize(1L.shl(27) / (tileSize * tileSize))
         .build<SemisoftTaskCache<*>,Result<*>>()
 
     private fun <T> createSemiSoftTaskCache() = SemisoftTaskCache<T>(backingCache)
