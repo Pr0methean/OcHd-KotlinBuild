@@ -103,10 +103,8 @@ class ImageStackingTask(val layers: LayerList,
         layerRenderTasks.forEach(Job::start)
         logger.debug("Waiting for layer tasks for {}", this)
         for (task in layerRenderTasks) {
-            task.await()
+            task.await().getOrThrow()
         }
-        val finalRenderTask = layerRenderTasks.last()
-        finalRenderTask.await().getOrThrow()
         logger.debug("Layer tasks done for {}", this)
         stats.onTaskCompleted("ImageStackingTask", name)
         return snapshotRef.get()
