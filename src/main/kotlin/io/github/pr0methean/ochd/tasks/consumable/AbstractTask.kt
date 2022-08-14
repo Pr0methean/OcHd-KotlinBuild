@@ -178,6 +178,11 @@ abstract class AbstractTask<T>(override val name: String, private val cache: Tas
         if (getNow() != null) {
             return this
         }
+        val otherNow = other.getNow()
+        if (otherNow != null) {
+            emit(otherNow)
+            return this
+        }
         logger.debug("Locking {} to merge with a duplicate", this)
         if (other is AbstractTask) {
             mutex.withLock(this@AbstractTask) {
