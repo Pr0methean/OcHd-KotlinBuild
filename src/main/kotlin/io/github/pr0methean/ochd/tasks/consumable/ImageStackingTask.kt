@@ -66,6 +66,7 @@ class ImageStackingTask(val layers: LayerList,
         logger.debug("Creating layer tasks for {}", this)
         val layerRenderTasks = mutableListOf<Deferred<Result<Unit>>>()
         layers.layers.forEachIndexed { index, layerTask ->
+            layerTask.startAsync()
             logger.debug("Creating consumer for layer {} ({})", index, layerTask)
             val previousLayerTask = layerRenderTasks.getOrNull(index - 1)
             val previousLayerName = layers.layers.getOrNull(index - 1).toString()
