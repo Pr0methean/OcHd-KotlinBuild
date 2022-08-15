@@ -5,6 +5,7 @@ import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.STONE
 import io.github.pr0methean.ochd.materials.block.shovel.DirtGroundCover
+import io.github.pr0methean.ochd.tasks.consumable.ImageTask
 import io.github.pr0methean.ochd.tasks.consumable.OutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Color
@@ -28,19 +29,24 @@ sealed interface Wood: ShadowHighlightMaterial {
     suspend fun LayerListBuilder.logTop()
     suspend fun LayerListBuilder.strippedLogTop()
     suspend fun LayerListBuilder.trapdoor()
-    suspend fun LayerListBuilder.doorTop()
+    suspend fun LayerListBuilder.doorTop(doorKnob: ImageTask)
     suspend fun LayerListBuilder.doorBottom()
 
     suspend fun LayerListBuilder.leaves()
     suspend fun LayerListBuilder.sapling()
 
     override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+        val doorKnob = ctx.stack {
+            layer("doorKnob", STONE.highlight)
+            layer("doorKnobShadow", STONE.shadow)
+        }
+        doorKnob.enableCaching()
         emit(ctx.out(ctx.stack { bark() }, "block/${name}_${logSynonym}"))
         emit(ctx.out(ctx.stack { strippedLogSide() }, "block/stripped_${name}_${logSynonym}"))
         emit(ctx.out(ctx.stack { strippedLogTop() }, "block/stripped_${name}_${logSynonym}_top"))
         emit(ctx.out(ctx.stack { logTop() }, "block/${name}_${logSynonym}_top"))
         emit(ctx.out(ctx.stack { trapdoor() }, "block/${name}_trapdoor"))
-        emit(ctx.out(ctx.stack { doorTop() }, "block/${name}_door_top"))
+        emit(ctx.out(ctx.stack { doorTop(doorKnob) }, "block/${name}_door_top"))
         emit(ctx.out(ctx.stack { doorBottom() }, "block/${name}_door_bottom"))
         emit(ctx.out(ctx.stack { leaves() }, "block/${name}_${leavesSynonym}"))
         emit(ctx.out(ctx.stack { sapling() }, "block/${name}_${saplingSynonym}"))
@@ -52,13 +58,6 @@ sealed interface Wood: ShadowHighlightMaterial {
         layer("waves", highlight)
         layer("planksTopBorder", shadow)
         layer("borderShortDashes", highlight)
-    }
-}
-
-private suspend fun LayerListBuilder.doorknob() {
-    copy {
-        layer("doorKnob", STONE.highlight)
-        layer("doorKnobShadow", STONE.shadow)
     }
 }
 
@@ -90,9 +89,9 @@ enum class OverworldWood(
             layer("trapdoorHinges", STONE.highlight)
         }
 
-        override suspend fun LayerListBuilder.doorTop() {
+        override suspend fun LayerListBuilder.doorTop(doorKnob: ImageTask) {
             copy { doorBottom() }
-            doorknob()
+            copy(doorKnob)
         }
 
         override suspend fun LayerListBuilder.doorBottom() {
@@ -135,7 +134,7 @@ enum class OverworldWood(
             layer("trapdoorHingesBig", STONE.shadow)
         }
 
-        override suspend fun LayerListBuilder.doorTop() {
+        override suspend fun LayerListBuilder.doorTop(doorKnob: ImageTask) {
             copy {
                 background(Color.WHITE)
                 layer("borderSolidExtraThick", color)
@@ -143,7 +142,7 @@ enum class OverworldWood(
                 layer("borderSolid", shadow)
             }
             layer("doorHingesBig", STONE.shadow)
-            doorknob()
+            copy(doorKnob)
         }
 
         override suspend fun LayerListBuilder.doorBottom() {
@@ -183,9 +182,9 @@ enum class OverworldWood(
             layer("trapdoorHingesBig", STONE.highlight)
         }
 
-        override suspend fun LayerListBuilder.doorTop() {
+        override suspend fun LayerListBuilder.doorTop(doorKnob: ImageTask) {
             copy {doorBottom()}
-            doorknob()
+            copy(doorKnob)
         }
 
         override suspend fun LayerListBuilder.doorBottom() {
@@ -225,14 +224,14 @@ enum class OverworldWood(
             layer("trapdoorHinges", STONE.color)
         }
 
-        override suspend fun LayerListBuilder.doorTop() {
+        override suspend fun LayerListBuilder.doorTop(doorKnob: ImageTask) {
             layer("trapdoor2", color)
             layer("borderShortDashes", highlight)
             copy {
                 layer("doorHingesBig", STONE.shadow)
                 layer("doorHinges", STONE.color)
             }
-            doorknob()
+            copy(doorKnob)
         }
 
         override suspend fun LayerListBuilder.doorBottom() {
@@ -276,9 +275,9 @@ enum class OverworldWood(
             layer("trapdoorHinges", STONE.shadow)
         }
 
-        override suspend fun LayerListBuilder.doorTop() {
+        override suspend fun LayerListBuilder.doorTop(doorKnob: ImageTask) {
             copy {doorBottom()}
-            doorknob()
+            copy(doorKnob)
         }
 
         override suspend fun LayerListBuilder.doorBottom() {
@@ -319,9 +318,9 @@ enum class OverworldWood(
             layer("trapdoorHinges", STONE.shadow)
         }
 
-        override suspend fun LayerListBuilder.doorTop() {
+        override suspend fun LayerListBuilder.doorTop(doorKnob: ImageTask) {
             copy {doorBottom()}
-            doorknob()
+            copy(doorKnob)
         }
 
         override suspend fun LayerListBuilder.doorBottom() {
@@ -359,14 +358,14 @@ enum class OverworldWood(
             layer("trapdoorHinges", STONE.highlight)
         }
 
-        override suspend fun LayerListBuilder.doorTop() {
+        override suspend fun LayerListBuilder.doorTop(doorKnob: ImageTask) {
             copy {
                 layer("borderSolidThick", color)
                 layer("borderSolid", shadow)
             }
             layer("craftingSide", shadow)
             layer("cross", shadow)
-            doorknob()
+            copy(doorKnob)
             copy {
                 layer("doorHingesBig", STONE.color)
                 layer("doorHinges", STONE.highlight)
@@ -469,9 +468,9 @@ enum class Fungus(
                 layer("trapdoorHinges", STONE.shadow)
             }
 
-            override suspend fun LayerListBuilder.doorTop() {
+            override suspend fun LayerListBuilder.doorTop(doorKnob: ImageTask) {
                 copy {doorBottom()}
-                doorknob()
+                copy(doorKnob)
             }
 
             override suspend fun LayerListBuilder.doorBottom() {
@@ -518,9 +517,9 @@ enum class Fungus(
             layer("trapdoorHinges", STONE.highlight)
         }
 
-        override suspend fun LayerListBuilder.doorTop() {
+        override suspend fun LayerListBuilder.doorTop(doorKnob: ImageTask) {
             copy {doorBottom()}
-            doorknob()
+            copy(doorKnob)
         }
 
         override suspend fun LayerListBuilder.doorBottom() {
