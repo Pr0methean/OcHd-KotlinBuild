@@ -2,7 +2,7 @@ package io.github.pr0methean.ochd.materials.block.barehand
 
 import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.c
-import io.github.pr0methean.ochd.tasks.consumable.OutputTask
+import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.flow.Flow

@@ -8,7 +8,7 @@ import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.Companion.stone
 import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.DEEPSLATE
 import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.STONE
 import io.github.pr0methean.ochd.materials.block.shovel.SimpleSoftEarth
-import io.github.pr0methean.ochd.tasks.consumable.OutputTask
+import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.texturebase.Block
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial

@@ -1,8 +1,8 @@
-package io.github.pr0methean.ochd.tasks.consumable
+package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.ImageProcessingStats
-import io.github.pr0methean.ochd.tasks.consumable.caching.TaskCache
-import io.github.pr0methean.ochd.tasks.consumable.caching.noopTaskCache
+import io.github.pr0methean.ochd.tasks.caching.TaskCache
+import io.github.pr0methean.ochd.tasks.caching.noopTaskCache
 import javafx.scene.image.Image
 
 abstract class AbstractImageTask(override val name: String, cache: TaskCache<Image>,

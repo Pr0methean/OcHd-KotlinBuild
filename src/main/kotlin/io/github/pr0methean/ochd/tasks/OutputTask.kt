@@ -1,7 +1,7 @@
-package io.github.pr0methean.ochd.tasks.consumable
+package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.ImageProcessingStats
-import io.github.pr0methean.ochd.tasks.consumable.caching.noopTaskCache
+import io.github.pr0methean.ochd.tasks.caching.noopTaskCache
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext

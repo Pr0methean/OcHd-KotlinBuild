@@ -1,6 +1,6 @@
-package io.github.pr0methean.ochd.tasks.consumable
+package io.github.pr0methean.ochd.tasks
 
-import io.github.pr0methean.ochd.tasks.consumable.caching.TaskCache
+import io.github.pr0methean.ochd.tasks.caching.TaskCache
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock

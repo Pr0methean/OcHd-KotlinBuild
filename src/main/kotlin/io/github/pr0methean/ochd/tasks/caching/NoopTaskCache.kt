@@ -1,4 +1,4 @@
-package io.github.pr0methean.ochd.tasks.consumable.caching
+package io.github.pr0methean.ochd.tasks.caching
 
 /**
  * If a task uses this, results will not be stored. Any requests for the result of the task will

@@ -1,6 +1,6 @@
 package io.github.pr0methean.ochd
 
-import io.github.pr0methean.ochd.tasks.consumable.ImageTask
+import io.github.pr0methean.ochd.tasks.ImageTask
 import javafx.scene.paint.Color.TRANSPARENT
 import javafx.scene.paint.Paint
 import org.apache.logging.log4j.util.StringBuilderFormattable

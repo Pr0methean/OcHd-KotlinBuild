@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd.texturebase
 
 import io.github.pr0methean.ochd.ImageProcessingContext
-import io.github.pr0methean.ochd.tasks.consumable.OutputTask
+import io.github.pr0methean.ochd.tasks.OutputTask
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.asFlow

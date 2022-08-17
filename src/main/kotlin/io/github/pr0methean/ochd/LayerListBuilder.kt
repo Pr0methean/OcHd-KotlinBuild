@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd
 
-import io.github.pr0methean.ochd.tasks.consumable.ImageTask
-import io.github.pr0methean.ochd.tasks.consumable.Task
+import io.github.pr0methean.ochd.tasks.ImageTask
+import io.github.pr0methean.ochd.tasks.Task
 import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
 import javafx.scene.image.Image
 import javafx.scene.paint.Color

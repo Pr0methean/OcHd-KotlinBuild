@@ -1,4 +1,4 @@
-package io.github.pr0methean.ochd.tasks.consumable
+package io.github.pr0methean.ochd.tasks
 
 import javafx.application.Platform
 import kotlinx.coroutines.*

@@ -1,8 +1,8 @@
-package io.github.pr0methean.ochd.tasks.consumable
+package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.LayerList
-import io.github.pr0methean.ochd.tasks.consumable.caching.TaskCache
+import io.github.pr0methean.ochd.tasks.caching.TaskCache
 import javafx.scene.SnapshotParameters
 import javafx.scene.canvas.Canvas
 import javafx.scene.image.Image
@@ -19,11 +19,11 @@ import kotlin.Result.Companion.success
 
 private val logger = LogManager.getLogger("ImageStackingTask")
 class ImageStackingTask(val layers: LayerList,
-                             val width: Int,
-                             val height: Int,
-                             override val name: String,
-                             cache: TaskCache<Image>,
-                             override val stats: ImageProcessingStats) : AbstractImageTask(name, cache ,stats) {
+                        val width: Int,
+                        val height: Int,
+                        override val name: String,
+                        cache: TaskCache<Image>,
+                        override val stats: ImageProcessingStats) : AbstractImageTask(name, cache ,stats) {
     init {
         if (layers.layers.isEmpty()) {
             throw IllegalArgumentException("Empty layer list")

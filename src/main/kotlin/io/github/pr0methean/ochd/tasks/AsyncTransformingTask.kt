@@ -1,6 +1,6 @@
-package io.github.pr0methean.ochd.tasks.consumable
+package io.github.pr0methean.ochd.tasks
 
-import io.github.pr0methean.ochd.tasks.consumable.caching.TaskCache
+import io.github.pr0methean.ochd.tasks.caching.TaskCache
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
@@ -9,24 +9,14 @@ import org.apache.logging.log4j.LogManager
 import kotlin.Result.Companion.failure
 import kotlin.Result.Companion.success
 
-private val logger = LogManager.getLogger("TransformingTask")
-open class TransformingTask<T, U>(
+private val logger = LogManager.getLogger("SlowTransformingTask")
+open class AsyncTransformingTask<T, U>(
     name: String,
     open val base: Task<T>,
-    open val cache: TaskCache<U>,
-    val transform: (T) -> U
+    cache: TaskCache<U>,
+    val transform: suspend (T) -> U
 )
         : AbstractTask<U>(name, cache) {
-
-    override fun getNow(): Result<U>? {
-        base.getNow()
-        return super.getNow()
-    }
-
-    @Suppress("DeferredResultUnused")
-    override suspend fun startPrerequisites() {
-        base.startAsync()
-    }
 
     override suspend fun createCoroutineAsync(coroutineScope: CoroutineScope): Deferred<Result<U>> {
         val myBase = base
@@ -43,6 +33,16 @@ open class TransformingTask<T, U>(
             }
             result
         }
+    }
+
+    @Suppress("DeferredResultUnused")
+    override suspend fun startPrerequisites() {
+        base.startAsync()
+    }
+
+    override fun getNow(): Result<U>? {
+        base.getNow()
+        return super.getNow()
     }
 
     @Suppress("UNCHECKED_CAST")

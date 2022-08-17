@@ -1,4 +1,4 @@
-package io.github.pr0methean.ochd.tasks.consumable.caching
+package io.github.pr0methean.ochd.tasks.caching
 
 import com.github.benmanes.caffeine.cache.Cache
 

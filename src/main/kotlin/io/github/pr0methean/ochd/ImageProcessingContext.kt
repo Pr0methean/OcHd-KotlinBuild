@@ -2,9 +2,9 @@ package io.github.pr0methean.ochd
 
 import com.github.benmanes.caffeine.cache.Caffeine
 import com.google.common.collect.ConcurrentHashMultiset
-import io.github.pr0methean.ochd.tasks.consumable.*
-import io.github.pr0methean.ochd.tasks.consumable.caching.SemiStrongTaskCache
-import io.github.pr0methean.ochd.tasks.consumable.caching.noopTaskCache
+import io.github.pr0methean.ochd.tasks.*
+import io.github.pr0methean.ochd.tasks.caching.SemiStrongTaskCache
+import io.github.pr0methean.ochd.tasks.caching.noopTaskCache
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
@@ -64,7 +64,8 @@ class ImageProcessingContext(
         if (task is RepaintTask
             && (task.paint == null || task.paint == Color.BLACK)
             && task.alpha == 1.0
-            && task.base is ImageTask) {
+            && task.base is ImageTask
+        ) {
             return deduplicate(task.base)
         }
         if (task is ImageStackingTask
