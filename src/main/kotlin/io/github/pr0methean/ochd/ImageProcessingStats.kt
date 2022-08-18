@@ -112,14 +112,12 @@ class ImageProcessingStats {
         var totalUnique = 0L
         var totalDedupes = 0L
         var totalActual = 0L
-        taskLaunches.toSet().forEach { className ->
+        dedupeSuccesses.toSet().forEach { className ->
             val unique = dedupeFailures.count(className)
             val dedupes = dedupeSuccesses.count(className)
             val actual = taskCompletions.count(className)
             val cacheSuccessRate = 1.0 - (actual - unique).toDouble().div(dedupes)
-            if (!cacheSuccessRate.isNaN()) {
-                logger.printf(Level.INFO, "%20s: %3.2f%%", className, 100.0*cacheSuccessRate)
-            }
+            logger.printf(Level.INFO, "%20s: %3.2f%%", className, 100.0 * cacheSuccessRate)
             totalUnique += unique
             totalDedupes += dedupes
             totalActual += actual
