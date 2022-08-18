@@ -123,7 +123,7 @@ class ImageProcessingStats {
             totalActual += actual
         }
         val totalCacheSuccessRate = 1.0 - (totalActual - totalUnique).toDouble().div(totalDedupes)
-        logger.printf(Level.INFO, "Total               : %3.2f%%", totalCacheSuccessRate)
+        logger.printf(Level.INFO, "Total               : %3.2f%%", 100.0 * totalCacheSuccessRate)
     }
 
     fun onTaskLaunched(typename: String, name: String) {
