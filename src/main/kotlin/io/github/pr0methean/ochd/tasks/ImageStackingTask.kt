@@ -53,11 +53,6 @@ class ImageStackingTask(val layers: LayerList,
         super.clearFailure()
     }
 
-    @Suppress("DeferredResultUnused")
-    override suspend fun startPrerequisites() {
-        layers.layers.asFlow().collect(Task<Image>::startAsync)
-    }
-
     override fun equals(other: Any?): Boolean {
         return (this === other) || (other is ImageStackingTask
                 && other.layers == layers

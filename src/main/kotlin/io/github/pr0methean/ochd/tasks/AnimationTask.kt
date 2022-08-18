@@ -32,11 +32,6 @@ class AnimationTask(
         super.clearFailure()
     }
 
-    @Suppress("DeferredResultUnused")
-    override suspend fun startPrerequisites() {
-        frames.asFlow().collect(ImageTask::startAsync)
-    }
-
     override fun equals(other: Any?): Boolean {
         return (this === other) || (
                 other is AnimationTask

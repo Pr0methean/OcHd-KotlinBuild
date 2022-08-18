@@ -66,14 +66,11 @@ abstract class AbstractTask<T>(override val name: String, private val cache: Tas
         return result
     }
 
-    protected open suspend fun startPrerequisites() {}
-
     override suspend fun startAsync(): Deferred<Result<T>> {
         val result = getNow()
         if (result != null) {
             return CompletableDeferred(result)
         }
-        startPrerequisites()
         val scope = createCoroutineScope()
         val newCoroutine = createCoroutineAsync(scope)
         logger.debug("Locking {} to start it", this)
@@ -90,7 +87,6 @@ abstract class AbstractTask<T>(override val name: String, private val cache: Tas
         if (result != null) {
             return CompletableDeferred(result)
         }
-        startPrerequisites()
         val scope = createCoroutineScope()
         val newCoroutine = createCoroutineAsync(scope)
         return startCoroutineWhileLockedAsync(newCoroutine, scope)
