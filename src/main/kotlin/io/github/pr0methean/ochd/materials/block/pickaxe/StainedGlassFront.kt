@@ -10,6 +10,9 @@ import javafx.scene.paint.Color
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
+/**
+ * This is the only material that feeds an ImageStackingTask to a RepaintTask rather than vice-versa.
+ */
 object StainedGlassFront: Material {
 
     override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
