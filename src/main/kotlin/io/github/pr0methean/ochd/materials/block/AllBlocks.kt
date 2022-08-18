@@ -11,5 +11,5 @@ import io.github.pr0methean.ochd.materials.block.shovel.SHOVEL_BLOCKS
 import io.github.pr0methean.ochd.texturebase.MaterialGroup
 
 val BLOCKS = MaterialGroup(
-        AXE_BLOCKS, PICKAXE_BLOCKS, SHOVEL_BLOCKS, HOE_BLOCKS, SHEAR_BLOCKS, LIQUID_BLOCKS,
-        BARE_HAND_BLOCKS, INDESTRUCTIBLE_BLOCKS)
+        INDESTRUCTIBLE_BLOCKS, AXE_BLOCKS, PICKAXE_BLOCKS, SHOVEL_BLOCKS, HOE_BLOCKS, SHEAR_BLOCKS, LIQUID_BLOCKS,
+        BARE_HAND_BLOCKS)
