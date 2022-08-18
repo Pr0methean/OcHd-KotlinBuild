@@ -5,4 +5,4 @@ import io.github.pr0methean.ochd.materials.item.ITEMS
 import io.github.pr0methean.ochd.materials.particle.PARTICLES
 import io.github.pr0methean.ochd.texturebase.MaterialGroup
 
-val ALL_MATERIALS = MaterialGroup(ITEMS, PARTICLES, BLOCKS)
+val ALL_MATERIALS = MaterialGroup(BLOCKS, ITEMS, PARTICLES)
