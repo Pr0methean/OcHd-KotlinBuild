@@ -9,7 +9,7 @@ import kotlinx.coroutines.debug.DebugProbes
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.io.IoBuilder
-import org.apache.logging.log4j.util.Unbox
+import org.apache.logging.log4j.util.Unbox.box
 import java.lang.management.ManagementFactory
 import java.lang.management.ThreadInfo
 import java.lang.management.ThreadMXBean
@@ -18,7 +18,13 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
 private fun Multiset<*>.log() {
-    toSet().forEach { logger.info("{}: {}", it, count(it)) }
+    var total = 0L
+    toSet().forEach {
+        val count = count(it)
+        total += count
+        logger.info("{}: {}", it, box(count))
+    }
+    logger.info("Total: {}", box(total))
 }
 private fun <T> Multiset<T>.logIf(predicate: (T) -> Boolean) {
     toSet().forEach { if (predicate(it)) {logger.info("{}: {}", it, count(it))} }
@@ -65,7 +71,7 @@ fun startMonitoring(stats: ImageProcessingStats, scope: CoroutineScope) {
 }
 
 fun logThread(logLevel: Level, id: Long, threadInfo: ThreadInfo) {
-    logger.log(logLevel, "Thread: {} (id: {})", threadInfo.threadName, Unbox.box(id))
+    logger.log(logLevel, "Thread: {} (id: {})", threadInfo.threadName, box(id))
     threadInfo.stackTrace.forEach {logger.log(logLevel, "{}.{} ({} line {})",
         it.className, it.methodName, it.fileName, it.lineNumber)}
 }
@@ -102,6 +108,24 @@ class ImageProcessingStats {
         val repeatedTasks = Multisets.copyHighestCountFirst(tasksByRunCount)
         repeatedTasks.logIf {repeatedTasks.count(it) >= 2}
         logger.info("")
+        logger.info("Cache hit rates for already-launched tasks:")
+        var totalUnique = 0L
+        var totalDedupes = 0L
+        var totalActual = 0L
+        taskLaunches.toSet().forEach { className ->
+            val unique = dedupeFailures.count(className)
+            val dedupes = dedupeSuccesses.count(className)
+            val actual = taskCompletions.count(className)
+            val cacheSuccessRate = 1.0 - (actual - unique).toDouble().div(dedupes)
+            if (!cacheSuccessRate.isNaN()) {
+                logger.printf(Level.INFO, "%20s: %3.2f%%", className, 100.0*cacheSuccessRate)
+            }
+            totalUnique += unique
+            totalDedupes += dedupes
+            totalActual += actual
+        }
+        val totalCacheSuccessRate = 1.0 - (totalActual - totalUnique).toDouble().div(totalDedupes)
+        logger.printf(Level.INFO, "Total               : %3.2f%%", totalCacheSuccessRate)
     }
 
     fun onTaskLaunched(typename: String, name: String) {
