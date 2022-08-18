@@ -73,7 +73,6 @@ enum class CommandBlock(
 
     override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
         val baseTexture = ctx.stack {createBaseTexture()}
-        baseTexture.enableCaching()
         for (sideType in SideType.values()) {
             val sideBase = ctx.stack {sideType.run {createBase()}}
             val frames = Array(4) { index -> ctx.stack {

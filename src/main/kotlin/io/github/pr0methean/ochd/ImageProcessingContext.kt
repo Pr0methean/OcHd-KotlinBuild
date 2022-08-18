@@ -97,7 +97,6 @@ class ImageProcessingContext(
     private fun findSvgTask(name: String): SvgImportTask {
         val task = svgTasks[name] ?: throw RuntimeException("Missing SvgImportTask for $name")
         if (dedupedSvgTasks.add(name, 1) > 0) {
-            task.enableCaching()
             stats.dedupeSuccesses.add("SvgImportTask")
         } else {
             stats.dedupeFailures.add("SvgImportTask")
@@ -133,7 +132,7 @@ class ImageProcessingContext(
         source: ImageTask,
         vararg destinations: File
     ): OutputTask {
-        return OutputTask(deduplicate(source).asPng, lowercaseName, stats, destinations.asList())
+        return out(lowercaseName, source, destinations.asList())
     }
 
     suspend fun out(
@@ -141,7 +140,10 @@ class ImageProcessingContext(
         source: ImageTask,
         destination: List<File>
     ): OutputTask {
-        return OutputTask(deduplicate(source).asPng, lowercaseName, stats, destination)
+        val pngSource = deduplicate(source).asPng
+        val outputTask = OutputTask(pngSource, lowercaseName, stats, destination)
+        pngSource.addDependentOutputTask(outputTask)
+        return outputTask
     }
 
     suspend fun out(source: suspend LayerListBuilder.() -> Unit, vararg names: String): OutputTask

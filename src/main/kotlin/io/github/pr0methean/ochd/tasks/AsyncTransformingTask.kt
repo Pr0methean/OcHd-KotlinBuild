@@ -45,6 +45,16 @@ open class AsyncTransformingTask<T, U>(
         return super.getNow()
     }
 
+    override fun addDependentOutputTask(task: OutputTask) {
+        super.addDependentOutputTask(task)
+        base.addDependentOutputTask(task)
+    }
+
+    override fun removeDependentOutputTask(task: OutputTask) {
+        super.removeDependentOutputTask(task)
+        base.removeDependentOutputTask(task)
+    }
+
     @Suppress("UNCHECKED_CAST")
     override suspend fun mergeWithDuplicate(other: Task<U>): Task<U> {
         val deduped = super.mergeWithDuplicate(other)

@@ -8,6 +8,11 @@ class SemiStrongTaskCache<T>(private val backingCache: Cache<SemiStrongTaskCache
         return backingCache.getIfPresent(this) as Result<T>? ?: super.getNow()
     }
 
+    override fun disable() {
+        backingCache.invalidate(this)
+        super.disable()
+    }
+
     override fun enabledSet(value: Result<T>?) {
         if (value == null) {
             backingCache.invalidate(this)

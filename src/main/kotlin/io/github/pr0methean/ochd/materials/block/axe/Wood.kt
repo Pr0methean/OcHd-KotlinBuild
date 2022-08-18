@@ -40,7 +40,6 @@ sealed interface Wood: ShadowHighlightMaterial {
             layer("doorKnob", STONE.highlight)
             layer("doorKnobShadow", STONE.shadow)
         }
-        doorKnob.enableCaching()
         emit(ctx.out(ctx.stack { bark() }, "block/${name}_${logSynonym}"))
         emit(ctx.out(ctx.stack { strippedLogSide() }, "block/stripped_${name}_${logSynonym}"))
         emit(ctx.out(ctx.stack { strippedLogTop() }, "block/stripped_${name}_${logSynonym}_top"))

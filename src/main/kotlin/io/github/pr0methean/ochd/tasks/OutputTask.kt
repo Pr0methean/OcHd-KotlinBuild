@@ -13,7 +13,7 @@ import java.nio.file.Files
 private val logger = LogManager.getLogger("OutputTask")
 @Suppress("BlockingMethodInNonBlockingContext")
 class OutputTask(
-    source: Task<ByteArray>,
+    val source: Task<ByteArray>,
     override val name: String,
     val stats: ImageProcessingStats,
     private val files: List<File>,

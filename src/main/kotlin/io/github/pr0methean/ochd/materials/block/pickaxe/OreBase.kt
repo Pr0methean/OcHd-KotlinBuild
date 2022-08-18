@@ -32,7 +32,6 @@ enum class OreBase(
 
         override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
             val baseTexture = ctx.stack {createTextureLayers()}
-            baseTexture.enableCaching()
             emit(ctx.out(baseTexture, "block/deepslate"))
             emit(ctx.out(ctx.stack {
                 copy(baseTexture)
@@ -54,12 +53,6 @@ enum class OreBase(
             layer("diagonalOutlineChecksBottomLeftTopRight", NETHERRACK.highlight)
         }
     };
-
-    override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> {
-        val tasks = super.outputTasks(ctx)
-        tasks.collect {it.base.enableCaching()}
-        return tasks
-    }
 
     companion object {
         val stoneExtremeHighlight = c(0xb5b5b5)

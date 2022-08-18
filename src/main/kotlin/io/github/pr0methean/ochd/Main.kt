@@ -74,10 +74,14 @@ suspend fun main(args: Array<String>) {
                     logger.info("Joining {}", task)
                     try {
                         return@withContext runBlocking {
-                            task.await()
+                            val result = task.await()
+                            if (result.isSuccess) {
+                                task.source.removeDependentOutputTask(task)
+                            }
+                            return@runBlocking result
                         }
                     } catch (t: Throwable) {
-                        return@withContext failure(t)
+                        return@withContext failure<Unit>(t)
                     }
                 }
                 tasksRun.increment()

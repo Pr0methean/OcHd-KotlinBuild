@@ -6,6 +6,7 @@ package io.github.pr0methean.ochd.tasks.caching
  */
 object NoopTaskCache: TaskCache<Any> {
     override fun enable() {} // No-op.
+    override fun disable() {} // No-op.
 
     override fun getNow(): Result<Nothing>? = null
 

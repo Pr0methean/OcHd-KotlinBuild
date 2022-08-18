@@ -23,6 +23,16 @@ open class TransformingTask<T, U>(
         return super.getNow()
     }
 
+    override fun addDependentOutputTask(task: OutputTask) {
+        super.addDependentOutputTask(task)
+        base.addDependentOutputTask(task)
+    }
+
+    override fun removeDependentOutputTask(task: OutputTask) {
+        super.removeDependentOutputTask(task)
+        base.removeDependentOutputTask(task)
+    }
+
     @Suppress("DeferredResultUnused")
     override suspend fun startPrerequisites() {
         base.startAsync()

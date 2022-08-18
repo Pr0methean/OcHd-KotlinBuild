@@ -61,9 +61,6 @@ class LayerListBuilder(val ctx: ImageProcessingContext) {
     suspend fun copy(element: ImageTask): Boolean {
         val deduped = ctx.deduplicate(element)
         val isAdded = layers.add(deduped)
-        if (isAdded) {
-            deduped.enableCaching()
-        }
         return isAdded
     }
     private fun addAll(elements: Collection<ImageTask>) = layers.addAll(elements)
