@@ -8,8 +8,6 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.toList
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox.box
-import smile.clustering.HierarchicalClustering
-import smile.clustering.linkage.WardLinkage
 import java.nio.file.Paths
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.atomic.LongAdder
@@ -69,16 +67,22 @@ suspend fun main(args: Array<String>) {
         cleanupAndCopyMetadata.join()
         System.gc()
         val tasksRun = LongAdder()
+        var prevTask: OutputTask? = null
         while (tasks.isNotEmpty()) {
-            val linkage = WardLinkage.of(tasks.toTypedArray()) { task1, task2 ->
-                val task1deps = task1.andAllDependencies()
-                val task2deps = task2.andAllDependencies()
-                1.0 - task1deps.intersect(task2deps).size.toDouble() / task1deps.union(task2deps).size
-            }
-            //
-            tasks = HierarchicalClustering.fit(linkage).partition(tasks.size).map(tasks::get)
             val tasksToRetry = ConcurrentLinkedDeque<OutputTask>()
-            tasks.forEach { task ->
+            val taskSet = tasks.toMutableSet()
+            while (taskSet.isNotEmpty()) {
+                val task = if (prevTask == null) {
+                    taskSet.first()
+                } else {
+                    taskSet.minBy {
+                        val task1deps = it.andAllDependencies()
+                        val task2deps = prevTask!!.andAllDependencies()
+                        1.0 - task1deps.intersect(task2deps).size.toDouble() / task1deps.union(task2deps).size
+                    }
+                }
+                taskSet.remove(task)
+                prevTask = task
                 val result = withContext(scope.coroutineContext) {
                     logger.info("Joining {}", task)
                     try {
