@@ -7,43 +7,11 @@ import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.STONE
 import io.github.pr0methean.ochd.materials.block.shovel.DirtGroundCover
 import io.github.pr0methean.ochd.tasks.ImageTask
 import io.github.pr0methean.ochd.tasks.OutputTask
-import io.github.pr0methean.ochd.texturebase.Material
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-
-// Puts more similar-shaped blocks together to improve cache hit rate.
-object WOOD_TRANSPOSED: Material {
-
-    override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
-        val woods = enumValues<OverworldWood>().asList().plus(enumValues<Fungus>())
-        val doorKnob = ctx.stack {
-            layer("doorKnob", STONE.highlight)
-            layer("doorKnobShadow", STONE.shadow)
-        }
-        woods.forEach {it.run {
-            emit(ctx.out(ctx.stack { bark() }, "block/${name}_${logSynonym}"))
-            emit(ctx.out(ctx.stack { strippedLogSide() }, "block/stripped_${name}_${logSynonym}"))
-            emit(ctx.out(ctx.stack { strippedLogTop() }, "block/stripped_${name}_${logSynonym}_top"))
-            emit(ctx.out(ctx.stack { logTop() }, "block/${name}_${logSynonym}_top"))
-        }}
-        woods.forEach {it.run {
-            emit(ctx.out(ctx.stack { trapdoor() }, "block/${name}_trapdoor"))
-            emit(ctx.out(ctx.stack { doorTop(doorKnob) }, "block/${name}_door_top"))
-            emit(ctx.out(ctx.stack { doorBottom() }, "block/${name}_door_bottom"))
-        }}
-        woods.forEach {it.run {
-            emit(ctx.out(ctx.stack { planks() }, "block/${name}_planks"))
-        }}
-        woods.forEach {it.run {
-            emit(ctx.out(ctx.stack { leaves() }, "block/${name}_${leavesSynonym}"))
-            emit(ctx.out(ctx.stack { sapling() }, "block/${name}_${saplingSynonym}"))
-        }}
-    }
-
-}
 
 sealed interface Wood: ShadowHighlightMaterial {
     val barkColor: Paint
