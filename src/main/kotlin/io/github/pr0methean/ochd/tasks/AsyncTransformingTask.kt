@@ -63,4 +63,8 @@ open class AsyncTransformingTask<T, U>(
         base.clearFailure()
         super.clearFailure()
     }
+
+    override fun andAllDependencies(): Set<Task<*>> {
+        return base.andAllDependencies().plus(this)
+    }
 }

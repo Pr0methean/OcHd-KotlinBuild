@@ -114,4 +114,8 @@ class ImageStackingTask(val layers: LayerList,
         stats.onTaskCompleted("ImageStackingTask", name)
         return snapshotRef.get()
     }
+
+    override fun andAllDependencies(): Set<Task<*>> {
+        return layers.layers.flatMap(Task<*>::andAllDependencies).toSet().plus(this)
+    }
 }

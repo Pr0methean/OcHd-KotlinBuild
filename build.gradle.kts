@@ -51,6 +51,7 @@ dependencies {
     implementation("org.apache.logging.log4j:log4j-core:$log4jVersion")
     implementation("org.apache.logging.log4j:log4j-iostreams:$log4jVersion")
     implementation("com.github.ben-manes.caffeine:caffeine:3.1.1")
+    implementation("com.github.haifengl:smile-core:2.6.0")
     runtimeOnly("org.apache.logging.log4j:log4j-jul:$log4jVersion")
     runtimeOnly("org.apache.logging.log4j:log4j-jpl:$log4jVersion")
     runtimeOnly("com.lmax:disruptor:3.4.4")

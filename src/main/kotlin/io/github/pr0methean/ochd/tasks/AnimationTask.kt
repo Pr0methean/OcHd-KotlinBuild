@@ -75,4 +75,7 @@ class AnimationTask(
         return output
     }
 
+    override fun andAllDependencies(): Set<Task<*>> {
+        return frames.flatMap(Task<*>::andAllDependencies).toSet().plus(this)
+    }
 }

@@ -33,6 +33,10 @@ open class TransformingTask<T, U>(
         base.removeDependentOutputTask(task)
     }
 
+    override fun andAllDependencies(): Set<Task<*>> {
+        return base.andAllDependencies().plus(this)
+    }
+
     override suspend fun createCoroutineAsync(coroutineScope: CoroutineScope): Deferred<Result<U>> {
         val myBase = base
         val myTransform = transform

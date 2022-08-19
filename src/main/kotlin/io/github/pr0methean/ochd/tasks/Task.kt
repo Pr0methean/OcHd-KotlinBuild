@@ -19,4 +19,6 @@ interface Task<T>: StringBuilderFormattable {
     fun addDependentOutputTask(task: OutputTask)
 
     fun removeDependentOutputTask(task: OutputTask)
+
+    fun andAllDependencies(): Set<Task<*>> = setOf(this)
 }
