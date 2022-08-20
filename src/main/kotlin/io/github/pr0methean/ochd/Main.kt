@@ -64,11 +64,11 @@ suspend fun main(args: Array<String>) {
     val time = measureNanoTime {
         stats.onTaskLaunched("Build task graph", "Build task graph")
         var tasks = ALL_MATERIALS.outputTasks(ctx).toList()
-        val distances = WeakHashMap<OutputTask,WeakHashMap<OutputTask, Int>>()
+        val distances = WeakHashMap<OutputTask,WeakHashMap<OutputTask, Double>>()
         for (task in tasks) {
             distances[task] = WeakHashMap()
             for (otherTask in tasks) {
-                distances[task]!![otherTask] = distanceFrom(task, otherTask)
+                distances[task]!![otherTask] = distanceBetween(task, otherTask)
             }
         }
         stats.onTaskCompleted("Build task graph", "Build task graph")
@@ -131,8 +131,8 @@ suspend fun main(args: Array<String>) {
     exitProcess(0)
 }
 
-fun distanceFrom(first: OutputTask, second: OutputTask): Int {
-    val task1deps = first.andAllDependencies()
-    val task2deps = second.andAllDependencies()
-    return task2deps.minus(task1deps).size
+fun distanceBetween(task: OutputTask, otherTask: OutputTask): Double {
+    val task1deps = task.andAllDependencies()
+    val task2deps = otherTask.andAllDependencies()
+    return 1.0 - (task1deps.intersect(task2deps).size.toDouble() / task1deps.union(task2deps).size)
 }
