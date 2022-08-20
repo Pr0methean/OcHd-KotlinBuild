@@ -17,7 +17,8 @@ enum class GiantMushroom(
     RED_MUSHROOM_BLOCK(Color.RED, Color.BLACK, Color.WHITE) {
         override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
-            layer("mushroomSpots", highlight)
+            layer("bigDotsTopLeftBottomRight", highlight)
+            layer("dots0", highlight)
             layer("borderRoundDots", highlight)
         }
     },
