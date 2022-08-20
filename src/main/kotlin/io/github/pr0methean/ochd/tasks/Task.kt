@@ -22,5 +22,9 @@ interface Task<T>: StringBuilderFormattable {
 
     fun andAllDependencies(): Set<Task<*>> = setOf(this)
 
-    fun uncachedSubtasks(): Int = andAllDependencies().filter { it.getNow() == null }.size
+    fun uncachedSubtasks(): Int = if (getNow() != null) {
+        0
+    } else {
+        andAllDependencies().filter { it.getNow() == null }.size
+    }
 }
