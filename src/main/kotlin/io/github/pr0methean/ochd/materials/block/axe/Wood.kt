@@ -391,9 +391,10 @@ enum class OverworldWood(
         }
 
         override suspend fun LayerListBuilder.sapling() {
+            layer("coalBorder", c(0x005c00))
             layer("saplingStem", barkColor)
-            layer("bigCircle", c(0x005c00))
-            layer("mushroomSpots", c(0x57ad3f))
+            layer("coal", c(0x57ad3f))
+            layer("sunflowerPistil", c(0x005c00))
         }
     };
 
