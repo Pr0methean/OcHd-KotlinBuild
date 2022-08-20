@@ -66,7 +66,7 @@ enum class SimpleSoftEarth(
             background(color)
             layer("borderSolid", shadow)
             layer("checksSmall", highlight)
-            layer("soulHeads", shadow)
+            layer("bigDotsTopLeftBottomRight", shadow)
             layer("soulTopLeftFace", highlight)
             layer("soulBottomRightFace", highlight)
         }
@@ -76,7 +76,7 @@ enum class SimpleSoftEarth(
             background(shadow)
             layer("borderSolid", color)
             layer("strokeBottomLeftTopRight4", highlight)
-            layer("soulHeads", color)
+            layer("bigDotsTopLeftBottomRight", color)
             layer("soulTopLeftFace", highlight)
             layer("soulBottomRightFace", shadow)
         }
