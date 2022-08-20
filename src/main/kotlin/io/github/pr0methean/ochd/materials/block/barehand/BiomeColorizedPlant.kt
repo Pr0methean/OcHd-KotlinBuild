@@ -19,7 +19,7 @@ enum class BiomeColorizedPlant: Block, ShadowHighlightMaterial {
     },
     TALL_GRASS {
         override suspend fun LayerListBuilder.createTextureLayers() {
-            layer("bottomPart", shadow)
+            layer("bottomHalf", shadow)
             layer("grassTall", color)
         }
     },

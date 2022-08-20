@@ -16,18 +16,18 @@ enum class CopperOxide(
     override val highlight: Color) : ShadowHighlightMaterial {
     EXPOSED(
         color = c(0xa87762),
-        shadow = c(0x796454),
-        highlight = c(0xce8d83)
+        shadow = c(0x795B4B),
+        highlight = c(0xce8888)
     ),
     WEATHERED(
         color = c(0x64a077),
         shadow = c(0x647147),
-        highlight = c(0x7ab799)
+        highlight = c(0x74BE9C)
     ),
     OXIDIZED(
         color = c(0x4fab90),
         shadow = c(0x3b5c5c),
-        highlight = c(0x6ec59f)
+        highlight = c(0x74BE9C)
     );
     private suspend fun LayerListBuilder.commonLayers() {
         background(color)

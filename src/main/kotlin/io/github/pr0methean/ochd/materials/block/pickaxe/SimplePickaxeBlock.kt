@@ -142,7 +142,7 @@ enum class SimplePickaxeBlock(
             layer("borderShortDashes", shadow)
         }
     },
-    BASALT_TOP(c(0x4e4e4e), c(0x002632), c(0x747474)) {
+    BASALT_TOP(c(0x515151), c(0x003939), c(0x737373)) {
         override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("borderSolid", shadow)
@@ -260,7 +260,7 @@ enum class SimplePickaxeBlock(
             layer("borderSolidTopLeft", stoneExtremeHighlight)
         }
     },
-    TERRACOTTA(c(0x965d43), c(0x945b43), c(0x9b6045)) {
+    TERRACOTTA(c(0x945b43), c(0x945b43), c(0x9b6045)) {
         override suspend fun LayerListBuilder.createTextureLayers() {
             background(shadow)
             layer("bigRingsTopLeftBottomRight", highlight)
@@ -289,7 +289,7 @@ enum class SimplePickaxeBlock(
             layer("borderDotted", highlight)
         }
     },
-    NETHER_BRICKS(c(0x302020), Color.BLACK, c(0x442727)) {
+    NETHER_BRICKS(c(0x302020), Color.BLACK, c(0x442929)) {
         override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("bricksSmall", highlight)

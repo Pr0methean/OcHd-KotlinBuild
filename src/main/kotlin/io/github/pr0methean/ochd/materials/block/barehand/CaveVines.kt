@@ -9,7 +9,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
 val berryHighlight = c(0xffff6b)
-val berryColor = c(0xeb8931)
+val berryColor = c(0xff8931)
 object CaveVines: ShadowHighlightMaterial {
     override val color: Paint = c(0x507233)
     override val shadow: Paint = c(0x4f3200)

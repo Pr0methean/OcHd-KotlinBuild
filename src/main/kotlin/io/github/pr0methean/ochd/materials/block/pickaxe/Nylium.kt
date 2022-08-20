@@ -12,7 +12,7 @@ enum class Nylium(
     override val shadow: Paint,
     override val highlight: Paint
 ): ShadowHighlightMaterial, GroundCoverBlock {
-    CRIMSON_NYLIUM(c(0x854242), c(0x7b0000), c(0xbd3031)) {
+    CRIMSON_NYLIUM(c(0x854242), c(0x7b0000), c(0xbd3030)) {
         override suspend fun LayerListBuilder.createCoverSideLayers() {
             layer("topPart", color)
             layer("strokeTopLeftBottomRight2TopPart", shadow)

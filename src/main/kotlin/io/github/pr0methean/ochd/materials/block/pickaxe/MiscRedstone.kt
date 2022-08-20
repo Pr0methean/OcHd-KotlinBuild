@@ -32,7 +32,7 @@ object MiscRedstone: Material {
         emit(ctx.out({
             val color = c(0xe6994a)
             val shadow = c(0x946931)
-            val highlight = c(0xffdab4)
+            val highlight = c(0xFFCDB2)
             background(color)
             layer("lampOn", highlight)
             layer("borderSolid", shadow)

@@ -71,12 +71,12 @@ enum class OverworldWood(
     )
     : Wood {
     ACACIA(
-        color = Color.rgb(0xad, 0x5d, 0x32),
-        highlight = Color.rgb(0xc2, 0x6d, 0x3f),
-        shadow = Color.rgb(0x8f, 0x4c, 0x2a),
-        barkColor = c(0x696259),
-        barkHighlight = c(0x8d8477),
-        barkShadow = c(0x504b40),
+        color = c(0xad5d32),
+        highlight = c(0xC27F4D),
+        shadow = c(0x915431),
+        barkColor = c(0x70583B),
+        barkHighlight = c(0x898977),
+        barkShadow = c(0x4a4a39),
     ) {
         override suspend fun LayerListBuilder.trapdoor() {
             copy {
@@ -117,17 +117,18 @@ enum class OverworldWood(
     },
     BIRCH(
         color = c(0xc8b77a),
-        highlight = c(0xd7cb8d),
-        shadow = c(0x9e8b61),
+        highlight = c(0xD7C187),
+        shadow = c(0x915431),
         barkColor = c(0xeeffea),
         barkHighlight = Color.WHITE,
-        barkShadow = c(0x605e54)
+        barkShadow = c(0x5f5f4f)
     ) {
         override suspend fun LayerListBuilder.trapdoor() {
             copy {
                 background(Color.WHITE)
                 layer("borderSolidExtraThick", color)
-                layer("craftingGrid", highlight)
+                layer("commandBlockSquare", highlight)
+                layer("craftingGridSpaces", Color.WHITE)
                 layer("borderSolid", shadow)
             }
             layer("trapdoorHingesBig", STONE.shadow)
@@ -137,7 +138,8 @@ enum class OverworldWood(
             copy {
                 background(Color.WHITE)
                 layer("borderSolidExtraThick", color)
-                layer("craftingGrid", highlight)
+                layer("commandBlockSquare", highlight)
+                layer("craftingGridSpaces", Color.WHITE)
                 layer("borderSolid", shadow)
             }
             layer("doorHingesBig", STONE.shadow)
@@ -147,7 +149,8 @@ enum class OverworldWood(
         override suspend fun LayerListBuilder.doorBottom() {
             background(highlight)
             layer("borderSolidExtraThick", color)
-            layer("craftingGrid", shadow)
+            layer("commandBlockSquare", shadow)
+            layer("craftingGridSpaces", highlight)
             layer("borderSolid", shadow)
             layer("doorHingesBig", STONE.shadow)
         }
@@ -164,12 +167,12 @@ enum class OverworldWood(
         }
     },
     DARK_OAK(
-        color = c(0x3e2912),
-        shadow = c(0x3a2411),
-        highlight = c(0x53381a),
-        barkColor = c(0x3f3100),
-        barkShadow = c(0x292000),
-        barkHighlight = c(0x584428)
+        color = c(0x3f2d23),
+        shadow = c(0x3a2400),
+        highlight = c(0x4a4a39),
+        barkColor = c(0x483800),
+        barkShadow = c(0x2b2000),
+        barkHighlight = c(0x624033)
     ) {
         override suspend fun LayerListBuilder.trapdoor() {
             copy {
@@ -203,17 +206,17 @@ enum class OverworldWood(
 
         override suspend fun LayerListBuilder.sapling() {
             layer("saplingStem", barkColor)
-            layer("bigCircle", c(0x005200))
+            layer("bigCircle", c(0x005c00))
             layer("bigCircleTwoQuarters", c(0x57ad3f))
         }
     },
     JUNGLE(
-        color = c(0x9f714a),
-        shadow = c(0x785437),
-        highlight = c(0x7d5d26),
-        barkColor = c(0x503f00),
-        barkShadow = c(0x3e3000),
-        barkHighlight = c(0x7d5d26)
+        color = c(0x915431),
+        shadow = c(0x795b4b),
+        highlight = c(0x8A593A),
+        barkColor = c(0x483800),
+        barkShadow = c(0x2B2000),
+        barkHighlight = c(0x8A593A)
     ) {
         override suspend fun LayerListBuilder.trapdoor() {
             layer("trapdoor2", color)
@@ -256,12 +259,12 @@ enum class OverworldWood(
         }
     },
     MANGROVE(
-        color = c(0x773934),
-        highlight = c(0x8b4d3a),
+        color = c(0x773636),
+        highlight = c(0x8A593A),
         shadow = c(0x5d0000),
-        barkColor = c(0x5a482c),
-        barkHighlight = c(0x675230),
-        barkShadow = c(0x443522)
+        barkColor = c(0x583838),
+        barkHighlight = c(0x624033),
+        barkShadow = c(0x4a4a39)
     ) {
         override val saplingSynonym: String = "propagule"
         override suspend fun LayerListBuilder.trapdoor() {
@@ -301,12 +304,12 @@ enum class OverworldWood(
         }
     },
     SPRUCE(
-        color = c(0x70522e),
-        highlight = c(0x886539),
-        shadow = c(0x5a4424),
+        color = c(0x70583B),
+        highlight = c(0x8A593A),
+        shadow = c(0x624033),
         barkColor = c(0x3b2700),
-        barkHighlight = c(0x553a1f),
-        barkShadow = c(0x2e1c00)
+        barkHighlight = c(0x624033),
+        barkShadow = c(0x2b2000)
     ) {
         override suspend fun LayerListBuilder.trapdoor() {
             background(shadow)
@@ -340,11 +343,11 @@ enum class OverworldWood(
     },
     OAK(
         color = c(0xaf8f55),
-        highlight = c(0xc29d62),
-        shadow = c(0x7e6237),
-        barkColor = c(0x745a36),
+        highlight = c(0xC27F4D),
+        shadow = c(0x70583B),
+        barkColor = c(0x70583B),
         barkHighlight = c(0x987849),
-        barkShadow = c(0x4c3d26)
+        barkShadow = c(0x4a4a39)
     ) {
         override suspend fun LayerListBuilder.trapdoor() {
             layer("cross", color)
@@ -389,7 +392,7 @@ enum class OverworldWood(
 
         override suspend fun LayerListBuilder.sapling() {
             layer("saplingStem", barkColor)
-            layer("bigCircle", c(0x006500))
+            layer("bigCircle", c(0x005c00))
             layer("mushroomSpots", c(0x57ad3f))
         }
     };
@@ -449,7 +452,7 @@ enum class Fungus(
             shadow = c(0x4b2737),
             highlight = c(0x863e5a),
             barkColor = c(0x4b2737),
-            barkShadow = c(0x442131),
+            barkShadow = c(0x442929),
             barkHighlight = c(0xb10000),
             leavesColor = c(0x7b0000),
             leavesShadow = c(0x5a0000),
@@ -496,11 +499,11 @@ enum class Fungus(
                 layer("crimsonFungusSpots", fungusSpotColor)
             }
         }, WARPED(
-            color = c(0x287067),
-            shadow = c(0x1e4340),
-            highlight = c(0x3a8e8c),
-            barkColor = c(0x562c3e),
-            barkShadow = c(0x442131),
+            color = c(0x286c6c),
+            shadow = c(0x003939),
+            highlight = c(0x3a8d8d),
+            barkColor = c(0x583838),
+            barkShadow = c(0x440031),
             barkHighlight = c(0x00956f),
             leavesColor = c(0x008282),
             leavesHighlight = c(0x00b485),

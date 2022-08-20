@@ -8,7 +8,7 @@ import io.github.pr0methean.ochd.texturebase.SingleLayerItem
 
 val REMAINS = MaterialGroup(BONE, BONE_MEAL)
 
-object BONE : SingleLayerItem("boneBottomLeftTopRight", "bone", c(0xe9e6d4))
+object BONE : SingleLayerItem("boneBottomLeftTopRight", "bone", c(0xeaead0))
 
 object BONE_MEAL: SingleLayerItem("bonemealSmall", "bone_meal")
 

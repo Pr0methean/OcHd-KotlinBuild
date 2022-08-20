@@ -16,7 +16,7 @@ enum class Polishable(
     override val shadow: Paint,
     override val highlight: Paint
 ): ShadowHighlightMaterial {
-    ANDESITE(c(0x8b8b8b),c(0x686868),c(0xa9a99a)) {
+    ANDESITE(c(0x8b8b8b),c(0x737373),c(0xaaaaaa)) {
         override suspend fun LayerListBuilder.createTextureLayersBase() {
             /*push bigRingsBottomLeftTopRight ${andesite_h} a1 ${andesite}
 push bigRingsTopLeftBottomRight ${andesite_s} a2*/
@@ -25,14 +25,14 @@ push bigRingsTopLeftBottomRight ${andesite_s} a2*/
             layer("bigRingsTopLeftBottomRight", shadow)
         }
     },
-    DIORITE(c(0xbfbfbf),c(0x7b7b7b), Color.WHITE) {
+    DIORITE(c(0xbfbfbf),c(0x888888), Color.WHITE) {
         override suspend fun LayerListBuilder.createTextureLayersBase() {
             background(color)
             layer("bigRingsBottomLeftTopRight", shadow)
             layer("bigRingsTopLeftBottomRight", highlight)
         }
     },
-    GRANITE(c(0x9f6b58),c(0x5f4034),c(0xffc0af)) {
+    GRANITE(c(0x9f6b58),c(0x624033),c(0xFFCDB2)) {
         override suspend fun LayerListBuilder.createTextureLayersBase() {
             background(color)
             layer("bigDotsBottomLeftTopRight", highlight)
@@ -41,7 +41,7 @@ push bigRingsTopLeftBottomRight ${andesite_s} a2*/
             layer("bigRingsTopLeftBottomRight", highlight)
         }
     },
-    BLACKSTONE(c(0x312c36), Color.BLACK,c(0x4e4b54)) {
+    BLACKSTONE(c(0x2e2e36), Color.BLACK,c(0x515151)) {
         override suspend fun LayerListBuilder.createTextureLayersBase() {
             background(shadow)
             layer("bigDotsBottomLeftTopRight", highlight)

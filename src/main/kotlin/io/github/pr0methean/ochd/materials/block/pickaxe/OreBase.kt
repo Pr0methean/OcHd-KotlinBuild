@@ -16,14 +16,14 @@ enum class OreBase(
     override val highlight: Color,
     val orePrefix: String
 ) : Block, ShadowHighlightMaterial {
-    STONE(c(0x888888), c(0x6d6d6d), c(0xa6a6a6), "") {
+    STONE(c(0x888888), c(0x737373), c(0xaaaaaa), "") {
         override suspend fun LayerListBuilder.createTextureLayers() {
             background(STONE.shadow)
             layer("checksLarge", STONE.highlight)
             layer("borderDotted", STONE.color)
         }
     },
-    DEEPSLATE(c(0x515151), c(0x2f2f37), c(0x797979), "deepslate_") {
+    DEEPSLATE(c(0x515151), c(0x2f2f3f), c(0x737373), "deepslate_") {
         override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("diagonalChecksBottomLeftTopRight", DEEPSLATE.highlight)
@@ -55,7 +55,7 @@ enum class OreBase(
     };
 
     companion object {
-        val stoneExtremeHighlight = c(0xb5b5b5)
-        val stoneExtremeShadow = c(0x525252)
+        val stoneExtremeHighlight = c(0xaaaaaa)
+        val stoneExtremeShadow = c(0x515151)
     }
 }

@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.merge
 
 val stemColor = c(0x4a8f28)
-val stemShadow = c(0x266325)
+val stemShadow = c(0x256325)
 val stemHighlight = c(0x55ab2d)
 
 @Suppress("unused")

@@ -21,20 +21,20 @@ enum class GiantMushroom(
             layer("borderRoundDots", highlight)
         }
     },
-    BROWN_MUSHROOM_BLOCK(c(0x977251), c(0x8d6850), c(0x9c795a)) {
+    BROWN_MUSHROOM_BLOCK(c(0x977251),  c(0x915431), c(0x9d825e)) {
         override suspend fun LayerListBuilder.createTextureLayers() {
             background(shadow)
             layer("rings", highlight)
         }
     },
-    MUSHROOM_STEM(c(0xc7c1b4), c(0xc2bcac), c(0xd3ccc4)) {
+    MUSHROOM_STEM(c(0xc4c4b4), c(0xc0c0ac), c(0xd0d0c4)) {
         override suspend fun LayerListBuilder.createTextureLayers() {
             background(highlight)
             layer("stripesThick", shadow)
             layer("borderShortDashes", color)
         }
     },
-    MUSHROOM_BLOCK_INSIDE(c(0xc7a877), c(0xab9066), c(0xd7b680)) {
+    MUSHROOM_BLOCK_INSIDE(c(0xc7a877), c(0xab9066), c(0xD7C187)) {
         override suspend fun LayerListBuilder.createTextureLayers() {
             background(highlight)
             layer("dots0", shadow)

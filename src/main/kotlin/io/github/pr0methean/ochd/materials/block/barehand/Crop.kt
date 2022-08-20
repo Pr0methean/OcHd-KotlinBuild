@@ -11,29 +11,13 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.util.*
 
-/*
-# plants
-
-flower_stem_h='55ab2d'
-flower_stem='4a8f28'
-flower_stem_s='266325'
-veg_leaves_h='55ab2d'
-veg_leaves='4a8f28'
-veg_leaves_s='266325'
-carrot='ff8a00'
-beetroot='bf2727'
-potato='d97b30'
-wheat_h='dcbb65'
-wheat='888836'
-wheat_s='5b6b0f'
- */
 /** Crops with multiple growth stages. */
 @Suppress("unused")
 private val vegLeavesColor = c(0x4a8f28)
-private val vegLeavesShadow = c(0x266325)
-private val vegLeavesHighlight = c(0x55ab2d)
+private val vegLeavesShadow = c(0x256325)
+private val vegLeavesHighlight = c(0x55ff2d)
 private val wheatColor = c(0x888836)
-private val wheatShadow = c(0x5b6b0f)
+private val wheatShadow = c(0x636300)
 private val wheatHighlight = c(0xdcbb65)
 
 @Suppress("unused")

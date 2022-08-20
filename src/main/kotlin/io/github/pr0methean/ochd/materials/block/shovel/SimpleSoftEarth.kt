@@ -13,14 +13,14 @@ enum class SimpleSoftEarth(
     override val shadow: Color,
     override val highlight: Color,
 ) : ShadowHighlightMaterial, Block {
-    SAND(c(0xdfd5aa), c(0xd1ba8a), c(0xedebcb)) {
+    SAND(c(0xdfd5aa), c(0xd1ba8a), c(0xEaEaD0)) {
         override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("checksSmall", shadow)
             layer("checksSmallOutline", highlight)
         }
     },
-    GRAVEL(c(0x7f7f7f), c(0x5f5f5f), c(0xaeaeae)) {
+    GRAVEL(c(0x737373), c(0x515151), c(0xaaaaaa)) {
         override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("checksLarge", shadow)
@@ -34,7 +34,7 @@ enum class SimpleSoftEarth(
             layer("checksSmallOutline", shadow)
         }
     },
-    CLAY(c(0x9aa3b3), c(0x9499a4), c(0xafb9d6)) {
+    CLAY(c(0x9aa3b3), c(0x9494a4), c(0xA8BEC5)) {
         override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("diagonalChecksTopLeftBottomRight", shadow)
@@ -43,7 +43,7 @@ enum class SimpleSoftEarth(
             layer("diagonalOutlineChecksBottomLeftTopRight", shadow)
         }
     },
-    MUD(c(0x3a3a3a), c(0x333333), c(0x494949)) {
+    MUD(c(0x3a3a3a), c(0x333333), c(0x515151)) {
         override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("strokeTopLeftBottomRight2", highlight)
@@ -61,7 +61,7 @@ enum class SimpleSoftEarth(
             layer("borderShortDashes", shadow)
         }
     },
-    SOUL_SAND(c(0x5b4538), c(0x352922), c(0x796152)) {
+    SOUL_SAND(c(0x624033), c(0x3F2D23), c(0x915431)) {
         override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("borderSolid", shadow)
@@ -71,7 +71,7 @@ enum class SimpleSoftEarth(
             layer("soulBottomRightFace", highlight)
         }
     },
-    SOUL_SOIL(c(0x49372c), c(0x352922), c(0x6a5244)) {
+    SOUL_SOIL(c(0x3F2D23), c(0x352922), c(0x915431)) {
         override suspend fun LayerListBuilder.createTextureLayers() {
             background(shadow)
             layer("borderSolid", color)

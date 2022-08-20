@@ -13,11 +13,6 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.merge
 
-/*
-grass_item_h='9ccb6c'
-grass_item='83b253'
-grass_item_s='64a43a'
- */
 private val grassItemColor = c(0x83b253)
 private val grassItemShadow = c(0x64a43a)
 @Suppress("unused")
@@ -79,7 +74,7 @@ enum class DirtGroundCover(
             }, "block/podzol_side"))
         }
     },
-    MYCELIUM(c(0x6a656a),c(0x5a5952),c(0x7b6d73)) {
+    MYCELIUM(c(0x6a656a),c(0x5a5a52),c(0x7b6d73)) {
         override suspend fun LayerListBuilder.createTopLayers() {
             background(color)
             layer("diagonalChecksTopLeftBottomRight", shadow)

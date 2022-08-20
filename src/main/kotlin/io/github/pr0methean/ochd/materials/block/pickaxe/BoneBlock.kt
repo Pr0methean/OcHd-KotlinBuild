@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.flow
 object BoneBlock: Material {
     val color = c(0xe1ddca)
     val shadow = c(0xc3bfa1)
-    val highlight = c(0xe9e6d4)
+    val highlight = c(0xEaEaD0)
     override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
         emit(ctx.out({
             background(shadow)

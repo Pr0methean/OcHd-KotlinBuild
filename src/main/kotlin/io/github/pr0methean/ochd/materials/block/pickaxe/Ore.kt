@@ -3,7 +3,6 @@ package io.github.pr0methean.ochd.materials.block.pickaxe
 import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.c
-import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.Companion.stoneExtremeHighlight
 import io.github.pr0methean.ochd.tasks.ImageTask
 import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
@@ -31,12 +30,12 @@ enum class Ore(
     COAL(
         color = c(0x2f2f2f),
         shadow = Color.BLACK,
-        highlight = c(0x494949)) {
+        highlight = c(0x515151)) {
         override suspend fun oreBlock(ctx: ImageProcessingContext, oreBase: OreBase): ImageTask {
             if (oreBase == OreBase.DEEPSLATE) {
                 return ctx.stack {
                     copy(OreBase.DEEPSLATE)
-                    layer("coalBorder", stoneExtremeHighlight)
+                    layer("coalBorder", refinedHighlight)
                     item()
                 }
             }
@@ -54,17 +53,17 @@ enum class Ore(
     },
     COPPER(
         color = c(0xe0734d),
-        shadow = c(0x904931),
+        shadow = c(0x915431),
         highlight = c(0xff8268),
         needsRefining = true),
     IRON(
         color=c(0xd8af93),
         shadow=c(0xaf8e77),
-        highlight=c(0xffc0aa),
+        highlight=c(0xFFCDB2),
         needsRefining = true,
         refinedColor = c(0xdcdcdc),
         refinedHighlight = Color.WHITE,
-        refinedShadow = c(0xb0b0b0)),
+        refinedShadow = c(0xaaaaaa)),
     REDSTONE(
         color=Color.RED,
         shadow=c(0xca0000),
@@ -82,7 +81,7 @@ enum class Ore(
         substrates = BOTH
     ),
     QUARTZ(
-        color=c(0xeae5de),
+        color=c(0xe8e8de),
         shadow=c(0xb6a48e),
         highlight = Color.WHITE,
         substrates = NETHER
@@ -105,7 +104,7 @@ enum class Ore(
 
     },
     LAPIS(
-        color=c(0x1855bd),
+        color=c(0x0055bd),
         shadow=c(0x00009c),
         highlight = c(0x6995ff),
         itemNameOverride = "lapis_lazuli"
@@ -125,8 +124,8 @@ enum class Ore(
         }
     },
     DIAMOND(
-        color=c(0x1ed0d6),
-        shadow=c(0x239698),
+        color=c(0x20d3d3),
+        shadow=c(0x209797),
         highlight=c(0x77e7d1)
     ) {
         private val extremeHighlight = c(0xd5ffff)
@@ -144,9 +143,9 @@ enum class Ore(
         }
     },
     EMERALD(
-        color=c(0x1c9829),
+        color=c(0x009829),
         shadow=c(0x007b18),
-        highlight=c(0x1cdd62)
+        highlight=c(0x00dd62)
     ) {
         private val extremeHighlight = c(0xd9ffeb)
         override suspend fun LayerListBuilder.item() {

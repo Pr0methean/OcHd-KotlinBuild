@@ -16,7 +16,7 @@ enum class SimpleIndestructibleBlock(
     override val shadow: Paint,
     override val highlight: Paint
 ): SingleTextureMaterial, ShadowHighlightMaterial, Block {
-    BEDROCK(c(0x575757), c(0x222222), c(0x979797)) {
+    BEDROCK(c(0x515151), c(0x222222), c(0xaaaaaa)) {
         override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("borderSolid", shadow)
