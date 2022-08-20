@@ -21,4 +21,6 @@ interface Task<T>: StringBuilderFormattable {
     fun removeDependentOutputTask(task: OutputTask)
 
     fun andAllDependencies(): Set<Task<*>> = setOf(this)
+
+    fun uncachedSubtasks(): Int = andAllDependencies().filter { it.getNow() == null }.size
 }

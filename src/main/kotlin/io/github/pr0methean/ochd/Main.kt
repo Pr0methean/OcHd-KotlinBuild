@@ -9,7 +9,6 @@ import kotlinx.coroutines.flow.toList
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox.box
 import java.nio.file.Paths
-import java.util.*
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.atomic.LongAdder
 import kotlin.Result.Companion.failure
@@ -64,13 +63,6 @@ suspend fun main(args: Array<String>) {
     val time = measureNanoTime {
         stats.onTaskLaunched("Build task graph", "Build task graph")
         var tasks = ALL_MATERIALS.outputTasks(ctx).toList()
-        val distances = WeakHashMap<OutputTask,WeakHashMap<OutputTask, Double>>()
-        for (task in tasks) {
-            distances[task] = WeakHashMap()
-            for (otherTask in tasks) {
-                distances[task]!![otherTask] = distanceBetween(task, otherTask)
-            }
-        }
         stats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupAndCopyMetadata.join()
         System.gc()
@@ -83,7 +75,7 @@ suspend fun main(args: Array<String>) {
                 val task = if (prevTask == null) {
                     taskSet.first()
                 } else {
-                    taskSet.minBy {distances[prevTask]!![it]!!}
+                    taskSet.minBy {it.uncachedSubtasks().toDouble() / it.andAllDependencies().size}
                 }
                 taskSet.remove(task)
                 prevTask = task
@@ -129,10 +121,4 @@ suspend fun main(args: Array<String>) {
     logger.info("")
     logger.info("All tasks finished after $time ns")
     exitProcess(0)
-}
-
-fun distanceBetween(task: OutputTask, otherTask: OutputTask): Double {
-    val task1deps = task.andAllDependencies()
-    val task2deps = otherTask.andAllDependencies()
-    return 1.0 - (task1deps.intersect(task2deps).size.toDouble() / task1deps.union(task2deps).size)
 }
