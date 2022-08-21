@@ -46,7 +46,7 @@ suspend fun main(args: Array<String>) {
     Platform.startup {}
     val tileSize = args[0].toInt()
     if (tileSize <= 0) throw IllegalArgumentException("tileSize shouldn't be zero or negative but was ${args[0]}")
-    val scope = CoroutineScope(newFixedThreadPoolContext(2 * Runtime.getRuntime().availableProcessors(), "Main")).plus(supervisorJob)
+    val scope = CoroutineScope(newFixedThreadPoolContext(3 * Runtime.getRuntime().availableProcessors(), "Main")).plus(supervisorJob)
     val svgDirectory = Paths.get("svg").toAbsolutePath().toFile()
     val outTextureRoot = out.resolve("assets").resolve("minecraft").resolve("textures")
 
