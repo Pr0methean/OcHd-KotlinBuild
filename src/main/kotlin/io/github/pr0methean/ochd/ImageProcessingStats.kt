@@ -87,6 +87,10 @@ class ImageProcessingStats {
     val dedupeFailures: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     private val retries = LongAdder()
     private val tasksByRunCount = ConcurrentHashMultiset.create<Pair<String, String>>()
+    init {
+        dedupeFailures.add("Build task graph")
+
+    }
 
     @Suppress("UnstableApiUsage")
     fun log() {
