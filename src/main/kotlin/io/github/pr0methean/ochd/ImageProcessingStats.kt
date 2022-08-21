@@ -97,11 +97,14 @@ class ImageProcessingStats {
         logger.info("Task completions:")
         taskCompletions.log()
         logger.info("")
+        logger.info("Necessary tasks:")
+        dedupeFailures.log()
+        logger.info("")
         logger.info("Deduplicated tasks:")
         dedupeSuccesses.log()
         logger.info("")
-        logger.info("Non-deduplicated tasks:")
-        dedupeFailures.log()
+        logger.info("Worst-case tasks:")
+        Multisets.sum(dedupeFailures, dedupeSuccesses).log()
         logger.info("")
         logger.info("Retries of failed tasks: {}", retries.sum())
         logger.info("Tasks repeated due to cache misses:")
@@ -135,6 +138,9 @@ class ImageProcessingStats {
     fun onTaskCompleted(typename: String, name: String) {
         logger.info("Completed: {}", name)
         taskCompletions.add(typename)
+        if (typename == "OutputTask" || typename == "PngCompressionTask") {
+            dedupeFailures.add(typename)
+        }
     }
 
     fun recordRetries(howMany: Long) {
