@@ -100,6 +100,14 @@ enum class DirtGroundCover(
             background(color)
             layer("snow", shadow)
         }
+
+        override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+            emit(ctx.out(ctx.stack { createTopLayers() }, "block/snow", "block/powder_snow"))
+            emit(ctx.out(ctx.stack {
+                copy(base)
+                createCoverSideLayers()
+            }, "block/grass_block_snow"))
+        }
     }
     ;
     override val base = SimpleSoftEarth.DIRT
