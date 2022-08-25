@@ -13,17 +13,14 @@ import kotlinx.coroutines.flow.toList
 class LayerListBuilder(val ctx: ImageProcessingContext) {
     private val layers = mutableListOf<ImageTask>()
     var background: Paint = Color.TRANSPARENT
-    fun background(color: Color, opacity: Double = 1.0) {
-        background = if (opacity == 1.0) color else Color(color.red, color.green, color.blue, opacity * color.opacity)
+    fun background(paint: Paint, opacity: Double = 1.0) {
+        background = if (opacity == 1.0 || paint !is Color) paint else Color(paint.red, paint.green, paint.blue, opacity * paint.opacity)
     }
     fun background(red: Int, green: Int, blue: Int) {
         background = Color.rgb(red, green, blue)
     }
     fun background(color: Int) {
         background = c(color)
-    }
-    fun background(paint: Paint) {
-        background = paint
     }
 
     suspend fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): ImageTask {

@@ -5,13 +5,13 @@ import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase
 import io.github.pr0methean.ochd.texturebase.Block
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
-import javafx.scene.paint.Color
+import javafx.scene.paint.Paint
 
 @Suppress("unused")
 enum class SimpleSoftEarth(
-    override val color: Color,
-    override val shadow: Color,
-    override val highlight: Color,
+    override val color: Paint,
+    override val shadow: Paint,
+    override val highlight: Paint,
 ) : ShadowHighlightMaterial, Block {
     SAND(c(0xdfd5aa), c(0xd1ba8a), c(0xEaEaD0)) {
         override suspend fun LayerListBuilder.createTextureLayers() {
@@ -111,5 +111,15 @@ enum class SimpleSoftEarth(
             layer("dots2", highlight)
             layer("borderDotted", highlight)
         }
+    },
+    POWDER_SNOW(DirtGroundCover.SNOW) {
+        override suspend fun LayerListBuilder.createTextureLayers() {
+            background(color)
+            layer("bigDotsBottomLeftTopRight", shadow, 0.5)
+            layer("diagonalChecksBottomLeftTopRight", color)
+            layer("snow", shadow)
+        }
     };
+    constructor(base: ShadowHighlightMaterial):
+            this(base.color, base.shadow, base.highlight)
 }
