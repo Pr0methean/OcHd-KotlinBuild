@@ -3,10 +3,10 @@ package io.github.pr0methean.ochd.materials.block.shovel
 import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.c
+import io.github.pr0methean.ochd.materials.block.shovel.SimpleSoftEarth.POWDER_SNOW
 import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.texturebase.GroundCoverBlock
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
-import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -90,7 +90,8 @@ enum class DirtGroundCover(
             layer("diagonalOutlineChecksTopRight", shadow)
         }
     },
-    SNOW(Color.WHITE,  c(0xcfcfdf), Color.WHITE, nameOverrideTop = "snow", nameOverrideSide = "grass_block_snow") {
+    SNOW(POWDER_SNOW.color,  POWDER_SNOW.shadow, POWDER_SNOW.highlight,
+            nameOverrideTop = "snow", nameOverrideSide = "grass_block_snow") {
         override suspend fun LayerListBuilder.createCoverSideLayers() {
             layer("topPart", color)
             layer("snowTopPart", shadow)

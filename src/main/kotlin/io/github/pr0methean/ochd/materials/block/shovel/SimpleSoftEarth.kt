@@ -5,6 +5,7 @@ import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase
 import io.github.pr0methean.ochd.texturebase.Block
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
+import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 
 @Suppress("unused")
@@ -112,7 +113,7 @@ enum class SimpleSoftEarth(
             layer("borderDotted", highlight)
         }
     },
-    POWDER_SNOW(DirtGroundCover.SNOW) {
+    POWDER_SNOW(Color.WHITE,  c(0xcfcfdf), Color.WHITE) {
         override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("bigDotsBottomLeftTopRight", shadow, 0.5)
