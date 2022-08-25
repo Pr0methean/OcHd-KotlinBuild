@@ -85,8 +85,8 @@ suspend fun main(args: Array<String>) {
                 } else {
                     taskSet.minBy {
                         1.shl(20).toDouble() * (it.uncachedSubtasks().toDouble() / it.andAllDependencies().size)
-                        + 1.shl(10).toDouble() * distances[prevTask]!![it]!!
-                        + it.uncachedSubtasks()}
+                        + 1.shl(10).toDouble() * it.uncachedSubtasks()
+                        + distances[prevTask]!![it]!!}
                 }
                 taskSet.remove(task)
                 prevTask = task
