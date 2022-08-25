@@ -116,8 +116,7 @@ enum class SimpleSoftEarth(
     POWDER_SNOW(Color.WHITE,  c(0xcfcfdf), Color.WHITE) {
         override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
-            layer("checksSmall", shadow, 0.5)
-            layer("snow", shadow)
+            layer("snowXorChecksSmall", shadow)
         }
     };
     constructor(base: ShadowHighlightMaterial):
