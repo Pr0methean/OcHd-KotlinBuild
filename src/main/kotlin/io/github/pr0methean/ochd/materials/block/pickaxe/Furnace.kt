@@ -23,15 +23,17 @@ object Furnace: Material {
             copy(furnaceSide)
             layer("furnaceFrontLit")
         }, "block/furnace_front_on"))
-        emit(ctx.out({
+        val blastFurnaceTop = ctx.stack {
             background(OreBase.STONE.shadow)
             layer("cornerCrosshairs", OreBase.stoneExtremeHighlight)
-        }, "block/blast_furnace_top"))
+        }
+        emit(ctx.out(blastFurnaceTop, "block/blast_furnace_top"))
         val blastFurnaceSide = ctx.stack {
-            copy(furnaceSide)
+            background(OreBase.STONE.shadow)
+            layer("bottomHalf", OreBase.STONE.color)
             layer("cornerCrosshairs", OreBase.stoneExtremeHighlight)
         }
-        emit(ctx.out(blastFurnaceSide, "block/blast_furnace_side"))
+        emit(ctx.out(blastFurnaceSide, "block/blast_furnace"))
         val blastFurnaceFrontBase = ctx.stack {
             copy(blastFurnaceSide)
             layer("commandBlockSquare", OreBase.stoneExtremeHighlight)
