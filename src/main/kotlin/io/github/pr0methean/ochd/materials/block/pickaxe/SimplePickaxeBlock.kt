@@ -99,30 +99,30 @@ enum class SimplePickaxeBlock(
             layer("creeperFaceSmall", shadow)
         }
     },
-    RED_SAND_BASE(SimpleSoftEarth.RED_SAND, hasOutput = false) {
+    RED_SANDSTONE_BASE(SimpleSoftEarth.RED_SAND, hasOutput = false) {
         override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
-            layer("checksLargeOutline", highlight)
+            layer("checksLarge", highlight)
+            layer("checksLargeOutline", shadow)
         }
     },
     RED_SANDSTONE_BOTTOM(SimpleSoftEarth.RED_SAND) {
         override suspend fun LayerListBuilder.createTextureLayers() {
-            copy(RED_SAND_BASE)
+            copy(RED_SANDSTONE_BASE)
             layer("borderLongDashes", shadow)
         }
     },
     RED_SANDSTONE_TOP(SimpleSoftEarth.RED_SAND) {
         override suspend fun LayerListBuilder.createTextureLayers() {
-            copy(RED_SAND_BASE)
+            copy(RED_SANDSTONE_BASE)
             layer("borderSolidThick", highlight)
             layer("borderLongDashes", shadow)
         }
     },
     CUT_RED_SANDSTONE(SimpleSoftEarth.RED_SAND) {
         override suspend fun LayerListBuilder.createTextureLayers() {
-            copy(RED_SAND_BASE)
-            layer("borderSolidThick", shadow)
-            layer("borderSolidTopLeft", highlight)
+            copy(RED_SANDSTONE_BASE)
+            layer("borderSolidThick", color)
             layer("borderSolid", highlight)
             layer("borderLongDashes", shadow)
         }
