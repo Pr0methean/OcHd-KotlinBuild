@@ -353,8 +353,9 @@ enum class OverworldWood(
     ) {
         override suspend fun LayerListBuilder.trapdoor() {
             copy {
+                layer("borderSolid", highlight)
+                layer("cross", highlight)
                 layer("2x2TopLeft", shadow)
-                layer("2x2BottomRight", highlight)
                 layer("borderShortDashes", color)
             }
             layer("trapdoorHingesBig", STONE.color)
@@ -363,8 +364,9 @@ enum class OverworldWood(
 
         override suspend fun LayerListBuilder.doorTop(doorKnob: ImageTask) {
             copy {
+                layer("borderSolid", highlight)
+                layer("cross", highlight)
                 layer("2x2TopLeft", shadow)
-                layer("2x2BottomRight", highlight)
                 layer("borderShortDashes", color)
             }
             layer("craftingSide", shadow)
@@ -380,8 +382,9 @@ enum class OverworldWood(
             background(color)
             layer("waves", highlight)
             copy {
+                layer("borderSolid", highlight)
+                layer("cross", highlight)
                 layer("2x2TopLeft", shadow)
-                layer("2x2BottomRight", highlight)
                 layer("borderShortDashes", color)
             }
             copy {
