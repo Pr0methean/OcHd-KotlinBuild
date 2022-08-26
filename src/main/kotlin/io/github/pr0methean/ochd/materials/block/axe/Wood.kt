@@ -177,7 +177,8 @@ enum class OverworldWood(
         override suspend fun LayerListBuilder.trapdoor() {
             copy {
                 background(color)
-                layer("2x2BottomRight", highlight)
+                layer("borderSolid", highlight)
+                layer("cross", highlight)
                 layer("2x2TopLeft", shadow)
                 layer("borderShortDashes", color)
             }
@@ -192,7 +193,8 @@ enum class OverworldWood(
         override suspend fun LayerListBuilder.doorBottom() {
             copy {
                 background(color)
-                layer("2x2BottomRight", highlight)
+                layer("borderSolid", highlight)
+                layer("cross", highlight)
                 layer("2x2TopLeft", shadow)
                 layer("borderShortDashes", color)
             }

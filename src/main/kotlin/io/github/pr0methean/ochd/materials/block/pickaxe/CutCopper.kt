@@ -12,7 +12,8 @@ object CutCopper: Block {
     override suspend fun LayerListBuilder.createTextureLayers() {
         background(COPPER.color)
         layer("streaks", COPPER.highlight)
-        layer("2x2BottomRight", COPPER.shadow)
+        layer("borderSolid", COPPER.shadow)
+        layer("cross", COPPER.shadow)
         layer("2x2TopLeft", COPPER.highlight)
     }
 }
