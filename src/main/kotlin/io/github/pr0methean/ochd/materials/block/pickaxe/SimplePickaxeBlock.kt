@@ -191,12 +191,14 @@ enum class SimplePickaxeBlock(
         override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("checksLargeOutline", shadow)
-            layer("bigDotsTopLeftBottomRight", highlight)
+            layer("bigDotsTopLeftBottomRight", shadow)
+            layer("bigRingsTopLeftBottomRight", highlight)
         }
     },
     END_STONE_BRICKS(END_STONE) {
         override suspend fun LayerListBuilder.createTextureLayers() {
-            copy(END_STONE)
+            background(highlight)
+            layer("checksSmall", color)
             layer("bricksSmall", shadow)
             layer("borderShortDashes", highlight)
         }
