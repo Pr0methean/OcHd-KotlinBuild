@@ -72,7 +72,7 @@ enum class OverworldWood(
     : Wood {
     ACACIA(
         color = c(0xad5d32),
-        highlight = c(0xC27F4D),
+        highlight = c(0xc26d3f),
         shadow = c(0x915431),
         barkColor = c(0x70583B),
         barkHighlight = c(0x898977),
@@ -343,7 +343,7 @@ enum class OverworldWood(
     },
     OAK(
         color = c(0xaf8f55),
-        highlight = c(0xC27F4D),
+        highlight = c(0xC29d62),
         shadow = c(0x70583B),
         barkColor = c(0x70583B),
         barkHighlight = c(0x987849),
