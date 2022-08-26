@@ -14,7 +14,5 @@ object CutCopper: Block {
         layer("streaks", COPPER.highlight)
         layer("2x2BottomRight", COPPER.shadow, 0.5)
         layer("2x2TopLeft", COPPER.highlight, 0.5)
-        layer("borderSolid", COPPER.shadow)
-        layer("borderSolidTopLeft", COPPER.highlight)
     }
 }
