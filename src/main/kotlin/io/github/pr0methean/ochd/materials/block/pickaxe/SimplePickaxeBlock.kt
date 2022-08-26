@@ -123,8 +123,8 @@ enum class SimplePickaxeBlock(
         override suspend fun LayerListBuilder.createTextureLayers() {
             copy(RED_SANDSTONE_BASE)
             layer("borderSolidThick", color)
-            layer("borderSolid", highlight)
-            layer("borderLongDashes", shadow)
+            layer("borderSolid", shadow)
+            layer("borderSolidTopLeft", highlight)
         }
     },
     CHISELED_RED_SANDSTONE(SimpleSoftEarth.RED_SAND) {
