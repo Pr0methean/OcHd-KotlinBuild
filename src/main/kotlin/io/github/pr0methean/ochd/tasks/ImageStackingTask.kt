@@ -39,8 +39,8 @@ class ImageStackingTask(val layers: LayerList,
     }
 
     override fun addDependentOutputTask(task: OutputTask) {
-        super.addDependentOutputTask(task)
         layers.layers.forEach { dep -> if (dep is AbstractTask<*>) {dep.addDependentOutputTask(task)} }
+        super.addDependentOutputTask(task)
     }
 
     override fun removeDependentOutputTask(task: OutputTask) {
