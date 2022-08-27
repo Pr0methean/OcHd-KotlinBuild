@@ -20,13 +20,15 @@ abstract class AbstractTask<T>(override val name: String, private val cache: Tas
     private val mutex = Mutex()
     override fun addDependentOutputTask(task: OutputTask): Unit = synchronized(dependentOutputTasks)
     {
-        if (dependentOutputTasks.add(task) && dependentOutputTasks.size >= 2) {
+        dependentOutputTasks.add(task)
+        if (dependentOutputTasks.size >= 2) {
             cache.enable()
         }
     }
 
     override fun removeDependentOutputTask(task: OutputTask): Unit = synchronized(dependentOutputTasks) {
-        if (dependentOutputTasks.remove(task) && dependentOutputTasks.isEmpty()) {
+        dependentOutputTasks.remove(task)
+        if (dependentOutputTasks.isEmpty()) {
             cache.disable()
         }
     }
