@@ -1,11 +1,11 @@
 package io.github.pr0methean.ochd.tasks
 
-import com.google.common.collect.MapMaker
 import io.github.pr0methean.ochd.tasks.caching.TaskCache
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.apache.logging.log4j.LogManager
+import java.util.*
 import java.util.Collections.newSetFromMap
 import java.util.concurrent.atomic.AtomicReference
 import javax.annotation.concurrent.GuardedBy
@@ -16,15 +16,16 @@ private val cancelBecauseReplacing = CancellationException("Being replaced")
 abstract class AbstractTask<T>(override val name: String, private val cache: TaskCache<T>) : Task<T> {
     /** Used to solve initialization deadlocks. */
     protected val thiz by lazy {this}
-    private val dependentOutputTasks = newSetFromMap<OutputTask>(MapMaker().weakKeys().makeMap())
+    private val dependentOutputTasks = newSetFromMap<OutputTask>(WeakHashMap())
     private val mutex = Mutex()
-    override fun addDependentOutputTask(task: OutputTask) {
+    override fun addDependentOutputTask(task: OutputTask): Unit = synchronized(dependentOutputTasks)
+    {
         if (dependentOutputTasks.add(task) && dependentOutputTasks.size >= 2) {
             cache.enable()
         }
     }
 
-    override fun removeDependentOutputTask(task: OutputTask) {
+    override fun removeDependentOutputTask(task: OutputTask): Unit = synchronized(dependentOutputTasks) {
         if (dependentOutputTasks.remove(task) && dependentOutputTasks.isEmpty()) {
             cache.disable()
         }
