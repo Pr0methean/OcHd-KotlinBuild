@@ -23,7 +23,7 @@ fun color(web: String, alpha: Double): Color = Color.web(web, alpha)
 
 private val logger = LogManager.getLogger("ImageProcessingContext")
 // Hard-ref cache will be able to contain this * 64MiB of uncompressed 32-bit pixels
-private const val MINIMUM_SVGIMPORT_CACHE_4096x4096 = 16L
+private const val MINIMUM_CACHE_4096x4096 = 16L
 
 /**
  * Holds info needed to build and deduplicate the task graph. Needs to become unreachable once the graph is built.
@@ -39,11 +39,11 @@ class ImageProcessingContext(
     private val taskDeduplicationMap = ConcurrentHashMap<ImageTask, ImageTask>()
     val stats: ImageProcessingStats = ImageProcessingStats()
     private val dedupedSvgTasks = ConcurrentHashMultiset.create<String>()
-    private val svgImportTaskBackingCache = Caffeine.newBuilder().weakKeys().maximumSize(MINIMUM_SVGIMPORT_CACHE_4096x4096.shl(24) / (tileSize * tileSize))
+    private val backingCache = Caffeine.newBuilder().weakKeys().maximumSize(MINIMUM_CACHE_4096x4096.shl(24) / (tileSize * tileSize))
         .build<SemiStrongTaskCache<*>,Result<*>>()
 
-    private fun <T> createStandardTaskCache() = WeakTaskCache<T>()
-    private fun <T> createSvgImportCache() = SemiStrongTaskCache<T>(svgImportTaskBackingCache)
+    private fun <T> createStandardTaskCache() = SemiStrongTaskCache<T>(backingCache)
+    private fun <T> createSvgImportCache() = WeakTaskCache<T>()
 
     init {
         val builder = mutableMapOf<String, SvgImportTask>()
