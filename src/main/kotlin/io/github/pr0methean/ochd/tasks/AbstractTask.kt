@@ -16,22 +16,17 @@ private val cancelBecauseReplacing = CancellationException("Being replaced")
 abstract class AbstractTask<T>(override val name: String, private val cache: TaskCache<T>) : Task<T> {
     private val dependentOutputTasks = newSetFromMap<OutputTask>(WeakHashMap())
     private val mutex = Mutex()
-    override fun addDependentOutputTask(task: OutputTask) {
-        val shouldEnable = synchronized(dependentOutputTasks) {
-            dependentOutputTasks.add(task)
-            dependentOutputTasks.size >= 2
-        }
-        if (shouldEnable) {
+    override fun addDependentOutputTask(task: OutputTask): Unit = synchronized(dependentOutputTasks)
+    {
+        dependentOutputTasks.add(task)
+        if (dependentOutputTasks.size >= 2) {
             cache.enable()
         }
     }
 
-    override fun removeDependentOutputTask(task: OutputTask) {
-        val shouldDisable = synchronized(dependentOutputTasks) {
-            dependentOutputTasks.remove(task)
-            dependentOutputTasks.isEmpty()
-        }
-        if (shouldDisable) {
+    override fun removeDependentOutputTask(task: OutputTask): Unit = synchronized(dependentOutputTasks) {
+        dependentOutputTasks.remove(task)
+        if (dependentOutputTasks.isEmpty()) {
             cache.disable()
         }
     }
