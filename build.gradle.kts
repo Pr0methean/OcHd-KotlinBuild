@@ -4,6 +4,7 @@ plugins {
     application
     kotlin("jvm") version "1.7.10"
     id("org.openjfx.javafxplugin") version "0.0.13"
+    id("io.gitlab.arturbosch.detekt").version("1.21.0")
 }
 
 group = "org.example"
