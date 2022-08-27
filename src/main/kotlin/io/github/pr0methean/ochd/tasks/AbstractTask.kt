@@ -14,8 +14,6 @@ import kotlin.Result.Companion.failure
 private val logger = LogManager.getLogger("AbstractTask")
 private val cancelBecauseReplacing = CancellationException("Being replaced")
 abstract class AbstractTask<T>(override val name: String, private val cache: TaskCache<T>) : Task<T> {
-    /** Used to solve initialization deadlocks. */
-    protected val thiz by lazy {this}
     private val dependentOutputTasks = newSetFromMap<OutputTask>(WeakHashMap())
     private val mutex = Mutex()
     override fun addDependentOutputTask(task: OutputTask) {
