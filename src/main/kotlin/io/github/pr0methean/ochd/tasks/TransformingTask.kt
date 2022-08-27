@@ -18,11 +18,6 @@ open class TransformingTask<T, U>(
 )
         : AbstractTask<U>(name, cache) {
 
-    override fun getNow(): Result<U>? {
-        base.getNow()
-        return super.getNow()
-    }
-
     override fun addDependentOutputTask(task: OutputTask) {
         super.addDependentOutputTask(task)
         base.addDependentOutputTask(task)
