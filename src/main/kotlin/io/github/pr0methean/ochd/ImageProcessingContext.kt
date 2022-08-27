@@ -21,8 +21,9 @@ fun color(web: String): Color = Color.web(web)
 fun color(web: String, alpha: Double): Color = Color.web(web, alpha)
 
 private val logger = LogManager.getLogger("ImageProcessingContext")
-// Hard-ref cache will be able to contain MINIMUM_IMAGE_CACHE_4096x4096 * 64MiB of uncompressed 32-bit pixels
-private const val MINIMUM_IMAGE_CACHE_4096x4096 = 17L
+// Hard-ref cache will be able to contain this * 64MiB of uncompressed 32-bit pixels
+private const val MINIMUM_SVGIMPORT_CACHE_4096x4096 = 12L
+private const val MINIMUM_OTHER_CACHE_4096x4096 = 4L
 
 /**
  * Holds info needed to build and deduplicate the task graph. Needs to become unreachable once the graph is built.
@@ -38,11 +39,13 @@ class ImageProcessingContext(
     private val taskDeduplicationMap = ConcurrentHashMap<ImageTask, ImageTask>()
     val stats: ImageProcessingStats = ImageProcessingStats()
     private val dedupedSvgTasks = ConcurrentHashMultiset.create<String>()
-
-    private val backingCache = Caffeine.newBuilder().weakKeys().maximumSize(MINIMUM_IMAGE_CACHE_4096x4096.shl(24) / (tileSize * tileSize))
+    private val mainBackingCache = Caffeine.newBuilder().weakKeys().maximumSize(MINIMUM_OTHER_CACHE_4096x4096.shl(24) / (tileSize * tileSize))
+        .build<SemiStrongTaskCache<*>,Result<*>>()
+    private val svgImportTaskBackingCache = Caffeine.newBuilder().weakKeys().maximumSize(MINIMUM_SVGIMPORT_CACHE_4096x4096.shl(24) / (tileSize * tileSize))
         .build<SemiStrongTaskCache<*>,Result<*>>()
 
-    private fun <T> createSemiStrongTaskCache() = SemiStrongTaskCache<T>(backingCache)
+    private fun <T> createSemiStrongTaskCache() = SemiStrongTaskCache<T>(mainBackingCache)
+    private fun <T> createSemiStrongSvgImportCache() = SemiStrongTaskCache<T>(svgImportTaskBackingCache)
 
     init {
         val builder = mutableMapOf<String, SvgImportTask>()
@@ -53,7 +56,7 @@ class ImageProcessingContext(
                 tileSize,
                 svgDirectory.resolve("$shortName.svg"),
                 stats,
-                createSemiStrongTaskCache()
+                createSemiStrongSvgImportCache()
             )
         }
         svgTasks = builder.toMap()
