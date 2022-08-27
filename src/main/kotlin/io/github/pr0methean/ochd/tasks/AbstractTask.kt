@@ -38,11 +38,7 @@ abstract class AbstractTask<T>(override val name: String, private val cache: Tas
         }
     }
 
-    private val toString by lazy {
-        StringBuilder().apply(::formatTo).toString()
-    }
-
-    final override fun toString(): String = toString
+    final override fun toString(): String = name
 
     override fun formatTo(buffer: StringBuilder) {
         buffer.append(name)
