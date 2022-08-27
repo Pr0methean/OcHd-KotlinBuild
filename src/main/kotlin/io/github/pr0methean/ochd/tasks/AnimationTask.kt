@@ -18,13 +18,13 @@ class AnimationTask(
 ): AbstractImageTask(name, cache, stats) {
     private val totalHeight = height * frames.size
     override fun addDependentOutputTask(task: OutputTask) {
-        frames.forEach { dep -> if (dep is AbstractTask<*>) {dep.addDependentOutputTask(task)} }
         super.addDependentOutputTask(task)
+        frames.forEach { dep -> if (dep is AbstractTask<*>) {dep.addDependentOutputTask(task)} }
     }
 
     override fun removeDependentOutputTask(task: OutputTask) {
-        super.removeDependentOutputTask(task)
         frames.forEach { dep -> if (dep is AbstractTask<*>) {dep.removeDependentOutputTask(task)} }
+        super.removeDependentOutputTask(task)
     }
 
     override suspend fun clearFailure() {

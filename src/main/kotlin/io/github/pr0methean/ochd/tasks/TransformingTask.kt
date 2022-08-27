@@ -19,13 +19,13 @@ open class TransformingTask<T, U>(
         : AbstractTask<U>(name, cache) {
 
     override fun addDependentOutputTask(task: OutputTask) {
-        base.addDependentOutputTask(task)
         super.addDependentOutputTask(task)
+        base.addDependentOutputTask(task)
     }
 
     override fun removeDependentOutputTask(task: OutputTask) {
-        super.removeDependentOutputTask(task)
         base.removeDependentOutputTask(task)
+        super.removeDependentOutputTask(task)
     }
 
     override fun andAllDependencies(): Set<Task<*>> {

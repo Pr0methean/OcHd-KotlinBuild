@@ -36,13 +36,13 @@ open class AsyncTransformingTask<T, U>(
     }
 
     override fun addDependentOutputTask(task: OutputTask) {
-        base.addDependentOutputTask(task)
         super.addDependentOutputTask(task)
+        base.addDependentOutputTask(task)
     }
 
     override fun removeDependentOutputTask(task: OutputTask) {
-        super.removeDependentOutputTask(task)
         base.removeDependentOutputTask(task)
+        super.removeDependentOutputTask(task)
     }
 
     @Suppress("UNCHECKED_CAST")
