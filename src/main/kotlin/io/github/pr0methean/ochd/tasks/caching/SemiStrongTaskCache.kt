@@ -9,6 +9,7 @@ class SemiStrongTaskCache<T>(private val backingCache: Cache<SemiStrongTaskCache
     }
 
     override fun disable() {
+        enabled = false
         backingCache.invalidate(this)
     }
 
@@ -16,8 +17,8 @@ class SemiStrongTaskCache<T>(private val backingCache: Cache<SemiStrongTaskCache
         if (value == null) {
             backingCache.invalidate(this)
         } else {
-            super.enabledSet(value)
             backingCache.put(this, value)
         }
+        super.enabledSet(value)
     }
 }
