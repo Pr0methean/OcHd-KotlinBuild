@@ -36,8 +36,8 @@ open class AsyncTransformingTask<T, U>(
     }
 
     override fun addDependentOutputTask(task: OutputTask) {
-        super.addDependentOutputTask(task)
         base.addDependentOutputTask(task)
+        super.addDependentOutputTask(task)
     }
 
     override fun removeDependentOutputTask(task: OutputTask) {
