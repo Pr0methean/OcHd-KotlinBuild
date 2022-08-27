@@ -4,7 +4,6 @@ import com.github.benmanes.caffeine.cache.Caffeine
 import com.google.common.collect.ConcurrentHashMultiset
 import io.github.pr0methean.ochd.tasks.*
 import io.github.pr0methean.ochd.tasks.caching.SemiStrongTaskCache
-import io.github.pr0methean.ochd.tasks.caching.WeakTaskCache
 import io.github.pr0methean.ochd.tasks.caching.noopTaskCache
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
@@ -43,7 +42,7 @@ class ImageProcessingContext(
         .build<SemiStrongTaskCache<*>,Result<*>>()
 
     private fun <T> createStandardTaskCache() = SemiStrongTaskCache<T>(backingCache)
-    private fun <T> createSvgImportCache() = WeakTaskCache<T>()
+    private fun <T> createSvgImportCache() = SemiStrongTaskCache<T>(backingCache)
 
     init {
         val builder = mutableMapOf<String, SvgImportTask>()
