@@ -4,7 +4,6 @@ import com.github.benmanes.caffeine.cache.Caffeine
 import com.google.common.collect.ConcurrentHashMultiset
 import io.github.pr0methean.ochd.tasks.*
 import io.github.pr0methean.ochd.tasks.caching.SemiStrongTaskCache
-import io.github.pr0methean.ochd.tasks.caching.noopTaskCache
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
@@ -38,7 +37,18 @@ class ImageProcessingContext(
     private val taskDeduplicationMap = ConcurrentHashMap<ImageTask, ImageTask>()
     val stats: ImageProcessingStats = ImageProcessingStats()
     private val dedupedSvgTasks = ConcurrentHashMultiset.create<String>()
-    private val backingCache = Caffeine.newBuilder().weakKeys().maximumSize(MINIMUM_CACHE_4096x4096.shl(24) / (tileSize * tileSize))
+    private val backingCache = Caffeine.newBuilder().weakKeys()
+        .maximumWeight(MINIMUM_CACHE_4096x4096.shl(24))
+        .weigher<SemiStrongTaskCache<*>,Result<*>> { _, value ->
+            if (value.isSuccess) {
+                val result = value.getOrThrow()
+                if (result is Image) {
+                    // Weight = number of pixels = number of pixel-buffer bytes * 0.25
+                    (result.height * result.width).toInt()
+                }
+            }
+            0
+        }
         .build<SemiStrongTaskCache<*>,Result<*>>()
 
     private fun <T> createStandardTaskCache(name: String) = SemiStrongTaskCache<T>(name, backingCache)
@@ -123,7 +133,7 @@ class ImageProcessingContext(
     }
 
     suspend fun animate(frames: List<ImageTask>): ImageTask {
-        return deduplicate(AnimationTask(frames.asFlow().map(::deduplicate).toList(), tileSize, tileSize, frames.toString(), noopTaskCache(), stats))
+        return deduplicate(AnimationTask(frames.asFlow().map(::deduplicate).toList(), tileSize, tileSize, frames.toString(), createStandardTaskCache(frames.toString()), stats))
     }
 
     suspend fun out(source: ImageTask, vararg name: String): OutputTask {
