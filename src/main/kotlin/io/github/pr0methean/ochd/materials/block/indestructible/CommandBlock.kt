@@ -23,12 +23,12 @@ enum class CommandBlock(
     COMMAND_BLOCK(c(0xc77e4f),c(0xa66030),c(0xd7b49d)),
     CHAIN_COMMAND_BLOCK(c(0x76b297),c(0x5f8f7a),c(0xA8BEC5)) {
         override suspend fun LayerListBuilder.decorateBaseTexture() {
-            layer("commandBlockChains")
+            layer("commandBlockChains4x")
         }
     },
     REPEATING_COMMAND_BLOCK(c(0x6a4fc7),c(0x553b9b),c(0x915431)) {
         override suspend fun LayerListBuilder.decorateBaseTexture() {
-            layer("loopArrow")
+            layer("loopArrow4x")
         }
     };
     internal enum class SideType {
@@ -69,7 +69,6 @@ enum class CommandBlock(
         layer("diagonalChecksBottomLeftTopRight", highlight)
         layer("diagonalOutlineChecksTopLeftBottomRight", shadow)
         layer("diagonalOutlineChecksBottomLeftTopRight", shadow)
-        decorateBaseTexture()
     }
 
     open suspend fun LayerListBuilder.decorateBaseTexture() {}
@@ -80,7 +79,10 @@ enum class CommandBlock(
             for (sideType in enumValues<SideType>()) {
                 val sideBase = ctx.stack {sideType.run {createBase()}}
                 val sideBasePerFrame = ctx.animate(listOf(sideBase, sideBase, sideBase, sideBase))
-                val framesTask = ctx.stack {sideType.run {createFrames()}}
+                val framesTask = ctx.stack {sideType.run {
+                    decorateBaseTexture()
+                    createFrames()
+                }}
                 sideBases[sideType] = ctx.stack {
                     copy(sideBasePerFrame)
                     copy(framesTask)
