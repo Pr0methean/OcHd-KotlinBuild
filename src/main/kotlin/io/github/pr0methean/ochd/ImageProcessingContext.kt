@@ -43,7 +43,7 @@ class ImageProcessingContext(
             if (value.isSuccess) {
                 val result = value.getOrThrow()
                 if (result is Image) {
-                    // Weight = number of pixels = number of pixel-buffer bytes * 0.25
+                    // Weight = number of pixels; 4 bytes per pixel
                     (result.height * result.width).toInt()
                 }
             }
@@ -164,5 +164,6 @@ class ImageProcessingContext(
             = out(stack {source()}, *names)
 
     suspend fun stack(layers: LayerList): ImageTask
-            = deduplicate(ImageStackingTask(layers, tileSize, tileSize, layers.toString(), createStandardTaskCache(layers.toString()), stats))
+            = deduplicate(ImageStackingTask(layers,
+        layers.toString(), createStandardTaskCache(layers.toString()), stats))
 }

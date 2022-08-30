@@ -36,7 +36,7 @@ private class ToImageTranscoder: ImageTranscoder() {
 
 class SvgImportTask(
     override val name: String,
-    private val tileSize: Int,
+    private val width: Int,
     private val file: File,
     override val stats: ImageProcessingStats,
     taskCache: TaskCache<Image>
@@ -58,12 +58,7 @@ class SvgImportTask(
         val transcoder = batikTranscoder.get()
         val input = TranscoderInput(file.toURI().toString())
         val image = SwingFXUtils.toFXImage(transcoder.mutex.withLock {
-            transcoder.setTranscodingHints(
-                mapOf(
-                    SVGAbstractTranscoder.KEY_WIDTH to tileSize.toFloat(),
-                    SVGAbstractTranscoder.KEY_HEIGHT to tileSize.toFloat()
-                )
-            )
+            transcoder.setTranscodingHints(mapOf(SVGAbstractTranscoder.KEY_WIDTH to width.toFloat()))
             transcoder.transcode(input, null)
             transcoder.takeLastImage()!!
         }, null)

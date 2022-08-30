@@ -38,8 +38,8 @@ enum class CommandBlock(
                 layer("craftingGridSpacesCross", Color.WHITE)
             }
 
-            override suspend fun LayerListBuilder.createFrame(i: Int) {
-                layer("dotsInCross$i", commandBlockDotColor)
+            override suspend fun LayerListBuilder.createFrames() {
+                layer("dotsInCrossAll", commandBlockDotColor)
             }
         }, BACK {
             override suspend fun LayerListBuilder.createBase() {
@@ -58,8 +58,8 @@ enum class CommandBlock(
             }
         };
         abstract suspend fun LayerListBuilder.createBase()
-        open suspend fun LayerListBuilder.createFrame(i: Int) {
-            layer("glider$i", commandBlockDotColor)
+        open suspend fun LayerListBuilder.createFrames() {
+            layer("gliderAll", commandBlockDotColor)
         }
     }
 
@@ -80,8 +80,7 @@ enum class CommandBlock(
             for (sideType in enumValues<SideType>()) {
                 val sideBase = ctx.stack {sideType.run {createBase()}}
                 val sideBasePerFrame = ctx.animate(listOf(sideBase, sideBase, sideBase, sideBase))
-                val frames = Array(4) { index -> ctx.stack { sideType.run {createFrame(index)} }}.asList()
-                val framesTask = ctx.animate(frames)
+                val framesTask = ctx.stack {sideType.run {createFrames()}}
                 sideBases[sideType] = ctx.stack {
                     copy(sideBasePerFrame)
                     copy(framesTask)

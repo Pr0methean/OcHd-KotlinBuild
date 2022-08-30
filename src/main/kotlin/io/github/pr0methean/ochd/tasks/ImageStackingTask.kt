@@ -19,8 +19,6 @@ import kotlin.Result.Companion.success
 
 private val logger = LogManager.getLogger("ImageStackingTask")
 class ImageStackingTask(val layers: LayerList,
-                        val width: Int,
-                        val height: Int,
                         override val name: String,
                         cache: TaskCache<Image>,
                         override val stats: ImageProcessingStats) : AbstractImageTask(name, cache ,stats) {
@@ -55,40 +53,44 @@ class ImageStackingTask(val layers: LayerList,
 
     override fun equals(other: Any?): Boolean {
         return (this === other) || (other is ImageStackingTask
-                && other.layers == layers
-                && other.width == width
-                && other.height == height)
+                && other.layers == layers)
     }
 
-    override fun hashCode(): Int = Objects.hash(layers, width, height)
+    override fun hashCode(): Int = layers.hashCode() + 37
 
     @Suppress("DeferredResultUnused")
     override suspend fun perform(): Image {
         stats.onTaskLaunched("ImageStackingTask", name)
-        val canvas = Canvas(width.toDouble(), height.toDouble())
+        logger.debug("Fetching first layer of {} to check size", this)
+        val firstLayer = layers.layers.first().await().getOrThrow()
+        val width = firstLayer.width
+        val height = firstLayer.height
+        val canvas = Canvas(width, height)
         val canvasCtx = canvas.graphicsContext2D
         val snapshotRef = AtomicReference<Image>(null)
         logger.debug("Creating layer tasks for {}", this)
         val layerRenderTasks = mutableListOf<Deferred<Result<Unit>>>()
         layers.layers.forEachIndexed { index, layerTask ->
-            layerTask.startAsync()
             logger.debug("Creating consumer for layer {} ({})", index, layerTask)
             val previousLayerTask = layerRenderTasks.getOrNull(index - 1)
             val previousLayerName = layers.layers.getOrNull(index - 1).toString()
             layerRenderTasks.add(layerTask.consumeAsync {
                 try {
-                    previousLayerTask?.start()
-                    logger.debug("Fetching layer {} ({})", index, layerTask)
-                    val layerImage = it.getOrThrow()
-                    logger.debug("Awaiting previous layer ({}) if needed", previousLayerName)
-                    previousLayerTask?.await()?.getOrThrow()
-                    logger.debug("Rendering layer {} ({}) onto the stack", box(index), layerTask)
-                    canvasCtx.drawImage(layerImage, 0.0, 0.0)
+                    if (index == 0) {
+                        canvasCtx.drawImage(firstLayer, 0.0, 0.0)
+                    } else {
+                        logger.debug("Awaiting previous layer ({}) if needed", previousLayerName)
+                        previousLayerTask?.await()?.getOrThrow()
+                        logger.debug("Fetching layer {} ({})", index, layerTask)
+                        val layerImage = it.getOrThrow()
+                        logger.debug("Rendering layer {} ({}) onto the stack", box(index), layerTask)
+                        canvasCtx.drawImage(layerImage, 0.0, 0.0)
+                    }
 
                     if (index == layers.layers.lastIndex) {
                         val params = SnapshotParameters()
                         params.fill = layers.background
-                        val output = WritableImage(width, height)
+                        val output = WritableImage(width.toInt(), height.toInt())
                         doJfx("Snapshot of $name") {
                             val snapshot = canvas.snapshot(params, output)
                             if (snapshot.isError) {
