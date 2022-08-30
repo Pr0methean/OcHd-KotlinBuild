@@ -5,7 +5,6 @@ import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
-import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -24,7 +23,7 @@ enum class CommandBlock(
     },
     REPEATING_COMMAND_BLOCK(c(0x6a4fc7),c(0x553b9b),c(0x915431)) {
         override suspend fun LayerListBuilder.decorateBackground() {
-            layer("loopArrow4x", Color.WHITE)
+            layer("loopArrow4x")
         }
     };
     internal enum class SideType {
