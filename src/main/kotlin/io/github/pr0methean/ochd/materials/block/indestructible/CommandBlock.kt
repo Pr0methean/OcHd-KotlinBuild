@@ -20,12 +20,12 @@ enum class CommandBlock(
 ): ShadowHighlightMaterial {
     COMMAND_BLOCK(c(0xc77e4f),c(0xa66030),c(0xd7b49d)),
     CHAIN_COMMAND_BLOCK(c(0x76b297),c(0x5f8f7a),c(0xA8BEC5)) {
-        override suspend fun LayerListBuilder.decorateBaseTexture() {
+        override suspend fun LayerListBuilder.decorateBackground() {
             layer("commandBlockChains4x")
         }
     },
     REPEATING_COMMAND_BLOCK(c(0x6a4fc7),c(0x553b9b),c(0x915431)) {
-        override suspend fun LayerListBuilder.decorateBaseTexture() {
+        override suspend fun LayerListBuilder.decorateBackground() {
             layer("loopArrow4x", Color.WHITE)
         }
     };
@@ -69,17 +69,16 @@ enum class CommandBlock(
         layer("diagonalOutlineChecksBottomLeftTopRight", shadow)
     }
 
-    open suspend fun LayerListBuilder.decorateBaseTexture() {}
+    open suspend fun LayerListBuilder.decorateBackground() {}
 
     override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
         for (sideType in enumValues<SideType>()) {
             emit(ctx.out(ctx.stack {sideType.run {
-                val sideBaseFrame = ctx.stack {
-                    createBackground()
-                    createBase()
-                }
-                copy(ctx.animate(List(4) {sideBaseFrame}))
-                decorateBaseTexture()
+                val backgroundPerFrame = ctx.stack {createBackground()}
+                copy(ctx.animate(List(4) {backgroundPerFrame}))
+                decorateBackground()
+                val basePerFrame = ctx.stack {createBase()}
+                copy(ctx.animate(List(4) {basePerFrame}))
                 createFrames()
             }}, "block/${name}_${sideType}"))
         }
