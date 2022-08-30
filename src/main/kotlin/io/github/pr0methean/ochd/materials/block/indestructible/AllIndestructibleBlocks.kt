@@ -4,4 +4,4 @@ import io.github.pr0methean.ochd.texturebase.MaterialGroup
 import io.github.pr0methean.ochd.texturebase.group
 
 val INDESTRUCTIBLE_BLOCKS =
-    MaterialGroup(group<CommandBlock>(), group<StructureOrJigsaw>(), group<SimpleIndestructibleBlock>())
+    MaterialGroup(group<StructureOrJigsaw>(), group<SimpleIndestructibleBlock>(), group<CommandBlock>())

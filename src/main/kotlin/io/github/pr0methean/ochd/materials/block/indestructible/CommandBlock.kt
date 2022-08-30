@@ -9,6 +9,13 @@ import javafx.scene.paint.Paint
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
+//  9 SvgImportTask
+//  8 RepaintTask for background
+// 12 RepaintTask for grid background
+//  3 ImageStackingTask for background
+// 12 ImageStackingTask for finished command block
+// --
+// 44 total tasks
 @Suppress("unused")
 enum class CommandBlock(
     override val color: Paint,
