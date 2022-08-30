@@ -4,15 +4,13 @@ import org.apache.logging.log4j.LogManager
 
 private val logger = LogManager.getLogger("AbstractTaskCache")
 abstract class AbstractTaskCache<T>(val name: String) : TaskCache<T> {
-    @Volatile var enabled = false
-    override fun disable() {
-        enabledSet(null)
-        enabled = false
-    }
-
-    override fun enable() {
-        enabled = true
-    }
+    @Volatile override var enabled = false
+        set(value) {
+            if (!value) {
+                enabledSet(null)
+            }
+            field = value
+        }
 
     override fun set(value: Result<T>?) {
         if (enabled) {

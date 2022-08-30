@@ -1,5 +1,6 @@
 package io.github.pr0methean.ochd.tasks
 
+import io.github.pr0methean.ochd.tasks.caching.NoopTaskCache
 import io.github.pr0methean.ochd.tasks.caching.TaskCache
 import kotlinx.coroutines.*
 import kotlinx.coroutines.sync.Mutex
@@ -19,17 +20,17 @@ abstract class AbstractTask<T>(override val name: String, private val cache: Tas
     override fun addDependentOutputTask(task: OutputTask): Unit = synchronized(dependentOutputTasks)
     {
         dependentOutputTasks.add(task)
-        if (dependentOutputTasks.size >= 2) {
+        if (dependentOutputTasks.size >= 2 && !cache.enabled && cache !is NoopTaskCache) {
             logger.info("Enabling caching for {}", name)
-            cache.enable()
+            cache.enabled = true
         }
     }
 
     override fun removeDependentOutputTask(task: OutputTask): Unit = synchronized(dependentOutputTasks) {
         dependentOutputTasks.remove(task)
-        if (dependentOutputTasks.isEmpty()) {
+        if (dependentOutputTasks.isEmpty() && cache.enabled) {
             logger.info("Disabling caching for {}", name)
-            cache.disable()
+            cache.enabled = false
         }
     }
 
