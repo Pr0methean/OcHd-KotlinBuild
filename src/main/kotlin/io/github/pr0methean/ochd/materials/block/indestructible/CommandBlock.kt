@@ -10,8 +10,6 @@ import javafx.scene.paint.Paint
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
-val commandBlockDotColor: Color = c(0xc2873e)
-
 @Suppress("unused")
 enum class CommandBlock(
     override val color: Paint,
@@ -33,27 +31,22 @@ enum class CommandBlock(
         FRONT {
             override suspend fun LayerListBuilder.createGrid(shadow: Paint) {
                 layer("commandBlockOctagon4x", shadow)
-                layer("gridSpacesCross4x", Color.WHITE)
-                layer("gliderAll", commandBlockDotColor)
-                layer("dotsInCrossAll", commandBlockDotColor)
+                layer("commandBlockGridFront")
             }
         }, BACK {
             override suspend fun LayerListBuilder.createGrid(shadow: Paint) {
                 layer("commandBlockSquare4x", shadow)
-                layer("gridSpaces4x", Color.WHITE)
-                layer("gliderAll", commandBlockDotColor)
+                layer("commandBlockGrid")
             }
         }, SIDE {
             override suspend fun LayerListBuilder.createGrid(shadow: Paint) {
                 layer("commandBlockArrowUnconditional4x", shadow)
-                layer("gridSpaces4x", Color.WHITE)
-                layer("gliderAll", commandBlockDotColor)
+                layer("commandBlockGrid")
             }
         }, CONDITIONAL {
             override suspend fun LayerListBuilder.createGrid(shadow: Paint) {
                 layer("commandBlockArrow4x", shadow)
-                layer("gridSpaces4x", Color.WHITE)
-                layer("gliderAll", commandBlockDotColor)
+                layer("commandBlockGrid")
             }
         };
         abstract suspend fun LayerListBuilder.createGrid(shadow: Paint)
