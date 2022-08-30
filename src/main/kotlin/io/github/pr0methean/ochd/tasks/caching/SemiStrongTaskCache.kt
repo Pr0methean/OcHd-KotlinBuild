@@ -2,7 +2,8 @@ package io.github.pr0methean.ochd.tasks.caching
 
 import com.github.benmanes.caffeine.cache.Cache
 
-class SemiStrongTaskCache<T>(private val backingCache: Cache<SemiStrongTaskCache<*>, Result<*>>): WeakTaskCache<T>() {
+class SemiStrongTaskCache<T>(name: String, private val backingCache: Cache<SemiStrongTaskCache<*>, Result<*>>):
+        WeakTaskCache<T>(name) {
     @Suppress("UNCHECKED_CAST")
     override fun getNow(): Result<T>? {
         return backingCache.getIfPresent(this) as Result<T>? ?: super.getNow()

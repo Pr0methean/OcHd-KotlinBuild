@@ -20,6 +20,7 @@ abstract class AbstractTask<T>(override val name: String, private val cache: Tas
     {
         dependentOutputTasks.add(task)
         if (dependentOutputTasks.size >= 2) {
+            logger.info("Enabling caching for {}", name)
             cache.enable()
         }
     }
@@ -27,6 +28,7 @@ abstract class AbstractTask<T>(override val name: String, private val cache: Tas
     override fun removeDependentOutputTask(task: OutputTask): Unit = synchronized(dependentOutputTasks) {
         dependentOutputTasks.remove(task)
         if (dependentOutputTasks.isEmpty()) {
+            logger.info("Disabling caching for {}", name)
             cache.disable()
         }
     }

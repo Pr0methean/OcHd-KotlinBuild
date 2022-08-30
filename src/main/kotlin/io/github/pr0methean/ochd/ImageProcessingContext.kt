@@ -41,8 +41,8 @@ class ImageProcessingContext(
     private val backingCache = Caffeine.newBuilder().weakKeys().maximumSize(MINIMUM_CACHE_4096x4096.shl(24) / (tileSize * tileSize))
         .build<SemiStrongTaskCache<*>,Result<*>>()
 
-    private fun <T> createStandardTaskCache() = SemiStrongTaskCache<T>(backingCache)
-    private fun <T> createSvgImportCache() = SemiStrongTaskCache<T>(backingCache)
+    private fun <T> createStandardTaskCache(name: String) = SemiStrongTaskCache<T>(name, backingCache)
+    private fun <T> createSvgImportCache(name: String) = SemiStrongTaskCache<T>(name, backingCache)
 
     init {
         val builder = mutableMapOf<String, SvgImportTask>()
@@ -53,7 +53,7 @@ class ImageProcessingContext(
                 tileSize,
                 svgDirectory.resolve("$shortName.svg"),
                 stats,
-                createSvgImportCache()
+                createSvgImportCache(shortName)
             )
         }
         svgTasks = builder.toMap()
@@ -80,13 +80,13 @@ class ImageProcessingContext(
         if (task !is ImageTask) {
             logger.warn("Tried to deduplicate a task that's not an ImageTask")
             stats.dedupeFailures.add(task::class.simpleName ?: "[unnamed non-ImageTask class]")
-            return object: AbstractImageTask(task.name, createStandardTaskCache(), stats) {
+            return object: AbstractImageTask(task.name, createStandardTaskCache(task.name), stats) {
                 override suspend fun perform(): Image = task.await().getOrThrow()
             }
         }
         val className = task::class.simpleName ?: "[unnamed class]"
         val deduped = taskDeduplicationMap.computeIfAbsent(task) {
-            logger.info("Failed to deduplicate: {}", task)
+            logger.info("New task: {}", task)
             stats.dedupeFailures.add(className)
             task
         }
@@ -112,14 +112,14 @@ class ImageProcessingContext(
             = layer(findSvgTask(name), paint, alpha)
 
     suspend fun layer(source: Task<Image>, paint: Paint? = null, alpha: Double = 1.0): ImageTask {
-        return deduplicate(RepaintTask(deduplicate(source), paint, alpha, createStandardTaskCache(), stats))
+        return deduplicate(RepaintTask(deduplicate(source), paint, alpha, createStandardTaskCache("$source@$paint@$alpha"), stats))
     }
 
     suspend fun stack(init: suspend LayerListBuilder.() -> Unit): ImageTask {
         val layerTasksBuilder = LayerListBuilder(this)
         layerTasksBuilder.init()
         val layerTasks = layerTasksBuilder.build()
-        return deduplicate(ImageStackingTask(layerTasks, tileSize, tileSize, layerTasks.toString(), createStandardTaskCache(), stats))
+        return stack(layerTasks)
     }
 
     suspend fun animate(frames: List<ImageTask>): ImageTask {
@@ -153,5 +153,6 @@ class ImageProcessingContext(
     suspend fun out(source: suspend LayerListBuilder.() -> Unit, vararg names: String): OutputTask
             = out(stack {source()}, *names)
 
-    suspend fun stack(layers: LayerList): ImageTask = deduplicate(ImageStackingTask(layers, tileSize, tileSize, layers.toString(), createStandardTaskCache(), stats))
+    suspend fun stack(layers: LayerList): ImageTask
+            = deduplicate(ImageStackingTask(layers, tileSize, tileSize, layers.toString(), createStandardTaskCache(layers.toString()), stats))
 }
