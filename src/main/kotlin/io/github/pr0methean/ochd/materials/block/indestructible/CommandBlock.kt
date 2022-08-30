@@ -31,8 +31,8 @@ enum class CommandBlock(
     };
     internal enum class SideType {
         FRONT {
-            override suspend fun LayerListBuilder.createBase() {
-                layer("commandBlockOctagon", Color.BLACK)
+            override suspend fun LayerListBuilder.createBase(shadow: Paint) {
+                layer("commandBlockOctagon", shadow)
                 layer("craftingGridSpacesCross", Color.WHITE)
             }
 
@@ -40,33 +40,32 @@ enum class CommandBlock(
                 layer("dotsInCrossAll", commandBlockDotColor)
             }
         }, BACK {
-            override suspend fun LayerListBuilder.createBase() {
-                layer("commandBlockSquare", Color.BLACK)
+            override suspend fun LayerListBuilder.createBase(shadow: Paint) {
+                layer("commandBlockSquare", shadow)
                 layer("craftingGridSpaces", Color.WHITE)
             }
         }, SIDE {
-            override suspend fun LayerListBuilder.createBase() {
-                layer("commandBlockArrowUnconditional", Color.BLACK)
+            override suspend fun LayerListBuilder.createBase(shadow: Paint) {
+                layer("commandBlockArrowUnconditional", shadow)
                 layer("craftingGridSpaces", Color.WHITE)
             }
         }, CONDITIONAL {
-            override suspend fun LayerListBuilder.createBase() {
-                layer("commandBlockArrow", Color.BLACK)
+            override suspend fun LayerListBuilder.createBase(shadow: Paint) {
+                layer("commandBlockArrow", shadow)
                 layer("craftingGridSpaces", Color.WHITE)
             }
         };
-        abstract suspend fun LayerListBuilder.createBase()
+        abstract suspend fun LayerListBuilder.createBase(shadow: Paint)
         open suspend fun LayerListBuilder.createFrames() {
             layer("gliderAll", commandBlockDotColor)
         }
     }
 
-    open suspend fun LayerListBuilder.createBackground() {
+    private suspend fun LayerListBuilder.createBackground() {
         background(color)
-        layer("diagonalChecksTopLeftBottomRight", highlight)
-        layer("diagonalChecksBottomLeftTopRight", highlight)
-        layer("diagonalOutlineChecksTopLeftBottomRight", shadow)
-        layer("diagonalOutlineChecksBottomLeftTopRight", shadow)
+        layer("diagonalChecks4x", highlight)
+        layer("diagonalOutlineChecks4x", shadow)
+        decorateBackground()
     }
 
     open suspend fun LayerListBuilder.decorateBackground() {}
@@ -74,10 +73,8 @@ enum class CommandBlock(
     override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
         for (sideType in enumValues<SideType>()) {
             emit(ctx.out(ctx.stack {sideType.run {
-                val backgroundPerFrame = ctx.stack {createBackground()}
-                copy(ctx.animate(List(4) {backgroundPerFrame}))
-                decorateBackground()
-                val basePerFrame = ctx.stack {createBase()}
+                createBackground()
+                val basePerFrame = ctx.stack {createBase(shadow)}
                 copy(ctx.animate(List(4) {basePerFrame}))
                 createFrames()
             }}, "block/${name}_${sideType}"))
