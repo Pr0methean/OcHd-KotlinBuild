@@ -3,14 +3,17 @@ package io.github.pr0methean.ochd.materials.block.indestructible
 import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.c
+import io.github.pr0methean.ochd.tasks.ImageTask
 import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
+import java.util.*
 
-val commandBlockDotColor = c(0xc2873e)
+val commandBlockDotColor: Color = c(0xc2873e)
+private lateinit var sideBases: EnumMap<CommandBlock.SideType, ImageTask>
 
 enum class CommandBlock(
     override val color: Paint,
@@ -28,7 +31,7 @@ enum class CommandBlock(
             layer("loopArrow")
         }
     };
-    private enum class SideType {
+    internal enum class SideType {
         FRONT {
             override suspend fun LayerListBuilder.createBase() {
                 layer("commandBlockOctagon", Color.BLACK)
@@ -72,15 +75,26 @@ enum class CommandBlock(
     open suspend fun LayerListBuilder.decorateBaseTexture() {}
 
     override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+        if (!::sideBases.isInitialized) {
+            sideBases = EnumMap<SideType, ImageTask>(SideType::class.java)
+            for (sideType in enumValues<SideType>()) {
+                val sideBase = ctx.stack {sideType.run {createBase()}}
+                val sideBasePerFrame = ctx.animate(listOf(sideBase, sideBase, sideBase, sideBase))
+                val frames = Array(4) { index -> ctx.stack { sideType.run {createFrame(index)} }}.asList()
+                val framesTask = ctx.animate(frames)
+                sideBases[sideType] = ctx.stack {
+                    copy(sideBasePerFrame)
+                    copy(framesTask)
+                }
+            }
+        }
         val baseTexture = ctx.stack {createBaseTexture()}
+        val basePerFrame = ctx.animate(listOf(baseTexture, baseTexture, baseTexture, baseTexture))
         for (sideType in SideType.values()) {
-            val sideBase = ctx.stack {sideType.run {createBase()}}
-            val frames = Array(4) { index -> ctx.stack {
-                copy(baseTexture)
-                copy(sideBase)
-                sideType.run {createFrame(index)}
-            }}.asList()
-            emit(ctx.out(ctx.animate(frames), "block/${name}_${sideType}"))
+            emit(ctx.out(ctx.stack {
+                copy(basePerFrame)
+                copy(sideBases[sideType]!!)
+            }, "block/${name}_${sideType}"))
         }
     }
 }
