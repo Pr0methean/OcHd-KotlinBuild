@@ -31,34 +31,32 @@ enum class CommandBlock(
     };
     internal enum class SideType {
         FRONT {
-            override suspend fun LayerListBuilder.createBase(shadow: Paint) {
-                layer("commandBlockOctagon", shadow)
-                layer("craftingGridSpacesCross", Color.WHITE)
-            }
-
-            override suspend fun LayerListBuilder.createFrames() {
+            override suspend fun LayerListBuilder.createGrid(shadow: Paint) {
+                layer("commandBlockOctagon4x", shadow)
+                layer("gridSpacesCross4x", Color.WHITE)
+                layer("gliderAll", commandBlockDotColor)
                 layer("dotsInCrossAll", commandBlockDotColor)
             }
         }, BACK {
-            override suspend fun LayerListBuilder.createBase(shadow: Paint) {
-                layer("commandBlockSquare", shadow)
-                layer("craftingGridSpaces", Color.WHITE)
+            override suspend fun LayerListBuilder.createGrid(shadow: Paint) {
+                layer("commandBlockSquare4x", shadow)
+                layer("gridSpaces4x", Color.WHITE)
+                layer("gliderAll", commandBlockDotColor)
             }
         }, SIDE {
-            override suspend fun LayerListBuilder.createBase(shadow: Paint) {
-                layer("commandBlockArrowUnconditional", shadow)
-                layer("craftingGridSpaces", Color.WHITE)
+            override suspend fun LayerListBuilder.createGrid(shadow: Paint) {
+                layer("commandBlockArrowUnconditional4x", shadow)
+                layer("gridSpaces4x", Color.WHITE)
+                layer("gliderAll", commandBlockDotColor)
             }
         }, CONDITIONAL {
-            override suspend fun LayerListBuilder.createBase(shadow: Paint) {
-                layer("commandBlockArrow", shadow)
-                layer("craftingGridSpaces", Color.WHITE)
+            override suspend fun LayerListBuilder.createGrid(shadow: Paint) {
+                layer("commandBlockArrow4x", shadow)
+                layer("gridSpaces4x", Color.WHITE)
+                layer("gliderAll", commandBlockDotColor)
             }
         };
-        abstract suspend fun LayerListBuilder.createBase(shadow: Paint)
-        open suspend fun LayerListBuilder.createFrames() {
-            layer("gliderAll", commandBlockDotColor)
-        }
+        abstract suspend fun LayerListBuilder.createGrid(shadow: Paint)
     }
 
     private suspend fun LayerListBuilder.createBackground() {
@@ -71,12 +69,11 @@ enum class CommandBlock(
     open suspend fun LayerListBuilder.decorateBackground() {}
 
     override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+        val background = ctx.stack {createBackground()}
         for (sideType in enumValues<SideType>()) {
             emit(ctx.out(ctx.stack {sideType.run {
-                createBackground()
-                val basePerFrame = ctx.stack {createBase(shadow)}
-                copy(ctx.animate(List(4) {basePerFrame}))
-                createFrames()
+                copy(background)
+                createGrid(shadow)
             }}, "block/${name}_${sideType}"))
         }
     }
