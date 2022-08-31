@@ -8,9 +8,10 @@ import org.apache.logging.log4j.util.StringBuilderFormattable
 import org.apache.logging.log4j.util.Unbox.box
 
 private val logger = LogManager.getLogger("ImageTask")
+private val resourcePool by lazy {GraphicsPipeline.getDefaultResourceFactory().textureResourcePool}
 
 suspend fun awaitFreeMemory(bytes: Long, name: String) {
-    while (!GraphicsPipeline.getDefaultResourceFactory().textureResourcePool.prepareForAllocation(bytes)) {
+    while (!doJfx("Free memory for $name") {resourcePool.prepareForAllocation(bytes)}) {
         logger.warn("Failed to free {} bytes for {}; trying again...", box(bytes), name)
         yield()
     }
