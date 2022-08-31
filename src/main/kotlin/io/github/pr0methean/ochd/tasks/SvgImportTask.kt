@@ -55,6 +55,7 @@ class SvgImportTask(
 
     override suspend fun perform(): Image {
         stats.onTaskLaunched("SvgImportTask", name)
+        awaitFreeMemory((16 * width * width).toLong()) // height can be up to 4*width
         val transcoder = batikTranscoder.get()
         val input = TranscoderInput(file.toURI().toString())
         val image = SwingFXUtils.toFXImage(transcoder.mutex.withLock {

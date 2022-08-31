@@ -37,7 +37,8 @@ class ImageProcessingContext(
     private val taskDeduplicationMap = ConcurrentHashMap<ImageTask, ImageTask>()
     val stats: ImageProcessingStats = ImageProcessingStats()
     private val dedupedSvgTasks = ConcurrentHashMultiset.create<String>()
-    private val backingCache = Caffeine.newBuilder().weakKeys()
+    private val backingCache = Caffeine.newBuilder()
+        .weakKeys()
         .maximumWeight(MINIMUM_CACHE_4096x4096.shl(24))
         .weigher<SemiStrongTaskCache<*>,Result<*>> { _, value ->
             if (value.isSuccess) {

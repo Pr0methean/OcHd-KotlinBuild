@@ -57,6 +57,7 @@ class AnimationTask(
     @Suppress("DeferredResultUnused")
     override suspend fun perform(): Image {
         stats.onTaskLaunched("AnimationTask", name)
+        awaitFreeMemory(4L * width * totalHeight)
         val canvas = Canvas(width.toDouble(), totalHeight.toDouble())
         val canvasCtx = canvas.graphicsContext2D
         val frameTasks = frames.map { it }.mapIndexed { index, frameTask -> frameTask.consumeAsync {

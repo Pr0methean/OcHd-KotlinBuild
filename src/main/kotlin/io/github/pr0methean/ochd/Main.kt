@@ -93,13 +93,11 @@ suspend fun main(args: Array<String>) {
                 val result = withContext(scope.coroutineContext) {
                     logger.info("Joining {}", task)
                     try {
-                        return@withContext runBlocking {
-                            val result = task.await()
-                            if (result.isSuccess) {
-                                task.source.removeDependentOutputTask(task)
-                            }
-                            return@runBlocking result
+                        val result = task.await()
+                        if (result.isSuccess) {
+                            task.source.removeDependentOutputTask(task)
                         }
+                        return@withContext result
                     } catch (t: Throwable) {
                         return@withContext failure<Unit>(t)
                     }

@@ -13,6 +13,7 @@ class PngCompressionTask(
     ByteArrayOutputStream().use {
         stats.onTaskLaunched("PngCompressionTask", base.name)
         @Suppress("BlockingMethodInNonBlockingContext")
+
         ImageIO.write(SwingFXUtils.fromFXImage(image, null), "PNG", it)
         val packed = it.toByteArray()
         stats.onTaskCompleted("PngCompressionTask", base.name)
