@@ -66,16 +66,16 @@ jobs:
       run: java -Dprism.maxvram=1280m -Dglass.platform=Monocle -Dmonocle.platform=Headless -Dquantum.multithreaded=true -XX:+UseStringDeduplication -Xms5376m -Xmx5376m '-Xlog:gc*=debug,gc+heap=trace,gc+heap+exit=trace,gc+metaspace=trace,gc+nmethod=info' -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:+UseNUMA -XX:ConcGCThreads=2 -XX:ParallelGCThreads=2 -XX:+HeapDumpOnOutOfMemoryError -jar OcHd-KotlinBuild-1.0-SNAPSHOT.jar ${{ matrix.size }}
       continue-on-error: true
     - name: Zip Texture Pack
-      if: steps.run.outcome == success
+      if: steps.run.outcome == 'success'
       run: cd pngout && zip -r OcHD-${{ matrix.size}}x${{ matrix.size}}.zip *
     - name: Publish Texture Pack
-      if: steps.run.outcome == success
+      if: steps.run.outcome == 'success'
       uses: actions/upload-artifact@v3
       with:
         name: OcHD ${{ matrix.size }}x${{ matrix.size }}
         path: 'pngout/OcHD-${{ matrix.size}}x${{ matrix.size}}.zip'
     - name: Publish Heap Dumps
-      if: steps.run.outcome != success
+      if: steps.run.outcome != 'success'
       uses: actions/upload-artifact@v3
       with:
         name: Heap Dump ${{ matrix.size }}x${{ matrix.size }}
