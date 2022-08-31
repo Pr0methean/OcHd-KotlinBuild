@@ -22,7 +22,7 @@ object StainedGlassFront: Material {
             layer("streaks", Color.BLACK)
         }
         DYES.forEach { (name, color) ->
-            emit(ctx.out("block/${name}_stained_glass", RepaintTask(masterTask, color, 1.0, noopTaskCache(), ctx.stats)))
+            emit(ctx.out(RepaintTask(masterTask, color, 1.0, noopTaskCache(), ctx.stats), "block/${name}_stained_glass"))
         }
     }
 }

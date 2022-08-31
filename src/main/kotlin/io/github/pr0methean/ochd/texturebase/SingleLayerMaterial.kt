@@ -24,9 +24,7 @@ abstract class SingleLayerMaterial(
 
     override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> {
         return flowOf(ctx.out(
-            name, ctx.layer(sourceFileName, color, alpha),
-            ctx.outTextureRoot.resolve(directory).resolve("$name.png")
-        ))
+            ctx.layer(sourceFileName, color, alpha), name))
     }
 
 }

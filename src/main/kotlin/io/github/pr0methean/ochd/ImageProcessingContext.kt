@@ -145,14 +145,6 @@ class ImageProcessingContext(
     suspend fun out(
         lowercaseName: String,
         source: ImageTask,
-        vararg destinations: File
-    ): OutputTask {
-        return out(lowercaseName, source, destinations.asList())
-    }
-
-    suspend fun out(
-        lowercaseName: String,
-        source: ImageTask,
         destination: List<File>
     ): OutputTask {
         val pngSource = deduplicate(source).asPng
