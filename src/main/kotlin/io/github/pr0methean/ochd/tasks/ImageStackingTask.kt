@@ -114,7 +114,7 @@ class ImageStackingTask(val layers: LayerList,
         }
         logger.debug("Layer tasks done for {}", this)
         stats.onTaskCompleted("ImageStackingTask", name)
-        return snapshotRef.get()
+        return snapshotRef.getAndSet(null)
     }
 
     override fun andAllDependencies(): Set<Task<*>> {
