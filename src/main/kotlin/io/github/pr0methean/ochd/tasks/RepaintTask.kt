@@ -22,7 +22,6 @@ class RepaintTask(
 ): AsyncTransformingTask<Image, Image>("$base@$paint@$alpha", base, cache, { baseImage ->
     val name = "$base@$paint@$alpha"
     stats.onTaskLaunched("RepaintTask", name)
-    awaitFreeMemory(4 * baseImage.width.toLong() * baseImage.height.toLong(), name)
     val output = WritableImage(baseImage.width.toInt(), baseImage.height.toInt())
     val canvas = Canvas(baseImage.width, baseImage.height)
     val gfx = canvas.graphicsContext2D
@@ -38,6 +37,7 @@ class RepaintTask(
     gfx.isImageSmoothing = false
     gfx.drawImage(baseImage, 0.0, 0.0)
     val snapshot = doJfx(name) {
+        awaitFreeMemory(4 * baseImage.width.toLong() * baseImage.height.toLong(), name)
         canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
         if (output.isError) {
             throw output.exception

@@ -57,7 +57,6 @@ class AnimationTask(
     @Suppress("DeferredResultUnused")
     override suspend fun perform(): Image {
         stats.onTaskLaunched("AnimationTask", name)
-        awaitFreeMemory(4L * width * totalHeight)
         val canvas = Canvas(width.toDouble(), totalHeight.toDouble())
         val canvasCtx = canvas.graphicsContext2D
         val frameTasks = frames.map { it }.mapIndexed { index, frameTask -> frameTask.consumeAsync {
@@ -67,6 +66,7 @@ class AnimationTask(
         frameTasks.joinAll()
         val output = WritableImage(width, totalHeight)
         doJfx("Snapshot of $name") {
+            awaitFreeMemory(4L * width * totalHeight, name)
             canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
         }
         if (output.isError) {

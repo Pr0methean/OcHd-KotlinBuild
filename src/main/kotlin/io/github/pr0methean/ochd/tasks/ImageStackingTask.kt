@@ -65,7 +65,6 @@ class ImageStackingTask(val layers: LayerList,
         val firstLayer = layers.layers.first().await().getOrThrow()
         val width = firstLayer.width
         val height = firstLayer.height
-        awaitFreeMemory((4 * width * height).toLong())
         val canvas = Canvas(width, height)
         val canvasCtx = canvas.graphicsContext2D
         val snapshotRef = AtomicReference<Image>(null)
@@ -93,6 +92,7 @@ class ImageStackingTask(val layers: LayerList,
                         params.fill = layers.background
                         val output = WritableImage(width.toInt(), height.toInt())
                         doJfx("Snapshot of $name") {
+                            awaitFreeMemory((4 * width * height).toLong(), name)
                             val snapshot = canvas.snapshot(params, output)
                             if (snapshot.isError) {
                                 throw snapshot.exception
