@@ -15,14 +15,14 @@ abstract class SimpleTask<T>(name: String, cache: TaskCache<T>) : AbstractTask<T
 
     override suspend fun createCoroutineAsync(coroutineScope: CoroutineScope): Deferred<Result<T>> {
         return coroutineScope.async(start = CoroutineStart.LAZY) {
-                val result = try {
-                    Result.success(perform())
-                } catch (t: Throwable) {
-                    logger.error("Exception in {}", this, t)
-                    Result.failure(t)
-                }
-                result
+            val result = try {
+                Result.success(perform())
+            } catch (t: Throwable) {
+                logger.error("Exception in {}", this, t)
+                Result.failure(t)
             }
+            result
+        }
     }
 
 }

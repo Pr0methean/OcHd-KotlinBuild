@@ -59,10 +59,9 @@ class AnimationTask(
         stats.onTaskLaunched("AnimationTask", name)
         val canvas = Canvas(width.toDouble(), totalHeight.toDouble())
         val canvasCtx = canvas.graphicsContext2D
-        val frameTasks = frames.map { it }.mapIndexed { index, frameTask -> frameTask.consumeAsync {
+        val frameTasks = frames.mapIndexed { index, frameTask -> frameTask.consumeAsync {
             canvasCtx.drawImage(it.getOrThrow(), 0.0, (height * index).toDouble())
         }}
-        frames.asFlow().collect { it.startAsync() }
         frameTasks.joinAll()
         val output = WritableImage(width, totalHeight)
         doJfx("Snapshot of $name") {

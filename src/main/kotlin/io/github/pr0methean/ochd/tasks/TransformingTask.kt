@@ -13,24 +13,10 @@ private val logger = LogManager.getLogger("TransformingTask")
 open class TransformingTask<T, U>(
     name: String,
     open val base: Task<T>,
-    open val cache: TaskCache<U>,
-    val transform: (T) -> U
+    cache: TaskCache<U>,
+    val transform: suspend (T) -> U
 )
         : AbstractTask<U>(name, cache) {
-
-    override fun addDependentOutputTask(task: OutputTask) {
-        super.addDependentOutputTask(task)
-        base.addDependentOutputTask(task)
-    }
-
-    override fun removeDependentOutputTask(task: OutputTask) {
-        base.removeDependentOutputTask(task)
-        super.removeDependentOutputTask(task)
-    }
-
-    override fun andAllDependencies(): Set<Task<*>> {
-        return base.andAllDependencies().plus(this)
-    }
 
     override suspend fun createCoroutineAsync(coroutineScope: CoroutineScope): Deferred<Result<U>> {
         val myBase = base
@@ -49,6 +35,16 @@ open class TransformingTask<T, U>(
         }
     }
 
+    override fun addDependentOutputTask(task: OutputTask) {
+        super.addDependentOutputTask(task)
+        base.addDependentOutputTask(task)
+    }
+
+    override fun removeDependentOutputTask(task: OutputTask) {
+        base.removeDependentOutputTask(task)
+        super.removeDependentOutputTask(task)
+    }
+
     @Suppress("UNCHECKED_CAST")
     override suspend fun mergeWithDuplicate(other: Task<U>): Task<U> {
         val deduped = super.mergeWithDuplicate(other)
@@ -61,5 +57,9 @@ open class TransformingTask<T, U>(
     override suspend fun clearFailure() {
         base.clearFailure()
         super.clearFailure()
+    }
+
+    override fun andAllDependencies(): Set<Task<*>> {
+        return base.andAllDependencies().plus(this)
     }
 }

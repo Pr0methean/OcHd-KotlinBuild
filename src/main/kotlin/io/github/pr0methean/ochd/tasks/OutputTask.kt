@@ -15,7 +15,7 @@ class OutputTask(
     override val name: String,
     val stats: ImageProcessingStats,
     private val files: List<File>,
-): AsyncTransformingTask<ByteArray, Unit>("Output $name", source, noopTaskCache(), transform = { bytes ->
+): TransformingTask<ByteArray, Unit>("Output $name", source, noopTaskCache(), transform = { bytes ->
     withContext(Dispatchers.IO.plus(CoroutineName(name))) {
         stats.onTaskLaunched("OutputTask", name)
         val firstFile = files[0]

@@ -8,7 +8,7 @@ import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
 
 class PngCompressionTask(
-    override val base: AbstractTask<Image>, override val cache: TaskCache<ByteArray>, val stats: ImageProcessingStats
+    base: AbstractTask<Image>, cache: TaskCache<ByteArray>, val stats: ImageProcessingStats
 ): TransformingTask<Image, ByteArray>("PNG compression of $base", base = base, cache = cache, transform = { image ->
     ByteArrayOutputStream().use {
         stats.onTaskLaunched("PngCompressionTask", base.name)

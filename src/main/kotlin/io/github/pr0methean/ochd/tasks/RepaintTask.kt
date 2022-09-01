@@ -19,7 +19,7 @@ class RepaintTask(
     val alpha: Double = 1.0,
     cache: TaskCache<Image>,
     val stats: ImageProcessingStats
-): AsyncTransformingTask<Image, Image>("$base@$paint@$alpha", base, cache, { baseImage ->
+): TransformingTask<Image, Image>("$base@$paint@$alpha", base, cache, { baseImage ->
     val name = "$base@$paint@$alpha"
     stats.onTaskLaunched("RepaintTask", name)
     val output = WritableImage(baseImage.width.toInt(), baseImage.height.toInt())
