@@ -9,6 +9,7 @@ import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.asFlow
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox.box
@@ -70,37 +71,30 @@ class ImageStackingTask(val layers: LayerList,
         val snapshotRef = AtomicReference<Image>(null)
         logger.debug("Creating layer tasks for {}", this)
         val layerRenderTasks = mutableListOf<Deferred<Result<Unit>>>()
-        layers.layers.forEachIndexed { index, layerTask ->
+        layerRenderTasks.add(createCoroutineScope().async {
+            logger.debug("Rendering first layer ({}) of {}", firstLayer, this@ImageStackingTask)
+            canvasCtx.drawImage(firstLayer, 0.0, 0.0)
+            if (layers.layers.size == 1) {
+                takeSnapshot(width, height, canvas, snapshotRef)
+            }
+            return@async success(Unit)
+        })
+        layers.layers.withIndex().drop(1).forEach { (index, layerTask) ->
             logger.debug("Creating consumer for layer {} ({})", index, layerTask)
             val previousLayerTask = layerRenderTasks.getOrNull(index - 1)
             val previousLayerName = layers.layers.getOrNull(index - 1).toString()
             layerRenderTasks.add(layerTask.consumeAsync {
                 try {
-                    if (index == 0) {
-                        canvasCtx.drawImage(firstLayer, 0.0, 0.0)
-                    } else {
-                        logger.debug("Awaiting previous layer ({}) if needed", previousLayerName)
-                        previousLayerTask?.await()?.getOrThrow()
-                        logger.debug("Fetching layer {} ({})", index, layerTask)
-                        val layerImage = it.getOrThrow()
-                        logger.debug("Rendering layer {} ({}) onto the stack", box(index), layerTask)
-                        canvasCtx.drawImage(layerImage, 0.0, 0.0)
-                    }
-
-                    if (index == layers.layers.lastIndex) {
-                        val params = SnapshotParameters()
-                        params.fill = layers.background
-                        val output = WritableImage(width.toInt(), height.toInt())
-                        doJfx("Snapshot of $name") {
-                            awaitFreeMemory((4 * width * height).toLong(), name)
-                            val snapshot = canvas.snapshot(params, output)
-                            if (snapshot.isError) {
-                                throw snapshot.exception
-                            }
-                            snapshotRef.set(snapshot)
-                        }
-                    }
+                    logger.debug("Awaiting previous layer ({}) if needed", previousLayerName)
+                    previousLayerTask?.await()?.getOrThrow()
+                    logger.debug("Fetching layer {} ({})", index, layerTask)
+                    val layerImage = it.getOrThrow()
+                    logger.debug("Rendering layer {} ({}) onto the stack", box(index), layerTask)
+                    canvasCtx.drawImage(layerImage, 0.0, 0.0)
                     logger.debug("Finished layer {} ({})", box(index), layerTask)
+                    if (index == layers.layers.lastIndex) {
+                        takeSnapshot(width, height, canvas, snapshotRef)
+                    }
                     return@consumeAsync success(Unit)
                 } catch (t: Throwable) {
                     logger.error("ImageStackingTask layer failed", t)
@@ -116,6 +110,25 @@ class ImageStackingTask(val layers: LayerList,
         logger.debug("Layer tasks done for {}", this)
         stats.onTaskCompleted("ImageStackingTask", name)
         return snapshotRef.getAndSet(null)
+    }
+
+    private suspend fun takeSnapshot(
+        width: Double,
+        height: Double,
+        canvas: Canvas,
+        snapshotRef: AtomicReference<Image>
+    ) {
+        val params = SnapshotParameters()
+        params.fill = layers.background
+        val output = WritableImage(width.toInt(), height.toInt())
+        doJfx("Snapshot of $name") {
+            awaitFreeMemory((4 * width * height).toLong(), name)
+            val snapshot = canvas.snapshot(params, output)
+            if (snapshot.isError) {
+                throw snapshot.exception
+            }
+            snapshotRef.set(snapshot)
+        }
     }
 
     override fun andAllDependencies(): Set<Task<*>> {
