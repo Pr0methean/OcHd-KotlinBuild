@@ -5,6 +5,13 @@ plugins {
     kotlin("jvm") version "1.7.10"
     id("org.openjfx.javafxplugin") version "0.0.13"
     id("io.gitlab.arturbosch.detekt").version("1.21.0")
+    constraints {
+        add("implementation", "org.yaml:snakeyaml") {
+            version {
+                require("1.31")
+            }
+            because("CVE-2022-25857")
+        }
 }
 
 group = "org.example"
