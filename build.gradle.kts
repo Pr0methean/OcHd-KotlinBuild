@@ -62,6 +62,12 @@ dependencies {
             }
             because("CVE-2022-25857")
         }
+        add("implementation", "commons-io:commons-io") {
+            version {
+                require("2.7")
+            }
+            because("CVE-2021-29425")
+        }
     }
 }
 
