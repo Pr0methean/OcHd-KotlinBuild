@@ -5,13 +5,6 @@ plugins {
     kotlin("jvm") version "1.7.10"
     id("org.openjfx.javafxplugin") version "0.0.13"
     id("io.gitlab.arturbosch.detekt").version("1.21.0")
-    constraints {
-        add("implementation", "org.yaml:snakeyaml") {
-            version {
-                require("1.31")
-            }
-            because("CVE-2022-25857")
-        }
 }
 
 group = "org.example"
@@ -62,6 +55,14 @@ dependencies {
     runtimeOnly("org.apache.logging.log4j:log4j-jul:$log4jVersion")
     runtimeOnly("org.apache.logging.log4j:log4j-jpl:$log4jVersion")
     runtimeOnly("com.lmax:disruptor:3.4.4")
+    constraints {
+        add("detekt", "org.yaml:snakeyaml") {
+            version {
+                require("1.31")
+            }
+            because("CVE-2022-25857")
+        }
+    }
 }
 
 tasks.test {
