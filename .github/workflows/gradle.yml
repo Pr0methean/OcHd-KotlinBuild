@@ -65,6 +65,7 @@ jobs:
       id: run
       run: java -Dprism.maxvram=1280m -Dglass.platform=Monocle -Dmonocle.platform=Headless -Dquantum.multithreaded=true -XX:+UseStringDeduplication -Xms5376m -Xmx5376m '-Xlog:gc*=debug,gc+heap=trace,gc+heap+exit=trace,gc+metaspace=trace,gc+nmethod=info' -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:+UseNUMA -XX:ConcGCThreads=2 -XX:ParallelGCThreads=2 -XX:+HeapDumpOnOutOfMemoryError -jar OcHd-KotlinBuild-1.0-SNAPSHOT.jar ${{ matrix.size }}
       continue-on-error: true
+      timeout-minutes: 60
     - name: Zip Texture Pack
       if: steps.run.outcome == 'success'
       run: cd pngout && zip -r OcHD-${{ matrix.size}}x${{ matrix.size}}.zip *
