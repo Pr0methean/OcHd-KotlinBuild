@@ -3,7 +3,6 @@ package io.github.pr0methean.ochd.tasks
 import io.github.pr0methean.ochd.DEFAULT_SNAPSHOT_PARAMS
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.tasks.caching.TaskCache
-import javafx.scene.canvas.Canvas
 import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
 import kotlinx.coroutines.flow.asFlow
@@ -57,7 +56,7 @@ class AnimationTask(
     @Suppress("DeferredResultUnused")
     override suspend fun perform(): Image {
         stats.onTaskLaunched("AnimationTask", name)
-        val canvas = Canvas(width.toDouble(), totalHeight.toDouble())
+        val canvas = createCanvas(width.toDouble(), totalHeight.toDouble())
         val canvasCtx = canvas.graphicsContext2D
         val frameTasks = frames.mapIndexed { index, frameTask -> frameTask.consumeAsync {
             canvasCtx.drawImage(it.getOrThrow(), 0.0, (height * index).toDouble())

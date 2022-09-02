@@ -66,7 +66,7 @@ class ImageStackingTask(val layers: LayerList,
         val firstLayer = layers.layers.first().await().getOrThrow()
         val width = firstLayer.width
         val height = firstLayer.height
-        val canvas = Canvas(width, height)
+        val canvas = createCanvas(width, height)
         val canvasCtx = canvas.graphicsContext2D
         val snapshotRef = AtomicReference<Image>(null)
         logger.debug("Creating layer tasks for {}", this)

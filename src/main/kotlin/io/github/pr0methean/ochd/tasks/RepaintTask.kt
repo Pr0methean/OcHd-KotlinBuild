@@ -4,7 +4,6 @@ import io.github.pr0methean.ochd.DEFAULT_SNAPSHOT_PARAMS
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.tasks.caching.TaskCache
 import io.github.pr0methean.ochd.tasks.caching.noopTaskCache
-import javafx.scene.canvas.Canvas
 import javafx.scene.effect.Blend
 import javafx.scene.effect.BlendMode
 import javafx.scene.effect.ColorInput
@@ -22,8 +21,8 @@ class RepaintTask(
 ): TransformingTask<Image, Image>("$base@$paint@$alpha", base, cache, { baseImage ->
     val name = "$base@$paint@$alpha"
     stats.onTaskLaunched("RepaintTask", name)
+    val canvas = createCanvas(baseImage.width, baseImage.height, name)
     val output = WritableImage(baseImage.width.toInt(), baseImage.height.toInt())
-    val canvas = Canvas(baseImage.width, baseImage.height)
     val gfx = canvas.graphicsContext2D
     canvas.opacity = alpha
     if (paint != null) {
