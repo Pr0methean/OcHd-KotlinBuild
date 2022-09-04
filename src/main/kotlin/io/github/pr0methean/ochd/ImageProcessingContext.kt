@@ -4,6 +4,8 @@ import com.github.benmanes.caffeine.cache.Caffeine
 import com.google.common.collect.ConcurrentHashMultiset
 import io.github.pr0methean.ochd.tasks.*
 import io.github.pr0methean.ochd.tasks.caching.SemiStrongTaskCache
+import io.github.pr0methean.ochd.tasks.caching.StrongTaskCache
+import io.github.pr0methean.ochd.tasks.caching.TaskCache
 import io.github.pr0methean.ochd.tasks.caching.WeakTaskCache
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
@@ -22,6 +24,7 @@ fun color(web: String, alpha: Double): Color = Color.web(web, alpha)
 
 private val logger = LogManager.getLogger("ImageProcessingContext")
 
+private val stronglyCacheableSvgs = setOf<String>("borderSolid","borderDotted","borderShortDashes","borderSolidTopLeft")
 /**
  * Holds info needed to build and deduplicate the task graph. Needs to become unreachable once the graph is built.
  */
@@ -42,8 +45,12 @@ class ImageProcessingContext(
         .build<SemiStrongTaskCache<*>,Result<*>>()
 
     private fun <T> createStandardTaskCache(name: String) = SemiStrongTaskCache<T>(name, backingCache)
-    private fun <T> createSvgImportCache(name: String) = SemiStrongTaskCache<T>(name, backingCache)
-
+    private fun <T> createSvgImportCache(name: String): TaskCache<T> {
+        if (stronglyCacheableSvgs.contains(name)) {
+            return StrongTaskCache(name)
+        }
+        return createStandardTaskCache(name)
+    }
     init {
         val builder = mutableMapOf<String, SvgImportTask>()
         svgDirectory.list()!!.forEach { svgFile ->
