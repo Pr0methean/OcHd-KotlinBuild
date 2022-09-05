@@ -36,13 +36,14 @@ repositories {
 }
 
 val log4jVersion = "2.18.0"
+val kotlinXCoroutinesVersion = "1.6.4"
 
 dependencies {
     testImplementation(kotlin("test"))
     implementation("no.tornado:tornadofx:1.7.20")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
-    runtimeOnly("org.jetbrains.kotlinx:kotlinx-coroutines-javafx:1.6.4")
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-debug:1.6.4")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinXCoroutinesVersion")
+    runtimeOnly("org.jetbrains.kotlinx:kotlinx-coroutines-javafx:$kotlinXCoroutinesVersion")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-debug:$kotlinXCoroutinesVersion")
     implementation("com.google.guava:guava:31.1-jre")
     implementation("org.testfx:openjfx-monocle:jdk-12.0.1+2")
     implementation("org.apache.xmlgraphics:batik-transcoder:1.14")
