@@ -37,14 +37,13 @@ class ImageProcessingContext(
     private val taskDeduplicationMap = ConcurrentHashMap<ImageTask, ImageTask>()
     val stats: ImageProcessingStats = ImageProcessingStats()
     private val dedupedSvgTasks = ConcurrentHashMultiset.create<String>()
+    private val backingCache = Caffeine.newBuilder()
+        .weakKeys()
+        .softValues()
+        .build<SemiStrongTaskCache<*>,Result<*>>()
 
-    private fun <T> createStandardTaskCache(name: String) = WeakTaskCache<T>(name)
-    private fun <T> createSvgImportCache(name: String): TaskCache<T> {
-        if (stronglyCacheableSvgs.contains(name)) {
-            return StrongTaskCache(name)
-        }
-        return WeakTaskCache(name)
-    }
+    private fun <T> createStandardTaskCache(name: String) = SemiStrongTaskCache<T>(name, backingCache)
+    private fun <T> createSvgImportCache(name: String) = SemiStrongTaskCache<T>(name, backingCache)
 
     init {
         val builder = mutableMapOf<String, SvgImportTask>()
