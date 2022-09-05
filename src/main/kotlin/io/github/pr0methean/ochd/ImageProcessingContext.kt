@@ -41,9 +41,9 @@ class ImageProcessingContext(
     private fun <T> createStandardTaskCache(name: String) = WeakTaskCache<T>(name)
     private fun <T> createSvgImportCache(name: String): TaskCache<T> {
         if (stronglyCacheableSvgs.contains(name)) {
-            return StrongTaskCache<T>(name)
+            return StrongTaskCache(name)
         }
-        return WeakTaskCache<T>(name)
+        return WeakTaskCache(name)
     }
 
     init {
