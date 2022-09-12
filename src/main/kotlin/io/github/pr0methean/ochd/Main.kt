@@ -81,10 +81,11 @@ suspend fun main(args: Array<String>) {
             val taskSet = tasks.toMutableSet()
             while (taskSet.isNotEmpty()) {
                 val task = taskSet.minBy {
-                        1L.shl(30).toDouble() * it.uncachedSubtasks()
+                        val uncachedSubtasks = it.uncachedSubtasks()
+                    1L.shl(30).toDouble() * uncachedSubtasks
                         + 1L.shl(20).toDouble() * it.unstartedSubtasks()
-                        + 1L.shl(10).toDouble() * ((it.uncachedSubtasks().toDouble() - 2) / (it.andAllDependencies().size - 2))
-                        + distances[prevTask]!![it]!!}
+                        + 1L.shl(10).toDouble() * ((uncachedSubtasks.toDouble() - 2) / (it.andAllDependencies().size - 2))
+                        + (distances[prevTask]?.get(it) ?: Double.POSITIVE_INFINITY)}
                 taskSet.remove(task)
                 prevTask = task
                 val result = withContext(scope.coroutineContext) {
