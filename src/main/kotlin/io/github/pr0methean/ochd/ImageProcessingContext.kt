@@ -4,6 +4,7 @@ import com.github.benmanes.caffeine.cache.Caffeine
 import com.google.common.collect.ConcurrentHashMultiset
 import io.github.pr0methean.ochd.tasks.*
 import io.github.pr0methean.ochd.tasks.caching.SemiStrongTaskCache
+import io.github.pr0methean.ochd.tasks.caching.WeakTaskCache
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
@@ -144,7 +145,8 @@ class ImageProcessingContext(
     suspend fun out(source: suspend LayerListBuilder.() -> Unit, vararg names: String): OutputTask
             = out(stack {source()}, *names)
 
-    suspend fun stack(layers: LayerList): ImageTask
-            = deduplicate(ImageStackingTask(layers,
-        layers.toString(), createStandardTaskCache(layers.toString()), stats))
+    suspend fun stack(layers: LayerList): ImageTask {
+        val name = layers.toString()
+        return deduplicate(ImageStackingTask(layers, name, WeakTaskCache(name), stats))
+    }
 }
