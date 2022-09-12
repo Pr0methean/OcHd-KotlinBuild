@@ -80,15 +80,11 @@ suspend fun main(args: Array<String>) {
             val tasksToRetry = ConcurrentLinkedDeque<OutputTask>()
             val taskSet = tasks.toMutableSet()
             while (taskSet.isNotEmpty()) {
-                val task = if (prevTask == null) {
-                    taskSet.first()
-                } else {
-                    taskSet.minBy {
+                val task = taskSet.minBy {
                         1L.shl(30).toDouble() * it.uncachedSubtasks()
                         + 1L.shl(20).toDouble() * it.unstartedSubtasks()
                         + 1L.shl(10).toDouble() * ((it.uncachedSubtasks().toDouble() - 2) / (it.andAllDependencies().size - 2))
                         + distances[prevTask]!![it]!!}
-                }
                 taskSet.remove(task)
                 prevTask = task
                 val result = withContext(scope.coroutineContext) {
