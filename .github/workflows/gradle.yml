@@ -35,7 +35,7 @@ jobs:
         java-version: '18'
         distribution: 'temurin'
     - name: Build with Gradle
-      uses: gradle/gradle-build-action@67421db6bd0bf253fb4bd25b31ebb98943c375e1
+      uses: gradle/gradle-build-action@356abb47e7664b5505e25d7997a5a522a17c62d9
       with:
         arguments: jar --scan
     - name: Upload Fat Jar
