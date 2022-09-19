@@ -57,9 +57,9 @@ dependencies {
     constraints {
         add("detekt", "org.yaml:snakeyaml") {
             version {
-                require("1.31")
+                require("1.32")
             }
-            because("CVE-2022-25857")
+            because("CVE-2022-25857, CVE-2022-38751, CVE-2022-38752")
         }
         add("implementation", "commons-io:commons-io") {
             version {
