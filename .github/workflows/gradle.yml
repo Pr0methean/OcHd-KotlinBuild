@@ -81,3 +81,6 @@ jobs:
       with:
         name: Heap Dump ${{ matrix.size }}x${{ matrix.size }}
         path: '*.hprof'
+    - name: Mark Job Failed After Heap Dump
+      if: steps.run.outcome != 'success'
+      run: 'false'
