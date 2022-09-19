@@ -35,7 +35,7 @@ repositories {
     mavenCentral()
 }
 
-val log4jVersion = "2.18.0"
+val log4jVersion = "2.19.0"
 val kotlinXCoroutinesVersion = "1.6.4"
 
 dependencies {
