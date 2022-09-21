@@ -16,10 +16,7 @@ import kotlin.Result.Companion.failure
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
-private val logger = run {
-    System.setProperty("java.util.logging.manager", "org.apache.logging.log4j.jul.LogManager")
-    LogManager.getRootLogger()
-}
+private val logger = LogManager.getRootLogger()
 
 @Suppress("UnstableApiUsage", "DeferredResultUnused")
 suspend fun main(args: Array<String>) {
