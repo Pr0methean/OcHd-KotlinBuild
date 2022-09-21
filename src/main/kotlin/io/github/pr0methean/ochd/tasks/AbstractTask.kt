@@ -15,20 +15,20 @@ import kotlin.Result.Companion.failure
 private val logger = LogManager.getLogger("AbstractTask")
 private val cancelBecauseReplacing = CancellationException("Being replaced")
 abstract class AbstractTask<T>(override val name: String, private val cache: TaskCache<T>) : Task<T> {
-    private val dependentOutputTasks = newSetFromMap<OutputTask>(WeakHashMap())
+    private val directDependentTasks = newSetFromMap<Task<*>>(WeakHashMap())
     private val mutex = Mutex()
-    override fun addDependentOutputTask(task: OutputTask): Unit = synchronized(dependentOutputTasks)
+    override fun addDirectDependentTask(task: Task<*>): Unit = synchronized(directDependentTasks)
     {
-        dependentOutputTasks.add(task)
-        if (dependentOutputTasks.size >= 2 && !cache.enabled && cache !is NoopTaskCache) {
+        directDependentTasks.add(task)
+        if (directDependentTasks.size >= 2 && !cache.enabled && cache !is NoopTaskCache) {
             logger.info("Enabling caching for {}", name)
             cache.enabled = true
         }
     }
 
-    override fun removeDependentOutputTask(task: OutputTask): Unit = synchronized(dependentOutputTasks) {
-        dependentOutputTasks.remove(task)
-        if (dependentOutputTasks.isEmpty() && cache.enabled) {
+    override fun removeDirectDependentTask(task: Task<*>): Unit = synchronized(directDependentTasks) {
+        directDependentTasks.remove(task)
+        if (directDependentTasks.isEmpty() && cache.enabled) {
             logger.info("Disabling caching for {}", name)
             cache.enabled = false
         }

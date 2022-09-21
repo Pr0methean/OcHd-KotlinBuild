@@ -35,16 +35,6 @@ open class TransformingTask<T, U>(
         }
     }
 
-    override fun addDependentOutputTask(task: OutputTask) {
-        super.addDependentOutputTask(task)
-        base.addDependentOutputTask(task)
-    }
-
-    override fun removeDependentOutputTask(task: OutputTask) {
-        base.removeDependentOutputTask(task)
-        super.removeDependentOutputTask(task)
-    }
-
     @Suppress("UNCHECKED_CAST")
     override suspend fun mergeWithDuplicate(other: Task<U>): Task<U> {
         val deduped = super.mergeWithDuplicate(other)
@@ -52,6 +42,10 @@ open class TransformingTask<T, U>(
             (deduped as TransformingTask<T, U>).base.mergeWithDuplicate(other.base as Task<T>)
         }
         return deduped
+    }
+
+    override fun registerDirectDependencies() {
+        base.addDirectDependentTask(this)
     }
 
     override suspend fun clearFailure() {

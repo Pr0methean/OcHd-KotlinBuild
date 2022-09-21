@@ -16,9 +16,9 @@ interface Task<T>: StringBuilderFormattable {
     suspend fun clearFailure()
     suspend fun mergeWithDuplicate(other: Task<T>): Task<T>
 
-    fun addDependentOutputTask(task: OutputTask)
+    fun addDirectDependentTask(task: Task<*>)
 
-    fun removeDependentOutputTask(task: OutputTask)
+    fun removeDirectDependentTask(task: Task<*>)
 
     fun andAllDependencies(): Set<Task<*>> = setOf(this)
 
@@ -29,4 +29,5 @@ interface Task<T>: StringBuilderFormattable {
     }
 
     fun unstartedSubtasks(): Int
+    fun registerDirectDependencies()
 }

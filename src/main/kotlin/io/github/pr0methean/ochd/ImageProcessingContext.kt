@@ -88,6 +88,9 @@ class ImageProcessingContext(
             stats.dedupeFailures.add(task::class.simpleName ?: "[unnamed non-ImageTask class]")
             return object: AbstractImageTask(task.name, createStandardTaskCache(task.name), stats) {
                 override suspend fun perform(): Image = task.await().getOrThrow()
+                override fun registerDirectDependencies() {
+                    task.addDirectDependentTask(this)
+                }
             }
         }
         val className = task::class.simpleName ?: "[unnamed class]"
@@ -96,6 +99,7 @@ class ImageProcessingContext(
             stats.dedupeFailures.add(className)
             task
         }
+        deduped.registerDirectDependencies()
         if (deduped !== task) {
             logger.info("Deduplicated: {}", task)
             stats.dedupeSuccesses.add(className)
@@ -144,7 +148,7 @@ class ImageProcessingContext(
     ): OutputTask {
         val pngSource = deduplicate(source).asPng
         val outputTask = OutputTask(pngSource, lowercaseName, stats, destination)
-        pngSource.addDependentOutputTask(outputTask)
+        pngSource.addDirectDependentTask(outputTask)
         return outputTask
     }
 
