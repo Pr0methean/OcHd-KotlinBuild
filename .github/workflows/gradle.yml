@@ -57,7 +57,8 @@ jobs:
       uses: actions/setup-java@v3
       with:
         java-version: '18'
-        distribution: 'temurin'
+        distribution: 'corretto'
+        cache: 'gradle'
     - name: Download Fat Jar
       uses: actions/download-artifact@v3
       with:
