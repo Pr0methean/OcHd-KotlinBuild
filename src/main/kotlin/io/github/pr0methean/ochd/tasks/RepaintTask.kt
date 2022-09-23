@@ -18,6 +18,12 @@ class RepaintTask(
     cache: TaskCache<Image>,
     stats: ImageProcessingStats
 ): AbstractImageTask("$base@$paint@$alpha", cache, stats) {
+    init {
+        if (alpha == 1.0) {
+            base.addOpaqueRepaint(this)
+        }
+    }
+
     override suspend fun mergeWithDuplicate(other: Task<Image>): ImageTask {
         if (other is RepaintTask) {
             base.mergeWithDuplicate(other.base)
@@ -44,9 +50,6 @@ class RepaintTask(
             }
         }
         baseImage = baseImage ?: base.await().getOrThrow()
-        if (alpha == 1.0) {
-            base.addOpaqueRepaint(this)
-        }
         stats.onTaskLaunched("RepaintTask", name)
         val canvas = createCanvas(baseImage.width, baseImage.height, name)
         val output = WritableImage(baseImage.width.toInt(), baseImage.height.toInt())
