@@ -37,6 +37,7 @@ repositories {
 
 val log4jVersion = "2.19.0"
 val kotlinXCoroutinesVersion = "1.6.4"
+val batikVersion = "1.15"
 
 dependencies {
     testImplementation(kotlin("test"))
@@ -46,8 +47,8 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-debug:$kotlinXCoroutinesVersion")
     implementation("com.google.guava:guava:31.1-jre")
     implementation("org.testfx:openjfx-monocle:jdk-12.0.1+2")
-    implementation("org.apache.xmlgraphics:batik-transcoder:1.15")
-    implementation("org.apache.xmlgraphics:batik-codec:1.15")
+    implementation("org.apache.xmlgraphics:batik-transcoder:$batikVersion")
+    implementation("org.apache.xmlgraphics:batik-codec:$batikVersion")
     runtimeOnly(kotlin("reflect"))
     implementation("org.apache.logging.log4j:log4j-api:$log4jVersion")
     implementation("org.apache.logging.log4j:log4j-core:$log4jVersion")
