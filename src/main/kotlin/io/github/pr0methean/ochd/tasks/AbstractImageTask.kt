@@ -10,8 +10,8 @@ abstract class AbstractImageTask(override val name: String, cache: TaskCache<Ima
                                  open val stats: ImageProcessingStats)
     : SimpleTask<Image>(name, cache), ImageTask {
     override suspend fun mergeWithDuplicate(other: Task<Image>): ImageTask {
-        if (other is AbstractImageTask) {
-            opaqueRepaints.addAll(other.opaqueRepaints)
+        if (other is ImageTask) {
+            other.opaqueRepaints().forEach(this::addOpaqueRepaint)
         }
         return super.mergeWithDuplicate(other) as ImageTask
     }
