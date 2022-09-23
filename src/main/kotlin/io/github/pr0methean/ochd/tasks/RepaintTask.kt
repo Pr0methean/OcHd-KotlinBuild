@@ -9,8 +9,10 @@ import javafx.scene.effect.ColorInput
 import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
 import javafx.scene.paint.Paint
+import org.apache.logging.log4j.LogManager
 import java.util.*
 
+private val logger = LogManager.getLogger("RepaintTask")
 class RepaintTask(
     val base: ImageTask,
     val paint: Paint?,
@@ -44,6 +46,7 @@ class RepaintTask(
             for (repaint in base.opaqueRepaints()) {
                 val repaintNow = repaint.getNow()
                 if (repaintNow != null) {
+                    logger.info("Repainting {} to create {}", repaint, this)
                     baseImage = repaintNow.getOrThrow()
                     break
                 }
