@@ -28,4 +28,8 @@ interface ImageTask: StringBuilderFormattable, Task<Image> {
     override suspend fun mergeWithDuplicate(other: Task<Image>): ImageTask
 
     suspend fun createCanvas(width: Double, height: Double): Canvas = createCanvas(width, height, name)
+
+    fun opaqueRepaints(): Iterable<ImageTask>
+
+    fun addOpaqueRepaint(repaint: ImageTask)
 }
