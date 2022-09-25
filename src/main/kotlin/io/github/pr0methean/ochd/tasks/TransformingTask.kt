@@ -6,6 +6,7 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import org.apache.logging.log4j.LogManager
+import java.util.*
 import kotlin.Result.Companion.failure
 import kotlin.Result.Companion.success
 
@@ -33,6 +34,16 @@ open class TransformingTask<T, U>(
             }
             result
         }
+    }
+
+    override fun equals(other: Any?): Boolean {
+        return (other === this) || (other is TransformingTask<*, *>
+                && transform.javaClass == other.transform.javaClass
+                && base == other.base)
+    }
+
+    override fun hashCode(): Int {
+        return Objects.hash(javaClass, base)
     }
 
     @Suppress("UNCHECKED_CAST")
