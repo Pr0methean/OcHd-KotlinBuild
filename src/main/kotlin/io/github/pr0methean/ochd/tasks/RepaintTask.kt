@@ -26,6 +26,19 @@ class RepaintTask(
         }
     }
 
+    override fun uncachedSubtasks(): Int {
+        val possiblyUncached = super.uncachedSubtasks()
+        if (possiblyUncached <= 1) {
+            return possiblyUncached
+        }
+        for (repaint in base.opaqueRepaints()) {
+            if (repaint.getNow() != null) {
+                return 1
+            }
+        }
+        return possiblyUncached
+    }
+
     override suspend fun mergeWithDuplicate(other: Task<Image>): ImageTask {
         if (other is RepaintTask) {
             base.mergeWithDuplicate(other.base)
