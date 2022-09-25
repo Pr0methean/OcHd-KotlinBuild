@@ -20,8 +20,8 @@ fun color(web: String): Color = Color.web(web)
 fun color(web: String, alpha: Double): Color = Color.web(web, alpha)
 
 private val logger = LogManager.getLogger("ImageProcessingContext")
-// Hard-ref cache will be able to contain this * 64MiB of uncompressed 32-bit pixels
-private const val MINIMUM_CACHE_4096x4096 = 16L
+// Soft-ref cache will be able to contain this * 16 MPx
+private const val MINIMUM_CACHE_4096x4096 = 24L
 
 /**
  * Holds info needed to build and deduplicate the task graph. Needs to become unreachable once the graph is built.
