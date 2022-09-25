@@ -23,7 +23,7 @@ class SemiStrongTaskCache<T>(name: String, private val backingCache: Cache<SemiS
             backingCache.invalidate(this)
         } else {
             backingCache.put(this, value)
+            super.enabledSet(value)
         }
-        super.enabledSet(value)
     }
 }
