@@ -219,11 +219,4 @@ abstract class AbstractTask<T>(override val name: String, private val cache: Tas
         return this
     }
 
-    override fun unstartedSubtasks(): Int = if (getNow() != null) {
-        0
-    } else {
-        andAllDependencies().filter {
-            it.getNow() == null && (it !is AbstractTask || (it.coroutine.get()?.isActive != true))
-        }.size
-    }
 }

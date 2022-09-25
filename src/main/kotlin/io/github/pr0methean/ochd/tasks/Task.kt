@@ -28,5 +28,4 @@ interface Task<T>: StringBuilderFormattable {
         andAllDependencies().filter { it.getNow() == null }.size
     }
 
-    fun unstartedSubtasks(): Int
 }
