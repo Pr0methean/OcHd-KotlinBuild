@@ -77,6 +77,7 @@ suspend fun main(args: Array<String>) {
             val tasksToRetry = ConcurrentLinkedDeque<OutputTask>()
             val taskSet = tasks.toMutableSet()
             while (taskSet.isNotEmpty()) {
+                yield()
                 val task = if (prevTask == null) {
                     taskSet.first()
                 } else {
