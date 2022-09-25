@@ -68,4 +68,6 @@ class SvgImportTask(
         stats.onTaskCompleted("SvgImportTask", name)
         return image
     }
+
+    override fun andAllDependencies(): Set<Task<*>> = setOf(this)
 }

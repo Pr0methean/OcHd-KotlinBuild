@@ -74,7 +74,6 @@ class ImageProcessingContext(
         if (task is RepaintTask
             && (task.paint == null || task.paint == Color.BLACK)
             && task.alpha == 1.0
-            && task.base is ImageTask
         ) {
             return deduplicate(task.base)
         }
@@ -88,6 +87,8 @@ class ImageProcessingContext(
             stats.dedupeFailures.add(task::class.simpleName ?: "[unnamed non-ImageTask class]")
             return object: AbstractImageTask(task.name, createStandardTaskCache(task.name), stats) {
                 override suspend fun perform(): Image = task.await().getOrThrow()
+
+                override fun andAllDependencies(): Set<Task<*>> = setOf(this)
             }
         }
         val className = task::class.simpleName ?: "[unnamed class]"
