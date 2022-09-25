@@ -84,7 +84,7 @@ suspend fun main(args: Array<String>) {
                     try {
                         val result = task.await()
                         if (result.isSuccess) {
-                            task.source.removeDependentOutputTask(task)
+                            task.source.removeDirectDependentTask(task)
                         }
                         return@withContext result
                     } catch (t: Throwable) {

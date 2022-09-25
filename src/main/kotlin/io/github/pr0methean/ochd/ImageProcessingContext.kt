@@ -4,8 +4,6 @@ import com.github.benmanes.caffeine.cache.Caffeine
 import com.google.common.collect.ConcurrentHashMultiset
 import io.github.pr0methean.ochd.tasks.*
 import io.github.pr0methean.ochd.tasks.caching.SemiStrongTaskCache
-import io.github.pr0methean.ochd.tasks.caching.StrongTaskCache
-import io.github.pr0methean.ochd.tasks.caching.TaskCache
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
@@ -23,7 +21,6 @@ fun color(web: String, alpha: Double): Color = Color.web(web, alpha)
 
 private val logger = LogManager.getLogger("ImageProcessingContext")
 
-private val stronglyCacheableSvgs = setOf<String>("borderSolid","borderDotted","borderShortDashes","borderSolidTopLeft")
 /**
  * Holds info needed to build and deduplicate the task graph. Needs to become unreachable once the graph is built.
  */
@@ -44,12 +41,8 @@ class ImageProcessingContext(
         .build<SemiStrongTaskCache<*>,Result<*>>()
 
     private fun <T> createStandardTaskCache(name: String) = SemiStrongTaskCache<T>(name, backingCache)
-    private fun <T> createSvgImportCache(name: String): TaskCache<T> {
-        if (stronglyCacheableSvgs.contains(name)) {
-            return StrongTaskCache(name)
-        }
-        return createStandardTaskCache(name)
-    }
+    private fun <T> createSvgImportCache(name: String) = SemiStrongTaskCache<T>(name, backingCache)
+
     init {
         val builder = mutableMapOf<String, SvgImportTask>()
         svgDirectory.list()!!.forEach { svgFile ->
@@ -87,6 +80,9 @@ class ImageProcessingContext(
             stats.dedupeFailures.add(task::class.simpleName ?: "[unnamed non-ImageTask class]")
             return object: AbstractImageTask(task.name, createStandardTaskCache(task.name), stats) {
                 override suspend fun perform(): Image = task.await().getOrThrow()
+                override fun registerDirectDependencies() {
+                    task.addDirectDependentTask(this)
+                }
 
                 override fun andAllDependencies(): Set<Task<*>> = setOf(this)
             }
@@ -97,6 +93,7 @@ class ImageProcessingContext(
             stats.dedupeFailures.add(className)
             task
         }
+        deduped.registerDirectDependencies()
         if (deduped !== task) {
             logger.info("Deduplicated: {}", task)
             stats.dedupeSuccesses.add(className)
@@ -145,7 +142,7 @@ class ImageProcessingContext(
     ): OutputTask {
         val pngSource = deduplicate(source).asPng
         val outputTask = OutputTask(pngSource, lowercaseName, stats, destination)
-        pngSource.addDependentOutputTask(outputTask)
+        pngSource.addDirectDependentTask(outputTask)
         return outputTask
     }
 

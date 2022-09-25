@@ -98,6 +98,10 @@ class RepaintTask(
         return snapshot
     }
 
+    override fun registerDirectDependencies() {
+        base.addDirectDependentTask(this)
+    }
+
     override fun equals(other: Any?): Boolean {
         return (this === other) || (other is RepaintTask
                 && other.base == base

@@ -45,6 +45,10 @@ class SvgImportTask(
         return super.createCoroutineScope().plus(batikTranscoder.asContextElement())
     }
 
+    override fun registerDirectDependencies() {
+        // No-op: SvgImportTask doesn't depend on any other task
+    }
+
     override fun equals(other: Any?): Boolean {
         return (other === this) || other is SvgImportTask && other.file == file
     }
