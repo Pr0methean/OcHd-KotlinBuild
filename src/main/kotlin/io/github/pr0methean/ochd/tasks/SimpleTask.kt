@@ -25,4 +25,6 @@ abstract class SimpleTask<T>(name: String, cache: TaskCache<T>) : AbstractTask<T
         }
     }
 
+    override fun andAllDependencies(): Set<Task<*>> = setOf(this)
+
 }

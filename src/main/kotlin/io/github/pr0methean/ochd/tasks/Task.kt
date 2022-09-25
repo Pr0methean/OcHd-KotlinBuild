@@ -20,7 +20,7 @@ interface Task<T>: StringBuilderFormattable {
 
     fun removeDirectDependentTask(task: Task<*>)
 
-    fun andAllDependencies(): Set<Task<*>> = setOf(this)
+    fun andAllDependencies(): Set<Task<*>>
 
     fun uncachedSubtasks(): Int = if (getNow() != null) {
         0

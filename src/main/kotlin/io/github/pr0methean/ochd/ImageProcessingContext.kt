@@ -67,7 +67,6 @@ class ImageProcessingContext(
         if (task is RepaintTask
             && (task.paint == null || task.paint == Color.BLACK)
             && task.alpha == 1.0
-            && task.base is ImageTask
         ) {
             return deduplicate(task.base)
         }
@@ -84,6 +83,8 @@ class ImageProcessingContext(
                 override fun registerDirectDependencies() {
                     task.addDirectDependentTask(this)
                 }
+
+                override fun andAllDependencies(): Set<Task<*>> = setOf(this)
             }
         }
         val className = task::class.simpleName ?: "[unnamed class]"

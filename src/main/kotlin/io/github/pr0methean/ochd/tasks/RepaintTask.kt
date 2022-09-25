@@ -26,9 +26,14 @@ class RepaintTask(
         }
     }
 
+    override fun andAllDependencies(): Set<Task<*>> {
+        return base.andAllDependencies().plus(this)
+    }
+
     override fun uncachedSubtasks(): Int {
         val possiblyUncached = super.uncachedSubtasks()
         if (possiblyUncached <= 1) {
+            // either this task is cached (and we'll return 0) or base is cached (and we'll return 1)
             return possiblyUncached
         }
         for (repaint in base.opaqueRepaints()) {
