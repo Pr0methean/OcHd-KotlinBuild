@@ -98,13 +98,9 @@ class RepaintTask(
         return snapshot
     }
 
-    override fun registerDirectDependencies() {
-        for (repaint in base.opaqueRepaints()) {
-            if (repaint is AbstractImageTask && repaint.cache.enabled && repaint !== this) {
-                return
-            }
-        }
+    override fun registerRecursiveDependencies() {
         base.addDirectDependentTask(this)
+        base.registerRecursiveDependencies()
     }
 
     override fun equals(other: Any?): Boolean {

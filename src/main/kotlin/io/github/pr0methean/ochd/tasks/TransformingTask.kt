@@ -55,8 +55,9 @@ open class TransformingTask<T, U>(
         return deduped
     }
 
-    override fun registerDirectDependencies() {
+    override fun registerRecursiveDependencies() {
         base.addDirectDependentTask(this)
+        base.registerRecursiveDependencies()
     }
 
     override suspend fun clearFailure() {

@@ -69,7 +69,10 @@ class AnimationTask(
         return frames.flatMap(Task<*>::andAllDependencies).toSet().plus(this)
     }
 
-    override fun registerDirectDependencies() {
-        frames.forEach {it.addDirectDependentTask(this@AnimationTask)}
+    override fun registerRecursiveDependencies() {
+        frames.forEach {
+            it.addDirectDependentTask(this@AnimationTask)
+            it.registerRecursiveDependencies()
+        }
     }
 }

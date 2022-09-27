@@ -93,7 +93,7 @@ class TaskPlanningContext(
             stats.dedupeFailures.add(task::class.simpleName ?: "[unnamed non-ImageTask class]")
             return object: AbstractImageTask(task.name, createStandardTaskCache(task.name), stats) {
                 override suspend fun perform(): Image = task.await().getOrThrow()
-                override fun registerDirectDependencies() {
+                override fun registerRecursiveDependencies() {
                     task.addDirectDependentTask(this)
                 }
 
@@ -106,7 +106,6 @@ class TaskPlanningContext(
             stats.dedupeFailures.add(className)
             task
         }
-        deduped.registerDirectDependencies()
         if (deduped !== task) {
             logger.info("Deduplicated: {}", task)
             stats.dedupeSuccesses.add(className)
