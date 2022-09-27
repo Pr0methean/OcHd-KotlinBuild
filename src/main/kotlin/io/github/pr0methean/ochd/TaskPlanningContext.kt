@@ -39,7 +39,6 @@ class TaskPlanningContext(
     private val dedupedSvgTasks = ConcurrentHashMultiset.create<String>()
     private val backingCache = Caffeine.newBuilder()
         .weakKeys()
-        .softValues()
         .maximumWeight(MINIMUM_CACHE_4096x4096.shl(24))
         .weigher<SemiStrongTaskCache<*>,Result<*>> { _, value ->
             if (value.isSuccess) {
