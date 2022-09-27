@@ -24,7 +24,7 @@ suspend fun createCanvas(width: Double, height: Double, name: String): Canvas {
 }
 
 interface ImageTask: StringBuilderFormattable, Task<Image> {
-    val asPng: Task<ByteArray>
+    val asPng: PngCompressionTask
     override suspend fun mergeWithDuplicate(other: Task<Image>): ImageTask
 
     suspend fun createCanvas(width: Double, height: Double): Canvas = createCanvas(width, height, name)
