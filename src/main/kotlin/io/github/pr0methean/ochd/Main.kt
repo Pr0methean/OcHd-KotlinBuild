@@ -64,22 +64,16 @@ suspend fun main(args: Array<String>) {
         cleanupAndCopyMetadata.join()
         System.gc()
         val tasksRun = LongAdder()
-        var prevTask: OutputTask? = null
         while (tasks.isNotEmpty()) {
             val tasksToRetry = ConcurrentLinkedDeque<OutputTask>()
             val taskSet = tasks.toMutableSet()
             while (taskSet.isNotEmpty()) {
                 yield()
-                val task = if (prevTask == null) {
-                    taskSet.first()
-                } else {
-                    taskSet.minBy {
-                        (if (it.name.contains("command_block")) -1.0e6 else 0.0) +
-                        (it.uncachedSubtasks() + 1.0) / (it.andAllDependencies().size + 2.0)
-                    }
+                val task = taskSet.minBy {
+                    (if (it.name.contains("command_block")) -1.0e6 else 0.0) +
+                    (it.uncachedSubtasks() + 1.0) / (it.andAllDependencies().size + 2.0)
                 }
                 taskSet.remove(task)
-                prevTask = task
                 val result = withContext(scope.coroutineContext) {
                     logger.info("Joining {}", task)
                     try {
