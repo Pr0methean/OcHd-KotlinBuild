@@ -24,7 +24,7 @@ abstract class SingleLayerMaterial(
 
     override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<OutputTask> {
         return flowOf(ctx.out(
-            ctx.layer(sourceFileName, color, alpha), name))
+            ctx.layer(sourceFileName, color, alpha), "$directory/$name"))
     }
 
 }
