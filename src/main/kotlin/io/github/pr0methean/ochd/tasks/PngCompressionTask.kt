@@ -24,6 +24,11 @@ class PngCompressionTask(
         return (this === other) || (other is PngCompressionTask && other.base == base)
     }
 
+    override fun removeDirectDependentTask(task: Task<*>) {
+        super.removeDirectDependentTask(task)
+        base.removeDirectDependentTask(this)
+    }
+
     override fun hashCode(): Int {
         return base.hashCode() + 17
     }
