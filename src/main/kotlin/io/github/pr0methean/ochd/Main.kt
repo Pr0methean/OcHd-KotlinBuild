@@ -74,6 +74,7 @@ suspend fun main(args: Array<String>) {
                     taskSet.first()
                 } else {
                     taskSet.minBy {
+                        (if (it.name.contains("command_block")) 1.0e6 else 0.0) +
                         (it.uncachedSubtasks() + 1.0) / (it.andAllDependencies().size + 2.0)
                     }
                 }
