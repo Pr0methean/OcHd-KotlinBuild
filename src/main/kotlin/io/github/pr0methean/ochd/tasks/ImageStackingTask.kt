@@ -37,8 +37,11 @@ class ImageStackingTask(val layers: LayerList,
         return deduped
     }
 
-    override fun registerDirectDependencies() {
-        layers.layers.forEach {it.addDirectDependentTask(this@ImageStackingTask)}
+    override fun registerRecursiveDependencies() {
+        layers.layers.forEach {
+            it.addDirectDependentTask(this@ImageStackingTask)
+            it.registerRecursiveDependencies()
+        }
     }
 
     override suspend fun clearFailure() {

@@ -45,7 +45,7 @@ class SvgImportTask(
         return super.createCoroutineScope().plus(batikTranscoder.asContextElement())
     }
 
-    override fun registerDirectDependencies() {
+    override fun registerRecursiveDependencies() {
         // No-op: SvgImportTask doesn't depend on any other task
     }
 
