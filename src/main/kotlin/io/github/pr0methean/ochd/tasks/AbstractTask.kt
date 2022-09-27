@@ -130,7 +130,7 @@ abstract class AbstractTask<T>(override val name: String, internal val cache: Ta
     suspend fun emit(result: Result<T>, source: Deferred<Result<T>>?) {
         logger.debug("Locking {} to emit {}", this, result)
         synchronized (directDependentTasks) {
-            if (cache.enabled && directDependentTasks.isEmpty()) {
+            if (cache.enabled && directDependentTasks.size < 2) {
                 logger.info("Disabling caching for {} while emitting result", this)
                 cache.enabled = false
             }
