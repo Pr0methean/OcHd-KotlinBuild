@@ -11,7 +11,7 @@ import java.nio.file.Files
 
 @Suppress("BlockingMethodInNonBlockingContext")
 class OutputTask(
-    val source: Task<ByteArray>,
+    val source: PngCompressionTask,
     override val name: String,
     val stats: ImageProcessingStats,
     private val files: List<File>,

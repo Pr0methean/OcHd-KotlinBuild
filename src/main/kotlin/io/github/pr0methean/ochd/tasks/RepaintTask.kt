@@ -99,6 +99,11 @@ class RepaintTask(
     }
 
     override fun registerDirectDependencies() {
+        for (repaint in base.opaqueRepaints()) {
+            if (repaint is AbstractImageTask && repaint.cache.enabled) {
+                return
+            }
+        }
         base.addDirectDependentTask(this)
     }
 
