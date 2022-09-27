@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd.materials.block.axe
 
-import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.LayerListBuilder
+import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.STONE
 import io.github.pr0methean.ochd.materials.block.shovel.DirtGroundCover
@@ -35,7 +35,7 @@ sealed interface Wood: ShadowHighlightMaterial {
     suspend fun LayerListBuilder.leaves()
     suspend fun LayerListBuilder.sapling()
 
-    override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+    override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<OutputTask> = flow {
         val doorKnob = ctx.stack {
             layer("doorKnob", STONE.highlight)
             layer("doorKnobShadow", STONE.shadow)

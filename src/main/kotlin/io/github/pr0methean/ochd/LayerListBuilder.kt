@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 
-class LayerListBuilder(val ctx: ImageProcessingContext) {
+class LayerListBuilder(val ctx: TaskPlanningContext) {
     private val layers = mutableListOf<ImageTask>()
     var background: Paint = Color.TRANSPARENT
     fun background(paint: Paint, opacity: Double = 1.0) {

@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd.materials.block.pickaxe
 
-import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.LayerListBuilder
+import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
@@ -47,7 +47,7 @@ push bigRingsTopLeftBottomRight ${andesite_s} a2*/
             layer("bigDotsBottomLeftTopRight", highlight)
             layer("bigDotsTopLeftBottomRight", color)
         }
-        override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+        override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<OutputTask> = flow {
 
             emit(ctx.out(ctx.stack { createTextureLayersBase() }, "block/blackstone"))
             val polishedTextureTask = ctx.stack { createPolishedTexture() }
@@ -70,7 +70,7 @@ push bigRingsTopLeftBottomRight ${andesite_s} a2*/
         layer("borderSolidTopLeft", highlight)
     }
 
-    override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+    override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<OutputTask> = flow {
         emit(ctx.out(ctx.stack {createTextureLayersBase()}, "block/$name"))
         emit(ctx.out(ctx.stack {createPolishedTexture()}, "block/polished_$name"))
     }

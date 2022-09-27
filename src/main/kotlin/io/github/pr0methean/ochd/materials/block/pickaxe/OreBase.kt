@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd.materials.block.pickaxe
 
-import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.LayerListBuilder
+import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.texturebase.Block
@@ -30,7 +30,7 @@ enum class OreBase(
             layer("diagonalChecksTopLeftBottomRight", DEEPSLATE.shadow)
         }
 
-        override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+        override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<OutputTask> = flow {
             val baseTexture = ctx.stack {createTextureLayers()}
             emit(ctx.out(baseTexture, "block/deepslate"))
             emit(ctx.out(ctx.stack {

@@ -1,6 +1,6 @@
 package io.github.pr0methean.ochd.materials.block.pickaxe
 
-import io.github.pr0methean.ochd.ImageProcessingContext
+import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.materials.DYES
 import io.github.pr0methean.ochd.tasks.OutputTask
@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
 object Glass: Material {
-    override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+    override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<OutputTask> = flow {
         emit(ctx.out(ctx.layer("paneTop", c(0xa8d5d5)), "block/glass_pane_top"))
         emit(ctx.out(ctx.stack {
             layer("borderSolid", DYES["gray"])

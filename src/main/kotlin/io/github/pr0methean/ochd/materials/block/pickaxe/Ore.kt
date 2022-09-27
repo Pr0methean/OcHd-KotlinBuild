@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd.materials.block.pickaxe
 
-import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.LayerListBuilder
+import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.tasks.ImageTask
 import io.github.pr0methean.ochd.tasks.OutputTask
@@ -31,7 +31,7 @@ enum class Ore(
         color = c(0x2f2f2f),
         shadow = Color.BLACK,
         highlight = c(0x515151)) {
-        override suspend fun oreBlock(ctx: ImageProcessingContext, oreBase: OreBase): ImageTask {
+        override suspend fun oreBlock(ctx: TaskPlanningContext, oreBase: OreBase): ImageTask {
             if (oreBase == OreBase.DEEPSLATE) {
                 return ctx.stack {
                     copy(OreBase.DEEPSLATE)
@@ -86,7 +86,7 @@ enum class Ore(
         highlight = Color.WHITE,
         substrates = NETHER
     ) {
-        override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+        override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<OutputTask> = flow {
             emit(ctx.out({ ingot() }, "item/quartz"))
             emit(ctx.out(ctx.stack {
                     copy(OreBase.NETHERRACK)
@@ -193,7 +193,7 @@ enum class Ore(
         item()
     }
 
-    override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+    override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<OutputTask> = flow {
         substrates.forEach { oreBase ->
             emit(ctx.out(oreBlock(ctx, oreBase), "block/${oreBase.orePrefix}${name}_ore"))
         }
@@ -208,7 +208,7 @@ enum class Ore(
     }
 
     protected open suspend fun oreBlock(
-        ctx: ImageProcessingContext,
+        ctx: TaskPlanningContext,
         oreBase: OreBase
     ) = ctx.stack {
         copy(oreBase)

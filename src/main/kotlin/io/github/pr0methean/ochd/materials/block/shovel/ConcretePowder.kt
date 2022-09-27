@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd.materials.block.shovel
 
-import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.LayerListBuilder
+import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.materials.DYES
 import io.github.pr0methean.ochd.tasks.ImageTask
 import io.github.pr0methean.ochd.texturebase.DyedBlock
@@ -13,7 +13,7 @@ object ConcretePowder: DyedBlock("concrete_powder") {
         copy(sharedLayersTask(ctx))
     }
 
-    private suspend fun sharedLayersTask(ctx: ImageProcessingContext): ImageTask = ctx.stack {
+    private suspend fun sharedLayersTask(ctx: TaskPlanningContext): ImageTask = ctx.stack {
         layer("checksSmall", DYES["gray"], 0.5)
         layer("checksSmall", DYES["light_gray"], 0.5)
     }

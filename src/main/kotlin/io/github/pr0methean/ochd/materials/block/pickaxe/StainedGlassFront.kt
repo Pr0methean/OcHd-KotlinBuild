@@ -1,6 +1,6 @@
 package io.github.pr0methean.ochd.materials.block.pickaxe
 
-import io.github.pr0methean.ochd.ImageProcessingContext
+import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.materials.DYES
 import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.tasks.RepaintTask
@@ -15,7 +15,7 @@ import kotlinx.coroutines.flow.flow
  */
 object StainedGlassFront: Material {
 
-    override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+    override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<OutputTask> = flow {
         val masterTask = ctx.stack {
             background(Color.BLACK, 0.25)
             layer("borderSolid", Color.BLACK)

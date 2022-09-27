@@ -19,14 +19,14 @@ fun color(web: String): Color = Color.web(web)
 
 fun color(web: String, alpha: Double): Color = Color.web(web, alpha)
 
-private val logger = LogManager.getLogger("ImageProcessingContext")
+private val logger = LogManager.getLogger("TaskPlanningContext")
 // Soft-ref cache will be able to contain this * 16 MPx
 private const val MINIMUM_CACHE_4096x4096 = 24L
 
 /**
  * Holds info needed to build and deduplicate the task graph. Needs to become unreachable once the graph is built.
  */
-class ImageProcessingContext(
+class TaskPlanningContext(
     val name: String,
     val tileSize: Int,
     val svgDirectory: File,

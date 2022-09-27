@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd.materials.block.indestructible
 
-import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.LayerListBuilder
+import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
@@ -67,7 +67,7 @@ enum class CommandBlock(
 
     open suspend fun LayerListBuilder.decorateBackground() {}
 
-    override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+    override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<OutputTask> = flow {
         val background = ctx.stack {createBackground()}
         for (sideType in enumValues<SideType>()) {
             emit(ctx.out(ctx.stack {sideType.run {

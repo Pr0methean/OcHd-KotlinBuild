@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd.materials.block.barehand
 
-import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.LayerListBuilder
+import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.texturebase.DoubleTallBlock
@@ -29,7 +29,7 @@ enum class DoubleTallFlower: DoubleTallBlock {
             layer("flowerStemBottomBorder", stemShadow)
         }
 
-        override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = merge(super.outputTasks(ctx), flow {
+        override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<OutputTask> = merge(super.outputTasks(ctx), flow {
             emit(ctx.out(ctx.layer("sunflowerPetals"), "block/sunflower_back"))
             emit(ctx.out(ctx.stack {
                 layer("sunflowerPetals", Color.YELLOW)

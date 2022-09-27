@@ -45,7 +45,7 @@ suspend fun main(args: Array<String>) {
     val svgDirectory = Paths.get("svg").toAbsolutePath().toFile()
     val outTextureRoot = out.resolve("assets").resolve("minecraft").resolve("textures")
 
-    val ctx = ImageProcessingContext(
+    val ctx = TaskPlanningContext(
         name = "MainContext",
         tileSize = tileSize,
         svgDirectory = svgDirectory,

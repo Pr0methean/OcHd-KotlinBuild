@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd.materials.block.pickaxe
 
-import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.LayerListBuilder
+import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.materials.block.pickaxe.SimplePickaxeBlock.TERRACOTTA
 import io.github.pr0methean.ochd.tasks.ImageTask
 import io.github.pr0methean.ochd.tasks.OutputTask
@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.Flow
 
 object DyedTerracotta : DyedBlock("terracotta") {
     var masterTask: ImageTask? = null
-    override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> {
+    override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<OutputTask> {
         masterTask = ctx.stack {
             layer("bigRingsTopLeftBottomRight", TERRACOTTA.highlight)
             layer("bigDotsBottomLeftTopRight", TERRACOTTA.shadow)

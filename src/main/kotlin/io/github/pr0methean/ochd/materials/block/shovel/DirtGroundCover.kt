@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd.materials.block.shovel
 
-import io.github.pr0methean.ochd.ImageProcessingContext
 import io.github.pr0methean.ochd.LayerListBuilder
+import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.materials.block.shovel.SimpleSoftEarth.POWDER_SNOW
 import io.github.pr0methean.ochd.tasks.OutputTask
@@ -43,7 +43,7 @@ enum class DirtGroundCover(
             layer("veesTop", grassItemShadow)
         }
 
-        override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask>
+        override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<OutputTask>
                 = merge(super.outputTasks(ctx), flowOf(ctx.out(ctx.stack {
             layer("topPart", color)
             layer("veesTop", shadow)
@@ -61,7 +61,7 @@ enum class DirtGroundCover(
             layer("borderDotted", shadow)
         }
 
-        override suspend fun outputTasks(ctx: ImageProcessingContext): Flow<OutputTask> = flow {
+        override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<OutputTask> = flow {
             val top = ctx.stack { createTopLayers() }
             emit(ctx.out(top, "block/podzol_top", "block/composter_compost"))
             emit(ctx.out(ctx.stack {
