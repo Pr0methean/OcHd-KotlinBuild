@@ -3,7 +3,7 @@ package io.github.pr0methean.ochd.materials
 import io.github.pr0methean.ochd.c
 import javafx.scene.paint.Color
 
-val DYES = mapOf(
+val DYES: Map<String, Color> = mapOf(
     "black" to Color.BLACK,
     "red" to c(0xb00000),
     "green" to c(0x007c00),

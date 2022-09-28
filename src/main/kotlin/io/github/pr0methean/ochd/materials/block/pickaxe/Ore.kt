@@ -210,7 +210,7 @@ enum class Ore(
     protected open suspend fun oreBlock(
         ctx: TaskPlanningContext,
         oreBase: OreBase
-    ) = ctx.stack {
+    ): ImageTask = ctx.stack {
         copy(oreBase)
         copy { item() }
     }

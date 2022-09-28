@@ -5,6 +5,7 @@ import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.texturebase.Block
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
+import javafx.scene.paint.Color
 
 @Suppress("unused")
 enum class StructureOrJigsaw(private val foregroundLayer: String?): SingleTextureMaterial, ShadowHighlightMaterial, Block {
@@ -34,9 +35,9 @@ enum class StructureOrJigsaw(private val foregroundLayer: String?): SingleTextur
         }
     };
 
-    override val color = c(0xb493b4)
-    override val shadow = c(0x26002a)
-    override val highlight = c(0xd7c2d7)
+    override val color: Color = c(0xb493b4)
+    override val shadow: Color = c(0x26002a)
+    override val highlight: Color = c(0xd7c2d7)
     override suspend fun LayerListBuilder.createTextureLayers() {
         backgroundAndBorder()
         foregroundLayer?.let { layer(it, highlight) }

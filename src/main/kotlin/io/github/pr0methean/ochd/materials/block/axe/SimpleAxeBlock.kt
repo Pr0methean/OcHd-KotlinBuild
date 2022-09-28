@@ -7,6 +7,7 @@ import io.github.pr0methean.ochd.texturebase.Block
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
 import javafx.scene.paint.Color
+import javafx.scene.paint.Paint
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
@@ -90,7 +91,7 @@ enum class SimpleAxeBlock: SingleTextureMaterial, ShadowHighlightMaterial, Block
             layer("borderDotted", highlight)
         }
     };
-    override val color = OverworldWood.OAK.color
-    override val shadow = OverworldWood.OAK.shadow
-    override val highlight = OverworldWood.OAK.highlight
+    override val color: Paint = OverworldWood.OAK.color
+    override val shadow: Paint = OverworldWood.OAK.shadow
+    override val highlight: Paint = OverworldWood.OAK.highlight
 }

@@ -22,9 +22,9 @@ push tntFuzes ${black} tnt2
 out_stack block/tnt_top
  */
 object Tnt: ShadowHighlightMaterial {
-    override val color = c(0xdb2f00)
-    override val shadow = c(0x912d00)
-    override val highlight = c(0xff4300)
+    override val color: Color = c(0xdb2f00)
+    override val shadow: Color = c(0x912d00)
+    override val highlight: Color = c(0xff4300)
 
     override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<OutputTask> = flow {
         val tntBottom = ctx.stack {

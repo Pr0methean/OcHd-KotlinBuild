@@ -44,7 +44,7 @@ enum class Nylium(
             layer("borderShortDashes", shadow)
         }
     };
-    override val base = OreBase.NETHERRACK
+    override val base: OreBase = OreBase.NETHERRACK
     override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<OutputTask> = flow {
         emit(ctx.out(ctx.stack { createTopLayers() }, "block/${name}")) // no "_top" at end
         emit(ctx.out(ctx.stack {

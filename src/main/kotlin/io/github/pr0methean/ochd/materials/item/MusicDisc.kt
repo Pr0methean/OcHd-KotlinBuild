@@ -5,10 +5,11 @@ import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.materials.DYES
 import io.github.pr0methean.ochd.texturebase.Item
 import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
+import javafx.scene.paint.Color
 
-val musicDiscColor = c(0x404040)
-val musicDiscShadow = c(0x212121)
-val musicDiscHighlight = c(0x515151)
+val musicDiscColor: Color = c(0x404040)
+val musicDiscShadow: Color = c(0x212121)
+val musicDiscHighlight: Color = c(0x515151)
 
 @Suppress("unused", "EnumEntryName")
 enum class MusicDisc(private val labelDyeName: String): SingleTextureMaterial, Item {

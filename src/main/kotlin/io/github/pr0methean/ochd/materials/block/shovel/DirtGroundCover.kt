@@ -7,6 +7,7 @@ import io.github.pr0methean.ochd.materials.block.shovel.SimpleSoftEarth.POWDER_S
 import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.texturebase.GroundCoverBlock
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
+import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -28,8 +29,8 @@ enum class DirtGroundCover(
      * Grass is a gray texture, modified by a colormap according to the biome.
      */
     GRASS_BLOCK(c(0x9d9d9d), c(0x828282), c(0xbababa)) {
-        val extremeShadow = c(0x757575)
-        val extremeHighlight = c(0xc3c3c3)
+        val extremeShadow: Color = c(0x757575)
+        val extremeHighlight: Color = c(0xc3c3c3)
         override suspend fun LayerListBuilder.createTopLayers() {
             background(highlight)
             layer("borderShortDashes", color)
@@ -108,5 +109,5 @@ enum class DirtGroundCover(
         }
     }
     ;
-    override val base = SimpleSoftEarth.DIRT
+    override val base: SimpleSoftEarth = SimpleSoftEarth.DIRT
 }
