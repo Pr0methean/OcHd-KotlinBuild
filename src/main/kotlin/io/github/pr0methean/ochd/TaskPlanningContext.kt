@@ -38,6 +38,7 @@ class TaskPlanningContext(
         .recordStats()
         .weakKeys()
         .maximumSize(0)
+        .executor(Runnable::run)
         .build<SemiStrongTaskCache<*>,Result<*>>()
     val stats: ImageProcessingStats = ImageProcessingStats(backingCache)
 
