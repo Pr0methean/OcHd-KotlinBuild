@@ -37,17 +37,7 @@ class TaskPlanningContext(
     private val backingCache = Caffeine.newBuilder()
         .recordStats()
         .weakKeys()
-        .maximumWeight(0)
-        .weigher<SemiStrongTaskCache<*>,Result<*>> { _, value ->
-            if (value.isSuccess) {
-                val result = value.getOrThrow()
-                if (result is Image) {
-                    // Weight = number of pixels; 4 bytes per pixel
-                    (result.height * result.width).toInt()
-                }
-            }
-            0
-        }
+        .maximumSize(0)
         .build<SemiStrongTaskCache<*>,Result<*>>()
     val stats: ImageProcessingStats = ImageProcessingStats(backingCache)
 
