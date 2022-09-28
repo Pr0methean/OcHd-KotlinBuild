@@ -48,9 +48,7 @@ fun startMonitoring(stats: ImageProcessingStats, scope: CoroutineScope) {
             delay(REPORTING_INTERVAL)
             logger.info("Completed tasks:")
             stats.taskCompletions.log()
-            logger.info("Cache stats:")
-            logger.info(stats.backingCache.stats())
-            logger.info("Cache has approximately {} entries", box(stats.backingCache.estimatedSize()))
+            stats.backingCache.logCacheStats()
             if (NEED_THREAD_MONITORING) {
                 val deadlocks = threadMxBean.findDeadlockedThreads()
                 if (deadlocks == null) {
@@ -81,6 +79,12 @@ fun logThread(logLevel: Level, id: Long, threadInfo: ThreadInfo) {
 
 fun stopMonitoring() {
     monitoringJob?.cancel("Monitoring stopped")
+}
+
+fun Cache<*, *>.logCacheStats() {
+    val stats = stats()
+    logger.info("Cache stats: {} hits, {} misses, {} evictions, {} entries",
+            box(stats.hitCount()), box(stats.missCount()), box(stats.evictionCount()), box(estimatedSize()))
 }
 
 class ImageProcessingStats(val backingCache: Cache<SemiStrongTaskCache<*>, Result<*>>) {
@@ -134,10 +138,7 @@ class ImageProcessingStats(val backingCache: Cache<SemiStrongTaskCache<*>, Resul
         }
         val totalCacheSuccessRate = 1.0 - (totalActual - totalUnique).toDouble().div(totalDedupes)
         logger.printf(Level.INFO, "Total               : %3.2f%%", 100.0 * totalCacheSuccessRate)
-        logger.info("")
-        logger.info("Additional cache stats:")
-        logger.info(backingCache.stats())
-        logger.info("Cache has approximately {} entries", box(backingCache.estimatedSize()))
+        backingCache.logCacheStats()
     }
 
     fun onTaskLaunched(typename: String, name: String) {
