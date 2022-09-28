@@ -21,7 +21,7 @@ fun color(web: String, alpha: Double): Color = Color.web(web, alpha)
 
 private val logger = LogManager.getLogger("TaskPlanningContext")
 // Soft-ref cache will be able to contain this * 16 MPx
-private const val MINIMUM_CACHE_4096x4096 = 32L
+private const val MINIMUM_CACHE_4096x4096 = 20L
 
 /**
  * Holds info needed to build and deduplicate the task graph. Needs to become unreachable once the graph is built.
