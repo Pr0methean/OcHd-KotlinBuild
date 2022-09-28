@@ -10,7 +10,7 @@ abstract class AbstractImageTask(override val name: String, cache: TaskCache<Ima
                                  open val stats: ImageProcessingStats)
     : SimpleTask<Image>(name, cache), ImageTask {
     override fun addDirectDependentTask(task: Task<*>) {
-        if (task !is RepaintTask || task.alpha != 1.0 || !task.cache.enabled) {
+        if (task !is RepaintTask || task.alpha != 1.0 || !task.cache.enabled || directDependentTasks.isEmpty()) {
             super.addDirectDependentTask(task)
         }
     }
