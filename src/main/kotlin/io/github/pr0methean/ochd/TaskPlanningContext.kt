@@ -39,6 +39,7 @@ class TaskPlanningContext(
     private val backingCache = Caffeine.newBuilder()
         .recordStats()
         .weakKeys()
+        .executor(Runnable::run) // keep eviction on same thread as population
         .maximumSize(MINIMUM_CACHE_4096x4096.shl(24) / (tileSize * tileSize))
         .build<SemiStrongTaskCache<*>,Result<*>>()
     val stats: ImageProcessingStats = ImageProcessingStats(backingCache)
