@@ -50,6 +50,7 @@ fun startMonitoring(stats: ImageProcessingStats, scope: CoroutineScope) {
             stats.taskCompletions.log()
             logger.info("Cache stats:")
             logger.info(stats.backingCache.stats())
+            logger.info("Cache has approximately {} entries", box(stats.backingCache.estimatedSize()))
             if (NEED_THREAD_MONITORING) {
                 val deadlocks = threadMxBean.findDeadlockedThreads()
                 if (deadlocks == null) {
@@ -136,6 +137,7 @@ class ImageProcessingStats(val backingCache: Cache<SemiStrongTaskCache<*>, Resul
         logger.info("")
         logger.info("Additional cache stats:")
         logger.info(backingCache.stats())
+        logger.info("Cache has approximately {} entries", box(backingCache.estimatedSize()))
     }
 
     fun onTaskLaunched(typename: String, name: String) {
