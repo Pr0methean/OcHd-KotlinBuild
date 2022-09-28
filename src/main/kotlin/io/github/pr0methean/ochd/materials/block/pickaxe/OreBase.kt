@@ -55,7 +55,7 @@ enum class OreBase(
     };
 
     companion object {
-        val stoneExtremeHighlight = c(0xaaaaaa)
-        val stoneExtremeShadow = c(0x515151)
+        val stoneExtremeHighlight: Color = c(0xaaaaaa)
+        val stoneExtremeShadow: Color = c(0x515151)
     }
 }

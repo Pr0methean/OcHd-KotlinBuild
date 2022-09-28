@@ -1,10 +1,14 @@
 package io.github.pr0methean.ochd.materials.block.pickaxe
 
 import io.github.pr0methean.ochd.LayerListBuilder
+import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.c
+import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.texturebase.GroundCoverBlock
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Paint
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flow
 
 @Suppress("unused")
 enum class Nylium(
@@ -40,6 +44,12 @@ enum class Nylium(
             layer("borderShortDashes", shadow)
         }
     };
-    override val nameOverrideTop = name
-    override val base = OreBase.NETHERRACK
+    override val base: OreBase = OreBase.NETHERRACK
+    override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<OutputTask> = flow {
+        emit(ctx.out(ctx.stack { createTopLayers() }, "block/${name}")) // no "_top" at end
+        emit(ctx.out(ctx.stack {
+            copy(base)
+            createCoverSideLayers()
+        }, "block/${name}_side"))
+    }
 }

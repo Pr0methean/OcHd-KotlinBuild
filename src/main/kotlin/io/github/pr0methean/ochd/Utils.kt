@@ -9,7 +9,7 @@ fun c(value: Int): Color = Color.rgb(
     value.shr(8).and(0xff),
     value.and(0xff))
 
-val DEFAULT_SNAPSHOT_PARAMS = SnapshotParameters().also {
+val DEFAULT_SNAPSHOT_PARAMS: SnapshotParameters = SnapshotParameters().also {
     it.fill = Color.TRANSPARENT
 }
 

@@ -437,14 +437,14 @@ enum class OverworldWood(
         layer("rings", shadow)
     }
 
-    override val logSynonym = "log"
-    override val leavesSynonym = "leaves"
-    override val saplingSynonym = "sapling"
+    override val logSynonym: String = "log"
+    override val leavesSynonym: String = "leaves"
+    override val saplingSynonym: String = "sapling"
 
     // Like grass, leaves are stored as gray and colorized in real time based on the biome
-    override val leavesColor = DirtGroundCover.GRASS_BLOCK.color
-    override val leavesHighlight = DirtGroundCover.GRASS_BLOCK.highlight
-    override val leavesShadow = DirtGroundCover.GRASS_BLOCK.shadow
+    override val leavesColor: Paint = DirtGroundCover.GRASS_BLOCK.color
+    override val leavesHighlight: Paint = DirtGroundCover.GRASS_BLOCK.highlight
+    override val leavesShadow: Paint = DirtGroundCover.GRASS_BLOCK.shadow
 }
 
 private val fungusSpotColor = c(0xff6500)
@@ -586,7 +586,7 @@ enum class Fungus(
         layer("rings2", highlight)
     }
 
-    override val logSynonym = "stem"
-    override val leavesSynonym = "wart_block"
-    override val saplingSynonym = "fungus"
+    override val logSynonym: String = "stem"
+    override val leavesSynonym: String = "wart_block"
+    override val saplingSynonym: String = "fungus"
 }

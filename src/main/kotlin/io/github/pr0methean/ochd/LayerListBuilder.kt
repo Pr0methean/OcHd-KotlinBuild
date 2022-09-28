@@ -57,8 +57,7 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
 
     suspend fun copy(element: ImageTask): Boolean {
         val deduped = ctx.deduplicate(element)
-        val isAdded = layers.add(deduped)
-        return isAdded
+        return layers.add(deduped)
     }
     private fun addAll(elements: Collection<ImageTask>) = layers.addAll(elements)
     suspend fun build(): LayerList = LayerList(layers.asFlow().map(ctx::deduplicate).toList(), background)

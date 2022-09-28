@@ -15,7 +15,7 @@ import kotlin.Result.Companion.failure
 private val logger = LogManager.getLogger("AbstractTask")
 private val cancelBecauseReplacing = CancellationException("Being replaced")
 abstract class AbstractTask<T>(override val name: String, internal val cache: TaskCache<T>) : Task<T> {
-    protected val directDependentTasks = newSetFromMap<Task<*>>(WeakHashMap())
+    protected val directDependentTasks: MutableSet<Task<*>> = newSetFromMap(WeakHashMap())
     private val mutex = Mutex()
     override fun addDirectDependentTask(task: Task<*>): Unit = synchronized(directDependentTasks)
     {
@@ -138,7 +138,7 @@ abstract class AbstractTask<T>(override val name: String, internal val cache: Ta
         cache.set(result)
         mutex.withLock(result) {
             if (coroutine.compareAndSet(source, null)) {
-                coroutineHandle.get()?.dispose()
+                coroutineHandle.getAndSet(null)?.dispose()
             }
         }
         logger.debug("Unlocking {} after emitting result", this)

@@ -4,12 +4,13 @@ import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
+import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
-val berryHighlight = c(0xffff6b)
-val berryColor = c(0xff8931)
+val berryHighlight: Color = c(0xffff6b)
+val berryColor: Color = c(0xff8931)
 object CaveVines: ShadowHighlightMaterial {
     override val color: Paint = c(0x507233)
     override val shadow: Paint = c(0x4f3200)

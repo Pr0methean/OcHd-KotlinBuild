@@ -10,10 +10,10 @@ import javafx.scene.paint.Color
 object ConcretePowder: DyedBlock("concrete_powder") {
     override suspend fun LayerListBuilder.createTextureLayers(color: Color) {
         background(color)
-        copy(sharedLayersTask(ctx))
+        copy(sharedLayersTaskRef.get()!!)
     }
 
-    private suspend fun sharedLayersTask(ctx: TaskPlanningContext): ImageTask = ctx.stack {
+    override suspend fun createSharedLayersTask(ctx: TaskPlanningContext): ImageTask = ctx.stack {
         layer("checksSmall", DYES["gray"], 0.5)
         layer("checksSmall", DYES["light_gray"], 0.5)
     }

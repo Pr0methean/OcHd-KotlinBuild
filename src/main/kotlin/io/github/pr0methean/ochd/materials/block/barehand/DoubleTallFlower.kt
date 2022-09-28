@@ -10,9 +10,9 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.merge
 
-val stemColor = c(0x4a8f28)
-val stemShadow = c(0x256325)
-val stemHighlight = c(0x55ab2d)
+val stemColor: Color = c(0x4a8f28)
+val stemShadow: Color = c(0x256325)
+val stemHighlight: Color = c(0x55ab2d)
 
 @Suppress("unused")
 enum class DoubleTallFlower: DoubleTallBlock {

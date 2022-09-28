@@ -35,9 +35,9 @@ class TaskPlanningContext(
     override fun toString(): String = name
     private val svgTasks: Map<String, SvgImportTask>
     private val taskDeduplicationMap = ConcurrentHashMap<ImageTask, ImageTask>()
-    val stats: ImageProcessingStats = ImageProcessingStats()
     private val dedupedSvgTasks = ConcurrentHashMultiset.create<String>()
     private val backingCache = Caffeine.newBuilder()
+        .recordStats()
         .weakKeys()
         .maximumWeight(MINIMUM_CACHE_4096x4096.shl(24))
         .weigher<SemiStrongTaskCache<*>,Result<*>> { _, value ->
@@ -51,6 +51,7 @@ class TaskPlanningContext(
             0
         }
         .build<SemiStrongTaskCache<*>,Result<*>>()
+    val stats: ImageProcessingStats = ImageProcessingStats(backingCache)
 
     private fun <T> createStandardTaskCache(name: String) = SemiStrongTaskCache<T>(name, backingCache)
     private fun <T> createSvgImportCache(name: String) = SemiStrongTaskCache<T>(name, backingCache)

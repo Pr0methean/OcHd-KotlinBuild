@@ -1,9 +1,10 @@
 package io.github.pr0methean.ochd
 
+import com.github.benmanes.caffeine.cache.Cache
 import com.google.common.collect.ConcurrentHashMultiset
 import com.google.common.collect.Multiset
 import com.google.common.collect.Multisets
-import com.sun.glass.ui.Application
+import io.github.pr0methean.ochd.tasks.caching.SemiStrongTaskCache
 import kotlinx.coroutines.*
 import kotlinx.coroutines.debug.DebugProbes
 import org.apache.logging.log4j.Level
@@ -47,7 +48,7 @@ fun startMonitoring(stats: ImageProcessingStats, scope: CoroutineScope) {
             delay(REPORTING_INTERVAL)
             logger.info("Completed tasks:")
             stats.taskCompletions.log()
-            Application.GetApplication().notifyRenderingFinished()
+            stats.backingCache.logCacheStats()
             if (NEED_THREAD_MONITORING) {
                 val deadlocks = threadMxBean.findDeadlockedThreads()
                 if (deadlocks == null) {
@@ -80,7 +81,13 @@ fun stopMonitoring() {
     monitoringJob?.cancel("Monitoring stopped")
 }
 
-class ImageProcessingStats {
+fun Cache<*, *>.logCacheStats() {
+    val stats = stats()
+    logger.info("Cache stats: {} hits, {} misses, {} evictions, {} entries",
+            box(stats.hitCount()), box(stats.missCount()), box(stats.evictionCount()), box(estimatedSize()))
+}
+
+class ImageProcessingStats(val backingCache: Cache<SemiStrongTaskCache<*>, Result<*>>) {
     private val taskLaunches: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val taskCompletions: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val dedupeSuccesses: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
@@ -107,7 +114,7 @@ class ImageProcessingStats {
         logger.info("Deduplicated tasks:")
         dedupeSuccesses.log()
         logger.info("")
-        logger.info("Worst-case tasks:")
+        logger.info("Tasks that would run with unlimited cache but no deduplication:")
         Multisets.sum(dedupeFailures, dedupeSuccesses).log()
         logger.info("")
         logger.info("Retries of failed tasks: {}", retries.sum())
@@ -115,22 +122,20 @@ class ImageProcessingStats {
         val repeatedTasks = Multisets.copyHighestCountFirst(tasksByRunCount)
         repeatedTasks.logIf {repeatedTasks.count(it) >= 2}
         logger.info("")
-        logger.info("Cache hit rates for already-launched tasks:")
+        logger.info("Task efficiency rates:")
         var totalUnique = 0L
-        var totalDedupes = 0L
         var totalActual = 0L
         dedupeSuccesses.toSet().forEach { className ->
             val unique = dedupeFailures.count(className)
-            val dedupes = dedupeSuccesses.count(className)
             val actual = taskCompletions.count(className)
-            val cacheSuccessRate = 1.0 - (actual - unique).toDouble().div(dedupes)
+            val cacheSuccessRate = (unique.toDouble() / actual)
             logger.printf(Level.INFO, "%20s: %3.2f%%", className, 100.0 * cacheSuccessRate)
             totalUnique += unique
-            totalDedupes += dedupes
             totalActual += actual
         }
-        val totalCacheSuccessRate = 1.0 - (totalActual - totalUnique).toDouble().div(totalDedupes)
+        val totalCacheSuccessRate = (totalUnique.toDouble() / totalActual)
         logger.printf(Level.INFO, "Total               : %3.2f%%", 100.0 * totalCacheSuccessRate)
+        backingCache.logCacheStats()
     }
 
     fun onTaskLaunched(typename: String, name: String) {

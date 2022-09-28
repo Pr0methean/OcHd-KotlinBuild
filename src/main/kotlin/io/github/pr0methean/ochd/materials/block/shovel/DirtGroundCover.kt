@@ -7,6 +7,7 @@ import io.github.pr0methean.ochd.materials.block.shovel.SimpleSoftEarth.POWDER_S
 import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.texturebase.GroundCoverBlock
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
+import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
@@ -22,16 +23,14 @@ private val grassItemHighlight = c(0x9ccb6c)
 enum class DirtGroundCover(
     override val color: Paint,
     override val shadow: Paint,
-    override val highlight: Paint,
-    override val nameOverrideTop: String? = null,
-    override val nameOverrideSide: String? = null
+    override val highlight: Paint
 ): ShadowHighlightMaterial, GroundCoverBlock {
     /**
      * Grass is a gray texture, modified by a colormap according to the biome.
      */
     GRASS_BLOCK(c(0x9d9d9d), c(0x828282), c(0xbababa)) {
-        val extremeShadow = c(0x757575)
-        val extremeHighlight = c(0xc3c3c3)
+        val extremeShadow: Color = c(0x757575)
+        val extremeHighlight: Color = c(0xc3c3c3)
         override suspend fun LayerListBuilder.createTopLayers() {
             background(highlight)
             layer("borderShortDashes", color)
@@ -90,11 +89,18 @@ enum class DirtGroundCover(
             layer("diagonalOutlineChecksTopRight", shadow)
         }
     },
-    SNOW(POWDER_SNOW.color,  POWDER_SNOW.shadow, POWDER_SNOW.highlight,
-            nameOverrideTop = "snow", nameOverrideSide = "grass_block_snow") {
+    SNOW(POWDER_SNOW.color,  POWDER_SNOW.shadow, POWDER_SNOW.highlight) {
         override suspend fun LayerListBuilder.createCoverSideLayers() {
             layer("topPart", color)
             layer("snowTopPart", shadow)
+        }
+
+        override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<OutputTask> = flow {
+            emit(ctx.out(ctx.stack { createTopLayers() }, "block/snow"))
+            emit(ctx.out(ctx.stack {
+                copy(base)
+                createCoverSideLayers()
+            }, "block/grass_block_snow"))
         }
 
         override suspend fun LayerListBuilder.createTopLayers() {
@@ -103,5 +109,5 @@ enum class DirtGroundCover(
         }
     }
     ;
-    override val base = SimpleSoftEarth.DIRT
+    override val base: SimpleSoftEarth = SimpleSoftEarth.DIRT
 }

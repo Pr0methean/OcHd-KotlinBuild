@@ -17,7 +17,7 @@ import javafx.scene.paint.Paint
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 
-val mortarColor = c(0xa2867d)
+val mortarColor: Color = c(0xa2867d)
 @Suppress("unused")
 enum class SimplePickaxeBlock(
     override val color: Paint,
