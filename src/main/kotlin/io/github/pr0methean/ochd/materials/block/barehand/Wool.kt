@@ -8,7 +8,7 @@ import io.github.pr0methean.ochd.texturebase.DyedBlock
 import javafx.scene.paint.Color
 
 object Wool : DyedBlock("wool") {
-    private suspend fun sharedLayersTask(ctx: TaskPlanningContext): ImageTask = ctx.stack {
+    override suspend fun createSharedLayersTask(ctx: TaskPlanningContext): ImageTask = ctx.stack {
         layer("zigzagBroken", DYES["gray"], 0.25)
         layer("zigzagBroken2", DYES["light_gray"], 0.25)
         layer("borderSolid", DYES["gray"], 0.5)
@@ -17,6 +17,6 @@ object Wool : DyedBlock("wool") {
 
     override suspend fun LayerListBuilder.createTextureLayers(color: Color) {
         background(color)
-        copy(sharedLayersTask(ctx))
+        copy(sharedLayersTaskRef.get()!!)
     }
 }
