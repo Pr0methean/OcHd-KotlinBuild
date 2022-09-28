@@ -37,6 +37,7 @@ class TaskPlanningContext(
     private val taskDeduplicationMap = ConcurrentHashMap<ImageTask, ImageTask>()
     private val dedupedSvgTasks = ConcurrentHashMultiset.create<String>()
     private val backingCache = Caffeine.newBuilder()
+        .recordStats()
         .weakKeys()
         .softValues()
         .maximumWeight(MINIMUM_CACHE_4096x4096.shl(24))
