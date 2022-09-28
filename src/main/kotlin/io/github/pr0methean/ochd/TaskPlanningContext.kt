@@ -20,6 +20,8 @@ fun color(web: String): Color = Color.web(web)
 fun color(web: String, alpha: Double): Color = Color.web(web, alpha)
 
 private val logger = LogManager.getLogger("TaskPlanningContext")
+// Soft-ref cache will be able to contain this * 16 MPx
+private const val MINIMUM_CACHE_4096x4096 = 16L
 
 /**
  * Holds info needed to build and deduplicate the task graph. Needs to become unreachable once the graph is built.
@@ -37,8 +39,18 @@ class TaskPlanningContext(
     private val backingCache = Caffeine.newBuilder()
         .recordStats()
         .weakKeys()
-        .maximumSize(0)
+        .maximumWeight(MINIMUM_CACHE_4096x4096.shl(24))
         .executor(Runnable::run)
+        .weigher<SemiStrongTaskCache<*>,Result<*>> { _, value ->
+            if (value.isSuccess) {
+                val result = value.getOrThrow()
+                if (result is Image) {
+                    // Weight = number of pixels; 4 bytes per pixel
+                    (result.height * result.width).toInt()
+                }
+            }
+            0
+        }
         .build<SemiStrongTaskCache<*>,Result<*>>()
     val stats: ImageProcessingStats = ImageProcessingStats(backingCache)
 
