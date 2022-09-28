@@ -138,7 +138,7 @@ abstract class AbstractTask<T>(override val name: String, internal val cache: Ta
         cache.set(result)
         mutex.withLock(result) {
             if (coroutine.compareAndSet(source, null)) {
-                coroutineHandle.get()?.dispose()
+                coroutineHandle.getAndSet(null)?.dispose()
             }
         }
         logger.debug("Unlocking {} after emitting result", this)

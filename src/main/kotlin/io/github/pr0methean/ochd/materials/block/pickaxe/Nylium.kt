@@ -40,6 +40,6 @@ enum class Nylium(
             layer("borderShortDashes", shadow)
         }
     };
-    override val nameOverrideTop = name
+    val nameOverrideTop = name
     override val base = OreBase.NETHERRACK
 }

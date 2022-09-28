@@ -9,19 +9,15 @@ import kotlinx.coroutines.flow.flow
 interface GroundCoverBlock: Material {
     val base: SingleTextureMaterial
     val name: String
-    val nameOverrideTop: String?
-            get() = null
-    val nameOverrideSide: String?
-            get() = null
 
     suspend fun LayerListBuilder.createCoverSideLayers()
     suspend fun LayerListBuilder.createTopLayers()
 
     override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<OutputTask> = flow {
-        emit(ctx.out(ctx.stack { createTopLayers() }, "block/${nameOverrideTop ?: "${name}_top"}"))
+        emit(ctx.out(ctx.stack { createTopLayers() }, "block/${name}_top"))
         emit(ctx.out(ctx.stack {
             copy(base)
             createCoverSideLayers()
-        }, "block/${nameOverrideSide ?: "${name}_side"}"))
+        }, "block/${name}_side"))
     }
 }
