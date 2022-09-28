@@ -39,18 +39,7 @@ class TaskPlanningContext(
     private val backingCache = Caffeine.newBuilder()
         .recordStats()
         .weakKeys()
-        .maximumWeight(MINIMUM_CACHE_4096x4096.shl(24))
-        .executor(Runnable::run)
-        .weigher<SemiStrongTaskCache<*>,Result<*>> { _, value ->
-            if (value.isSuccess) {
-                val result = value.getOrThrow()
-                if (result is Image) {
-                    // Weight = number of pixels; 4 bytes per pixel
-                    (result.height * result.width).toInt()
-                }
-            }
-            0
-        }
+        .maximumSize(MINIMUM_CACHE_4096x4096.shl(24) / (tileSize * tileSize))
         .build<SemiStrongTaskCache<*>,Result<*>>()
     val stats: ImageProcessingStats = ImageProcessingStats(backingCache)
 
