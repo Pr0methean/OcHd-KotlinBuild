@@ -1,9 +1,10 @@
 package io.github.pr0methean.ochd
 
+import com.github.benmanes.caffeine.cache.Cache
 import com.google.common.collect.ConcurrentHashMultiset
 import com.google.common.collect.Multiset
 import com.google.common.collect.Multisets
-import com.sun.glass.ui.Application
+import io.github.pr0methean.ochd.tasks.caching.SemiStrongTaskCache
 import kotlinx.coroutines.*
 import kotlinx.coroutines.debug.DebugProbes
 import org.apache.logging.log4j.Level
@@ -47,7 +48,8 @@ fun startMonitoring(stats: ImageProcessingStats, scope: CoroutineScope) {
             delay(REPORTING_INTERVAL)
             logger.info("Completed tasks:")
             stats.taskCompletions.log()
-            Application.GetApplication().notifyRenderingFinished()
+            logger.info("Cache stats:")
+            logger.info(stats.backingCache.stats())
             if (NEED_THREAD_MONITORING) {
                 val deadlocks = threadMxBean.findDeadlockedThreads()
                 if (deadlocks == null) {
@@ -80,7 +82,7 @@ fun stopMonitoring() {
     monitoringJob?.cancel("Monitoring stopped")
 }
 
-class ImageProcessingStats {
+class ImageProcessingStats(val backingCache: Cache<SemiStrongTaskCache<*>, Result<*>>) {
     private val taskLaunches: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val taskCompletions: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val dedupeSuccesses: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
@@ -131,6 +133,9 @@ class ImageProcessingStats {
         }
         val totalCacheSuccessRate = 1.0 - (totalActual - totalUnique).toDouble().div(totalDedupes)
         logger.printf(Level.INFO, "Total               : %3.2f%%", 100.0 * totalCacheSuccessRate)
+        logger.info("")
+        logger.info("Additional cache stats:")
+        logger.info(backingCache.stats())
     }
 
     fun onTaskLaunched(typename: String, name: String) {
