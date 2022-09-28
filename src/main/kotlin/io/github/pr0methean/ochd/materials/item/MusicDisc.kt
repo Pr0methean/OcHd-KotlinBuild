@@ -12,29 +12,26 @@ val musicDiscHighlight = c(0x515151)
 
 @Suppress("unused", "EnumEntryName")
 enum class MusicDisc(private val labelDyeName: String): SingleTextureMaterial, Item {
-    FAR("red"),
-    WAIT("green"),
-    STRAD("brown"),
-    MALL("blue"),
-    CAT("purple"),
-    PIGSTEP("cyan"),
-    MELLOHI("light_gray"),
-    `13`("pink"),
-    BLOCKS("lime"),
-    STAL("yellow"),
-    WARD("light_blue"),
-    `5`("magenta"),
-    OTHERSIDE("orange"),
-    CHIRP("gray"),
-    `11`("") {
+    MUSIC_DISC_FAR("red"),
+    MUSIC_DISC_WAIT("green"),
+    MUSIC_DISC_STRAD("brown"),
+    MUSIC_DISC_MALL("blue"),
+    MUSIC_DISC_CAT("purple"),
+    MUSIC_DISC_PIGSTEP("cyan"),
+    MUSIC_DISC_MELLOHI("light_gray"),
+    MUSIC_DISC_13("pink"),
+    MUSIC_DISC_BLOCKS("lime"),
+    MUSIC_DISC_STAL("yellow"),
+    MUSIC_DISC_WARD("light_blue"),
+    MUSIC_DISC_5("magenta"),
+    MUSIC_DISC_OTHERSIDE("orange"),
+    MUSIC_DISC_CHIRP("gray"),
+    MUSIC_DISC_11("") {
         override suspend fun LayerListBuilder.createTextureLayers() {
             layer("musicDiscBroken", musicDiscShadow)
             layer("musicDiscGrooveBroken", musicDiscHighlight)
         }
     };
-
-    override val nameOverride: String?
-        get() = "music_disc_$name"
 
     override suspend fun LayerListBuilder.createTextureLayers() {
         copy {

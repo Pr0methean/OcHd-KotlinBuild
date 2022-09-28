@@ -22,9 +22,7 @@ private val grassItemHighlight = c(0x9ccb6c)
 enum class DirtGroundCover(
     override val color: Paint,
     override val shadow: Paint,
-    override val highlight: Paint,
-    override val nameOverrideTop: String? = null,
-    override val nameOverrideSide: String? = null
+    override val highlight: Paint
 ): ShadowHighlightMaterial, GroundCoverBlock {
     /**
      * Grass is a gray texture, modified by a colormap according to the biome.
@@ -90,11 +88,18 @@ enum class DirtGroundCover(
             layer("diagonalOutlineChecksTopRight", shadow)
         }
     },
-    SNOW(POWDER_SNOW.color,  POWDER_SNOW.shadow, POWDER_SNOW.highlight,
-            nameOverrideTop = "snow", nameOverrideSide = "grass_block_snow") {
+    SNOW(POWDER_SNOW.color,  POWDER_SNOW.shadow, POWDER_SNOW.highlight) {
         override suspend fun LayerListBuilder.createCoverSideLayers() {
             layer("topPart", color)
             layer("snowTopPart", shadow)
+        }
+
+        override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<OutputTask> = flow {
+            emit(ctx.out(ctx.stack { createTopLayers() }, "block/snow"))
+            emit(ctx.out(ctx.stack {
+                copy(base)
+                createCoverSideLayers()
+            }, "block/grass_block_snow"))
         }
 
         override suspend fun LayerListBuilder.createTopLayers() {
