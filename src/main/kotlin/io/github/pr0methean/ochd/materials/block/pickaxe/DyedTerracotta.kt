@@ -10,7 +10,7 @@ import javafx.scene.paint.Color
 import kotlinx.coroutines.flow.Flow
 
 object DyedTerracotta : DyedBlock("terracotta") {
-    var masterTask: ImageTask? = null
+    private var masterTask: ImageTask? = null
     override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<OutputTask> {
         masterTask = ctx.stack {
             layer("bigRingsTopLeftBottomRight", TERRACOTTA.highlight)
