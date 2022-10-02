@@ -78,20 +78,21 @@ suspend fun main(args: Array<String>) {
                     (if (it.name.contains("command_block")) -1.0e6 else 0.0) +
                     (it.uncachedSubtasks() + 1.0) / (it.andAllDependencies().size + 2.0)
                 }
-                taskSet.remove(task)
-                pendingTasks.add(scope.launch {
-                    logger.info("Joining {}", task)
-                    tasksRun.increment()
-                    val result = task.await()
-                    if (result.isSuccess) {
-                        logger.info("Joined {} with result of success", task)
-                        task.source.removeDirectDependentTask(task)
-                    } else {
-                        logger.error("Error in {}", task, result.exceptionOrNull())
-                        task.clearFailure()
-                        tasksToRetry.add(task)
-                    }
-                })
+                if (taskSet.remove(task)) {
+                    pendingTasks.add(scope.launch {
+                        logger.info("Joining {}", task)
+                        tasksRun.increment()
+                        val result = task.await()
+                        if (result.isSuccess) {
+                            logger.info("Joined {} with result of success", task)
+                            task.source.removeDirectDependentTask(task)
+                        } else {
+                            logger.error("Error in {}", task, result.exceptionOrNull())
+                            task.clearFailure()
+                            tasksToRetry.add(task)
+                        }
+                    })
+                }
             }
             pendingTasks.joinAll()
             tasks = tasksToRetry.toList()
