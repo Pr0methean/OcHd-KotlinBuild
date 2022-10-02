@@ -9,12 +9,6 @@ import java.util.*
 abstract class AbstractImageTask(override val name: String, cache: TaskCache<Image>,
                                  open val stats: ImageProcessingStats)
     : SimpleTask<Image>(name, cache), ImageTask {
-    override fun addDirectDependentTask(task: Task<*>) {
-        if (task !is RepaintTask || task.alpha != 1.0 || !task.cache.enabled) {
-            super.addDirectDependentTask(task)
-        }
-    }
-
     override suspend fun mergeWithDuplicate(other: Task<Image>): ImageTask {
         if (other is ImageTask) {
             other.opaqueRepaints().forEach(this::addOpaqueRepaint)
