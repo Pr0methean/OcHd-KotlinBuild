@@ -12,7 +12,6 @@ import org.apache.logging.log4j.util.Unbox.box
 import java.nio.file.Paths
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.atomic.LongAdder
-import kotlin.Result.Companion.failure
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
@@ -76,26 +75,15 @@ suspend fun main(args: Array<String>) {
                     (it.uncachedSubtasks() + 1.0) / (it.andAllDependencies().size + 2.0)
                 }
                 taskSet.remove(task)
-                val result = withContext(scope.coroutineContext) {
-                    logger.info("Joining {}", task)
-                    try {
-                        val result = task.await()
-                        if (result.isSuccess) {
-                            task.source.removeDirectDependentTask(task)
-                        }
-                        return@withContext result
-                    } catch (t: Throwable) {
-                        return@withContext failure<Unit>(t)
-                    }
-                }
-                tasksRun.increment()
-                if (result.isFailure) {
+                val result = task.await()
+                if (result.isSuccess) {
+                    task.source.removeDirectDependentTask(task)
+                    tasksRun.increment()
+                    logger.info("Joined {} with result of success", task)
+                } else {
                     logger.error("Error in {}", task, result.exceptionOrNull())
                     task.clearFailure()
-                    logger.debug("Cleared failure in {}", task)
                     tasksToRetry.add(task)
-                } else {
-                    logger.info("Joined {} with result of {}", task, result)
                 }
             }
             tasks = tasksToRetry.toList()
