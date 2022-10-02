@@ -10,15 +10,15 @@ plugins {
 group = "org.example"
 version = "1.0-SNAPSHOT"
 
-val mainClassName = "io.github.pr0methean.ochd.MainKt"
+val myMainClassName = "io.github.pr0methean.ochd.MainKt"
 
 application {
-    mainClass.set(mainClassName)
+    mainClass.set(myMainClassName)
 }
 
 tasks.jar {
     manifest {
-        attributes("Main-Class" to mainClassName, "Multi-Release" to true)
+        attributes("Main-Class" to myMainClassName, "Multi-Release" to true)
     }
     duplicatesStrategy = DuplicatesStrategy.INCLUDE
     from (
