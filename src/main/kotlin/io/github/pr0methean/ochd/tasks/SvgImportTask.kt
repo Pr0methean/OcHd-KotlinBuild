@@ -41,6 +41,11 @@ class SvgImportTask(
     override val stats: ImageProcessingStats,
     taskCache: TaskCache<Image>
 ): AbstractImageTask(name, taskCache, stats) {
+    override fun addDirectDependentTask(task: Task<*>) {
+        if (task !is RepaintTask || task.alpha != 1.0 || !task.cache.enabled) {
+            super.addDirectDependentTask(task)
+        }
+    }
 
     override suspend fun createCoroutineScope(): CoroutineScope {
         return super.createCoroutineScope().plus(batikTranscoder.asContextElement())
