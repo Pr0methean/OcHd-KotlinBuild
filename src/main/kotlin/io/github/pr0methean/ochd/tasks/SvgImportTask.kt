@@ -61,6 +61,9 @@ class SvgImportTask(
         stats.onTaskLaunched("SvgImportTask", name)
         val transcoder = batikTranscoder.get()
         val input = TranscoderInput(file.toURI().toString())
+        doJfx("Reserve memory for import of $name") {
+            awaitFreeMemory(16 * width.toLong() * width, name) // Height may be up to width*4
+        }
         val image = SwingFXUtils.toFXImage(transcoder.mutex.withLock {
             transcoder.setTranscodingHints(mapOf(SVGAbstractTranscoder.KEY_WIDTH to width.toFloat()))
             transcoder.transcode(input, null)
