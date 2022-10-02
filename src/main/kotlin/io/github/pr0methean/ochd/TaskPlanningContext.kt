@@ -58,7 +58,7 @@ class TaskPlanningContext(
             // These images are too large for the strong cache to manage
             return SoftTaskCache(name)
         }
-        return createStandardTaskCache(name)
+        return SemiStrongTaskCache(name, backingCache)
     }
 
     init {
