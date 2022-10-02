@@ -15,7 +15,7 @@ import kotlin.Result.Companion.failure
 private val logger = LogManager.getLogger("AbstractTask")
 private val cancelBecauseReplacing = CancellationException("Being replaced")
 abstract class AbstractTask<T>(override val name: String, internal val cache: TaskCache<T>) : Task<T> {
-    protected val directDependentTasks: MutableSet<Task<*>> = newSetFromMap(WeakHashMap())
+    private val directDependentTasks: MutableSet<Task<*>> = newSetFromMap(WeakHashMap())
     private val mutex = Mutex()
     override fun addDirectDependentTask(task: Task<*>): Unit = synchronized(directDependentTasks)
     {
