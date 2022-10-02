@@ -27,7 +27,7 @@ tasks.jar {
 }
 
 javafx {
-    version = "18.0.1"
+    version = "19"
     modules = listOf("javafx.graphics", "javafx.swing")
 }
 
