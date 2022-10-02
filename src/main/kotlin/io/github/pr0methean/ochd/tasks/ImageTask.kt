@@ -11,7 +11,7 @@ private val logger = LogManager.getLogger("ImageTask")
 private val resourcePool by lazy {GraphicsPipeline.getDefaultResourceFactory().textureResourcePool}
 
 fun awaitFreeMemory(bytes: Long, name: String) {
-    while (!resourcePool.prepareForAllocation(bytes)) {
+    while (!resourcePool.prepareForAllocation(2 * bytes)) {
         logger.warn("Failed to free {} bytes for {}; trying again...", box(bytes), name)
     }
 }
