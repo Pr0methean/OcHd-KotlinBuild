@@ -77,6 +77,8 @@ tasks.test {
 
 tasks.withType<KotlinCompile> {
     kotlinOptions.jvmTarget = "18"
+    kotlinOptions.useK2 = true
+    compile
 }
 
 buildScan {

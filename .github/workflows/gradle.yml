@@ -38,7 +38,7 @@ jobs:
     - name: Build with Gradle
       uses: gradle/gradle-build-action@c295a4096e1d2c453eaf1f65c6f96686e26bd8be
       with:
-        arguments: jar --scan --warning-mode all -Xuse-k2
+        arguments: jar --scan --warning-mode all
     - name: Upload Fat Jar
       uses: actions/upload-artifact@v3
       with:
