@@ -6,7 +6,6 @@ import io.github.pr0methean.ochd.tasks.Task
 import io.github.pr0methean.ochd.tasks.doJfx
 import javafx.application.Platform
 import kotlinx.coroutines.*
-import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.toList
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox.box
@@ -89,6 +88,7 @@ suspend fun main(args: Array<String>) {
                         task.source.removeDirectDependentTask(task)
                     } else {
                         logger.error("Error in {}", task, result.exceptionOrNull())
+                        task.clearFailure()
                         tasksToRetry.add(task)
                     }
                 })
@@ -101,7 +101,6 @@ suspend fun main(args: Array<String>) {
                     "{} tasks succeeded and {} failed on attempt {}",
                     box(tasksRun.sumThenReset() - tasksToRetry.size), box(tasksToRetry.size), box(attemptNumber)
                 )
-                tasksToRetry.asFlow().collect(OutputTask::clearFailure)
                 stats.recordRetries(tasksToRetry.size.toLong())
                 attemptNumber++
             }
