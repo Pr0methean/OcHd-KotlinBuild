@@ -4,6 +4,8 @@ import com.github.benmanes.caffeine.cache.Caffeine
 import com.google.common.collect.ConcurrentHashMultiset
 import io.github.pr0methean.ochd.tasks.*
 import io.github.pr0methean.ochd.tasks.caching.SemiStrongTaskCache
+import io.github.pr0methean.ochd.tasks.caching.SoftTaskCache
+import io.github.pr0methean.ochd.tasks.caching.TaskCache
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
@@ -44,8 +46,20 @@ class TaskPlanningContext(
         .build<SemiStrongTaskCache<*>,Result<*>>()
     val stats: ImageProcessingStats = ImageProcessingStats(backingCache)
 
-    private fun <T> createStandardTaskCache(name: String) = SemiStrongTaskCache<T>(name, backingCache)
-    private fun <T> createSvgImportCache(name: String) = SemiStrongTaskCache<T>(name, backingCache)
+    private fun <T> createStandardTaskCache(name: String): TaskCache<T> {
+        if (name.contains("4x") || name.contains("commandBlockGrid") || name.contains("commandBlockGridFront")) {
+            // Tasks using these images are too large for the strong cache to manage
+            return SoftTaskCache(name)
+        }
+        return SemiStrongTaskCache(name, backingCache)
+    }
+    private fun <T> createSvgImportCache(name: String): TaskCache<T> {
+        if (setOf("commandBlockGrid","commandBlockGridFront").contains(name) || name.endsWith("4x")) {
+            // These images are too large for the strong cache to manage
+            return SoftTaskCache(name)
+        }
+        return createStandardTaskCache(name)
+    }
 
     init {
         val builder = mutableMapOf<String, SvgImportTask>()
