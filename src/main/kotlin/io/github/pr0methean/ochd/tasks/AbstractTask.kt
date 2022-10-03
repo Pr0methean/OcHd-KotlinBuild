@@ -166,6 +166,8 @@ abstract class AbstractTask<T>(override val name: String, internal val cache: Ta
                 logger.debug("Unlocking {} after clearing failure", this)
                 mutex.unlock(this@AbstractTask)
             }
+        } else {
+            logger.warn("Couldn't acquire lock for {}.clearFailure()", this)
         }
     }
 
