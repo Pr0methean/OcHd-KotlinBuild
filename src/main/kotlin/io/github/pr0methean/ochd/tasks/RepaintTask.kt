@@ -59,18 +59,23 @@ class RepaintTask(
     }
 
     override suspend fun perform(): Image {
-        var baseImage: Image? = base.getNow()?.getOrThrow()
-        if (baseImage == null) {
-            for (repaint in base.opaqueRepaints()) {
-                val repaintNow = repaint.getNow()
-                if (repaintNow != null) {
-                    logger.info("Repainting {} to create {}", repaint, this)
-                    baseImage = repaintNow.getOrThrow()
-                    break
+        var baseImage: Image? = null
+        while (baseImage == null) {
+            baseImage = base.getNow()?.getOrThrow()
+            if (baseImage == null) {
+                for (repaint in base.opaqueRepaints()) {
+                    val repaintNow = repaint.getNow()
+                    if (repaintNow != null) {
+                        logger.info("Repainting {} to create {}", repaint, this)
+                        baseImage = repaintNow.getOrThrow()
+                        break
+                    }
                 }
             }
+            if (baseImage == null) {
+                base.startAsync()
+            }
         }
-        baseImage = baseImage ?: base.await().getOrThrow()
         stats.onTaskLaunched("RepaintTask", name)
         val canvas = createCanvas(baseImage.width, baseImage.height, name)
         val output = WritableImage(baseImage.width.toInt(), baseImage.height.toInt())
