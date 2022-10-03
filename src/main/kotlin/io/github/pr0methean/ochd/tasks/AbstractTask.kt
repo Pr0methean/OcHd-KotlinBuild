@@ -148,21 +148,27 @@ abstract class AbstractTask<T>(override val name: String, internal val cache: Ta
 
     override suspend fun clearFailure() {
         logger.debug("Locking {} to clear failure", this)
-        mutex.withLock(this@AbstractTask) {
-            if (getNow()?.isFailure == true) {
-                logger.debug("Clearing failure from {}", this)
-                cache.set(null)
-                val oldCoroutine = coroutine.getAndSet(null)
-                if (oldCoroutine?.isCompleted == false) {
-                    logger.debug("Canceling failed coroutine for {}", this)
-                    oldCoroutine.cancel(cancelBecauseReplacing)
+        if (mutex.tryLock(this@AbstractTask)) {
+            try {
+                if (getNow()?.isFailure == true) {
+                    logger.debug("Clearing failure from {}", this)
+                    cache.set(null)
+                    val oldCoroutine = coroutine.getAndSet(null)
+                    if (oldCoroutine?.isCompleted == false) {
+                        logger.debug("Canceling failed coroutine for {}", this)
+                        oldCoroutine.cancel(cancelBecauseReplacing)
+                    }
+                    coroutineHandle.getAndSet(null)?.dispose()
+                } else {
+                    logger.debug("No failure to clear for {}", this)
                 }
-                coroutineHandle.getAndSet(null)?.dispose()
-            } else {
-                logger.debug("No failure to clear for {}", this)
+            } finally {
+                logger.debug("Unlocking {} after clearing failure", this)
+                mutex.unlock(this@AbstractTask)
             }
+        } else {
+            logger.warn("Couldn't acquire lock for {}.clearFailure()", this)
         }
-        logger.debug("Unlocking {} after clearing failure", this)
     }
 
     @Suppress("DeferredResultUnused")
