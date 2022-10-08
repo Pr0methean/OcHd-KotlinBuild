@@ -20,8 +20,6 @@ private val logger = LogManager.getRootLogger()
 private const val PARALLELISM = 2
 private const val MAX_TILE_SIZE_FOR_PARALLEL_COMMAND_BLOCKS = 1.shl(10)
 
-private const val COMMAND_BLOCK_PRIORITY_ADJUSTMENT = -(1.shl(16)).toDouble()
-
 @OptIn(ExperimentalCoroutinesApi::class)
 @Suppress("UnstableApiUsage", "DeferredResultUnused")
 suspend fun main(args: Array<String>) {
@@ -77,10 +75,8 @@ suspend fun main(args: Array<String>) {
             val taskSet = tasks.toMutableSet()
             while (taskSet.isNotEmpty()) {
                 yield()
-                val task = taskSet.minBy {
-                    (if (it.isCommandBlock) COMMAND_BLOCK_PRIORITY_ADJUSTMENT else 0.0) +
-                    (it.uncachedSubtasks() + 1.0) / (it.andAllDependencies().size + 2.0)
-                }
+                val task = taskSet.minWithOrNull(compareBy(OutputTask::isCommandBlock)
+                    .thenBy { (it.uncachedSubtasks() + 1.0) / (it.andAllDependencies().size + 2.0) })!!
                 if (taskSet.remove(task)) {
                     if (task.isCommandBlock && tileSize > MAX_TILE_SIZE_FOR_PARALLEL_COMMAND_BLOCKS) {
                         awaitAndHandleResult(task, tasksRun, tasksToRetry)
