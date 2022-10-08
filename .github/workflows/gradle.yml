@@ -65,7 +65,14 @@ jobs:
         name: OcHD-App
     - name: Make Textures
       id: run
-      run: java -Dprism.maxvram=2560m -Dglass.platform=Monocle -Dmonocle.platform=Headless -Dquantum.multithreaded=true -XX:+UseStringDeduplication -Xms4G -Xmx4G '-Xlog:gc*=debug,gc+heap=trace,gc+heap+exit=trace,gc+metaspace=trace,gc+nmethod=info,safepoint+stats=info' -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC -XX:+UseNUMA -XX:ConcGCThreads=2 -XX:ParallelGCThreads=2 -XX:+HeapDumpOnOutOfMemoryError -jar OcHd-KotlinBuild-1.0-SNAPSHOT.jar ${{ matrix.size }}
+      run: >
+        java -Dprism.maxvram=2560m -Dglass.platform=Monocle -Dmonocle.platform=Headless -Dquantum.multithreaded=true 
+        -XX:+UseStringDeduplication -Xms4G -Xmx4G -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC
+        '-Xlog:gc*=debug,gc+heap=trace,gc+heap+exit=trace,gc+metaspace=trace,gc+nmethod=info,safepoint+stats=info' 
+        -XX:+UseNUMA -XX:ConcGCThreads=2 -XX:ParallelGCThreads=2 -XX:ShenandoahMinFreeThreshold=512m
+        -XX:+HeapDumpOnOutOfMemoryError 
+        -jar OcHd-KotlinBuild-1.0-SNAPSHOT.jar ${{ matrix.size }}
+
       continue-on-error: true
       timeout-minutes: 60
     - name: Zip Texture Pack
