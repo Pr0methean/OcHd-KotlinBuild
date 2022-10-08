@@ -18,6 +18,7 @@ import kotlin.system.measureNanoTime
 
 private val logger = LogManager.getRootLogger()
 private const val PARALLELISM = 2
+private const val MAX_TILE_SIZE_FOR_PARALLEL_COMMAND_BLOCKS = 1.shl(10)
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @Suppress("UnstableApiUsage", "DeferredResultUnused")
@@ -75,23 +76,15 @@ suspend fun main(args: Array<String>) {
             while (taskSet.isNotEmpty()) {
                 yield()
                 val task = taskSet.minBy {
-                    (if (it.name.contains("command_block")) -1.0e6 else 0.0) +
+                    (if (it.isCommandBlock) -1.0e6 else 0.0) +
                     (it.uncachedSubtasks() + 1.0) / (it.andAllDependencies().size + 2.0)
                 }
                 if (taskSet.remove(task)) {
-                    pendingTasks.add(scope.launch {
-                        logger.info("Joining {}", task)
-                        tasksRun.increment()
-                        val result = runBlocking {task.await()}
-                        if (result.isSuccess) {
-                            logger.info("Joined {} with result of success", task)
-                            task.source.removeDirectDependentTask(task)
-                        } else {
-                            logger.error("Error in {}", task, result.exceptionOrNull())
-                            task.clearFailure()
-                            tasksToRetry.add(task)
-                        }
-                    })
+                    if (task.isCommandBlock && tileSize > MAX_TILE_SIZE_FOR_PARALLEL_COMMAND_BLOCKS) {
+                        awaitAndHandleResult(task, tasksRun, tasksToRetry)
+                    } else {
+                        pendingTasks.add(scope.launch(block = awaitAndHandleResult(task, tasksRun, tasksToRetry)))
+                    }
                 }
             }
             pendingTasks.joinAll()
@@ -113,4 +106,22 @@ suspend fun main(args: Array<String>) {
     logger.info("")
     logger.info("All tasks finished after $time ns")
     exitProcess(0)
+}
+
+private fun awaitAndHandleResult(
+    task: OutputTask,
+    tasksRun: LongAdder,
+    tasksToRetry: ConcurrentLinkedDeque<OutputTask>
+): suspend CoroutineScope.() -> Unit = {
+    logger.info("Joining {}", task)
+    tasksRun.increment()
+    val result = runBlocking { task.await() }
+    if (result.isSuccess) {
+        logger.info("Joined {} with result of success", task)
+        task.source.removeDirectDependentTask(task)
+    } else {
+        logger.error("Error in {}", task, result.exceptionOrNull())
+        task.clearFailure()
+        tasksToRetry.add(task)
+    }
 }

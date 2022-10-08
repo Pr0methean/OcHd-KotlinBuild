@@ -35,6 +35,7 @@ class OutputTask(
     }
     stats.onTaskCompleted("OutputTask", name)
 }) {
+    val isCommandBlock = name.contains("command_block")
     init {
         if (files.isEmpty()) {
             throw IllegalArgumentException("OutputTask with no destination files")
