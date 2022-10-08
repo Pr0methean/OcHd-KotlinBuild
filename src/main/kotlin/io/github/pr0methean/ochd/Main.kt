@@ -79,9 +79,9 @@ suspend fun main(args: Array<String>) {
                     .thenBy { (it.uncachedSubtasks() + 1.0) / (it.andAllDependencies().size + 2.0) })!!
                 if (taskSet.remove(task)) {
                     if (task.isCommandBlock && tileSize > MAX_TILE_SIZE_FOR_PARALLEL_COMMAND_BLOCKS) {
-                        runBlocking {awaitAndHandleResult(task, tasksRun, tasksToRetry)()}
+                        runBlocking { awaitAndHandleResult(task, tasksRun, tasksToRetry)}
                     } else {
-                        pendingTasks.add(scope.launch(block = awaitAndHandleResult(task, tasksRun, tasksToRetry)))
+                        pendingTasks.add(scope.launch { awaitAndHandleResult(task, tasksRun, tasksToRetry) })
                     }
                 }
             }
@@ -106,11 +106,11 @@ suspend fun main(args: Array<String>) {
     exitProcess(0)
 }
 
-private fun awaitAndHandleResult(
+private suspend inline fun awaitAndHandleResult(
     task: OutputTask,
     tasksRun: LongAdder,
     tasksToRetry: ConcurrentLinkedDeque<OutputTask>
-): suspend CoroutineScope.() -> Unit = {
+) {
     logger.info("Joining {}", task)
     tasksRun.increment()
     val result = runBlocking { task.await() }

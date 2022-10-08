@@ -46,7 +46,7 @@ class TaskPlanningContext(
         .build<SemiStrongTaskCache<*>,Result<*>>()
     val stats: ImageProcessingStats = ImageProcessingStats(backingCache)
 
-    private fun <T> createStandardTaskCache(name: String): TaskCache<T> {
+    fun <T> createStandardTaskCache(name: String): TaskCache<T> {
         if (name.contains("4x") || name.contains("commandBlockGrid") || name.contains("commandBlockGridFront")) {
             // Tasks using these images are too large for the strong cache to manage
             return SoftTaskCache(name)
@@ -119,7 +119,7 @@ class TaskPlanningContext(
         return deduped
     }
 
-    private fun findSvgTask(name: String): SvgImportTask {
+    fun findSvgTask(name: String): SvgImportTask {
         val task = svgTasks[name] ?: throw RuntimeException("Missing SvgImportTask for $name")
         if (dedupedSvgTasks.add(name, 1) > 0) {
             stats.dedupeSuccesses.add("SvgImportTask")
@@ -129,30 +129,30 @@ class TaskPlanningContext(
         return task
     }
 
-    suspend fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): ImageTask
+    suspend inline fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): ImageTask
             = layer(findSvgTask(name), paint, alpha)
 
-    suspend fun layer(source: Task<Image>, paint: Paint? = null, alpha: Double = 1.0): ImageTask {
+    suspend inline fun layer(source: Task<Image>, paint: Paint? = null, alpha: Double = 1.0): ImageTask {
         return deduplicate(RepaintTask(deduplicate(source), paint, alpha, createStandardTaskCache("$source@$paint@$alpha"), stats))
     }
 
-    suspend fun stack(init: suspend LayerListBuilder.() -> Unit): ImageTask {
+    suspend inline fun stack(init: LayerListBuilder.() -> Unit): ImageTask {
         val layerTasksBuilder = LayerListBuilder(this)
         layerTasksBuilder.init()
         val layerTasks = layerTasksBuilder.build()
         return stack(layerTasks)
     }
 
-    suspend fun animate(frames: List<ImageTask>): ImageTask {
+    suspend inline fun animate(frames: List<ImageTask>): ImageTask {
         return deduplicate(AnimationTask(frames.asFlow().map(::deduplicate).toList(), tileSize, tileSize, frames.toString(), createStandardTaskCache(frames.toString()), stats))
     }
 
-    suspend fun out(source: ImageTask, vararg name: String): OutputTask {
+    suspend inline fun out(source: ImageTask, vararg name: String): OutputTask {
         val lowercaseName = name.map {it.lowercase(Locale.ENGLISH)}
         return out(lowercaseName[0], source, lowercaseName.map{outTextureRoot.resolve("$it.png")})
     }
 
-    suspend fun out(
+    suspend inline fun out(
         lowercaseName: String,
         source: ImageTask,
         destination: List<File>
@@ -163,10 +163,10 @@ class TaskPlanningContext(
         return outputTask
     }
 
-    suspend fun out(source: suspend LayerListBuilder.() -> Unit, vararg names: String): OutputTask
+    suspend inline fun out(source: LayerListBuilder.() -> Unit, vararg names: String): OutputTask
             = out(stack {source()}, *names)
 
-    suspend fun stack(layers: LayerList): ImageTask
+    suspend inline fun stack(layers: LayerList): ImageTask
             = deduplicate(ImageStackingTask(layers,
         layers.toString(), createStandardTaskCache(layers.toString()), stats))
 }

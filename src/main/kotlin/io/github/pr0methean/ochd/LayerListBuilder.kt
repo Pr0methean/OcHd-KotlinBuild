@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 
 class LayerListBuilder(val ctx: TaskPlanningContext) {
-    private val layers = mutableListOf<ImageTask>()
+    val layers: MutableList<ImageTask> = mutableListOf()
     var background: Paint = Color.TRANSPARENT
     fun background(paint: Paint, opacity: Double = 1.0) {
         background = if (opacity == 1.0 || paint !is Color) paint else Color(paint.red, paint.green, paint.blue, opacity * paint.opacity)
@@ -23,21 +23,21 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
         background = c(color)
     }
 
-    suspend fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): ImageTask {
+    suspend inline fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): ImageTask {
         val layer = ctx.layer(name, paint, alpha)
         copy(layer)
         return layer
     }
 
-    suspend fun layer(source: Task<Image>, paint: Paint? = null, alpha: Double = 1.0): ImageTask {
+    suspend inline fun layer(source: Task<Image>, paint: Paint? = null, alpha: Double = 1.0): ImageTask {
         val layer = ctx.layer(source, paint, alpha)
         copy(layer)
         return layer
     }
 
-    suspend fun copy(sourceInit: suspend LayerListBuilder.() -> Unit): Unit =
+    suspend inline fun copy(sourceInit: LayerListBuilder.() -> Unit): Unit =
         copy(LayerListBuilder(ctx).also {sourceInit()}.build())
-    suspend fun copy(source: LayerList) {
+    suspend inline fun copy(source: LayerList) {
         if (source.background != Color.TRANSPARENT) {
             if (background == Color.TRANSPARENT && layers.isEmpty()) {
                 if (source.layers.size <= 1) {
@@ -59,6 +59,6 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
         val deduped = ctx.deduplicate(element)
         return layers.add(deduped)
     }
-    private fun addAll(elements: Collection<ImageTask>) = layers.addAll(elements)
+    fun addAll(elements: Collection<ImageTask>): Boolean = layers.addAll(elements)
     suspend fun build(): LayerList = LayerList(layers.asFlow().map(ctx::deduplicate).toList(), background)
 }
