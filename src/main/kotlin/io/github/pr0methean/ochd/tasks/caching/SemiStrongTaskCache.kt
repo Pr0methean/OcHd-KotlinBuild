@@ -3,7 +3,7 @@ package io.github.pr0methean.ochd.tasks.caching
 import com.github.benmanes.caffeine.cache.Cache
 import javafx.scene.image.Image
 
-const val MAX_IMAGE_PIXELS_TO_CACHE_NONWEAKLY = 1L.shl(24)
+const val MAX_IMAGE_PIXELS_TO_CACHE_NONWEAKLY: Long = 1L.shl(24)
 class SemiStrongTaskCache<T>(name: String, private val backingCache: Cache<SemiStrongTaskCache<*>, Result<*>>):
         WeakTaskCache<T>(name) {
     override var enabled: Boolean
@@ -17,7 +17,7 @@ class SemiStrongTaskCache<T>(name: String, private val backingCache: Cache<SemiS
 
     @Suppress("UNCHECKED_CAST")
     override fun getNow(): Result<T>? {
-        return backingCache.getIfPresent(this) as Result<T>? ?: super.getNow()
+        return super.getNow() ?: backingCache.getIfPresent(this) as Result<T>?
     }
 
     override fun enabledSet(value: Result<T>?) {
