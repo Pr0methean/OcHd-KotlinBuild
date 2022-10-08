@@ -115,7 +115,7 @@ private suspend inline fun awaitAndHandleResult(
 ) {
     logger.info("Joining {}", task)
     tasksRun.increment()
-    val result = runBlocking { task.await() }
+    val result = task.await()
     if (result.isSuccess) {
         logger.info("Joined {} with result of success", task)
         task.source.removeDirectDependentTask(task)
