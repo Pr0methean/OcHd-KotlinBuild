@@ -76,7 +76,8 @@ suspend fun main(args: Array<String>) {
             val taskSet = tasks.toMutableSet()
             while (taskSet.isNotEmpty()) {
                 yield()
-                val task = taskSet.minWithOrNull(compareBy(OutputTask::isCommandBlock)
+                val task = taskSet.minWithOrNull(
+                    compareByDescending(OutputTask::isCommandBlock)
                     .thenBy { (it.uncachedSubtasks() + 1.0) / (it.andAllDependencies().size + 2.0) })!!
                 if (taskSet.remove(task)) {
                     if (task.isCommandBlock && tileSize > MAX_TILE_SIZE_FOR_PARALLEL_COMMAND_BLOCKS) {
