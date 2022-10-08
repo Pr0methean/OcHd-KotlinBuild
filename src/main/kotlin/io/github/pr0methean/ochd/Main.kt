@@ -18,7 +18,7 @@ import kotlin.system.measureNanoTime
 
 private val logger = LogManager.getRootLogger()
 private const val PARALLELISM = 2
-private const val MAX_TILE_SIZE_FOR_PARALLEL_COMMAND_BLOCKS = 1.shl(9)
+private const val MAX_TILE_SIZE_FOR_PARALLEL_COMMAND_BLOCKS = 1.shl(10)
 
 private const val COMMAND_BLOCK_PRIORITY_ADJUSTMENT = -(1.shl(20)).toDouble()
 
