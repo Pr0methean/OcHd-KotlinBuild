@@ -8,8 +8,6 @@ open class WeakTaskCache<T>(name: String): AbstractTaskCache<T>(name) {
     override fun getNow(): Result<T>? = result.get()
 
     override fun enabledSet(value: Result<T>?) {
-        if (value != null) {
-            result = WeakReference(value)
-        }
+        result = WeakReference(value)
     }
 }
