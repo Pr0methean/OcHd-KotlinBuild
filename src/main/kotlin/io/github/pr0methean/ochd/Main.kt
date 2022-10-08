@@ -17,7 +17,7 @@ import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
 private val logger = LogManager.getRootLogger()
-private const val PARALLELISM = 3
+private const val PARALLELISM = 2
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @Suppress("UnstableApiUsage", "DeferredResultUnused")
