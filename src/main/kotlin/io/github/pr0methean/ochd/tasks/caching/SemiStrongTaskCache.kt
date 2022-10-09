@@ -17,7 +17,7 @@ class SemiStrongTaskCache<T>(name: String, private val backingCache: Cache<SemiS
 
     @Suppress("UNCHECKED_CAST")
     override fun getNow(): Result<T>? {
-        return super.getNow() ?: backingCache.getIfPresent(this) as Result<T>?
+        return backingCache.getIfPresent(this) as Result<T>? ?: super.getNow()
     }
 
     override fun enabledSet(value: Result<T>?) {
