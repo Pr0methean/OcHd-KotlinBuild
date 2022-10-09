@@ -58,7 +58,7 @@ jobs:
       with:
         java-version: '19'
         distribution: 'corretto'
-        cache: 'gradle'
+        check-latest: true
     - name: Download Fat Jar
       uses: actions/download-artifact@v3
       with:
