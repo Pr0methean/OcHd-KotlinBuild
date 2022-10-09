@@ -31,7 +31,6 @@ import kotlin.system.measureNanoTime
 
 private val logger = LogManager.getRootLogger()
 private const val PARALLELISM = 2
-private const val MAX_TILE_SIZE_FOR_PARALLEL_COMMAND_BLOCKS = 1.shl(9)
 
 @OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
 @Suppress("UnstableApiUsage", "DeferredResultUnused")
@@ -75,57 +74,18 @@ suspend fun main(args: Array<String>) {
     }
     val stats = ctx.stats
     startMonitoring(stats, scope)
-    var attemptNumber = 1
     val time = measureNanoTime {
         stats.onTaskLaunched("Build task graph", "Build task graph")
-        var tasks = ALL_MATERIALS.outputTasks(ctx).toList()
+        val tasks = ALL_MATERIALS.outputTasks(ctx).toList()
         tasks.forEach(Task<*>::registerRecursiveDependencies)
+        val cbTasks = tasks.filter(OutputTask::isCommandBlock)
+        val nonCbTasks = tasks.filterNot(OutputTask::isCommandBlock)
         stats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupAndCopyMetadata.join()
         System.gc()
         val tasksRun = LongAdder()
-        val pendingTasks = ConcurrentHashMap.newKeySet<Job>()
-        while (tasks.isNotEmpty()) {
-            val tasksToRetry = ConcurrentLinkedDeque<OutputTask>()
-            val taskSet = tasks.toMutableSet()
-            while (taskSet.isNotEmpty()) {
-                yield()
-                val task = taskSet.minWithOrNull(
-                    compareByDescending(OutputTask::isCommandBlock)
-                    .thenBy { (it.uncachedSubtasks() + 1.0) / (it.andAllDependencies().size + 2.0) })!!
-                if (taskSet.remove(task)) {
-                    val taskScope = if (task.isCommandBlock && tileSize > MAX_TILE_SIZE_FOR_PARALLEL_COMMAND_BLOCKS) {
-                        cbScope
-                    } else {
-                        scope
-                    }
-                    pendingTasks.add(taskScope.launch {
-                        logger.info("Joining {}", task)
-                        tasksRun.increment()
-                        val result = runBlocking { task.await() }
-                        if (result.isSuccess) {
-                            logger.info("Joined {} with result of success", task)
-                            task.source.removeDirectDependentTask(task)
-                        } else {
-                            logger.error("Error in {}", task, result.exceptionOrNull())
-                            task.clearFailure()
-                            tasksToRetry.add(task)
-                        }
-                    })
-                }
-            }
-            pendingTasks.joinAll()
-            tasks = tasksToRetry.toList()
-            if (tasksToRetry.isNotEmpty()) {
-                System.gc()
-                logger.warn(
-                    "{} tasks succeeded and {} failed on attempt {}",
-                    box(tasksRun.sumThenReset() - tasksToRetry.size), box(tasksToRetry.size), box(attemptNumber)
-                )
-                stats.recordRetries(tasksToRetry.size.toLong())
-                attemptNumber++
-            }
-        }
+        runAll(cbTasks, cbScope, tasksRun, stats)
+        runAll(nonCbTasks, scope, tasksRun, stats)
     }
     stopMonitoring()
     Platform.exit()
@@ -133,5 +93,53 @@ suspend fun main(args: Array<String>) {
     logger.info("")
     logger.info("All tasks finished after $time ns")
     exitProcess(0)
+}
+
+private suspend fun runAll(
+    tasks: Iterable<OutputTask>,
+    scope: CoroutineScope,
+    tasksRun: LongAdder,
+    stats: ImageProcessingStats
+) {
+    val remainingTasks = tasks.toMutableSet()
+    var attemptNumber = 1
+    while (remainingTasks.isNotEmpty()) {
+        val pendingTasks = ConcurrentHashMap.newKeySet<Job>()
+        val tasksToRetry = ConcurrentLinkedDeque<OutputTask>()
+        val tasksToAttempt = remainingTasks.toMutableSet()
+        while (tasksToAttempt.isNotEmpty()) {
+            yield()
+            val task = tasksToAttempt.minWithOrNull(
+                compareByDescending(OutputTask::isCommandBlock)
+                    .thenBy { (it.uncachedSubtasks() + 1.0) / (it.andAllDependencies().size + 2.0) })!!
+            if (tasksToAttempt.remove(task)) {
+                pendingTasks.add(scope.launch {
+                    logger.info("Joining {}", task)
+                    tasksRun.increment()
+                    val result = runBlocking { task.await() }
+                    if (result.isSuccess) {
+                        logger.info("Joined {} with result of success", task)
+                        task.source.removeDirectDependentTask(task)
+                    } else {
+                        logger.error("Error in {}", task, result.exceptionOrNull())
+                        task.clearFailure()
+                        tasksToRetry.add(task)
+                    }
+                })
+            }
+        }
+        remainingTasks.clear()
+        pendingTasks.joinAll()
+        if (tasksToRetry.isNotEmpty()) {
+            remainingTasks.addAll(tasksToRetry)
+            System.gc()
+            logger.warn(
+                "{} tasks succeeded and {} failed on attempt {}",
+                box(tasksRun.sumThenReset() - tasksToRetry.size), box(tasksToRetry.size), box(attemptNumber)
+            )
+            stats.recordRetries(tasksToRetry.size.toLong())
+            attemptNumber++
+        }
+    }
 }
 
