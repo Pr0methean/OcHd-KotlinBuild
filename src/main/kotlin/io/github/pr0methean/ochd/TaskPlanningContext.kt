@@ -2,7 +2,15 @@ package io.github.pr0methean.ochd
 
 import com.github.benmanes.caffeine.cache.Caffeine
 import com.google.common.collect.ConcurrentHashMultiset
-import io.github.pr0methean.ochd.tasks.*
+import io.github.pr0methean.ochd.tasks.AbstractImageTask
+import io.github.pr0methean.ochd.tasks.AnimationTask
+import io.github.pr0methean.ochd.tasks.ImageStackingTask
+import io.github.pr0methean.ochd.tasks.ImageTask
+import io.github.pr0methean.ochd.tasks.OutputTask
+import io.github.pr0methean.ochd.tasks.RepaintTask
+import io.github.pr0methean.ochd.tasks.SvgImportTask
+import io.github.pr0methean.ochd.tasks.Task
+import io.github.pr0methean.ochd.tasks.await
 import io.github.pr0methean.ochd.tasks.caching.SemiStrongTaskCache
 import io.github.pr0methean.ochd.tasks.caching.SoftTaskCache
 import io.github.pr0methean.ochd.tasks.caching.TaskCache
@@ -23,7 +31,7 @@ fun color(web: String, alpha: Double): Color = Color.web(web, alpha)
 
 private val logger = LogManager.getLogger("TaskPlanningContext")
 // Soft-ref cache will be able to contain this * 16 MPx
-private const val MINIMUM_CACHE_4096x4096 = 12L
+private const val MINIMUM_CACHE_4096x4096 = 16L
 
 /**
  * Holds info needed to build and deduplicate the task graph. Needs to become unreachable once the graph is built.
