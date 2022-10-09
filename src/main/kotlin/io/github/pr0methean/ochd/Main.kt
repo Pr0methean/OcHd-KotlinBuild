@@ -85,6 +85,7 @@ suspend fun main(args: Array<String>) {
         System.gc()
         val tasksRun = LongAdder()
         runAll(cbTasks, cbScope, tasksRun, stats)
+        System.gc()
         runAll(nonCbTasks, scope, tasksRun, stats)
     }
     stopMonitoring()
