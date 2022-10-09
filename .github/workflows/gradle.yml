@@ -70,6 +70,7 @@ jobs:
         -XX:+UseStringDeduplication -Xms4G -Xmx4G -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC
         '-Xlog:gc*=debug,gc+heap=trace,gc+heap+exit=trace,gc+metaspace=trace,gc+nmethod=info,safepoint+stats=info' 
         -XX:+UseNUMA -XX:ConcGCThreads=2 -XX:ParallelGCThreads=2 -XX:+HeapDumpOnOutOfMemoryError 
+        -Dkotlinx.coroutines.debug
         -jar OcHd-KotlinBuild-1.0-SNAPSHOT.jar ${{ matrix.size }}
 
       continue-on-error: true
