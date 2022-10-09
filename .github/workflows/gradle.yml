@@ -70,7 +70,7 @@ jobs:
         -XX:+UseStringDeduplication -Xms4G -Xmx4G -XX:+UnlockExperimentalVMOptions -XX:+UseShenandoahGC
         '-Xlog:gc*=debug,gc+heap=trace,gc+heap+exit=trace,gc+metaspace=trace,gc+nmethod=info,safepoint+stats=info' 
         -XX:+UseNUMA -XX:ConcGCThreads=2 -XX:ParallelGCThreads=2 -XX:+AlwaysPreTouch -XX:+UseTransparentHugePages
-        -XX:ShenandoahInitFreeThreshold=25 -XX:ShenandoahMinFreeThreshold=12 -XX:ShenandoahAllocSpikeFactor=7  
+        -XX:ShenandoahInitFreeThreshold=25 -XX:ShenandoahAllocSpikeFactor=7  
         -XX:+HeapDumpOnOutOfMemoryError 
         -jar OcHd-KotlinBuild-1.0-SNAPSHOT.jar ${{ matrix.size }}
 
