@@ -8,6 +8,7 @@ import io.github.pr0methean.ochd.tasks.doJfx
 import javafx.application.Platform
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
@@ -15,6 +16,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.yield
@@ -31,7 +33,7 @@ private val logger = LogManager.getRootLogger()
 private const val PARALLELISM = 2
 private const val MAX_TILE_SIZE_FOR_PARALLEL_COMMAND_BLOCKS = 1.shl(9)
 
-@OptIn(ExperimentalCoroutinesApi::class)
+@OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
 @Suppress("UnstableApiUsage", "DeferredResultUnused")
 suspend fun main(args: Array<String>) {
     if (args.isEmpty()) {
@@ -56,7 +58,9 @@ suspend fun main(args: Array<String>) {
     Platform.startup {}
     val tileSize = args[0].toInt()
     if (tileSize <= 0) throw IllegalArgumentException("tileSize shouldn't be zero or negative but was ${args[0]}")
-    val scope = CoroutineScope(Dispatchers.Default.limitedParallelism(PARALLELISM)).plus(supervisorJob)
+    val coroutineContext = newFixedThreadPoolContext(PARALLELISM, "Main coroutine context")
+    val scope = CoroutineScope(coroutineContext).plus(supervisorJob)
+    val cbScope = CoroutineScope(coroutineContext.limitedParallelism(1)).plus(supervisorJob)
     val svgDirectory = Paths.get("svg").toAbsolutePath().toFile()
     val outTextureRoot = out.resolve("assets").resolve("minecraft").resolve("textures")
 
@@ -90,11 +94,24 @@ suspend fun main(args: Array<String>) {
                     compareByDescending(OutputTask::isCommandBlock)
                     .thenBy { (it.uncachedSubtasks() + 1.0) / (it.andAllDependencies().size + 2.0) })!!
                 if (taskSet.remove(task)) {
-                    if (task.isCommandBlock && tileSize > MAX_TILE_SIZE_FOR_PARALLEL_COMMAND_BLOCKS) {
-                        awaitAndHandleResult(task, tasksRun, tasksToRetry)
+                    val taskScope = if (task.isCommandBlock && tileSize > MAX_TILE_SIZE_FOR_PARALLEL_COMMAND_BLOCKS) {
+                        cbScope
                     } else {
-                        pendingTasks.add(scope.launch { awaitAndHandleResult(task, tasksRun, tasksToRetry) })
+                        scope
                     }
+                    pendingTasks.add(taskScope.launch {
+                        logger.info("Joining {}", task)
+                        tasksRun.increment()
+                        val result = runBlocking { task.await() }
+                        if (result.isSuccess) {
+                            logger.info("Joined {} with result of success", task)
+                            task.source.removeDirectDependentTask(task)
+                        } else {
+                            logger.error("Error in {}", task, result.exceptionOrNull())
+                            task.clearFailure()
+                            tasksToRetry.add(task)
+                        }
+                    })
                 }
             }
             pendingTasks.joinAll()
@@ -118,20 +135,3 @@ suspend fun main(args: Array<String>) {
     exitProcess(0)
 }
 
-private suspend inline fun awaitAndHandleResult(
-    task: OutputTask,
-    tasksRun: LongAdder,
-    tasksToRetry: ConcurrentLinkedDeque<OutputTask>
-) {
-    logger.info("Joining {}", task)
-    tasksRun.increment()
-    val result = runBlocking { task.await() }
-    if (result.isSuccess) {
-        logger.info("Joined {} with result of success", task)
-        task.source.removeDirectDependentTask(task)
-    } else {
-        logger.error("Error in {}", task, result.exceptionOrNull())
-        task.clearFailure()
-        tasksToRetry.add(task)
-    }
-}
