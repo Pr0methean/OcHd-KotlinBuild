@@ -3,7 +3,7 @@ package io.github.pr0methean.ochd.tasks.caching
 import com.github.benmanes.caffeine.cache.Cache
 
 class SemiStrongTaskCache<T>(name: String, private val backingCache: Cache<SemiStrongTaskCache<*>, Result<*>>):
-        WeakTaskCache<T>(name) {
+        SoftTaskCache<T>(name) {
     override var enabled: Boolean
         get() = super.enabled
         set(value) {
