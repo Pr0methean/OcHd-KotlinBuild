@@ -59,7 +59,7 @@ class TaskPlanningContext(
         .executor(Runnable::run) // keep eviction on same thread as population
         .maximumSize(MINIMUM_CACHE_16384x4096.shl(24) / (tileSize * tileSize))
         .build<SemiStrongTaskCache<*>,Result<*>>()
-    val stats: ImageProcessingStats = ImageProcessingStats(backingCache, hugeTileBackingCache)
+    val stats: ImageProcessingStats = ImageProcessingStats(backingCache)
 
     fun <T> createStandardTaskCache(name: String): TaskCache<T> {
         if (name.contains("4x") || name.contains("commandBlockGrid")) {
