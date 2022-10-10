@@ -53,7 +53,7 @@ class TaskPlanningContext(
         .executor(Runnable::run) // keep eviction on same thread as population
         .maximumSize(MINIMUM_CACHE_4096x4096.shl(24) / (tileSize * tileSize))
         .build<SemiStrongTaskCache<*>,Result<*>>()
-    private val hugeTileBackingCache = Caffeine.newBuilder()
+    internal val hugeTileBackingCache = Caffeine.newBuilder()
         .recordStats()
         .weakKeys()
         .executor(Runnable::run) // keep eviction on same thread as population

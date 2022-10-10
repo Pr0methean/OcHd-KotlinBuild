@@ -80,11 +80,13 @@ suspend fun main(args: Array<String>) {
         tasks.forEach(Task<*>::registerRecursiveDependencies)
         val cbTasks = tasks.filter(OutputTask::isCommandBlock)
         val nonCbTasks = tasks.filterNot(OutputTask::isCommandBlock)
+        val hugeTaskCache = ctx.hugeTileBackingCache
         stats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupAndCopyMetadata.join()
         System.gc()
         val tasksRun = LongAdder()
         runAll(cbTasks, cbScope, tasksRun, stats)
+        hugeTaskCache.invalidateAll()
         System.gc()
         runAll(nonCbTasks, scope, tasksRun, stats)
     }
