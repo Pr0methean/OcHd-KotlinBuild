@@ -12,7 +12,6 @@ import io.github.pr0methean.ochd.tasks.SvgImportTask
 import io.github.pr0methean.ochd.tasks.Task
 import io.github.pr0methean.ochd.tasks.await
 import io.github.pr0methean.ochd.tasks.caching.SemiStrongTaskCache
-import io.github.pr0methean.ochd.tasks.caching.SoftTaskCache
 import io.github.pr0methean.ochd.tasks.caching.TaskCache
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
@@ -30,8 +29,10 @@ fun color(web: String): Color = Color.web(web)
 fun color(web: String, alpha: Double): Color = Color.web(web, alpha)
 
 private val logger = LogManager.getLogger("TaskPlanningContext")
-// Caffeine cache will be able to contain this * 16 MPx
+// Main Caffeine cache will be able to contain this * 16 MPx
 private const val MINIMUM_CACHE_4096x4096 = 15L
+// Huge-tile Caffeine cache will be able to contain this * 16 MPx
+private const val MINIMUM_CACHE_16384x4096 = 4L
 
 /**
  * Holds info needed to build and deduplicate the task graph. Needs to become unreachable once the graph is built.
@@ -52,19 +53,25 @@ class TaskPlanningContext(
         .executor(Runnable::run) // keep eviction on same thread as population
         .maximumSize(MINIMUM_CACHE_4096x4096.shl(24) / (tileSize * tileSize))
         .build<SemiStrongTaskCache<*>,Result<*>>()
+    private val hugeTileBackingCache = Caffeine.newBuilder()
+        .recordStats()
+        .weakKeys()
+        .executor(Runnable::run) // keep eviction on same thread as population
+        .maximumSize(MINIMUM_CACHE_16384x4096.shl(24) / (tileSize * tileSize))
+        .build<SemiStrongTaskCache<*>,Result<*>>()
     val stats: ImageProcessingStats = ImageProcessingStats(backingCache)
 
     fun <T> createStandardTaskCache(name: String): TaskCache<T> {
-        if (name.contains("4x") || name.contains("commandBlockGrid") || name.contains("commandBlockGridFront")) {
-            // Tasks using these images are too large for the strong cache to manage
-            return SoftTaskCache(name)
+        if (name.contains("4x") || name.contains("commandBlockGrid")) {
+            // Tasks using these images are too large for the main cache to manage
+            return SemiStrongTaskCache(name, hugeTileBackingCache)
         }
         return SemiStrongTaskCache(name, backingCache)
     }
     private fun <T> createSvgImportCache(name: String): TaskCache<T> {
         if (setOf("commandBlockGrid","commandBlockGridFront").contains(name) || name.endsWith("4x")) {
-            // These images are too large for the strong cache to manage
-            return SoftTaskCache(name)
+            // These images are too large for the main cache to manage
+            return SemiStrongTaskCache(name, hugeTileBackingCache)
         }
         return SemiStrongTaskCache(name, backingCache)
     }
