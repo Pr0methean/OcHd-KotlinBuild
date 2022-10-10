@@ -12,7 +12,9 @@ import io.github.pr0methean.ochd.tasks.SvgImportTask
 import io.github.pr0methean.ochd.tasks.Task
 import io.github.pr0methean.ochd.tasks.await
 import io.github.pr0methean.ochd.tasks.caching.SemiStrongTaskCache
+import io.github.pr0methean.ochd.tasks.caching.SoftTaskCache
 import io.github.pr0methean.ochd.tasks.caching.TaskCache
+import io.github.pr0methean.ochd.tasks.caching.WeakTaskCache
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
@@ -64,16 +66,16 @@ class TaskPlanningContext(
     fun <T> createStandardTaskCache(name: String): TaskCache<T> {
         if (name.contains("4x") || name.contains("commandBlockGrid")) {
             // Tasks using these images are too large for the main cache to manage
-            return SemiStrongTaskCache(name, hugeTileBackingCache)
+            return SemiStrongTaskCache(SoftTaskCache(name), hugeTileBackingCache)
         }
-        return SemiStrongTaskCache(name, backingCache)
+        return SemiStrongTaskCache(WeakTaskCache(name), backingCache)
     }
     private fun <T> createSvgImportCache(name: String): TaskCache<T> {
         if (setOf("commandBlockGrid","commandBlockGridFront").contains(name) || name.endsWith("4x")) {
             // These images are too large for the main cache to manage
-            return SemiStrongTaskCache(name, hugeTileBackingCache)
+            return SemiStrongTaskCache(SoftTaskCache(name), hugeTileBackingCache)
         }
-        return SemiStrongTaskCache(name, backingCache)
+        return SemiStrongTaskCache(WeakTaskCache(name), backingCache)
     }
 
     init {
