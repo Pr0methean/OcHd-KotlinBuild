@@ -7,17 +7,23 @@ abstract class AbstractTaskCache<T>(val name: String) : TaskCache<T> {
     @Volatile override var enabled: Boolean = false
         set(value) {
             if (!value) {
-                enabledSet(null)
+                disable()
             }
             field = value
         }
 
     override fun set(value: Result<T>?) {
-        if (enabled) {
+        if (value == null) {
+            clear()
+        } else if (enabled) {
             logger.info("Caching result of {}", name)
             enabledSet(value)
         }
     }
 
-    abstract fun enabledSet(value: Result<T>?)
+    abstract fun disable()
+
+    abstract fun clear()
+
+    abstract fun enabledSet(value: Result<T>)
 }
