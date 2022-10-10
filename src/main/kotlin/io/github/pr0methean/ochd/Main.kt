@@ -86,7 +86,7 @@ suspend fun main(args: Array<String>) {
         System.gc()
         val tasksRun = LongAdder()
         runAll(cbTasks, cbScope, tasksRun, stats)
-        hugeTaskCache.invalidateAll()
+        stats.readHugeTileCache(hugeTaskCache)
         System.gc()
         runAll(nonCbTasks, scope, tasksRun, stats)
     }
