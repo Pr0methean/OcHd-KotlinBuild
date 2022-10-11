@@ -50,7 +50,8 @@ jobs:
       matrix:
         size: [ 4096, 2048, 1024, 512, 256, 128, 64, 32 ]
     runs-on: ubuntu-latest
-    
+    container:
+      options: --user root
     steps:
     - uses: actions/checkout@v3
     - name: Enable Transparent Huge Pages
