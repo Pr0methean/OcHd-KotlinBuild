@@ -71,7 +71,7 @@ jobs:
         '-Xlog:gc*=debug,gc+stats=trace,gc+heap=trace,gc+heap+exit=trace,gc+metaspace=trace,gc+nmethod=info,safepoint+stats=info' 
         -XX:+UseNUMA -XX:ConcGCThreads=2 -XX:ParallelGCThreads=2 -XX:+AlwaysPreTouch -XX:+UseTransparentHugePages
         -XX:ShenandoahInitFreeThreshold=25 -XX:ShenandoahAllocSpikeFactor=7  
-        -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintFlagsFinal
+        -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintFlagsFinal -XX:-ShenandoahPacing
         -jar OcHd-KotlinBuild-1.0-SNAPSHOT.jar ${{ matrix.size }}
 
       continue-on-error: true
