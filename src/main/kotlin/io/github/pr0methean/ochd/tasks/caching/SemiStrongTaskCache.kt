@@ -10,13 +10,13 @@ class SemiStrongTaskCache<T>(private val baseCache: AbstractTaskCache<T>, privat
     }
 
     override fun clear() {
-        baseCache.clear()
         backingCache.invalidate(this)
+        baseCache.clear()
     }
 
     override fun disable() {
-        baseCache.disable()
         backingCache.invalidate(this)
+        baseCache.disable()
     }
 
     override fun enabledSet(value: Result<T>) {
