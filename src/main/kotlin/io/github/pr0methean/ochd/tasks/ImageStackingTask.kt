@@ -118,13 +118,13 @@ class ImageStackingTask(val layers: LayerList,
         val params = SnapshotParameters()
         params.fill = layers.background
         val output = WritableImage(width.toInt(), height.toInt())
-        doJfx("Snapshot of $name") {
-            val snapshot = canvas.snapshot(params, output)
-            if (snapshot.isError) {
-                throw snapshot.exception
-            }
-            snapshotRef.set(snapshot)
+        val snapshot = doJfx("Snapshot of $name") {
+            canvas.snapshot(params, output)
         }
+        if (snapshot.isError) {
+            throw snapshot.exception
+        }
+        snapshotRef.set(snapshot)
     }
 
     override fun andAllDependencies(): Set<Task<*>> {

@@ -89,10 +89,9 @@ class RepaintTask(
         gfx.drawImage(baseImage, 0.0, 0.0)
         val snapshot = doJfx(name) {
             canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
-            if (output.isError) {
-                throw output.exception
-            }
-            return@doJfx output
+        }
+        if (snapshot.isError) {
+            throw output.exception
         }
         stats.onTaskCompleted("RepaintTask", name)
         return snapshot
