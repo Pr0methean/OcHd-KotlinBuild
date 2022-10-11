@@ -37,7 +37,7 @@ jobs:
     - name: Build with Gradle
       uses: gradle/gradle-build-action@fd32ae908111fe31afa48827bd1ee909540aa971
       with:
-        gradle-version: '7.6-milestone-1'
+        gradle-version: '8.0-milestone-2'
         arguments: jar --scan --warning-mode all
     - name: Upload Fat Jar
       uses: actions/upload-artifact@v3
