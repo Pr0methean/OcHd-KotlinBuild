@@ -16,7 +16,7 @@ open class SoftTaskCache<T>(name: String): AbstractTaskCache<T>(name) {
     }
 
     override fun clear() {
-        result = WeakReference(null)
+        result.clear()
     }
 
     override fun getNow(): Result<T>? = result.get()
