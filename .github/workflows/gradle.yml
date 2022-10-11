@@ -70,7 +70,7 @@ jobs:
         -XX:+UseStringDeduplication -Xms4G -Xmx4G -XX:+UseG1GC
         '-Xlog:gc*=debug,gc+stats=trace,gc+heap=trace,gc+heap+exit=trace,gc+metaspace=trace,gc+nmethod=info,safepoint+stats=info' 
         -XX:+UseNUMA -XX:ConcGCThreads=2 -XX:ParallelGCThreads=2 -XX:+AlwaysPreTouch -XX:+UseTransparentHugePages
-        -XX:+HeapDumpOnOutOfMemoryError -XX:G1HeapRegionSize=256M
+        -XX:+HeapDumpOnOutOfMemoryError -XX:G1HeapRegionSize=16M
         -jar OcHd-KotlinBuild-1.0-SNAPSHOT.jar ${{ matrix.size }}
 
       continue-on-error: true
