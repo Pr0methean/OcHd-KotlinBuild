@@ -3,6 +3,7 @@ package io.github.pr0methean.ochd.tasks
 import io.github.pr0methean.ochd.DEFAULT_SNAPSHOT_PARAMS
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.tasks.caching.TaskCache
+import javafx.scene.canvas.Canvas
 import javafx.scene.effect.Blend
 import javafx.scene.effect.BlendMode
 import javafx.scene.effect.ColorInput
@@ -72,7 +73,7 @@ class RepaintTask(
         }
         baseImage = baseImage ?: base.await().getOrThrow()
         stats.onTaskLaunched("RepaintTask", name)
-        val canvas = createCanvas(baseImage.width, baseImage.height, name)
+        val canvas = Canvas(baseImage.width, baseImage.height)
         val output = WritableImage(baseImage.width.toInt(), baseImage.height.toInt())
         val gfx = canvas.graphicsContext2D
         canvas.opacity = alpha
@@ -87,7 +88,6 @@ class RepaintTask(
         gfx.isImageSmoothing = false
         gfx.drawImage(baseImage, 0.0, 0.0)
         val snapshot = doJfx(name) {
-            awaitFreeMemory(4 * baseImage.width.toLong() * baseImage.height.toLong(), name)
             canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
             if (output.isError) {
                 throw output.exception
