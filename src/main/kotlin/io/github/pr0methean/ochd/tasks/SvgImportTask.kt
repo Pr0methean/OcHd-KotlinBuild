@@ -35,10 +35,10 @@ private class ToImageTranscoder: ImageTranscoder() {
 }
 
 class SvgImportTask(
-    override val name: String,
+    name: String,
     private val width: Int,
     private val file: File,
-    override val stats: ImageProcessingStats,
+    stats: ImageProcessingStats,
     taskCache: TaskCache<Image>
 ): AbstractImageTask(name, taskCache, stats) {
     override suspend fun createCoroutineScope(): CoroutineScope {

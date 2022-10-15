@@ -12,7 +12,7 @@ import java.nio.file.Files
 @Suppress("BlockingMethodInNonBlockingContext")
 class OutputTask(
     val source: PngCompressionTask,
-    override val name: String,
+    name: String,
     val stats: ImageProcessingStats,
     private val files: List<File>,
 ): TransformingTask<ByteArray, Unit>("Output $name", source, noopTaskCache(), transform = { bytes ->
@@ -35,7 +35,7 @@ class OutputTask(
     }
     stats.onTaskCompleted("OutputTask", name)
 }) {
-    val isCommandBlock = name.contains("command_block")
+    val isCommandBlock: Boolean = name.contains("command_block")
     init {
         if (files.isEmpty()) {
             throw IllegalArgumentException("OutputTask with no destination files")
