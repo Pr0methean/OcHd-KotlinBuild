@@ -19,12 +19,12 @@ interface Task<T>: StringBuilderFormattable {
 
     fun removeDirectDependentTask(task: Task<*>)
 
-    fun uncachedCacheableSubtasks(): Int = if (getNow() != null || !isCachingEnabled()) {
+    fun unstartedCacheableSubtasks(): Int = if (isStartedOrAvailable() || !isCachingEnabled()) {
         0
     } else {
         var total = 1
         for (task in directDependencies) {
-            total += task.uncachedCacheableSubtasks()
+            total += task.unstartedCacheableSubtasks()
         }
         total
     }
@@ -32,6 +32,8 @@ interface Task<T>: StringBuilderFormattable {
     fun cachedSubtasks(): Int
 
     fun isCachingEnabled(): Boolean
+
+    fun isStartedOrAvailable(): Boolean
 
     fun registerRecursiveDependencies()
 
