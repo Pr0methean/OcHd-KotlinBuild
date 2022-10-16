@@ -67,7 +67,7 @@ jobs:
       id: run
       run: >
         java -Dprism.maxvram=2560m -Dglass.platform=Monocle -Dmonocle.platform=Headless -Dquantum.multithreaded=true 
-        -XX:+UseStringDeduplication  -Xms4G -Xmx4G -XX:+UnlockExperimentalVMOptions -XX:+UseParallelGC -XX:NewRatio=15
+        -XX:+UseStringDeduplication  -Xms4G -Xmx4G -XX:+UnlockExperimentalVMOptions -XX:+UseParallelGC -XX:NewRatio=31
         '-Xlog:gc*=debug,gc+stats=trace,gc+heap=trace,gc+heap+exit=trace,gc+metaspace=trace,gc+nmethod=info,safepoint+stats=info' 
         -XX:+UseNUMA -XX:ConcGCThreads=2 -XX:ParallelGCThreads=2 -XX:+AlwaysPreTouch -XX:+UseTransparentHugePages 
         -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintFlagsFinal -XX:StringDeduplicationAgeThreshold=1
