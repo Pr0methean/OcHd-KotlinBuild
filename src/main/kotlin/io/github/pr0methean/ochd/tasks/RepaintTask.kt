@@ -42,6 +42,17 @@ class RepaintTask(
         return super.uncachedCacheableSubtasks()
     }
 
+    override fun cachedSubtasks(): Int {
+        if (base.getNow() == null) {
+            for (repaint in base.opaqueRepaints()) {
+                if (repaint.getNow() != null) {
+                    return base.cachedSubtasks()
+                }
+            }
+        }
+        return super.cachedSubtasks()
+    }
+
     override suspend fun mergeWithDuplicate(other: Task<Image>): ImageTask {
         if (other is RepaintTask) {
             base.mergeWithDuplicate(other.base)
