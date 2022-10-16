@@ -45,6 +45,8 @@ interface Task<T>: StringBuilderFormattable {
             .plus(CoroutineName(name))
             .plus(SupervisorJob())
     )
+
+    val totalSubtasks: Int
 }
 
 @Suppress("DeferredResultUnused")
