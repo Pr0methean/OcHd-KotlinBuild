@@ -27,22 +27,30 @@ class RepaintTask(
         }
     }
 
-    override fun andAllDependencies(): Set<Task<*>> {
-        return base.andAllDependencies().plus(this)
-    }
-
-    override fun uncachedSubtasks(): Int {
-        val possiblyUncached = super.uncachedSubtasks()
-        if (possiblyUncached <= 1) {
-            // either this task is cached (and we'll return 0) or base is cached (and we'll return 1)
-            return possiblyUncached
+    override fun uncachedCacheableSubtasks(): Int {
+        if (getNow() != null) {
+            return 0
+        }
+        if (base.getNow() != null) {
+            return if (cache.enabled) 0 else 1
         }
         for (repaint in base.opaqueRepaints()) {
             if (repaint.getNow() != null) {
-                return 1
+                return if (cache.enabled) 0 else 1
             }
         }
-        return possiblyUncached
+        return super.uncachedCacheableSubtasks()
+    }
+
+    override fun cachedSubtasks(): Int {
+        if (getNow() == null && base.getNow() == null) {
+            for (repaint in base.opaqueRepaints()) {
+                if (repaint.getNow() != null) {
+                    return base.cachedSubtasks()
+                }
+            }
+        }
+        return super.cachedSubtasks()
     }
 
     override suspend fun mergeWithDuplicate(other: Task<Image>): ImageTask {
@@ -97,10 +105,7 @@ class RepaintTask(
         return snapshot
     }
 
-    override fun registerRecursiveDependencies() {
-        base.addDirectDependentTask(this)
-        base.registerRecursiveDependencies()
-    }
+    override val directDependencies: List<ImageTask> = listOf(base)
 
     override fun equals(other: Any?): Boolean {
         return (this === other) || (other is RepaintTask

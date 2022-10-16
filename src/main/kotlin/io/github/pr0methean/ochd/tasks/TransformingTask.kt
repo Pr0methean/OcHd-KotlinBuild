@@ -13,7 +13,7 @@ import kotlin.Result.Companion.success
 private val logger = LogManager.getLogger("TransformingTask")
 open class TransformingTask<T, U>(
     name: String,
-    open val base: Task<T>,
+    val base: Task<T>,
     cache: TaskCache<U>,
     val transform: suspend (T) -> U
 )
@@ -55,17 +55,10 @@ open class TransformingTask<T, U>(
         return deduped
     }
 
-    override fun registerRecursiveDependencies() {
-        base.addDirectDependentTask(this)
-        base.registerRecursiveDependencies()
-    }
+    override val directDependencies: List<Task<T>> = listOf(base)
 
     override suspend fun clearFailure() {
         base.clearFailure()
         super.clearFailure()
-    }
-
-    override fun andAllDependencies(): Set<Task<*>> {
-        return base.andAllDependencies().plus(this)
     }
 }

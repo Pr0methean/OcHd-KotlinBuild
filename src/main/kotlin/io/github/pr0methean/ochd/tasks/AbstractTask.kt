@@ -35,6 +35,34 @@ abstract class AbstractTask<T>(override val name: String, val cache: TaskCache<T
         }
     }
 
+    override val totalSubtasks: Int by lazy {
+        var total = 0
+        for (task in directDependencies) {
+            total += 1 + task.totalSubtasks
+        }
+        total
+    }
+
+    override fun cachedSubtasks(): Int {
+        if (getNow() != null) {
+            return totalSubtasks + 1
+        }
+        var total = 0
+        for (task in directDependencies) {
+            total += if (task.getNow() != null) task.totalSubtasks + 1 else task.cachedSubtasks()
+        }
+        return total
+    }
+
+    override fun registerRecursiveDependencies() {
+        directDependencies.forEach {
+            it.addDirectDependentTask(this@AbstractTask)
+            it.registerRecursiveDependencies()
+        }
+    }
+
+    override fun isCachingEnabled(): Boolean = cache.enabled
+
     final override fun toString(): String = name
 
     override fun formatTo(buffer: StringBuilder) {

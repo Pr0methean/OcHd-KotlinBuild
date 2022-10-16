@@ -23,12 +23,15 @@ import kotlinx.coroutines.yield
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox.box
 import java.nio.file.Paths
+import java.util.Comparator.comparingInt
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.atomic.LongAdder
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
+private val taskOrderComparator = comparingInt(OutputTask::uncachedCacheableSubtasks)
+    .then(comparingInt(OutputTask::cachedSubtasks).reversed())
 private val logger = LogManager.getRootLogger()
 private const val PARALLELISM = 2
 
@@ -113,9 +116,7 @@ private suspend fun runAll(
         val tasksToAttempt = remainingTasks.toMutableSet()
         while (tasksToAttempt.isNotEmpty()) {
             yield()
-            val task = tasksToAttempt.minWithOrNull(
-                compareByDescending(OutputTask::isCommandBlock)
-                    .thenBy { (it.uncachedSubtasks() + 1.0) / (it.andAllDependencies().size + 2.0) })!!
+            val task = tasksToAttempt.minWithOrNull(taskOrderComparator)!!
             if (tasksToAttempt.remove(task)) {
                 pendingTasks.add(scope.launch {
                     logger.info("Joining {}", task)

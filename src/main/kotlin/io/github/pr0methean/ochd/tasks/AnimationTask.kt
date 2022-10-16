@@ -67,14 +67,5 @@ class AnimationTask(
         return output
     }
 
-    override fun andAllDependencies(): Set<Task<*>> {
-        return frames.flatMap(Task<*>::andAllDependencies).toSet().plus(this)
-    }
-
-    override fun registerRecursiveDependencies() {
-        frames.forEach {
-            it.addDirectDependentTask(this@AnimationTask)
-            it.registerRecursiveDependencies()
-        }
-    }
+    override val directDependencies: List<ImageTask> = frames
 }

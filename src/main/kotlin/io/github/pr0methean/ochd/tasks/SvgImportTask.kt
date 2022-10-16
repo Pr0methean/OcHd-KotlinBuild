@@ -45,9 +45,7 @@ class SvgImportTask(
         return super.createCoroutineScope().plus(batikTranscoder.asContextElement())
     }
 
-    override fun registerRecursiveDependencies() {
-        // No-op: SvgImportTask doesn't depend on any other task
-    }
+    override val directDependencies: List<Task<Nothing>> = listOf() // SVG import doesn't depend on any other tasks
 
     override fun equals(other: Any?): Boolean {
         return (other === this) || other is SvgImportTask && other.file == file
@@ -70,5 +68,4 @@ class SvgImportTask(
         return image
     }
 
-    override fun andAllDependencies(): Set<Task<*>> = setOf(this)
 }

@@ -37,12 +37,7 @@ class ImageStackingTask(val layers: LayerList,
         return deduped
     }
 
-    override fun registerRecursiveDependencies() {
-        layers.layers.forEach {
-            it.addDirectDependentTask(this@ImageStackingTask)
-            it.registerRecursiveDependencies()
-        }
-    }
+    override val directDependencies: List<ImageTask> = layers.layers
 
     override suspend fun clearFailure() {
         layers.layers.asFlow().collect(Task<Image>::clearFailure)
@@ -127,7 +122,4 @@ class ImageStackingTask(val layers: LayerList,
         snapshotRef.set(snapshot)
     }
 
-    override fun andAllDependencies(): Set<Task<*>> {
-        return layers.layers.flatMap(Task<*>::andAllDependencies).toSet().plus(this)
-    }
 }
