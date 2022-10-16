@@ -1,11 +1,8 @@
 package io.github.pr0methean.ochd.tasks
 
-import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
-import kotlinx.coroutines.currentCoroutineContext
 import org.apache.logging.log4j.util.StringBuilderFormattable
 
 interface Task<T>: StringBuilderFormattable {
@@ -22,12 +19,12 @@ interface Task<T>: StringBuilderFormattable {
 
     fun removeDirectDependentTask(task: Task<*>)
 
-    fun uncachedCacheableSubtasks(): Int = if (getNow() != null || !isCachingEnabled()) {
+    fun unstartedCacheableSubtasks(): Int = if (isStartedOrAvailable() || !isCachingEnabled()) {
         0
     } else {
         var total = 1
         for (task in directDependencies) {
-            total += task.uncachedCacheableSubtasks()
+            total += task.unstartedCacheableSubtasks()
         }
         total
     }
@@ -36,15 +33,13 @@ interface Task<T>: StringBuilderFormattable {
 
     fun isCachingEnabled(): Boolean
 
+    fun isStartedOrAvailable(): Boolean
+
     fun registerRecursiveDependencies()
 
     val directDependencies: Iterable<Task<*>>
 
-    suspend fun createCoroutineScope(): CoroutineScope = CoroutineScope(
-        currentCoroutineContext()
-            .plus(CoroutineName(name))
-            .plus(SupervisorJob())
-    )
+    suspend fun createCoroutineScope(): CoroutineScope
 
     val totalSubtasks: Int
 }

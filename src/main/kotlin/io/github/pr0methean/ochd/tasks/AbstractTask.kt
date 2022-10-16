@@ -15,7 +15,7 @@ import kotlin.Result.Companion.failure
 
 val abstractTaskLogger: Logger = LogManager.getLogger("AbstractTask")
 private val cancelBecauseReplacing = CancellationException("Being replaced")
-abstract class AbstractTask<T>(override val name: String, val cache: TaskCache<T>) : Task<T> {
+abstract class AbstractTask<T>(final override val name: String, val cache: TaskCache<T>) : Task<T> {
     val directDependentTasks: MutableSet<Task<*>> = newSetFromMap(WeakHashMap())
     val mutex: Mutex = Mutex()
     override fun addDirectDependentTask(task: Task<*>): Unit = synchronized(directDependentTasks)
@@ -115,11 +115,6 @@ abstract class AbstractTask<T>(override val name: String, val cache: TaskCache<T
             if (resultWithLock != null) {
                 abstractTaskLogger.debug("Found result {} before we could start {}", resultWithLock, this)
                 return CompletableDeferred(resultWithLock)
-            }
-            val maybeAlreadyStartedWithLock = coroutine.get()
-            if (maybeAlreadyStartedWithLock != null) {
-                abstractTaskLogger.debug("Found coroutine {} before we could start {}", maybeAlreadyStartedWithLock, this)
-                return maybeAlreadyStartedWithLock
             }
             val oldCoroutine = coroutine.compareAndExchange(null, newCoroutine)
             if (oldCoroutine != null) {
@@ -246,4 +241,14 @@ abstract class AbstractTask<T>(override val name: String, val cache: TaskCache<T
         return this
     }
 
+    private val supervisorJob = SupervisorJob()
+    private val coroutineName = CoroutineName(name)
+
+    override suspend fun createCoroutineScope(): CoroutineScope = CoroutineScope(
+        currentCoroutineContext()
+            .plus(coroutineName)
+            .plus(supervisorJob)
+    )
+
+    override fun isStartedOrAvailable(): Boolean = coroutine.get()?.isActive == true || getNow() != null
 }
