@@ -116,11 +116,6 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
                 abstractTaskLogger.debug("Found result {} before we could start {}", resultWithLock, this)
                 return CompletableDeferred(resultWithLock)
             }
-            val maybeAlreadyStartedWithLock = coroutine.get()
-            if (maybeAlreadyStartedWithLock != null) {
-                abstractTaskLogger.debug("Found coroutine {} before we could start {}", maybeAlreadyStartedWithLock, this)
-                return maybeAlreadyStartedWithLock
-            }
             val oldCoroutine = coroutine.compareAndExchange(null, newCoroutine)
             if (oldCoroutine != null) {
                 abstractTaskLogger.debug("Already started {}", this)
