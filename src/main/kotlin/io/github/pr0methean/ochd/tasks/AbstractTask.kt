@@ -35,6 +35,8 @@ abstract class AbstractTask<T>(override val name: String, val cache: TaskCache<T
         }
     }
 
+    override fun isCachingEnabled(): Boolean = cache.enabled
+
     final override fun toString(): String = name
 
     override fun formatTo(buffer: StringBuilder) {

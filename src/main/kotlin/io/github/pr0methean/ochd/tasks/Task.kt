@@ -24,11 +24,13 @@ interface Task<T>: StringBuilderFormattable {
 
     fun andAllDependencies(): Set<Task<*>>
 
-    fun uncachedSubtasks(): Int = if (getNow() != null) {
+    fun uncachedCacheableSubtasks(): Int = if (getNow() != null) {
         0
     } else {
-        andAllDependencies().filter { it.getNow() == null }.size
+        andAllDependencies().filter { it.getNow() == null && it.isCachingEnabled() }.size
     }
+
+    fun isCachingEnabled(): Boolean
 
     fun registerRecursiveDependencies()
 
