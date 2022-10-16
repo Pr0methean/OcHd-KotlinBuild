@@ -30,6 +30,8 @@ import java.util.concurrent.atomic.LongAdder
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
+private val taskOrderComparator = comparingInt(OutputTask::uncachedCacheableSubtasks)
+    .then(comparingInt(OutputTask::cachedSubtasks).reversed())
 private val logger = LogManager.getRootLogger()
 private const val PARALLELISM = 2
 
@@ -114,9 +116,7 @@ private suspend fun runAll(
         val tasksToAttempt = remainingTasks.toMutableSet()
         while (tasksToAttempt.isNotEmpty()) {
             yield()
-            val task = tasksToAttempt.minWithOrNull(
-                comparingInt(OutputTask::uncachedCacheableSubtasks)
-                    .then(comparingInt(OutputTask::cachedSubtasks).reversed()))!!
+            val task = tasksToAttempt.minWithOrNull(taskOrderComparator)!!
             if (tasksToAttempt.remove(task)) {
                 pendingTasks.add(scope.launch {
                     logger.info("Joining {}", task)
