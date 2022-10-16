@@ -246,4 +246,11 @@ abstract class AbstractTask<T>(override val name: String, val cache: TaskCache<T
         return this
     }
 
+    private val supervisorJob = SupervisorJob()
+    override suspend fun createCoroutineScope(): CoroutineScope = CoroutineScope(
+        currentCoroutineContext()
+            .plus(CoroutineName(name))
+            .plus(supervisorJob)
+    )
+
 }

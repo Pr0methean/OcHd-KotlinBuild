@@ -2,7 +2,6 @@ package io.github.pr0methean.ochd
 
 import com.github.benmanes.caffeine.cache.Caffeine
 import com.google.common.collect.ConcurrentHashMultiset
-import io.github.pr0methean.ochd.tasks.AbstractImageTask
 import io.github.pr0methean.ochd.tasks.AnimationTask
 import io.github.pr0methean.ochd.tasks.ImageStackingTask
 import io.github.pr0methean.ochd.tasks.ImageTask
@@ -10,7 +9,6 @@ import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.tasks.RepaintTask
 import io.github.pr0methean.ochd.tasks.SvgImportTask
 import io.github.pr0methean.ochd.tasks.Task
-import io.github.pr0methean.ochd.tasks.await
 import io.github.pr0methean.ochd.tasks.caching.SemiStrongTaskCache
 import io.github.pr0methean.ochd.tasks.caching.SoftTaskCache
 import io.github.pr0methean.ochd.tasks.caching.TaskCache
@@ -111,12 +109,7 @@ class TaskPlanningContext(
             return deduplicate(task.layers.layers[0])
         }
         if (task !is ImageTask) {
-            logger.warn("Tried to deduplicate a task that's not an ImageTask")
-            stats.dedupeFailures.add(task::class.simpleName ?: "[unnamed non-ImageTask class]")
-            return object: AbstractImageTask(task.name, createStandardTaskCache(task.name), stats) {
-                override suspend fun perform(): Image = task.await().getOrThrow()
-                override val directDependencies: List<Task<*>> = listOf(task)
-            }
+            throw RuntimeException("Tried to deduplicate a task that wasn't an ImageTask")
         }
         val className = task::class.simpleName ?: "[unnamed class]"
         val deduped = taskDeduplicationMap.computeIfAbsent(task) {

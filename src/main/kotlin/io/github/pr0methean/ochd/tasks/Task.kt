@@ -1,11 +1,8 @@
 package io.github.pr0methean.ochd.tasks
 
-import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
-import kotlinx.coroutines.currentCoroutineContext
 import org.apache.logging.log4j.util.StringBuilderFormattable
 
 interface Task<T>: StringBuilderFormattable {
@@ -40,11 +37,7 @@ interface Task<T>: StringBuilderFormattable {
 
     val directDependencies: Iterable<Task<*>>
 
-    suspend fun createCoroutineScope(): CoroutineScope = CoroutineScope(
-        currentCoroutineContext()
-            .plus(CoroutineName(name))
-            .plus(SupervisorJob())
-    )
+    suspend fun createCoroutineScope(): CoroutineScope
 
     val totalSubtasks: Int
 }
