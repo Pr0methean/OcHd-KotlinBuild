@@ -20,9 +20,9 @@ import kotlin.Result.Companion.success
 
 private val logger = LogManager.getLogger("ImageStackingTask")
 class ImageStackingTask(val layers: LayerList,
-                        override val name: String,
+                        name: String,
                         cache: TaskCache<Image>,
-                        override val stats: ImageProcessingStats) : AbstractImageTask(name, cache ,stats) {
+                        stats: ImageProcessingStats) : AbstractImageTask(name, cache, stats) {
     init {
         if (layers.layers.isEmpty()) {
             throw IllegalArgumentException("Empty layer list")

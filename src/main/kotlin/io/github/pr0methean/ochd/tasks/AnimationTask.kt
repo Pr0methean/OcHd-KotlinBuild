@@ -12,9 +12,9 @@ import java.util.*
 
 class AnimationTask(
     val frames: List<ImageTask>,
-    val width: Int, val height: Int, override val name: String,
+    val width: Int, val height: Int, name: String,
     cache: TaskCache<Image>,
-    override val stats: ImageProcessingStats
+    stats: ImageProcessingStats
 ): AbstractImageTask(name, cache, stats) {
     private val totalHeight = height * frames.size
 
