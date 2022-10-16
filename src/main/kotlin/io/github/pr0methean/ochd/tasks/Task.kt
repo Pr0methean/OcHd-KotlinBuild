@@ -22,17 +22,23 @@ interface Task<T>: StringBuilderFormattable {
 
     fun removeDirectDependentTask(task: Task<*>)
 
-    fun andAllDependencies(): Set<Task<*>>
-
     fun uncachedCacheableSubtasks(): Int = if (getNow() != null) {
         0
     } else {
-        andAllDependencies().filter { it.getNow() == null && it.isCachingEnabled() }.size
+        var total = 1
+        for (task in directDependencies) {
+            total += task.uncachedCacheableSubtasks()
+        }
+        total
     }
+
+    fun cachedSubtasks(): Int
 
     fun isCachingEnabled(): Boolean
 
     fun registerRecursiveDependencies()
+
+    val directDependencies: Iterable<Task<*>>
 
     suspend fun createCoroutineScope(): CoroutineScope = CoroutineScope(
         currentCoroutineContext()

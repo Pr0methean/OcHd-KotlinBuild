@@ -114,8 +114,8 @@ private suspend fun runAll(
         while (tasksToAttempt.isNotEmpty()) {
             yield()
             val task = tasksToAttempt.minWithOrNull(
-                compareByDescending(OutputTask::isCommandBlock)
-                    .thenBy (OutputTask::uncachedCacheableSubtasks))!!
+                compareBy(OutputTask::uncachedCacheableSubtasks)
+                    .thenByDescending(OutputTask::cachedSubtasks))!!
             if (tasksToAttempt.remove(task)) {
                 pendingTasks.add(scope.launch {
                     logger.info("Joining {}", task)

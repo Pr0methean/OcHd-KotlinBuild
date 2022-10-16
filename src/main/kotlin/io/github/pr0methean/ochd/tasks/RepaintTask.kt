@@ -27,10 +27,6 @@ class RepaintTask(
         }
     }
 
-    override fun andAllDependencies(): Set<Task<*>> {
-        return base.andAllDependencies().plus(this)
-    }
-
     override fun uncachedCacheableSubtasks(): Int {
         if (getNow() != null) {
             return 0
@@ -98,10 +94,7 @@ class RepaintTask(
         return snapshot
     }
 
-    override fun registerRecursiveDependencies() {
-        base.addDirectDependentTask(this)
-        base.registerRecursiveDependencies()
-    }
+    override val directDependencies: List<ImageTask> = listOf(base)
 
     override fun equals(other: Any?): Boolean {
         return (this === other) || (other is RepaintTask
