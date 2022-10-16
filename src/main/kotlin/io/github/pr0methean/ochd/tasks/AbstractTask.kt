@@ -253,5 +253,5 @@ abstract class AbstractTask<T>(override val name: String, val cache: TaskCache<T
             .plus(supervisorJob)
     )
 
-    override fun isStartedOrAvailable(): Boolean = getNow() != null || coroutine.get()?.isActive == true
+    override fun isStartedOrAvailable(): Boolean = coroutine.get()?.isActive == true || getNow() != null
 }
