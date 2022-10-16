@@ -23,6 +23,7 @@ import kotlinx.coroutines.yield
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox.box
 import java.nio.file.Paths
+import java.util.Comparator.comparingInt
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.atomic.LongAdder
@@ -114,8 +115,8 @@ private suspend fun runAll(
         while (tasksToAttempt.isNotEmpty()) {
             yield()
             val task = tasksToAttempt.minWithOrNull(
-                compareBy(OutputTask::uncachedCacheableSubtasks)
-                    .thenByDescending(OutputTask::cachedSubtasks))!!
+                comparingInt(OutputTask::uncachedCacheableSubtasks)
+                    .then(comparingInt(OutputTask::cachedSubtasks).reversed()))!!
             if (tasksToAttempt.remove(task)) {
                 pendingTasks.add(scope.launch {
                     logger.info("Joining {}", task)
