@@ -22,7 +22,7 @@ interface Task<T>: StringBuilderFormattable {
 
     fun removeDirectDependentTask(task: Task<*>)
 
-    fun uncachedCacheableSubtasks(): Int = if (getNow() != null) {
+    fun uncachedCacheableSubtasks(): Int = if (getNow() != null || !isCachingEnabled()) {
         0
     } else {
         var total = 1
