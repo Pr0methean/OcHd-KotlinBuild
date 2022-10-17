@@ -7,7 +7,8 @@ import org.apache.logging.log4j.util.StringBuilderFormattable
 
 data class LayerList(val layers: List<ImageTask>, val background: Paint):
         StringBuilderFormattable {
-    override fun toString(): String = StringBuilder().also {formatTo(it)}.toString()
+    private val toString by lazy {StringBuilder().also {formatTo(it)}.toString()}
+    override fun toString(): String = toString
     override fun formatTo(buffer: StringBuilder) {
         if (background != TRANSPARENT) {
             buffer.append(background).append(", ")

@@ -20,17 +20,9 @@ class PngCompressionTask(
         packed
     }
 }) {
-    override fun equals(other: Any?): Boolean {
-        return (this === other) || (other is PngCompressionTask && other.base == base)
-    }
-
     override suspend fun removeDirectDependentTask(task: Task<*>) {
         super.removeDirectDependentTask(task)
         // Relies on the fact that a PngCompressionTask has only one consumer
         base.removeDirectDependentTask(this)
-    }
-
-    override fun hashCode(): Int {
-        return base.hashCode() + 17
     }
 }

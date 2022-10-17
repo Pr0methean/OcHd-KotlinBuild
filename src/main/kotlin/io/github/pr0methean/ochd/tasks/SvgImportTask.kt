@@ -50,10 +50,9 @@ class SvgImportTask(
     override fun equals(other: Any?): Boolean {
         return (other === this) || other is SvgImportTask && other.file == file
     }
+    private val hashCode by lazy {file.hashCode()}
 
-    override fun hashCode(): Int {
-        return file.hashCode()
-    }
+    override fun hashCode(): Int = hashCode
 
     override suspend fun perform(): Image {
         stats.onTaskLaunched("SvgImportTask", name)

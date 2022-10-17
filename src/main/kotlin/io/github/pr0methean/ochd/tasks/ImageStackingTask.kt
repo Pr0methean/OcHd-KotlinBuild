@@ -23,6 +23,7 @@ class ImageStackingTask(val layers: LayerList,
                         name: String,
                         cache: TaskCache<Image>,
                         stats: ImageProcessingStats) : AbstractImageTask(name, cache, stats) {
+    private val hashCode by lazy {layers.hashCode() + 37}
     init {
         if (layers.layers.isEmpty()) {
             throw IllegalArgumentException("Empty layer list")
@@ -49,7 +50,7 @@ class ImageStackingTask(val layers: LayerList,
                 && other.layers == layers)
     }
 
-    override fun hashCode(): Int = layers.hashCode() + 37
+    override fun hashCode(): Int = hashCode
 
     @Suppress("DeferredResultUnused")
     override suspend fun perform(): Image {
