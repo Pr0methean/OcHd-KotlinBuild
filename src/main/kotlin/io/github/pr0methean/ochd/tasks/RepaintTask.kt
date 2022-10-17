@@ -113,6 +113,6 @@ class RepaintTask(
                 && other.paint == paint
                 && other.alpha == alpha)
     }
-    private val hashCode by lazy {Objects.hash(base, paint, alpha)}
+    private val hashCode = Objects.hash(base, paint, alpha)
     override fun hashCode(): Int = hashCode
 }
