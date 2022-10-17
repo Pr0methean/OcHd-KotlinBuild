@@ -15,9 +15,9 @@ interface Task<T>: StringBuilderFormattable {
     suspend fun clearFailure()
     suspend fun mergeWithDuplicate(other: Task<T>): Task<T>
 
-    fun addDirectDependentTask(task: Task<*>)
+    suspend fun addDirectDependentTask(task: Task<*>)
 
-    fun removeDirectDependentTask(task: Task<*>)
+    suspend fun removeDirectDependentTask(task: Task<*>)
 
     fun unstartedCacheableSubtasks(): Int = if (isStartedOrAvailable() || !isCachingEnabled()) {
         0
@@ -35,7 +35,7 @@ interface Task<T>: StringBuilderFormattable {
 
     fun isStartedOrAvailable(): Boolean
 
-    fun registerRecursiveDependencies()
+    suspend fun registerRecursiveDependencies()
 
     val directDependencies: Iterable<Task<*>>
 

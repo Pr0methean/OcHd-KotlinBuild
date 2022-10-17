@@ -16,10 +16,10 @@ import kotlin.Result.Companion.failure
 val abstractTaskLogger: Logger = LogManager.getLogger("AbstractTask")
 private val cancelBecauseReplacing = CancellationException("Being replaced")
 abstract class AbstractTask<T>(final override val name: String, val cache: TaskCache<T>) : Task<T> {
-    val directDependentTasks: MutableSet<Task<*>> = newSetFromMap(WeakHashMap())
     val mutex: Mutex = Mutex()
-    override fun addDirectDependentTask(task: Task<*>): Unit = synchronized(directDependentTasks)
-    {
+    @GuardedBy("mutex")
+    val directDependentTasks: MutableSet<Task<*>> = newSetFromMap(WeakHashMap())
+    override suspend fun addDirectDependentTask(task: Task<*>): Unit = mutex.withLock {
         directDependentTasks.add(task)
         if (directDependentTasks.size >= 2 && !cache.enabled && cache !is NoopTaskCache) {
             abstractTaskLogger.info("Enabling caching for {}", name)
@@ -27,7 +27,7 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
         }
     }
 
-    override fun removeDirectDependentTask(task: Task<*>): Unit = synchronized(directDependentTasks) {
+    override suspend fun removeDirectDependentTask(task: Task<*>): Unit = mutex.withLock {
         directDependentTasks.remove(task)
         if (directDependentTasks.isEmpty() && cache.enabled) {
             abstractTaskLogger.info("Disabling caching for {}", name)
@@ -54,7 +54,7 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
         return total
     }
 
-    override fun registerRecursiveDependencies() {
+    override suspend fun registerRecursiveDependencies(): Unit = mutex.withLock {
         directDependencies.forEach {
             it.addDirectDependentTask(this@AbstractTask)
             it.registerRecursiveDependencies()

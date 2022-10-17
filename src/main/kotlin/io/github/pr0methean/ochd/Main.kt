@@ -2,7 +2,6 @@ package io.github.pr0methean.ochd
 
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
 import io.github.pr0methean.ochd.tasks.OutputTask
-import io.github.pr0methean.ochd.tasks.Task
 import io.github.pr0methean.ochd.tasks.await
 import io.github.pr0methean.ochd.tasks.doJfx
 import javafx.application.Platform
@@ -80,10 +79,11 @@ suspend fun main(args: Array<String>) {
     val time = measureNanoTime {
         stats.onTaskLaunched("Build task graph", "Build task graph")
         val tasks = ALL_MATERIALS.outputTasks(ctx).toList()
-        tasks.forEach(Task<*>::registerRecursiveDependencies)
+        val depsBuildTasks = tasks.map {task -> scope.launch {task.registerRecursiveDependencies()}}
         val cbTasks = tasks.filter(OutputTask::isCommandBlock)
         val nonCbTasks = tasks.filterNot(OutputTask::isCommandBlock)
         val hugeTaskCache = ctx.hugeTileBackingCache
+        depsBuildTasks.joinAll()
         stats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupAndCopyMetadata.join()
         System.gc()
