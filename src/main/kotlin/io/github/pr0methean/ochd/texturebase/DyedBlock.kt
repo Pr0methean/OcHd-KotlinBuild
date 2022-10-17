@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicReference
 abstract class DyedBlock(val name: String): Material {
     abstract suspend fun LayerListBuilder.createTextureLayers(color: Color)
     abstract suspend fun createSharedLayersTask(ctx: TaskPlanningContext): ImageTask
-    var sharedLayersTaskRef = AtomicReference<ImageTask?>(null)
+    protected var sharedLayersTaskRef: AtomicReference<ImageTask?> = AtomicReference(null)
 
     override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<OutputTask> = flow {
         sharedLayersTaskRef.compareAndSet(null, createSharedLayersTask(ctx))
