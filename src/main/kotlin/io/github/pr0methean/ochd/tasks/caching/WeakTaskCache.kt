@@ -4,11 +4,11 @@ import java.lang.ref.WeakReference
 
 @Suppress("unused")
 open class WeakTaskCache<T>(name: String): AbstractTaskCache<T>(name) {
-    @Volatile var result: WeakReference<Result<T>?> = WeakReference<Result<T>?>(null)
+    @Volatile var result: WeakReference<out Result<T>?> = nullRef
     override fun disable() {}
 
     override fun clear() {
-        result = WeakReference(null)
+        result.clear()
     }
 
     override fun getNow(): Result<T>? = result.get()
