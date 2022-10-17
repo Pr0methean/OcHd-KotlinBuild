@@ -153,14 +153,12 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
     @Suppress("DeferredResultUnused")
     suspend inline fun emit(result: Result<T>, source: Deferred<Result<T>>?) {
         abstractTaskLogger.debug("Locking {} to emit {}", this, result)
-        synchronized (directDependentTasks) {
+        mutex.withLock(result) {
             if (cache.enabled && directDependentTasks.size < 2) {
                 abstractTaskLogger.info("Disabling caching for {} while emitting result", this)
                 cache.enabled = false
             }
-        }
-        cache.set(result)
-        mutex.withLock(result) {
+            cache.set(result)
             if (coroutine.compareAndSet(source, null)) {
                 coroutineHandle.getAndSet(null)?.dispose()
             }
