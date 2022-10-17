@@ -18,7 +18,7 @@ abstract class AbstractImageTask(name: String, cache: TaskCache<Image>,
 
     private val opaqueRepaints = Collections.newSetFromMap(WeakHashMap<ImageTask,Boolean>())
 
-    override fun opaqueRepaints(): Iterable<ImageTask> = opaqueRepaints.toSet()
+    override fun opaqueRepaints(): Iterable<ImageTask> = opaqueRepaints.toList()
 
     override fun addOpaqueRepaint(repaint: ImageTask) {
         opaqueRepaints.add(repaint)
