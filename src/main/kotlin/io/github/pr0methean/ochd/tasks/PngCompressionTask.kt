@@ -24,8 +24,9 @@ class PngCompressionTask(
         return (this === other) || (other is PngCompressionTask && other.base == base)
     }
 
-    override fun removeDirectDependentTask(task: Task<*>) {
+    override suspend fun removeDirectDependentTask(task: Task<*>) {
         super.removeDirectDependentTask(task)
+        // Relies on the fact that a PngCompressionTask has only one consumer
         base.removeDirectDependentTask(this)
     }
 

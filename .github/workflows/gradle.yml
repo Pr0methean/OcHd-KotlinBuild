@@ -14,7 +14,9 @@ on:
   pull_request:
     branches: [ "*" ]
   schedule:
-    - cron: "0 0 * * *"
+    # TODO: Switch from hourly back to nightly once we have enough data on which branch performs better
+    - cron: "0 * * * *"
+      branches: [ "main" "parallelGcWithTuning" ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
