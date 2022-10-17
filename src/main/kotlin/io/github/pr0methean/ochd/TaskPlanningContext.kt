@@ -91,7 +91,7 @@ class TaskPlanningContext(
         svgTasks = builder.toMap()
     }
 
-    suspend fun deduplicate(task: Task<Image>): ImageTask {
+    tailrec suspend fun deduplicate(task: Task<Image>): ImageTask {
         if (task is SvgImportTask) {
             // svgTasks is populated eagerly
             val name = task.name
