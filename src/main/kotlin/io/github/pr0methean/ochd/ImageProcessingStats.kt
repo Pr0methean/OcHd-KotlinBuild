@@ -86,7 +86,7 @@ fun CacheStats.log(name: String, estimatedSize: Long) {
             box(hitCount()), box(missCount()), box(evictionCount()), box(estimatedSize))
 }
 
-class ImageProcessingStats(val backingCache: Cache<SemiStrongTaskCache<*>, Result<*>>) {
+class ImageProcessingStats(private val backingCache: Cache<SemiStrongTaskCache<*>, Result<*>>) {
     private val taskLaunches: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val taskCompletions: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val dedupeSuccesses: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
