@@ -38,13 +38,14 @@ open class TransformingTask<T, U>(
 
     override fun equals(other: Any?): Boolean {
         return (other === this) || (other is TransformingTask<*, *>
+                && javaClass == other.javaClass
                 && transform.javaClass == other.transform.javaClass
                 && base == other.base)
     }
 
-    override fun hashCode(): Int {
-        return Objects.hash(javaClass, base)
-    }
+    private val hashCode by lazy {Objects.hash(javaClass, transform, base)}
+
+    override fun hashCode(): Int = hashCode
 
     @Suppress("UNCHECKED_CAST")
     override suspend fun mergeWithDuplicate(other: Task<U>): Task<U> {

@@ -17,6 +17,7 @@ class AnimationTask(
     stats: ImageProcessingStats
 ): AbstractImageTask(name, cache, stats) {
     private val totalHeight = height * frames.size
+    private val hashCode: Int by lazy {Objects.hash(frames, width, height)}
 
     override suspend fun clearFailure() {
         frames.asFlow().collect(Task<Image>::clearFailure)
@@ -26,14 +27,12 @@ class AnimationTask(
     override fun equals(other: Any?): Boolean {
         return (this === other) || (
                 other is AnimationTask
-                        && other.frames == frames
                         && other.width == width
-                        && other.height == height)
+                        && other.height == height
+                        && other.frames == frames)
     }
 
-    override fun hashCode(): Int {
-        return Objects.hash(frames, width, height)
-    }
+    override fun hashCode(): Int = hashCode
 
     override suspend fun mergeWithDuplicate(other: Task<Image>): ImageTask {
         val deduped = super.mergeWithDuplicate(other)
