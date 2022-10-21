@@ -14,8 +14,8 @@ on:
   pull_request:
     branches: [ "*" ]
   schedule:
-    # TODO: Switch from hourly back to nightly once we have enough data on which branch performs better
-    - cron: "15 * * * *"
+    # TODO: Switch from half-hourly back to nightly once we have enough data on which branch performs better
+    - cron: "15,45 * * * *"
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
