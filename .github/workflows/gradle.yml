@@ -72,7 +72,7 @@ jobs:
         -XX:+UseNUMA -XX:ConcGCThreads=2 -XX:ParallelGCThreads=2 -XX:+AlwaysPreTouch -XX:+UseTransparentHugePages
         -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintFlagsFinal -XX:StringDeduplicationAgeThreshold=1
         -Dlog4j2.contextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector
-        -Dcaffeine.tracing.file=caffeine-trace.txt -Dcaffeine.tracing.format=text
+        -Dcaffeine.tracing.file=caffeine-trace.txt -Dcaffeine.tracing.format=text -Dcaffeine.tracing.enabled=true
         -jar OcHd-KotlinBuild-1.0-SNAPSHOT.jar ${{ matrix.size }}
 
       continue-on-error: true
