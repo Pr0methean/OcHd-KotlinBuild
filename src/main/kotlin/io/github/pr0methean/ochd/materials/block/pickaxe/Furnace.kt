@@ -36,7 +36,7 @@ object Furnace: Material {
         emit(ctx.out(blastFurnaceSide, "block/blast_furnace"))
         val blastFurnaceFrontBase = ctx.stack {
             copy(blastFurnaceSide)
-            layer("commandBlockSquare", OreBase.stoneExtremeHighlight)
+            layer("craftingGridSquare", OreBase.stoneExtremeHighlight)
         }
         emit(ctx.out({
             copy(blastFurnaceFrontBase)

@@ -128,7 +128,7 @@ enum class OverworldWood(
             copy {
                 background(Color.WHITE)
                 layer("borderSolidExtraThick", color)
-                layer("commandBlockSquare", highlight)
+                layer("craftingGridSquare", highlight)
                 layer("craftingGridSpaces", Color.WHITE)
                 layer("borderSolid", shadow)
             }
@@ -139,7 +139,7 @@ enum class OverworldWood(
             copy {
                 background(Color.WHITE)
                 layer("borderSolidExtraThick", color)
-                layer("commandBlockSquare", highlight)
+                layer("craftingGridSquare", highlight)
                 layer("craftingGridSpaces", Color.WHITE)
                 layer("borderSolid", shadow)
             }
@@ -150,7 +150,7 @@ enum class OverworldWood(
         override suspend fun LayerListBuilder.doorBottom() {
             background(highlight)
             layer("borderSolidExtraThick", color)
-            layer("commandBlockSquare", shadow)
+            layer("craftingGridSquare", shadow)
             layer("craftingGridSpaces", highlight)
             layer("borderSolid", shadow)
             layer("doorHingesBig", STONE.shadow)
