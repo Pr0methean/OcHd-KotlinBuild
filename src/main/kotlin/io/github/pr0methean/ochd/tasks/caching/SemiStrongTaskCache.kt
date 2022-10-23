@@ -4,7 +4,7 @@ import com.github.benmanes.caffeine.cache.Cache
 import java.lang.ref.Cleaner
 
 private val CLEANER = Cleaner.create { runnable ->
-    val thread = Thread(runnable)
+    val thread = Thread.ofVirtual().start(runnable)
     thread.priority = Thread.MAX_PRIORITY
     thread
 }
