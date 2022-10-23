@@ -3,7 +3,11 @@ package io.github.pr0methean.ochd.tasks.caching
 import com.github.benmanes.caffeine.cache.Cache
 import java.lang.ref.Cleaner
 
-private val CLEANER = Cleaner.create()
+private val CLEANER = Cleaner.create { runnable ->
+    val thread = Thread(runnable)
+    thread.priority = Thread.MAX_PRIORITY
+    thread
+}
 class SemiStrongTaskCache<T>(private val baseCache: AbstractTaskCache<T>, private val backingCache: Cache<SemiStrongTaskCache<*>, Result<*>>):
         AbstractTaskCache<T>(baseCache.name) {
     @Suppress("UNCHECKED_CAST")
