@@ -1,7 +1,9 @@
 package io.github.pr0methean.ochd.tasks.caching
 
 import com.github.benmanes.caffeine.cache.Cache
+import java.lang.ref.Cleaner
 
+private val CLEANER = Cleaner.create()
 class SemiStrongTaskCache<T>(private val baseCache: AbstractTaskCache<T>, private val backingCache: Cache<SemiStrongTaskCache<*>, Result<*>>):
         AbstractTaskCache<T>(baseCache.name) {
     @Suppress("UNCHECKED_CAST")
@@ -20,6 +22,10 @@ class SemiStrongTaskCache<T>(private val baseCache: AbstractTaskCache<T>, privat
     }
 
     override fun enabledSet(value: Result<T>) {
+        CLEANER.register(this, backingCache::cleanUp)
+        if (baseCache is WeakTaskCache || baseCache is SoftTaskCache) {
+            CLEANER.register(value, backingCache::cleanUp)
+        }
         baseCache.enabledSet(value)
         backingCache.put(this, value)
     }
