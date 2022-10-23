@@ -72,7 +72,7 @@ jobs:
         -XX:+UseNUMA -XX:ConcGCThreads=2 -XX:ParallelGCThreads=2 -XX:+AlwaysPreTouch -XX:+UseTransparentHugePages
         -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintFlagsFinal -XX:StringDeduplicationAgeThreshold=1
         -Dlog4j2.contextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector
-        -jar OcHd-KotlinBuild-1.0-SNAPSHOT.jar ${{ matrix.size }}
+        -jar OcHd-KotlinBuild-1.0-SNAPSHOT.jar ${{ matrix.size }} --enable-preview
 
       continue-on-error: true
       timeout-minutes: 60
