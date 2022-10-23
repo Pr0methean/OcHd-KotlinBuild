@@ -62,7 +62,7 @@ class TaskPlanningContext(
     val stats: ImageProcessingStats = ImageProcessingStats(backingCache)
 
     fun <T> createStandardTaskCache(name: String): TaskCache<T> {
-        if (name.contains("4x") || name.contains("commandBlockGrid")) {
+        if (name.contains("4x") || name.contains("commandBlock")) {
             // Tasks using these images are too large for the main cache to manage
             return SemiStrongTaskCache(WeakTaskCache(name), hugeTileBackingCache)
         }
