@@ -29,7 +29,7 @@ enum class SimpleAxeBlock: SingleTextureMaterial, ShadowHighlightMaterial, Block
         override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("waves", highlight)
-            layer("commandBlockSquare", shadow)
+            layer("craftingGridSquare", shadow)
             layer("craftingGridSpaces", color)
             layer("borderSolid", OverworldWood.DARK_OAK.color)
             layer("cornersTri", highlight)
