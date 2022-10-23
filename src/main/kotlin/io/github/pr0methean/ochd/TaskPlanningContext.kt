@@ -32,7 +32,7 @@ private val logger = LogManager.getLogger("TaskPlanningContext")
 // Main Caffeine cache will be able to contain this * 16 MPx
 private const val MINIMUM_CACHE_4096x4096 = 18L
 // Huge-tile Caffeine cache will be able to contain this * 64 MPx
-private const val MINIMUM_CACHE_16384x4096 = 3L
+private const val MINIMUM_CACHE_16384x4096 = 2L
 
 /**
  * Holds info needed to build and deduplicate the task graph. Needs to become unreachable once the graph is built.
