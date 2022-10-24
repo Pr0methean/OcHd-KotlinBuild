@@ -32,7 +32,7 @@ class SemiStrongTaskCache<T>(private val baseCache: AbstractTaskCache<T>, privat
             backingCacheRef.get()?.cleanUp()
         }
         if (baseCache is WeakTaskCache || baseCache is SoftTaskCache) {
-            CLEANER.register(this) {
+            CLEANER.register(value) {
                 backingCacheRef.get()?.cleanUp()
             }
         }
