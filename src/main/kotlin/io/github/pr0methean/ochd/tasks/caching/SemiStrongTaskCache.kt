@@ -2,6 +2,7 @@ package io.github.pr0methean.ochd.tasks.caching
 
 import com.github.benmanes.caffeine.cache.Cache
 import java.lang.ref.Cleaner
+import java.lang.ref.WeakReference
 
 private val CLEANER = Cleaner.create { runnable ->
     val thread = Thread.ofVirtual().unstarted(runnable)
@@ -26,9 +27,14 @@ class SemiStrongTaskCache<T>(private val baseCache: AbstractTaskCache<T>, privat
     }
 
     override fun enabledSet(value: Result<T>) {
-        CLEANER.register(this, backingCache::cleanUp)
+        val backingCacheRef = WeakReference(backingCache)
+        CLEANER.register(this) {
+            backingCacheRef.get()?.cleanUp()
+        }
         if (baseCache is WeakTaskCache || baseCache is SoftTaskCache) {
-            CLEANER.register(value, backingCache::cleanUp)
+            CLEANER.register(this) {
+                backingCacheRef.get()?.cleanUp()
+            }
         }
         baseCache.enabledSet(value)
         backingCache.put(this, value)
