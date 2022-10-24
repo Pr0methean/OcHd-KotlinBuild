@@ -35,7 +35,7 @@ jobs:
         java-version: '19'
         distribution: 'corretto'
     - name: Build with Gradle
-      uses: gradle/gradle-build-action@fd32ae908111fe31afa48827bd1ee909540aa971
+      uses: gradle/gradle-build-action@3fbe033aaae657f011f88f29be9e65ed26bd29ef
       with:
         gradle-version: '8.0-milestone-2'
         arguments: jar --scan --warning-mode all
