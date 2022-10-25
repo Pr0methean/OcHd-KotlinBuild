@@ -36,7 +36,7 @@ class SemiStrongTaskCache<T>(private val baseCache: AbstractTaskCache<T>, privat
         if (cleanupScheduled.compareAndSet(false, true)) {
             CLEANER.register(this, cleanUpCacheRunnable)
         }
-        if (value.isSuccess && (baseCache is WeakTaskCache || baseCache is SoftTaskCache)) {
+        if (baseCache is WeakTaskCache || baseCache is SoftTaskCache) {
             CLEANER.register(value, cleanUpCacheRunnable)
         }
         baseCache.enabledSet(value)
