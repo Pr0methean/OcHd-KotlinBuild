@@ -37,7 +37,7 @@ repositories {
 
 val log4jVersion = "2.19.0"
 val kotlinXCoroutinesVersion = "1.6.4"
-val batikVersion = "1.15"
+val batikVersion = "1.16"
 
 dependencies {
     testImplementation(kotlin("test"))
