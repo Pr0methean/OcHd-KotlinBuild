@@ -29,8 +29,8 @@ import java.util.concurrent.atomic.LongAdder
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
-private val taskOrderComparator = comparingInt(OutputTask::unstartedCacheableSubtasks)
-    .then(comparingInt(OutputTask::cachedSubtasks).reversed())
+private val taskOrderComparator = comparingInt(OutputTask::cachedSubtasks).reversed()
+    .then(comparingInt(OutputTask::unstartedCacheableSubtasks))
 private val logger = LogManager.getRootLogger()
 private const val PARALLELISM = 2
 
