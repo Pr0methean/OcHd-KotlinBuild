@@ -30,7 +30,7 @@ import kotlin.system.measureNanoTime
 private val taskOrderComparator = comparingInt(OutputTask::cachedSubtasks).reversed()
     .then(comparingInt(OutputTask::unstartedCacheableSubtasks))
 private val logger = LogManager.getRootLogger()
-private const val PARALLELISM = 4
+private const val PARALLELISM = 3
 
 @OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
 @Suppress("UnstableApiUsage", "DeferredResultUnused")
