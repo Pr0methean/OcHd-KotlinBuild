@@ -64,7 +64,7 @@ jobs:
       with:
         name: OcHD-App
     - name: Enable Huge Pages
-      run: echo 3072 > /sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages
+      run: sudo echo 3072 > /sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages
     - name: Make Textures
       id: run
       run: >
