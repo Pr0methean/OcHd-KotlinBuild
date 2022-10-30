@@ -63,13 +63,15 @@ jobs:
       uses: actions/download-artifact@v3
       with:
         name: OcHD-App
+    - name: Enable Huge Pages
+      run: echo 3072 > /sys/kernel/mm/hugepages/hugepages-2048kB/nr_hugepages
     - name: Make Textures
       id: run
       run: >
         java -Dprism.maxvram=2560m -Dglass.platform=Monocle -Dmonocle.platform=Headless -Dquantum.multithreaded=true 
         -XX:+UseStringDeduplication -Xms4G -Xmx4G -XX:+UnlockExperimentalVMOptions -XX:+UseZGC
         '-Xlog:gc*=debug,gc+stats=trace,gc+heap=trace,gc+heap+exit=trace,gc+metaspace=trace,gc+nmethod=info,safepoint+stats=info' 
-        -XX:+UseNUMA -XX:ConcGCThreads=2 -XX:ParallelGCThreads=2 -XX:+AlwaysPreTouch -XX:+UseTransparentHugePages
+        -XX:+UseNUMA -XX:ConcGCThreads=2 -XX:ParallelGCThreads=2 -XX:+AlwaysPreTouch -XX:+UseLargePages
         -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintFlagsFinal -XX:StringDeduplicationAgeThreshold=1
         -Dlog4j2.contextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector --enable-preview
         -jar OcHd-KotlinBuild-1.0-SNAPSHOT.jar ${{ matrix.size }}
