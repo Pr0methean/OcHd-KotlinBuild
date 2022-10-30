@@ -106,31 +106,29 @@ private suspend fun runAll(
     stats: ImageProcessingStats
 ) {
     val remainingTasks = tasks.toMutableSet()
+    val pendingTasks = ConcurrentHashMap.newKeySet<Job>()
+    val tasksToAttempt = remainingTasks.toMutableSet()
     while (remainingTasks.isNotEmpty()) {
-        val pendingTasks = ConcurrentHashMap.newKeySet<Job>()
-        val tasksToAttempt = remainingTasks.toMutableSet()
-        while (remainingTasks.isNotEmpty()) {
-            if (pendingTasks.size >= PARALLELISM) {
-                yield()
-            }
-            val task = tasksToAttempt.minWithOrNull(taskOrderComparator) ?: break
-            if (tasksToAttempt.remove(task)) {
-                pendingTasks.add(scope.launch {
-                    logger.info("Joining {}", task)
-                    tasksRun.increment()
-                    val result = task.await()
-                    if (result.isSuccess) {
-                        logger.info("Joined {} with result of success", task)
-                        task.source.removeDirectDependentTask(task)
-                        remainingTasks.remove(task)
-                    } else {
-                        logger.error("Error in {}", task, result.exceptionOrNull())
-                        stats.recordRetries(1)
-                        task.clearFailure()
-                        tasksToAttempt.add(task)
-                    }
-                })
-            }
+        if (pendingTasks.size >= PARALLELISM) {
+            yield()
+        }
+        val task = tasksToAttempt.minWithOrNull(taskOrderComparator) ?: break
+        if (tasksToAttempt.remove(task)) {
+            pendingTasks.add(scope.launch {
+                logger.info("Joining {}", task)
+                tasksRun.increment()
+                val result = task.await()
+                if (result.isSuccess) {
+                    logger.info("Joined {} with result of success", task)
+                    task.source.removeDirectDependentTask(task)
+                    remainingTasks.remove(task)
+                } else {
+                    logger.error("Error in {}", task, result.exceptionOrNull())
+                    stats.recordRetries(1)
+                    task.clearFailure()
+                    tasksToAttempt.add(task)
+                }
+            })
         }
     }
 }
