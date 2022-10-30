@@ -31,6 +31,7 @@ private val taskOrderComparator = comparingInt(OutputTask::cachedSubtasks).rever
     .then(comparingInt(OutputTask::unstartedCacheableSubtasks))
 private val logger = LogManager.getRootLogger()
 private const val PARALLELISM = 2
+private const val HUGE_TILE_PARALLELISM = 1
 
 @OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
 @Suppress("UnstableApiUsage", "DeferredResultUnused")
@@ -86,11 +87,11 @@ suspend fun main(args: Array<String>) {
         cleanupAndCopyMetadata.join()
         System.gc()
         val tasksRun = LongAdder()
-        runAll(cbTasks, cbScope, tasksRun, stats)
+        runAll(cbTasks, cbScope, tasksRun, stats, HUGE_TILE_PARALLELISM)
         stats.readHugeTileCache(hugeTaskCache)
         hugeTaskCache.invalidateAll()
         System.gc()
-        runAll(nonCbTasks, scope, tasksRun, stats)
+        runAll(nonCbTasks, scope, tasksRun, stats, PARALLELISM)
     }
     stopMonitoring()
     Platform.exit()
@@ -105,13 +106,14 @@ private suspend fun runAll(
     tasks: Iterable<OutputTask>,
     scope: CoroutineScope,
     tasksRun: LongAdder,
-    stats: ImageProcessingStats
+    stats: ImageProcessingStats,
+    parallelism: Int
 ) {
     val remainingTasks = tasks.toMutableSet()
     val pendingTasks = ConcurrentHashMap.newKeySet<ReceiveChannel<Unit>>()
     val tasksToAttempt = remainingTasks.toMutableSet()
     while (remainingTasks.isNotEmpty()) {
-        while (pendingTasks.size >= PARALLELISM || (tasksToAttempt.isEmpty() && remainingTasks.isNotEmpty())) {
+        while (pendingTasks.size >= parallelism || (tasksToAttempt.isEmpty() && remainingTasks.isNotEmpty())) {
             select<Unit> {
                 pendingTasks.map {task -> task.onReceive {pendingTasks.remove(task)}}
             }
