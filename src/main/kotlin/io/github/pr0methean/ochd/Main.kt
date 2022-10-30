@@ -111,7 +111,7 @@ private suspend fun runAll(
     val pendingTasks = ConcurrentHashMap.newKeySet<ReceiveChannel<Unit>>()
     val tasksToAttempt = remainingTasks.toMutableSet()
     while (remainingTasks.isNotEmpty()) {
-        if (pendingTasks.size >= PARALLELISM) {
+        while (pendingTasks.size >= PARALLELISM || tasksToAttempt.isEmpty()) {
             select<Unit> {
                 pendingTasks.map {task -> task.onReceive {pendingTasks.remove(task)}}
             }
