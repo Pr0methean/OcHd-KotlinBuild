@@ -111,7 +111,7 @@ private suspend fun runAll(
         val pendingTasks = ConcurrentHashMap.newKeySet<Job>()
         val tasksToAttempt = remainingTasks.toMutableSet()
         while (remainingTasks.isNotEmpty()) {
-            if (pendingTasks.isNotEmpty()) {
+            if (pendingTasks.size >= PARALLELISM) {
                 yield()
             }
             val task = tasksToAttempt.minWithOrNull(taskOrderComparator) ?: break
