@@ -29,10 +29,10 @@ fun color(web: String): Color = Color.web(web)
 fun color(web: String, alpha: Double): Color = Color.web(web, alpha)
 
 private val logger = LogManager.getLogger("TaskPlanningContext")
-// Main Caffeine cache will be able to contain this * 16 MPx
-private const val MINIMUM_CACHE_4096x4096 = 18L
-// Huge-tile Caffeine cache will be able to contain this * 64 MPx
-private const val MINIMUM_CACHE_16384x4096 = 2L
+// Main Caffeine cache will be able to contain this * 16 MPx * 4 bytes/Px
+private const val MINIMUM_CACHE_4096x4096 = 21L
+// Huge-tile Caffeine cache will be able to contain this * 64 MPx * 4 bytes/Px
+private const val MINIMUM_CACHE_16384x4096 = 3L
 
 /**
  * Holds info needed to build and deduplicate the task graph. Needs to become unreachable once the graph is built.

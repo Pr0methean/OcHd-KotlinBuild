@@ -22,12 +22,14 @@ import kotlinx.coroutines.selects.select
 import org.apache.logging.log4j.LogManager
 import java.nio.file.Paths
 import java.util.Comparator.comparingInt
+import java.util.Comparator.comparingLong
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.LongAdder
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
-private val taskOrderComparator = comparingInt(OutputTask::cachedSubtasks).reversed()
+private val taskOrderComparator = comparingLong(OutputTask::timesFailed)
+    .then(comparingInt(OutputTask::cachedSubtasks).reversed())
     .then(comparingInt(OutputTask::unstartedCacheableSubtasks))
 private val logger = LogManager.getRootLogger()
 private const val PARALLELISM = 2
