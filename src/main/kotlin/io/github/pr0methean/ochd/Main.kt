@@ -17,7 +17,6 @@ import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.plus
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.yield
 import org.apache.logging.log4j.LogManager
 import java.nio.file.Paths
@@ -119,7 +118,7 @@ private suspend fun runAll(
                 pendingTasks.add(scope.launch {
                     logger.info("Joining {}", task)
                     tasksRun.increment()
-                    val result = runBlocking { task.await() }
+                    val result = task.await()
                     if (result.isSuccess) {
                         logger.info("Joined {} with result of success", task)
                         task.source.removeDirectDependentTask(task)
