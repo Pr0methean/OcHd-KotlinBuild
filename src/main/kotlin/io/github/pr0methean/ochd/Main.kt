@@ -10,14 +10,15 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.ReceiveChannel
+import kotlinx.coroutines.channels.produce
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.plus
-import kotlinx.coroutines.yield
+import kotlinx.coroutines.selects.select
 import org.apache.logging.log4j.LogManager
 import java.nio.file.Paths
 import java.util.Comparator.comparingInt
@@ -99,6 +100,7 @@ suspend fun main(args: Array<String>) {
     exitProcess(0)
 }
 
+@OptIn(ExperimentalCoroutinesApi::class)
 private suspend fun runAll(
     tasks: Iterable<OutputTask>,
     scope: CoroutineScope,
@@ -106,15 +108,17 @@ private suspend fun runAll(
     stats: ImageProcessingStats
 ) {
     val remainingTasks = tasks.toMutableSet()
-    val pendingTasks = ConcurrentHashMap.newKeySet<Job>()
+    val pendingTasks = ConcurrentHashMap.newKeySet<ReceiveChannel<Unit>>()
     val tasksToAttempt = remainingTasks.toMutableSet()
     while (remainingTasks.isNotEmpty()) {
         if (pendingTasks.size >= PARALLELISM) {
-            yield()
+            select<Unit> {
+                pendingTasks.map {task -> task.onReceive {pendingTasks.remove(task)}}
+            }
         }
         val task = tasksToAttempt.minWithOrNull(taskOrderComparator) ?: break
         if (tasksToAttempt.remove(task)) {
-            pendingTasks.add(scope.launch {
+            pendingTasks.add(scope.produce {
                 logger.info("Joining {}", task)
                 tasksRun.increment()
                 val result = task.await()
@@ -128,6 +132,7 @@ private suspend fun runAll(
                     task.clearFailure()
                     tasksToAttempt.add(task)
                 }
+                send(Unit)
             })
         }
     }
