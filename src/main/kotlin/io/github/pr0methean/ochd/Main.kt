@@ -22,7 +22,7 @@ import kotlinx.coroutines.selects.select
 import org.apache.logging.log4j.LogManager
 import java.nio.file.Paths
 import java.util.Comparator.comparingInt
-import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentSkipListSet
 import java.util.concurrent.atomic.LongAdder
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
@@ -110,7 +110,7 @@ private suspend fun runAll(
     parallelism: Int
 ) {
     val remainingTasks = tasks.toMutableSet()
-    val pendingTasks = ConcurrentHashMap.newKeySet<ReceiveChannel<Unit>>()
+    val pendingTasks = ConcurrentSkipListSet<ReceiveChannel<Unit>>()
     val tasksToAttempt = remainingTasks.toMutableSet()
     while (remainingTasks.isNotEmpty()) {
         while (pendingTasks.size >= parallelism || (tasksToAttempt.isEmpty() && remainingTasks.isNotEmpty())) {
