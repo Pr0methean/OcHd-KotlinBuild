@@ -42,6 +42,8 @@ interface Task<T>: StringBuilderFormattable {
     suspend fun createCoroutineScope(): CoroutineScope
 
     val totalSubtasks: Int
+
+    fun timesFailed(): Long
 }
 
 @Suppress("DeferredResultUnused")

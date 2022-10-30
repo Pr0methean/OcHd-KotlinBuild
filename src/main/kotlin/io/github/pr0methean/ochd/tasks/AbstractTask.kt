@@ -9,6 +9,7 @@ import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import java.util.*
 import java.util.Collections.newSetFromMap
+import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 import javax.annotation.concurrent.GuardedBy
 import kotlin.Result.Companion.failure
@@ -17,6 +18,7 @@ val SUCCESS_UNIT = Result.success(Unit)
 val abstractTaskLogger: Logger = LogManager.getLogger("AbstractTask")
 private val cancelBecauseReplacing = CancellationException("Being replaced")
 abstract class AbstractTask<T>(final override val name: String, val cache: TaskCache<T>) : Task<T> {
+    val timesFailed: AtomicLong = AtomicLong(0)
     val mutex: Mutex = Mutex()
     @GuardedBy("mutex")
     val directDependentTasks: MutableSet<Task<*>> = newSetFromMap(WeakHashMap())
@@ -153,6 +155,7 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
 
     @Suppress("DeferredResultUnused")
     suspend inline fun emit(result: Result<T>, source: Deferred<Result<T>>?) {
+        timesFailed.incrementAndGet()
         abstractTaskLogger.debug("Locking {} to emit {}", this,
             if (SUCCESS_UNIT == result) "success(Unit)" else result)
         mutex.withLock(result) {
@@ -252,4 +255,6 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
 
     override fun isStartedOrAvailable(): Boolean = coroutine.get()?.run { isActive || isCompleted } == true
             || getNow() != null
+
+    override fun timesFailed(): Long = timesFailed.get()
 }
