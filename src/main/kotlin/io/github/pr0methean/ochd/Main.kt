@@ -20,11 +20,9 @@ import kotlinx.coroutines.plus
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.yield
 import org.apache.logging.log4j.LogManager
-import org.apache.logging.log4j.util.Unbox.box
 import java.nio.file.Paths
 import java.util.Comparator.comparingInt
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.atomic.LongAdder
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
@@ -109,14 +107,15 @@ private suspend fun runAll(
     stats: ImageProcessingStats
 ) {
     val remainingTasks = tasks.toMutableSet()
-    var attemptNumber = 1
     while (remainingTasks.isNotEmpty()) {
         val pendingTasks = ConcurrentHashMap.newKeySet<Job>()
-        val tasksToRetry = ConcurrentLinkedDeque<OutputTask>()
         val tasksToAttempt = remainingTasks.toMutableSet()
-        while (tasksToAttempt.isNotEmpty()) {
-            yield()
-            val task = tasksToAttempt.minWithOrNull(taskOrderComparator)!!
+        while (remainingTasks.isNotEmpty()) {
+            while (pendingTasks.isNotEmpty()) {
+                yield()
+                pendingTasks.joinAll()
+            }
+            val task = tasksToAttempt.minWithOrNull(taskOrderComparator) ?: break
             if (tasksToAttempt.remove(task)) {
                 pendingTasks.add(scope.launch {
                     logger.info("Joining {}", task)
@@ -125,25 +124,15 @@ private suspend fun runAll(
                     if (result.isSuccess) {
                         logger.info("Joined {} with result of success", task)
                         task.source.removeDirectDependentTask(task)
+                        remainingTasks.remove(task)
                     } else {
                         logger.error("Error in {}", task, result.exceptionOrNull())
+                        stats.recordRetries(1)
                         task.clearFailure()
-                        tasksToRetry.add(task)
+                        tasksToAttempt.add(task)
                     }
                 })
             }
-        }
-        remainingTasks.clear()
-        pendingTasks.joinAll()
-        if (tasksToRetry.isNotEmpty()) {
-            remainingTasks.addAll(tasksToRetry)
-            System.gc()
-            logger.warn(
-                "{} tasks succeeded and {} failed on attempt {}",
-                box(tasksRun.sumThenReset() - tasksToRetry.size), box(tasksToRetry.size), box(attemptNumber)
-            )
-            stats.recordRetries(tasksToRetry.size.toLong())
-            attemptNumber++
         }
     }
 }
