@@ -24,7 +24,6 @@ import java.nio.file.Paths
 import java.util.Comparator.comparingInt
 import java.util.Comparator.comparingLong
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.LongAdder
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
@@ -87,13 +86,12 @@ suspend fun main(args: Array<String>) {
         depsBuildTasks.joinAll()
         stats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupAndCopyMetadata.join()
-        val tasksRun = LongAdder()
         System.gc()
-        runAll(cbTasks, cbScope, tasksRun, stats, HUGE_TILE_PARALLELISM)
+        runAll(cbTasks, cbScope, stats, HUGE_TILE_PARALLELISM)
         stats.readHugeTileCache(hugeTaskCache)
         hugeTaskCache.invalidateAll()
         System.gc()
-        runAll(nonCbTasks, scope, tasksRun, stats, PARALLELISM)
+        runAll(nonCbTasks, scope, stats, PARALLELISM)
     }
     stopMonitoring()
     Platform.exit()
@@ -107,7 +105,6 @@ suspend fun main(args: Array<String>) {
 private suspend fun runAll(
     tasks: Iterable<OutputTask>,
     scope: CoroutineScope,
-    tasksRun: LongAdder,
     stats: ImageProcessingStats,
     parallelism: Int
 ) {
@@ -124,7 +121,6 @@ private suspend fun runAll(
         if (tasksToAttempt.remove(task)) {
             pendingTasks.add(scope.produce {
                 logger.info("Joining {}", task)
-                tasksRun.increment()
                 val result = task.await()
                 if (result.isSuccess) {
                     logger.info("Joined {} with result of success", task)
