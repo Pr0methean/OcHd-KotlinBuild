@@ -14,7 +14,6 @@ import java.util.concurrent.atomic.AtomicReference
 import javax.annotation.concurrent.GuardedBy
 import kotlin.Result.Companion.failure
 
-val SUCCESS_UNIT: Result<Unit> = Result.success(Unit)
 val LOGGER: Logger = LogManager.getLogger("AbstractTask")
 private val CANCEL_BECAUSE_REPLACING = CancellationException("Being replaced")
 private val SUPERVISOR_JOB = SupervisorJob()
@@ -157,16 +156,19 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
     @Suppress("DeferredResultUnused")
     suspend inline fun emit(result: Result<T>, source: Deferred<Result<T>>?) {
         if (result.isFailure) {
+            LOGGER.error("Emitting failure for {}", this, result.exceptionOrNull())
             timesFailed.incrementAndGet()
+        } else {
+            LOGGER.debug("Emitting success for {}", this)
         }
-        LOGGER.debug("Locking {} to emit {}", this,
-            if (SUCCESS_UNIT == result) "success(Unit)" else result)
         mutex.withLock(result) {
             if (cache.enabled && directDependentTasks.size < 2) {
                 LOGGER.info("Disabling caching for {} while emitting result", this)
                 cache.enabled = false
+            } else {
+                LOGGER.info("Emitting result of {} into cache", this)
+                cache.set(result)
             }
-            cache.set(result)
             if (coroutine.compareAndSet(source, null)) {
                 coroutineHandle.getAndSet(null)?.dispose()
             }
