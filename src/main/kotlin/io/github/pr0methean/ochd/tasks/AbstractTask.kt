@@ -189,6 +189,9 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
                         oldCoroutine.cancel(CANCEL_BECAUSE_REPLACING)
                     }
                     coroutineHandle.getAndSet(null)?.dispose()
+                    for (dependency in directDependencies) {
+                        dependency.clearFailure()
+                    }
                 } else {
                     LOGGER.debug("No failure to clear for {}", name)
                 }
