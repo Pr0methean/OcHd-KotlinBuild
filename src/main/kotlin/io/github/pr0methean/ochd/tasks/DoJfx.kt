@@ -10,7 +10,7 @@ private val logger = LogManager.getLogger("doJfx")
 @Suppress("BlockingMethodInNonBlockingContext")
 suspend fun <T> doJfx(name: String, jfxCode: CoroutineScope.() -> T): T = try {
     ByteArrayOutputStream().use { errorCatcher ->
-        abstractTaskLogger.info("Starting JFX task: {}", name)
+        LOGGER.info("Starting JFX task: {}", name)
         val result = PrintStream(errorCatcher, true, System.err.charset()).use { tempStderr ->
             withContext(Dispatchers.Main.plus(CoroutineName(name))) {
                 val oldSystemErr = System.err

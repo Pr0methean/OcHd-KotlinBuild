@@ -14,9 +14,10 @@ import java.util.concurrent.atomic.AtomicReference
 import javax.annotation.concurrent.GuardedBy
 import kotlin.Result.Companion.failure
 
-val SUCCESS_UNIT = Result.success(Unit)
-val abstractTaskLogger: Logger = LogManager.getLogger("AbstractTask")
-private val cancelBecauseReplacing = CancellationException("Being replaced")
+val SUCCESS_UNIT: Result<Unit> = Result.success(Unit)
+val LOGGER: Logger = LogManager.getLogger("AbstractTask")
+private val CANCEL_BECAUSE_REPLACING = CancellationException("Being replaced")
+private val SUPERVISOR_JOB = SupervisorJob()
 abstract class AbstractTask<T>(final override val name: String, val cache: TaskCache<T>) : Task<T> {
     val timesFailed: AtomicLong = AtomicLong(0)
     val mutex: Mutex = Mutex()
@@ -25,7 +26,7 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
     override suspend fun addDirectDependentTask(task: Task<*>): Unit = mutex.withLock {
         directDependentTasks.add(task)
         if (directDependentTasks.size >= 2 && !cache.enabled && cache !is NoopTaskCache) {
-            abstractTaskLogger.info("Enabling caching for {}", name)
+            LOGGER.info("Enabling caching for {}", name)
             cache.enabled = true
         }
     }
@@ -33,7 +34,7 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
     override suspend fun removeDirectDependentTask(task: Task<*>): Unit = mutex.withLock {
         directDependentTasks.remove(task)
         if (directDependentTasks.isEmpty() && cache.enabled) {
-            abstractTaskLogger.info("Disabling caching for {}", name)
+            LOGGER.info("Disabling caching for {}", name)
             cache.enabled = false
         }
     }
@@ -81,7 +82,7 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
     override fun getNow(): Result<T>? {
         val cached = cache.getNow()
         if (cached != null) {
-            abstractTaskLogger.debug("Retrieved {} from cache", cached)
+            LOGGER.debug("Retrieved {} from cache", cached)
             return cached
         }
         val coroutine = coroutine.get()
@@ -95,7 +96,7 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
             failure(coroutine.getCancellationException())
         } else null
         if (result != null) {
-            abstractTaskLogger.debug("Retrieved {} from coroutine in getNow", result)
+            LOGGER.debug("Retrieved {} from coroutine in getNow", result)
         }
         return result
     }
@@ -112,26 +113,26 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
         }
         val scope = createCoroutineScope()
         val newCoroutine = createCoroutineAsync(scope)
-        abstractTaskLogger.debug("Locking {} to start it", this)
+        LOGGER.debug("Locking {} to start it", this)
         mutex.withLock {
             val resultWithLock = getNow()
             if (resultWithLock != null) {
-                abstractTaskLogger.debug("Found result {} before we could start {}", resultWithLock, this)
+                LOGGER.debug("Found result {} before we could start {}", resultWithLock, this)
                 return CompletableDeferred(resultWithLock)
             }
             val oldCoroutine = coroutine.compareAndExchange(null, newCoroutine)
             if (oldCoroutine != null) {
-                abstractTaskLogger.debug("Already started {}", this)
+                LOGGER.debug("Already started {}", this)
                 newCoroutine.cancel("Not started because a copy is already running")
                 return oldCoroutine
             } else {
-                abstractTaskLogger.debug("Starting {}", this)
+                LOGGER.debug("Starting {}", this)
                 val newHandle = newCoroutine.invokeOnCompletion(onCancelling = true) {
-                    if (it === cancelBecauseReplacing) {
+                    if (it === CANCEL_BECAUSE_REPLACING) {
                         return@invokeOnCompletion
                     }
                     if (it != null) {
-                        abstractTaskLogger.error("Handling exception in invokeOnCompletion", it)
+                        LOGGER.error("Handling exception in invokeOnCompletion", it)
                         scope.launch { emit(failure(it), newCoroutine) }
                     } else {
                         scope.launch { emit(newCoroutine.getCompleted(), newCoroutine) }
@@ -144,7 +145,7 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
                 }
                 newCoroutine.start()
                 val oldHandle = coroutineHandle.getAndSet(newHandle)
-                abstractTaskLogger.debug("Started {}", this)
+                LOGGER.debug("Started {}", this)
                 oldHandle?.dispose()
                 return newCoroutine
             }
@@ -158,11 +159,11 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
         if (result.isFailure) {
             timesFailed.incrementAndGet()
         }
-        abstractTaskLogger.debug("Locking {} to emit {}", this,
+        LOGGER.debug("Locking {} to emit {}", this,
             if (SUCCESS_UNIT == result) "success(Unit)" else result)
         mutex.withLock(result) {
             if (cache.enabled && directDependentTasks.size < 2) {
-                abstractTaskLogger.info("Disabling caching for {} while emitting result", this)
+                LOGGER.info("Disabling caching for {} while emitting result", this)
                 cache.enabled = false
             }
             cache.set(result)
@@ -170,31 +171,31 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
                 coroutineHandle.getAndSet(null)?.dispose()
             }
         }
-        abstractTaskLogger.debug("Unlocking {} after emitting result", this)
+        LOGGER.debug("Unlocking {} after emitting result", this)
     }
 
     override suspend fun clearFailure() {
-        abstractTaskLogger.debug("Locking {} to clear failure", this)
+        LOGGER.debug("Locking {} to clear failure", this)
         if (mutex.tryLock(this@AbstractTask)) {
             try {
                 if (getNow()?.isFailure == true) {
-                    abstractTaskLogger.debug("Clearing failure from {}", this)
+                    LOGGER.debug("Clearing failure from {}", this)
                     cache.set(null)
                     val oldCoroutine = coroutine.getAndSet(null)
                     if (oldCoroutine?.isCompleted == false) {
-                        abstractTaskLogger.debug("Canceling failed coroutine for {}", this)
-                        oldCoroutine.cancel(cancelBecauseReplacing)
+                        LOGGER.debug("Canceling failed coroutine for {}", this)
+                        oldCoroutine.cancel(CANCEL_BECAUSE_REPLACING)
                     }
                     coroutineHandle.getAndSet(null)?.dispose()
                 } else {
-                    abstractTaskLogger.debug("No failure to clear for {}", this)
+                    LOGGER.debug("No failure to clear for {}", this)
                 }
             } finally {
-                abstractTaskLogger.debug("Unlocking {} after clearing failure", this)
+                LOGGER.debug("Unlocking {} after clearing failure", this)
                 mutex.unlock(this@AbstractTask)
             }
         } else {
-            abstractTaskLogger.warn("Couldn't acquire lock for {}.clearFailure()", this)
+            LOGGER.warn("Couldn't acquire lock for {}.clearFailure()", this)
         }
     }
 
@@ -208,7 +209,7 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
             emit(otherNow, (other as? AbstractTask)?.coroutine?.get())
             return this
         }
-        abstractTaskLogger.debug("Locking {} to merge with a duplicate", this)
+        LOGGER.debug("Locking {} to merge with a duplicate", this)
         mutex.withLock(other) {
             if (getNow() != null) {
                 return@withLock
@@ -219,7 +220,7 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
                 return this
             }
             if (coroutine.get() == null && other is AbstractTask) {
-                abstractTaskLogger.debug("Locking {} to merge into {}", other, this)
+                LOGGER.debug("Locking {} to merge into {}", other, this)
                 other.mutex.withLock(this@AbstractTask) {
                     val resultWithLock = other.getNow()
                     if (resultWithLock != null) {
@@ -236,20 +237,19 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
                         return this
                     }
                 }
-                abstractTaskLogger.debug("Unlocking {} after merging it into {}", other, this)
+                LOGGER.debug("Unlocking {} after merging it into {}", other, this)
             }
         }
-        abstractTaskLogger.debug("Unlocking {} after merging a duplicate into it", this)
+        LOGGER.debug("Unlocking {} after merging a duplicate into it", this)
         return this
     }
 
-    private val supervisorJob = SupervisorJob()
     private val coroutineName = CoroutineName(name)
 
     override suspend fun createCoroutineScope(): CoroutineScope = CoroutineScope(
         currentCoroutineContext()
             .plus(coroutineName)
-            .plus(supervisorJob)
+            .plus(SUPERVISOR_JOB)
     )
 
     override fun isStartedOrAvailable(): Boolean = coroutine.get()?.isActive == true || getNow() != null
