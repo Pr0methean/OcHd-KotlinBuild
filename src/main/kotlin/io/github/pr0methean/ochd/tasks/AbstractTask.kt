@@ -200,10 +200,7 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
 
     @OptIn(ExperimentalCoroutinesApi::class)
     override suspend fun mergeWithDuplicate(other: Task<T>): Task<T> {
-        if (other === this) {
-            return this
-        }
-        if (getNow() != null) {
+        if (other === this || getNow() != null) {
             return this
         }
         val otherNow = other.getNow()
