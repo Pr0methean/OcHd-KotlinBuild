@@ -155,7 +155,9 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
 
     @Suppress("DeferredResultUnused")
     suspend inline fun emit(result: Result<T>, source: Deferred<Result<T>>?) {
-        timesFailed.incrementAndGet()
+        if (result.isFailure) {
+            timesFailed.incrementAndGet()
+        }
         abstractTaskLogger.debug("Locking {} to emit {}", this,
             if (SUCCESS_UNIT == result) "success(Unit)" else result)
         mutex.withLock(result) {
