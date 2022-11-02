@@ -255,8 +255,7 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
             .plus(supervisorJob)
     )
 
-    override fun isStartedOrAvailable(): Boolean = coroutine.get()?.run { isActive || isCompleted } == true
-            || getNow() != null
+    override fun isStartedOrAvailable(): Boolean = coroutine.get()?.isActive == true || getNow() != null
 
     override fun timesFailed(): Long = timesFailed.get()
 }
