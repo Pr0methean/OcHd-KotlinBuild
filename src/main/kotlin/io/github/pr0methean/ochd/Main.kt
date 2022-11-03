@@ -113,18 +113,21 @@ private suspend fun runAll(
     val remainingTasksMutex = Mutex()
     val remainingTasks = tasks.toMutableSet()
     val pendingTasks = mutableSetOf<ReceiveChannel<Unit>>()
-    while (remainingTasks.isNotEmpty() || pendingTasks.isNotEmpty()) {
-        while (pendingTasks.size >= parallelism || (remainingTasks.isEmpty() && pendingTasks.isNotEmpty())) {
-            select<Unit> {
-                pendingTasks.map {task -> task.onReceive {
-                    pendingTasks.remove(task)
-                }}
-            }
+    do {
+        while (pendingTasks.size >= parallelism) {
+            removeNextFinished(pendingTasks)
         }
         val task = remainingTasksMutex.withLock {
-            remainingTasks.minWithOrNull(taskOrderComparator)
+            val maybeTask = remainingTasks.minWithOrNull(taskOrderComparator)
+            if (maybeTask != null && remainingTasks.remove(maybeTask)) {
+                maybeTask
+            } else null
         }
-        if (task != null && remainingTasksMutex.withLock {remainingTasks.remove(task)}) {
+        if (task == null) {
+            while (pendingTasks.isNotEmpty()) {
+                removeNextFinished(pendingTasks)
+            }
+        } else {
             pendingTasks.add(scope.produce(capacity = CONFLATED) {
                 logger.info("Joining {}", task)
                 val result = task.await()
@@ -143,6 +146,18 @@ private suspend fun runAll(
                     stats.recordRetries(1)
                 }
             })
+        }
+    } while (pendingTasks.isNotEmpty())
+}
+
+private suspend fun removeNextFinished(
+    pendingTasks: MutableSet<ReceiveChannel<Unit>>
+) {
+    select<Unit> {
+        pendingTasks.map { task ->
+            task.onReceive {
+                pendingTasks.remove(task)
+            }
         }
     }
 }
