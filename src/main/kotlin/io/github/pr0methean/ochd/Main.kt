@@ -10,10 +10,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
-import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.channels.produce
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
@@ -103,7 +101,6 @@ suspend fun main(args: Array<String>) {
     exitProcess(0)
 }
 
-@OptIn(ExperimentalCoroutinesApi::class)
 private suspend fun runAll(
     tasks: Iterable<OutputTask>,
     scope: CoroutineScope,
@@ -112,7 +109,7 @@ private suspend fun runAll(
 ) {
     val remainingTasksMutex = Mutex()
     val remainingTasks = tasks.sortedWith(comparingInt(OutputTask::unstartedCacheableSubtasks)).toMutableSet()
-    val pendingTasks = mutableSetOf<ReceiveChannel<Unit>>()
+    val pendingTasks = mutableSetOf<Job>()
     do {
         while (pendingTasks.size >= parallelism) {
             removeNextFinished(pendingTasks)
@@ -128,21 +125,18 @@ private suspend fun runAll(
                 removeNextFinished(pendingTasks)
             }
         } else {
-            pendingTasks.add(scope.produce(capacity = CONFLATED) {
+            pendingTasks.add(scope.launch {
                 logger.info("Joining {}", task)
                 val result = task.await()
-                if (result.isFailure) {
-                    task.clearFailure()
-                    remainingTasksMutex.withLock {
-                        remainingTasks.add(task)
-                    }
-                }
-                send(Unit)
                 if (result.isSuccess) {
                     logger.info("Joined {} with result of success", task)
                     task.source.removeDirectDependentTask(task)
                 } else {
                     logger.error("Joined {} with an error", task, result.exceptionOrNull())
+                    task.clearFailure()
+                    remainingTasksMutex.withLock {
+                        remainingTasks.add(task)
+                    }
                     stats.recordRetries(1)
                 }
             })
@@ -151,14 +145,10 @@ private suspend fun runAll(
 }
 
 private suspend fun removeNextFinished(
-    pendingTasks: MutableSet<ReceiveChannel<Unit>>
+    pendingTasks: MutableSet<Job>
 ) {
-    select<Unit> {
-        pendingTasks.map { task ->
-            task.onReceive {
-                pendingTasks.remove(task)
-            }
-        }
-    }
+    pendingTasks.remove(select {
+        pendingTasks.map(Job::onJoin)
+    })
 }
 
