@@ -146,5 +146,6 @@ private suspend fun runAll(
             }
         }
     } while (pendingJobs.isNotEmpty())
+    finishedJobsChannel.close()
 }
 
