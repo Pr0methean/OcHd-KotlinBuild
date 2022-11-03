@@ -17,9 +17,9 @@ import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.plus
-import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.yield
 import org.apache.logging.log4j.LogManager
 import java.nio.file.Paths
 import java.util.Comparator.comparingInt
@@ -109,10 +109,10 @@ private suspend fun runAll(
 ) {
     val remainingTasksMutex = Mutex()
     val remainingTasks = tasks.sortedWith(comparingInt(OutputTask::unstartedCacheableSubtasks)).toMutableSet()
-    val pendingTasks = mutableSetOf<Job>()
+    val pendingJobs = mutableSetOf<Job>()
     do {
-        while (pendingTasks.size >= parallelism) {
-            removeNextFinished(pendingTasks)
+        while (pendingJobs.size >= parallelism) {
+            removeNextFinished(pendingJobs)
         }
         val task = remainingTasksMutex.withLock {
             val maybeTask = remainingTasks.minWithOrNull(taskOrderComparator)
@@ -121,11 +121,11 @@ private suspend fun runAll(
             } else null
         }
         if (task == null) {
-            while (pendingTasks.isNotEmpty()) {
-                removeNextFinished(pendingTasks)
+            while (pendingJobs.isNotEmpty()) {
+                removeNextFinished(pendingJobs)
             }
         } else {
-            pendingTasks.add(scope.launch {
+            pendingJobs.add(scope.launch {
                 logger.info("Joining {}", task)
                 val result = task.await()
                 if (result.isSuccess) {
@@ -141,16 +141,17 @@ private suspend fun runAll(
                 }
             })
         }
-    } while (pendingTasks.isNotEmpty())
+    } while (pendingJobs.isNotEmpty())
 }
 
 private suspend fun removeNextFinished(
-    pendingTasks: MutableSet<Job>
+    pendingJobs: MutableSet<Job>
 ) {
-    pendingTasks.remove(select {
-        pendingTasks.map { job ->
-            job.onJoin { job }
-        }
-    })
+    var job: Job? = null
+    while (job == null) {
+        yield()
+        job = pendingJobs.find(Job::isCompleted)
+    }
+    pendingJobs.remove(job)
 }
 
