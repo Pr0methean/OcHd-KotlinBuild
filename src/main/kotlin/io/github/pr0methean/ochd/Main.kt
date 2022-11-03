@@ -11,6 +11,7 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.Channel.Factory.CONFLATED
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlinx.coroutines.channels.produce
 import kotlinx.coroutines.flow.toList
@@ -124,7 +125,7 @@ private suspend fun runAll(
             remainingTasks.minWithOrNull(taskOrderComparator)
         }
         if (task != null && remainingTasksMutex.withLock {remainingTasks.remove(task)}) {
-            pendingTasks.add(scope.produce {
+            pendingTasks.add(scope.produce(capacity = CONFLATED) {
                 logger.info("Joining {}", task)
                 val result = task.await()
                 if (result.isFailure) {
