@@ -17,9 +17,9 @@ import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.plus
+import kotlinx.coroutines.selects.select
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.yield
 import org.apache.logging.log4j.LogManager
 import java.nio.file.Paths
 import java.util.Comparator.comparingInt
@@ -147,8 +147,10 @@ private suspend fun runAll(
 private suspend fun removeNextFinished(
     pendingTasks: MutableSet<Job>
 ) {
-    do {
-        yield()
-    } while (!pendingTasks.removeIf(Job::isCompleted))
+    pendingTasks.remove(select {
+        pendingTasks.map { job ->
+            job.onJoin { job }
+        }
+    })
 }
 
