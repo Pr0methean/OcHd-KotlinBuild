@@ -27,6 +27,7 @@ import java.util.Comparator.comparingLong
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
+private const val CAPACITY_PADDING_FACTOR = 2
 private val taskOrderComparator = comparingLong(OutputTask::timesFailed)
     .then(comparingInt(OutputTask::cachedSubtasks).reversed())
     .then(comparingInt(OutputTask::unstartedCacheableSubtasks))
@@ -110,7 +111,7 @@ private suspend fun runAll(
     val unstartedTasksMutex = Mutex()
     val unstartedTasks = tasks.sortedWith(comparingInt(OutputTask::unstartedCacheableSubtasks)).toMutableSet()
     val pendingJobs = mutableMapOf<OutputTask,Job>()
-    val finishedJobsChannel = Channel<OutputTask>(capacity = parallelism)
+    val finishedJobsChannel = Channel<OutputTask>(capacity = CAPACITY_PADDING_FACTOR * parallelism)
     do {
         while (pendingJobs.size >= parallelism) {
             pendingJobs.remove(finishedJobsChannel.receive())
