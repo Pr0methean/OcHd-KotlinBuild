@@ -71,10 +71,10 @@ class RepaintTask(
         var baseImage: Image? = base.getNow()?.getOrThrow()
         if (baseImage == null) {
             for (repaint in base.opaqueRepaints()) {
-                val repaintNow = repaint.getNow()
+                val repaintNow = repaint.getNow()?.getOrNull()
                 if (repaintNow != null) {
                     logger.info("Repainting {} to create {}", repaint, this)
-                    baseImage = repaintNow.getOrThrow()
+                    baseImage = repaintNow
                     break
                 }
             }
