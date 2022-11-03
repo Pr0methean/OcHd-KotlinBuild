@@ -19,11 +19,12 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.selects.select
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.apache.logging.log4j.LogManager
 import java.nio.file.Paths
 import java.util.Comparator.comparingInt
 import java.util.Comparator.comparingLong
-import java.util.concurrent.ConcurrentHashMap
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
@@ -108,29 +109,32 @@ private suspend fun runAll(
     stats: ImageProcessingStats,
     parallelism: Int
 ) {
-    val remainingTasks = tasks.toMutableSet()
-    val pendingTasks = ConcurrentHashMap.newKeySet<ReceiveChannel<Unit>>()
-    val tasksToAttempt = remainingTasks.sortedWith(comparingInt(OutputTask::unstartedCacheableSubtasks)).toMutableSet()
+    val remainingTasksMutex = Mutex()
+    val remainingTasks = tasks.sortedWith(comparingInt(OutputTask::unstartedCacheableSubtasks)).toMutableSet()
+    val pendingTasks = mutableSetOf<ReceiveChannel<Unit>>()
     while (remainingTasks.isNotEmpty()) {
-        while (pendingTasks.size >= parallelism || (tasksToAttempt.isEmpty() && pendingTasks.isNotEmpty())) {
+        while (pendingTasks.size >= parallelism || (remainingTasks.isEmpty() && pendingTasks.isNotEmpty())) {
             select<Unit> {
                 pendingTasks.map {task -> task.onReceive {pendingTasks.remove(task)}}
             }
         }
-        val task = tasksToAttempt.minWithOrNull(taskOrderComparator) ?: break
-        if (tasksToAttempt.remove(task)) {
+        val task = remainingTasksMutex.withLock {
+            remainingTasks.minWithOrNull(taskOrderComparator)
+        }
+        if (task != null && remainingTasksMutex.withLock {remainingTasks.remove(task)}) {
             pendingTasks.add(scope.produce {
                 logger.info("Joining {}", task)
                 val result = task.await()
                 if (result.isSuccess) {
                     logger.info("Joined {} with result of success", task)
                     task.source.removeDirectDependentTask(task)
-                    remainingTasks.remove(task)
                 } else {
                     logger.error("Error in {}", task, result.exceptionOrNull())
                     stats.recordRetries(1)
                     task.clearFailure()
-                    tasksToAttempt.add(task)
+                    remainingTasksMutex.withLock {
+                        remainingTasks.add(task)
+                    }
                 }
                 send(Unit)
             })
