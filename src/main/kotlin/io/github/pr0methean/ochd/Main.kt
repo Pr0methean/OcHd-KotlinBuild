@@ -115,7 +115,9 @@ private suspend fun runAll(
     while (remainingTasks.isNotEmpty()) {
         while (pendingTasks.size >= parallelism || (remainingTasks.isEmpty() && pendingTasks.isNotEmpty())) {
             select<Unit> {
-                pendingTasks.map {task -> task.onReceive {pendingTasks.remove(task)}}
+                pendingTasks.map {task -> task.onReceive {
+                    pendingTasks.remove(task)
+                }}
             }
         }
         val task = remainingTasksMutex.withLock {
@@ -125,18 +127,20 @@ private suspend fun runAll(
             pendingTasks.add(scope.produce {
                 logger.info("Joining {}", task)
                 val result = task.await()
-                if (result.isSuccess) {
-                    logger.info("Joined {} with result of success", task)
-                    task.source.removeDirectDependentTask(task)
-                } else {
-                    logger.error("Error in {}", task, result.exceptionOrNull())
-                    stats.recordRetries(1)
+                if (result.isFailure) {
                     task.clearFailure()
                     remainingTasksMutex.withLock {
                         remainingTasks.add(task)
                     }
                 }
                 send(Unit)
+                if (result.isSuccess) {
+                    logger.info("Joined {} with result of success", task)
+                    task.source.removeDirectDependentTask(task)
+                } else {
+                    logger.error("Joined {} with an error", task, result.exceptionOrNull())
+                    stats.recordRetries(1)
+                }
             })
         }
     }
