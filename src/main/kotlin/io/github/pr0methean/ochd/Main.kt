@@ -12,6 +12,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
@@ -19,7 +20,6 @@ import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import kotlinx.coroutines.yield
 import org.apache.logging.log4j.LogManager
 import java.nio.file.Paths
 import java.util.Comparator.comparingInt
@@ -107,51 +107,44 @@ private suspend fun runAll(
     stats: ImageProcessingStats,
     parallelism: Int
 ) {
-    val remainingTasksMutex = Mutex()
-    val remainingTasks = tasks.sortedWith(comparingInt(OutputTask::unstartedCacheableSubtasks)).toMutableSet()
-    val pendingJobs = mutableSetOf<Job>()
+    val unstartedTasksMutex = Mutex()
+    val unstartedTasks = tasks.sortedWith(comparingInt(OutputTask::unstartedCacheableSubtasks)).toMutableSet()
+    val pendingJobs = mutableMapOf<OutputTask,Job>()
+    val finishedJobsChannel = Channel<OutputTask>()
     do {
         while (pendingJobs.size >= parallelism) {
-            removeNextFinished(pendingJobs)
+            pendingJobs.remove(finishedJobsChannel.receive())
         }
-        val task = remainingTasksMutex.withLock {
-            val maybeTask = remainingTasks.minWithOrNull(taskOrderComparator)
-            if (maybeTask != null && remainingTasks.remove(maybeTask)) {
+        val task = unstartedTasksMutex.withLock {
+            val maybeTask = unstartedTasks.minWithOrNull(taskOrderComparator)
+            if (maybeTask != null && unstartedTasks.remove(maybeTask)) {
                 maybeTask
             } else null
         }
         if (task == null) {
             while (pendingJobs.isNotEmpty()) {
-                removeNextFinished(pendingJobs)
+                pendingJobs.remove(finishedJobsChannel.receive())
             }
         } else {
-            pendingJobs.add(scope.launch {
+            pendingJobs[task] = scope.launch {
                 logger.info("Joining {}", task)
                 val result = task.await()
+                if (result.isFailure) {
+                    task.clearFailure()
+                    unstartedTasksMutex.withLock {
+                        unstartedTasks.add(task)
+                    }
+                }
+                finishedJobsChannel.send(task)
                 if (result.isSuccess) {
                     logger.info("Joined {} with result of success", task)
                     task.source.removeDirectDependentTask(task)
                 } else {
                     logger.error("Joined {} with an error", task, result.exceptionOrNull())
-                    task.clearFailure()
-                    remainingTasksMutex.withLock {
-                        remainingTasks.add(task)
-                    }
                     stats.recordRetries(1)
                 }
-            })
+            }
         }
     } while (pendingJobs.isNotEmpty())
-}
-
-private suspend fun removeNextFinished(
-    pendingJobs: MutableSet<Job>
-) {
-    var job: Job? = null
-    while (job == null) {
-        yield()
-        job = pendingJobs.find(Job::isCompleted)
-    }
-    pendingJobs.remove(job)
 }
 
