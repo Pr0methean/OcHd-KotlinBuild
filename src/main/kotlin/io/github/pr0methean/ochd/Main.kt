@@ -110,7 +110,7 @@ private suspend fun runAll(
     val unstartedTasksMutex = Mutex()
     val unstartedTasks = tasks.sortedWith(comparingInt(OutputTask::unstartedCacheableSubtasks)).toMutableSet()
     val pendingJobs = mutableMapOf<OutputTask,Job>()
-    val finishedJobsChannel = Channel<OutputTask>()
+    val finishedJobsChannel = Channel<OutputTask>(capacity = parallelism)
     do {
         while (pendingJobs.size >= parallelism) {
             pendingJobs.remove(finishedJobsChannel.receive())
