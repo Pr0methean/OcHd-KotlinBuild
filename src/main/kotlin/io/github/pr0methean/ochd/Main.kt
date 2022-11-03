@@ -147,8 +147,9 @@ private suspend fun runAll(
 private suspend fun removeNextFinished(
     pendingTasks: MutableSet<Job>
 ) {
-    pendingTasks.remove(select {
+    select<Unit> {
         pendingTasks.map(Job::onJoin)
-    })
+    }
+    pendingTasks.removeIf(Job::isCompleted)
 }
 
