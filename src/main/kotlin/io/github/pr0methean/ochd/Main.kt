@@ -110,7 +110,7 @@ private suspend fun runAll(
 ) {
     val remainingTasks = tasks.toMutableSet()
     val pendingTasks = ConcurrentHashMap.newKeySet<ReceiveChannel<Unit>>()
-    val tasksToAttempt = remainingTasks.sortedWith(taskOrderComparator).toMutableSet()
+    val tasksToAttempt = remainingTasks.sortedWith(comparingInt(OutputTask::unstartedCacheableSubtasks)).toMutableSet()
     while (remainingTasks.isNotEmpty()) {
         while (pendingTasks.size >= parallelism || (tasksToAttempt.isEmpty() && pendingTasks.isNotEmpty())) {
             select<Unit> {
