@@ -111,7 +111,7 @@ private suspend fun runAll(
     parallelism: Int
 ) {
     val remainingTasksMutex = Mutex()
-    val remainingTasks = tasks.sortedWith(comparingInt(OutputTask::unstartedCacheableSubtasks)).toMutableSet()
+    val remainingTasks = tasks.toMutableSet()
     val pendingTasks = mutableSetOf<ReceiveChannel<Unit>>()
     while (remainingTasks.isNotEmpty() || pendingTasks.isNotEmpty()) {
         while (pendingTasks.size >= parallelism || (remainingTasks.isEmpty() && pendingTasks.isNotEmpty())) {
