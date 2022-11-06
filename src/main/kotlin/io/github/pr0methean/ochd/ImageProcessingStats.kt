@@ -123,14 +123,16 @@ class ImageProcessingStats(private val backingCache: Cache<SemiStrongTaskCache<*
         val repeatedTasks = Multisets.copyHighestCountFirst(tasksByRunCount)
         repeatedTasks.logIf {repeatedTasks.count(it) >= 2}
         logger.info("")
-        logger.info("Task efficiency rates:")
+        logger.info("Task efficiency / hit rate")
         var totalUnique = 0L
         var totalActual = 0L
         dedupeSuccesses.toSet().forEach { className ->
             val unique = dedupeFailures.count(className)
-            val actual = taskCompletions.count(className)
-            val cacheSuccessRate = (unique.toDouble() / actual)
-            logger.printf(Level.INFO, "%20s: %3.2f%%", className, 100.0 * cacheSuccessRate)
+            val actual = taskLaunches.count(className)
+            val worstCase = unique + dedupeSuccesses.count(className)
+            val efficiency = (unique.toDouble() / actual)
+            val hitRate = (actual - unique).toDouble()/(worstCase - unique)
+            logger.printf(Level.INFO, "%20s: %3.2f%%: %3.2f%%", className, 100.0 * efficiency, 100.0 * hitRate)
             totalUnique += unique
             totalActual += actual
         }
