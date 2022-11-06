@@ -110,11 +110,11 @@ private suspend fun runAll(
 ) {
     val unstartedTasksMutex = Mutex()
     val unstartedTasks = tasks.sortedWith(comparingInt(OutputTask::unstartedCacheableSubtasks)).toMutableSet()
-    val pendingJobs = mutableMapOf<OutputTask,Job>()
+    val inProgressJobs = mutableMapOf<OutputTask,Job>()
     val finishedJobsChannel = Channel<OutputTask>(capacity = CAPACITY_PADDING_FACTOR * parallelism)
     do {
-        while (pendingJobs.size >= parallelism) {
-            pendingJobs.remove(finishedJobsChannel.receive())
+        while (inProgressJobs.size >= parallelism) {
+            inProgressJobs.remove(finishedJobsChannel.receive())
         }
         val task = unstartedTasksMutex.withLock {
             val maybeTask = unstartedTasks.minWithOrNull(taskOrderComparator)
@@ -123,11 +123,11 @@ private suspend fun runAll(
             } else null
         }
         if (task == null) {
-            while (pendingJobs.isNotEmpty()) {
-                pendingJobs.remove(finishedJobsChannel.receive())
+            while (inProgressJobs.isNotEmpty()) {
+                inProgressJobs.remove(finishedJobsChannel.receive())
             }
         } else {
-            pendingJobs[task] = scope.launch {
+            inProgressJobs[task] = scope.launch {
                 logger.info("Joining {}", task)
                 val result = task.await()
                 finishedJobsChannel.send(task)
@@ -140,7 +140,7 @@ private suspend fun runAll(
                 }
             }
         }
-    } while (pendingJobs.isNotEmpty())
+    } while (inProgressJobs.isNotEmpty() || unstartedTasks.isNotEmpty())
     finishedJobsChannel.close()
 }
 
