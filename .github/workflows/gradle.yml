@@ -68,10 +68,11 @@ jobs:
       id: run
       run: >
         java -Dprism.maxvram=2560m -Dglass.platform=Monocle -Dmonocle.platform=Headless -Dquantum.multithreaded=true 
-        -XX:+UseStringDeduplication -Xms4352m -Xmx4352m -XX:+UnlockExperimentalVMOptions -XX:+UseZGC
+        -XX:+UseStringDeduplication -Xms4356m -Xmx4356m -XX:SoftMaxHeapSize=4092m
+        -XX:+UnlockExperimentalVMOptions -XX:+UseZGC
         '-Xlog:gc*=debug,gc+stats=trace,gc+heap=trace,gc+heap+exit=trace,gc+metaspace=trace,gc+nmethod=info,safepoint+stats=info' 
         -XX:+UseNUMA -XX:ConcGCThreads=2 -XX:ParallelGCThreads=2 -XX:+AlwaysPreTouch -XX:+UseTransparentHugePages
-        -XX:ZAllocationSpikeTolerance=2 -XX:SoftMaxHeapSize=4088m
+        -XX:ZAllocationSpikeTolerance=2 -XX:SoftMaxHeapSize=4092m
         -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintFlagsFinal -XX:StringDeduplicationAgeThreshold=1
         -Dlog4j2.contextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector --enable-preview
         -jar OcHd-KotlinBuild-1.0-SNAPSHOT.jar ${{ matrix.size }}
