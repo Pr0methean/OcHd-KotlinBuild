@@ -10,36 +10,36 @@ private val CLEANER = Cleaner.create { runnable ->
     thread.priority = Thread.MAX_PRIORITY
     thread
 }
-class SemiStrongTaskCache<T>(private val baseCache: AbstractTaskCache<T>, private val backingCache: Cache<SemiStrongTaskCache<*>, Result<*>>):
-        AbstractTaskCache<T>(baseCache.name) {
+class SemiStrongTaskCache<T>(private val victimCache: AbstractTaskCache<T>, private val primaryCache: Cache<SemiStrongTaskCache<*>, Result<*>>):
+        AbstractTaskCache<T>(victimCache.name) {
     private val cleanupScheduled = AtomicBoolean(false)
     @Suppress("UNCHECKED_CAST")
     override fun getNow(): Result<T>? {
-        return backingCache.getIfPresent(this) as Result<T>? ?: baseCache.getNow()
+        return primaryCache.getIfPresent(this) as Result<T>? ?: victimCache.getNow()
     }
 
     override fun clear() {
-        backingCache.invalidate(this)
-        baseCache.clear()
+        primaryCache.invalidate(this)
+        victimCache.clear()
     }
 
     override fun disable() {
-        backingCache.invalidate(this)
-        baseCache.disable()
+        primaryCache.invalidate(this)
+        victimCache.disable()
     }
 
     override fun enabledSet(value: Result<T>) {
-        val backingCacheRef = WeakReference(backingCache)
+        val backingCacheRef = WeakReference(primaryCache)
         val cleanUpCacheRunnable = Runnable {
             backingCacheRef.get()?.cleanUp()
         }
         if (cleanupScheduled.compareAndSet(false, true)) {
             CLEANER.register(this, cleanUpCacheRunnable)
         }
-        if (baseCache is WeakTaskCache || baseCache is SoftTaskCache) {
+        if (victimCache is WeakTaskCache || victimCache is SoftTaskCache) {
             CLEANER.register(value, cleanUpCacheRunnable)
         }
-        baseCache.enabledSet(value)
-        backingCache.put(this, value)
+        victimCache.enabledSet(value)
+        primaryCache.put(this, value)
     }
 }
