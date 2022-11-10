@@ -34,7 +34,7 @@ class AnimationTask(
 
     override fun hashCode(): Int = hashCode
 
-    override suspend fun mergeWithDuplicate(other: Task<Image>): ImageTask {
+    override suspend fun mergeWithDuplicate(other: Task<*>): ImageTask {
         val deduped = super.mergeWithDuplicate(other)
         if (deduped !== other && deduped is AnimationTask && other is AnimationTask) {
             for ((index, frame) in deduped.frames.withIndex()) {

@@ -46,15 +46,15 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
         total
     }
 
-    override fun cachedSubtasks(): Int {
+    override fun cachedSubtasks(): Set<Task<*>> {
+        val subtasks = mutableSetOf<Task<*>>()
         if (getNow() != null) {
-            return totalSubtasks + 1
+            subtasks += this
         }
-        var total = 0
         for (task in directDependencies) {
-            total += if (task.getNow() != null) task.totalSubtasks + 1 else task.cachedSubtasks()
+            subtasks += task.cachedSubtasks()
         }
-        return total
+        return subtasks
     }
 
     override suspend fun registerRecursiveDependencies(): Unit = mutex.withLock {
@@ -153,6 +153,11 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
 
     protected abstract suspend fun createCoroutineAsync(coroutineScope: CoroutineScope): Deferred<Result<T>>
 
+    @Suppress("UNCHECKED_CAST")
+    private suspend inline fun emitUnchecked(result: Result<*>, source: Deferred<Result<*>>?) {
+        emit(result as Result<T>, source as Deferred<Result<T>>)
+    }
+
     @Suppress("DeferredResultUnused")
     suspend inline fun emit(result: Result<T>, source: Deferred<Result<T>>?) {
         if (result.isFailure) {
@@ -204,14 +209,15 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
         }
     }
 
+    @Suppress("UNCHECKED_CAST")
     @OptIn(ExperimentalCoroutinesApi::class)
-    override suspend fun mergeWithDuplicate(other: Task<T>): Task<T> {
+    override suspend fun mergeWithDuplicate(other: Task<*>): Task<T> {
         if (other === this || getNow() != null) {
             return this
         }
         val otherNow = other.getNow()
         if (otherNow != null) {
-            emit(otherNow, (other as? AbstractTask)?.coroutine?.get())
+            emitUnchecked(otherNow, (other as? AbstractTask)?.coroutine?.get())
             return this
         }
         LOGGER.debug("Locking {} to merge with a duplicate", name)
@@ -221,7 +227,7 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
             }
             val result = other.getNow()
             if (result != null) {
-                emit(result, (other as? AbstractTask)?.coroutine?.get())
+                emitUnchecked(result, (other as? AbstractTask)?.coroutine?.get())
                 return this
             }
             if (coroutine.get() == null && other is AbstractTask) {
@@ -229,15 +235,15 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
                 other.mutex.withLock(this@AbstractTask) {
                     val resultWithLock = other.getNow()
                     if (resultWithLock != null) {
-                        emit(resultWithLock, other.coroutine.get())
+                        emitUnchecked(resultWithLock, other.coroutine.get())
                         return this
                     }
                     val otherCoroutine = other.coroutine.get()
                     if (otherCoroutine != null) {
                         if (otherCoroutine.isCompleted) {
-                            emit(otherCoroutine.getCompleted(), otherCoroutine)
+                            emitUnchecked(otherCoroutine.getCompleted(), otherCoroutine)
                         } else {
-                            coroutine.set(createCoroutineScope().async { otherCoroutine.await() })
+                            coroutine.set(createCoroutineScope().async { otherCoroutine.await() as Result<T> })
                         }
                         return this
                     }

@@ -27,22 +27,22 @@ class RepaintTask(
         }
     }
 
-    override fun unstartedCacheableSubtasks(): Int {
+    override fun unstartedCacheableSubtasks(): Collection<Task<*>> {
         if (getNow() != null) {
-            return 0
+            return listOf()
         }
         if (base.getNow() != null) {
-            return if (cache.enabled) 0 else 1
+            return if (cache.enabled) listOf() else listOf(this)
         }
         for (repaint in base.opaqueRepaints()) {
             if (repaint.isStartedOrAvailable()) {
-                return if (cache.enabled) 0 else 1
+                return if (cache.enabled) listOf() else listOf(this)
             }
         }
         return super.unstartedCacheableSubtasks()
     }
 
-    override fun cachedSubtasks(): Int {
+    override fun cachedSubtasks(): Set<Task<*>> {
         if (getNow() == null && base.getNow() == null) {
             for (repaint in base.opaqueRepaints()) {
                 if (repaint.getNow() != null) {
@@ -53,7 +53,7 @@ class RepaintTask(
         return super.cachedSubtasks()
     }
 
-    override suspend fun mergeWithDuplicate(other: Task<Image>): ImageTask {
+    override suspend fun mergeWithDuplicate(other: Task<*>): ImageTask {
         if (other is RepaintTask) {
             base.mergeWithDuplicate(other.base)
         }

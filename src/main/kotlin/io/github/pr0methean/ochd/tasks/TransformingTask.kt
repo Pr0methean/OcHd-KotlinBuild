@@ -48,9 +48,9 @@ open class TransformingTask<T, U>(
     override fun hashCode(): Int = hashCode
 
     @Suppress("UNCHECKED_CAST")
-    override suspend fun mergeWithDuplicate(other: Task<U>): Task<U> {
+    override suspend fun mergeWithDuplicate(other: Task<*>): Task<U> {
         val deduped = super.mergeWithDuplicate(other)
-        if (other !== deduped && other is TransformingTask<*, U>) {
+        if (other !== deduped && other is TransformingTask<*, *>) {
             (deduped as TransformingTask<T, U>).base.mergeWithDuplicate(other.base as Task<T>)
         }
         return deduped
