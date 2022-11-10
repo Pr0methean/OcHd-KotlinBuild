@@ -68,7 +68,6 @@ jobs:
       id: run
       run: >
         java -Dprism.maxvram=2560m -Dglass.platform=Monocle -Dmonocle.platform=Headless -Dquantum.multithreaded=true 
-        -Dprism.printallocs=true -Dprism.printStats=true -Dkotlinx.coroutines.debug
         -XX:+UseStringDeduplication -Xms4224m -Xmx4224m -XX:SoftMaxHeapSize=4092m
         -XX:+UnlockExperimentalVMOptions -XX:+UseZGC
         '-Xlog:gc*=debug,gc+stats=trace,gc+heap=trace,gc+heap+exit=trace,gc+metaspace=trace,gc+nmethod=info,safepoint+stats=info' 
