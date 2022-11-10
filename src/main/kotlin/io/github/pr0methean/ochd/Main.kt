@@ -130,6 +130,11 @@ private suspend fun runAll(
             inProgressJobs[task] = scope.launch {
                 logger.info("Joining {}", task)
                 val result = task.await()
+                if (result.isFailure) {
+                    unstartedTasksMutex.withLock {
+                        unstartedTasks.add(task)
+                    }
+                }
                 finishedJobsChannel.send(task)
                 if (result.isSuccess) {
                     logger.info("Joined {} with result of success", task)
