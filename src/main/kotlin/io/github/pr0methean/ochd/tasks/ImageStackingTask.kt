@@ -8,7 +8,6 @@ import javafx.scene.canvas.Canvas
 import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.asFlow
 import org.apache.logging.log4j.LogManager
@@ -105,11 +104,8 @@ class ImageStackingTask(val layers: LayerList,
                 })
             }
         }
-        layerRenderTasks.forEach(Job::start)
         logger.debug("Waiting for layer tasks for {}", this)
-        for (task in layerRenderTasks) {
-            task.await().getOrThrow()
-        }
+        layerRenderTasks.last().await().getOrThrow()
         logger.debug("Layer tasks done for {}", this)
         stats.onTaskCompleted("ImageStackingTask", name)
         return snapshotRef.getAndSet(null)
