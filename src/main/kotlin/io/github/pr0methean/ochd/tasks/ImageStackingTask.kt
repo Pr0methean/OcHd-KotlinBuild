@@ -19,6 +19,8 @@ import kotlin.Result.Companion.failure
 import kotlin.Result.Companion.success
 
 private val logger = LogManager.getLogger("ImageStackingTask")
+private val SUCCESS = success(Unit)
+
 class ImageStackingTask(val layers: LayerList,
                         name: String,
                         cache: TaskCache<Image>,
@@ -59,18 +61,22 @@ class ImageStackingTask(val layers: LayerList,
         val firstLayer = layers.layers.first().await().getOrThrow()
         val width = firstLayer.width
         val height = firstLayer.height
+        val snapshotRef = AtomicReference<Image>(null)
         val canvas = Canvas(width, height)
         val canvasCtx = canvas.graphicsContext2D
-        val snapshotRef = AtomicReference<Image>(null)
         logger.debug("Creating layer tasks for {}", this)
         val layerRenderTasks = mutableListOf<Deferred<Result<Unit>>>()
         layerRenderTasks.add(createCoroutineScope().async {
             logger.debug("Rendering first layer ({}) of {}", firstLayer, this@ImageStackingTask)
             canvasCtx.drawImage(firstLayer, 0.0, 0.0)
             if (layers.layers.size == 1) {
-                takeSnapshot(width, height, canvas, snapshotRef)
+                try {
+                    takeSnapshot(width, height, canvas, snapshotRef)
+                } catch (t: Throwable) {
+                    return@async failure(t)
+                }
             }
-            return@async success(Unit)
+            return@async SUCCESS
         })
         layers.layers.withIndex().drop(1).forEach { (index, layerTask) ->
             logger.debug("Creating consumer for layer {} ({})", index, layerTask)
@@ -88,7 +94,7 @@ class ImageStackingTask(val layers: LayerList,
                     if (index == layers.layers.lastIndex) {
                         takeSnapshot(width, height, canvas, snapshotRef)
                     }
-                    return@consumeAsync success(Unit)
+                    return@consumeAsync SUCCESS
                 } catch (t: Throwable) {
                     logger.error("ImageStackingTask layer failed", t)
                     return@consumeAsync failure(t)
