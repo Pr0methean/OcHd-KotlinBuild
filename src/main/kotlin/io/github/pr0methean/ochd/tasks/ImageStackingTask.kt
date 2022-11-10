@@ -81,13 +81,13 @@ class ImageStackingTask(val layers: LayerList,
         if (!singleLayer) {
             layers.layers.withIndex().drop(1).forEach { (index, layerTask) ->
                 logger.debug("Creating consumer for layer {} ({})", index, layerTask)
-                val previousLayerTask = layerRenderTasks.getOrNull(index - 1)
+                val previousLayerTask = layerRenderTasks[index - 1]
                 val previousLayerName = previousLayerTask.toString()
                 val lastLayer = index == layers.layers.lastIndex
                 layerRenderTasks.add(layerTask.consumeAsync {
                     try {
-                        logger.debug("Awaiting previous layer ({}) if needed", previousLayerName)
-                        previousLayerTask?.await()?.getOrThrow()
+                        logger.debug("Awaiting previous layer ({})", previousLayerName)
+                        previousLayerTask.await().getOrThrow()
                         logger.debug("Fetching layer {} ({})", index, layerTask)
                         val layerImage = it.getOrThrow()
                         logger.debug("Rendering layer {} ({}) onto the stack", box(index), layerTask)
