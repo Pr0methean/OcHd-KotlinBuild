@@ -139,7 +139,7 @@ class ImageProcessingStats(private val backingCache: Cache<SemiStrongTaskCache<*
             totalWorstCase += worstCase
         }
         val totalEfficiency = (totalUnique.toDouble() / totalActual)
-        val totalHitRate = (totalActual - totalUnique).toDouble()/(totalWorstCase - totalUnique)
+        val totalHitRate = 1.0 - (totalActual - totalUnique).toDouble()/(totalWorstCase - totalUnique)
         logger.printf(Level.INFO, "Total               : %3.2f%% / %3.2f%%", 100.0 * totalEfficiency, 100.0 * totalHitRate)
         backingCache.stats().log("main", backingCache.estimatedSize())
         hugeCacheStats.log("huge-tile", hugeCacheFinalSize)
