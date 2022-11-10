@@ -118,7 +118,10 @@ private suspend fun runAll(
         }
         val task = unstartedTasksMutex.withLock {
             val maybeTask = unstartedTasks.minWithOrNull(taskOrderComparator)
-            if (maybeTask != null && unstartedTasks.remove(maybeTask)) {
+            if (maybeTask != null) {
+                if (!unstartedTasks.remove(maybeTask)) {
+                    throw RuntimeException("Attempted to remove task more than once: $maybeTask")
+                }
                 maybeTask
             } else null
         }
