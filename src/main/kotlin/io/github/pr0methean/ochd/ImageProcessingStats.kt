@@ -32,7 +32,7 @@ private fun <T> Multiset<T>.logIf(predicate: (T) -> Boolean) {
     toSet().forEach { if (predicate(it)) {logger.info("{}: {}", it, count(it))} }
 }
 private val logger = LogManager.getLogger("ImageProcessingStats")
-private const val NEED_THREAD_MONITORING = false
+private const val NEED_THREAD_MONITORING = true
 private val NEED_COROUTINE_DEBUG = logger.isDebugEnabled
 private val REPORTING_INTERVAL: Duration = 1.minutes
 val threadMxBean: ThreadMXBean = ManagementFactory.getThreadMXBean()
