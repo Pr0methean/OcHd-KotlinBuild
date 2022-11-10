@@ -115,6 +115,8 @@ class ImageStackingTask(val layers: LayerList,
         return snapshotRef.getAndSet(null)
     }
 
+    private val background = layers.background
+
     private suspend fun takeSnapshot(
         width: Double,
         height: Double,
@@ -122,7 +124,7 @@ class ImageStackingTask(val layers: LayerList,
         snapshotRef: AtomicReference<Image>
     ) {
         val params = SnapshotParameters()
-        params.fill = layers.background
+        params.fill = background
         val output = WritableImage(width.toInt(), height.toInt())
         val snapshot = doJfx("Snapshot of $name") {
             canvas.snapshot(params, output)
