@@ -24,12 +24,12 @@ open class TransformingTask<T, U>(
         val myTransform = transform
         return coroutineScope.async(start = CoroutineStart.LAZY) {
             val result = try {
-                logger.debug("Awaiting {} to transform it in {}", myBase, this)
+                logger.debug("Awaiting {} to transform it in {}", myBase, this@TransformingTask)
                 val input = myBase.await()
-                logger.debug("Got {} from {}; transforming it in {}", input, myBase, this)
+                logger.debug("Got {} from {}; transforming it in {}", input, myBase, this@TransformingTask)
                 success(myTransform(input.getOrThrow()))
             } catch (t: Throwable) {
-                logger.error("Exception in {}", this, t)
+                logger.error("Exception in {}", this@TransformingTask, t)
                 failure(t)
             }
             result
