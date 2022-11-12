@@ -80,7 +80,7 @@ class ImageStackingTask(val layers: LayerList,
         })
         if (!singleLayer) {
             layers.layers.withIndex().drop(1).forEach { (index, layerTask) ->
-                logger.debug("Creating consumer for layer {} ({})", index, layerTask)
+                logger.debug("Creating consumer for layer {} ({})", box(index), layerTask)
                 val previousLayerTask = layerRenderTasks[index - 1]
                 val previousLayerName = layers.layers[index - 1].name
                 val lastLayer = index == layers.layers.lastIndex
@@ -88,12 +88,13 @@ class ImageStackingTask(val layers: LayerList,
                     try {
                         logger.debug("Awaiting previous layer ({})", previousLayerName)
                         previousLayerTask.await().getOrThrow()
-                        logger.debug("Fetching layer {} ({})", index, layerTask)
+                        logger.debug("Fetching layer {} ({})", box(index), layerTask)
                         val layerImage = it.getOrThrow()
                         logger.debug("Rendering layer {} ({}) onto the stack", box(index), layerTask)
                         canvasCtx.drawImage(layerImage, 0.0, 0.0)
                         logger.debug("Finished layer {} ({})", box(index), layerTask)
                         if (lastLayer) {
+                            logger.debug("Taking snapshot of {}", name)
                             takeSnapshot(width, height, canvas, snapshotRef)
                         }
                         return@consumeAsync SUCCESS
@@ -106,7 +107,6 @@ class ImageStackingTask(val layers: LayerList,
         }
         logger.debug("Waiting for layer tasks for {}", this)
         layerRenderTasks.last().await().getOrThrow()
-        logger.debug("Layer tasks done for {}", this)
         stats.onTaskCompleted("ImageStackingTask", name)
         return snapshotRef.getAndSet(null)
     }
