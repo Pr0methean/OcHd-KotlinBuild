@@ -14,7 +14,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.plus
@@ -80,11 +79,11 @@ suspend fun main(args: Array<String>) {
     val time = measureNanoTime {
         stats.onTaskLaunched("Build task graph", "Build task graph")
         val tasks = ALL_MATERIALS.outputTasks(ctx).toList()
-        val depsBuildTasks = tasks.map {task -> scope.launch {task.registerRecursiveDependencies()}}
+        val depsBuildTask = scope.launch { tasks.forEach { it.registerRecursiveDependencies() }}
         val cbTasks = tasks.filter(OutputTask::isCommandBlock)
         val nonCbTasks = tasks.filterNot(OutputTask::isCommandBlock)
         val hugeTaskCache = ctx.hugeTileBackingCache
-        depsBuildTasks.joinAll()
+        depsBuildTask.join()
         stats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupAndCopyMetadata.join()
         System.gc()
