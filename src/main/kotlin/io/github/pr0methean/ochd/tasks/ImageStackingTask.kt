@@ -21,9 +21,8 @@ private val logger = LogManager.getLogger("ImageStackingTask")
 private val SUCCESS = success(Unit)
 
 class ImageStackingTask(val layers: LayerList,
-                        name: String,
                         cache: TaskCache<Image>,
-                        stats: ImageProcessingStats) : AbstractImageTask(name, cache, stats) {
+                        stats: ImageProcessingStats) : AbstractImageTask(layers.toString(), cache, stats) {
     private val hashCode by lazy {layers.hashCode() + 37}
     init {
         if (layers.layers.isEmpty()) {

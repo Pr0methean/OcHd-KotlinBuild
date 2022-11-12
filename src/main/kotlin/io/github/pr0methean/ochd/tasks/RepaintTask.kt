@@ -20,7 +20,7 @@ class RepaintTask(
     val alpha: Double = 1.0,
     cache: TaskCache<Image>,
     stats: ImageProcessingStats
-): AbstractImageTask("$base@$paint@$alpha", cache, stats) {
+): AbstractImageTask("{$base}@$paint@$alpha", cache, stats) {
     init {
         if (alpha == 1.0) {
             base.addOpaqueRepaint(this)

@@ -173,5 +173,5 @@ class TaskPlanningContext(
 
     suspend inline fun stack(layers: LayerList): ImageTask
             = deduplicate(ImageStackingTask(layers,
-        layers.toString(), createStandardTaskCache(layers.toString()), stats))
+        createStandardTaskCache(layers.toString()), stats))
 }
