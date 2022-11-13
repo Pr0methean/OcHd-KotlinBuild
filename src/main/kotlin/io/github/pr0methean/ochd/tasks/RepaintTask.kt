@@ -20,7 +20,7 @@ class RepaintTask(
     val alpha: Double = 1.0,
     cache: TaskCache<Image>,
     stats: ImageProcessingStats
-): AbstractImageTask("$base@$paint@$alpha", cache, stats) {
+): AbstractImageTask("{$base}@$paint@$alpha", cache, stats) {
     init {
         if (alpha == 1.0) {
             base.addOpaqueRepaint(this)
@@ -28,7 +28,7 @@ class RepaintTask(
     }
 
     override fun unstartedCacheableSubtasks(): Collection<Task<*>> {
-        if (getNow() != null) {
+        if (isStartedOrAvailable()) {
             return listOf()
         }
         if (base.getNow() != null) {
@@ -39,7 +39,7 @@ class RepaintTask(
                 return if (cache.enabled) listOf() else listOf(this)
             }
         }
-        return super.unstartedCacheableSubtasks()
+        return base.unstartedCacheableSubtasks() + this
     }
 
     override fun cachedSubtasks(): Set<Task<*>> {
