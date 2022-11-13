@@ -28,7 +28,7 @@ class RepaintTask(
     }
 
     override fun unstartedCacheableSubtasks(): Collection<Task<*>> {
-        if (getNow() != null) {
+        if (isStartedOrAvailable()) {
             return listOf()
         }
         if (base.getNow() != null) {
@@ -39,7 +39,7 @@ class RepaintTask(
                 return if (cache.enabled) listOf() else listOf(this)
             }
         }
-        return super.unstartedCacheableSubtasks()
+        return base.unstartedCacheableSubtasks() + this
     }
 
     override fun cachedSubtasks(): Set<Task<*>> {
