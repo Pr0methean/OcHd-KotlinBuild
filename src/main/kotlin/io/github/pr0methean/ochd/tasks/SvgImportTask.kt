@@ -1,8 +1,6 @@
 package io.github.pr0methean.ochd.tasks
 
-import com.sun.prism.GraphicsPipeline
 import io.github.pr0methean.ochd.ImageProcessingStats
-import io.github.pr0methean.ochd.isHugeTileImportTask
 import io.github.pr0methean.ochd.tasks.caching.TaskCache
 import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
@@ -15,12 +13,9 @@ import org.apache.batik.transcoder.SVGAbstractTranscoder
 import org.apache.batik.transcoder.TranscoderInput
 import org.apache.batik.transcoder.TranscoderOutput
 import org.apache.batik.transcoder.image.ImageTranscoder
-import org.apache.logging.log4j.Logger
-import org.apache.logging.log4j.util.Unbox.box
 import java.awt.image.BufferedImage
 import java.io.File
 
-private val LOGGER: Logger = org.apache.logging.log4j.LogManager.getLogger("SvgImportTask")
 private val batikTranscoder: ThreadLocal<ToImageTranscoder> = ThreadLocal.withInitial { ToImageTranscoder() }
 /** SVG decoder that stores the last image it decoded, rather than passing it to an encoder. */
 private class ToImageTranscoder: ImageTranscoder() {
@@ -39,7 +34,6 @@ private class ToImageTranscoder: ImageTranscoder() {
     }
 }
 
-private val resourcePool by lazy { GraphicsPipeline.getDefaultResourceFactory().textureResourcePool }
 class SvgImportTask(
     name: String,
     private val width: Int,
@@ -64,10 +58,6 @@ class SvgImportTask(
         stats.onTaskLaunched("SvgImportTask", name)
         val transcoder = batikTranscoder.get()
         val input = TranscoderInput(file.toURI().toString())
-        val bytes = if (isHugeTileImportTask(name)) { 4L } else { 1L } * 4 * width * width
-        while (!resourcePool.prepareForAllocation(bytes)) {
-            LOGGER.warn("Failed to free {} bytes for {}; trying again...", box(bytes), name)
-        }
         val image = SwingFXUtils.toFXImage(transcoder.mutex.withLock {
             transcoder.setTranscodingHints(mapOf(SVGAbstractTranscoder.KEY_WIDTH to width.toFloat()))
             transcoder.transcode(input, null)

@@ -31,8 +31,7 @@ private val logger = LogManager.getLogger("TaskPlanningContext")
 // Main Caffeine cache will be able to contain this * 16 MPx * 4 bytes/Px
 private const val MINIMUM_CACHE_4096x4096 = 20L
 // Huge-tile Caffeine cache will be able to contain this * 64 MPx * 4 bytes/Px
-private const val MINIMUM_CACHE_16384x4096 = 4L
-fun isHugeTileImportTask(name: String): Boolean = name.startsWith("commandBlock") || name.endsWith("4x")
+private const val MINIMUM_CACHE_16384x4096 = 3L
 
 /**
  * Holds info needed to build and deduplicate the task graph. Needs to become unreachable once the graph is built.
@@ -69,7 +68,7 @@ class TaskPlanningContext(
         return SemiStrongTaskCache(WeakTaskCache(name), backingCache)
     }
     private fun <T> createSvgImportCache(name: String): TaskCache<T> {
-        if (isHugeTileImportTask(name)) {
+        if (name.startsWith("commandBlock") || name.endsWith("4x")) {
             // These images are too large for the main cache to manage
             return SemiStrongTaskCache(WeakTaskCache(name), hugeTileBackingCache)
         }
