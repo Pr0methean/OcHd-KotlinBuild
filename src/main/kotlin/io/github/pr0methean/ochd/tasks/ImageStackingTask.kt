@@ -105,7 +105,10 @@ class ImageStackingTask(val layers: LayerList,
             }
         }
         logger.debug("Waiting for layer tasks for {}", this)
-        layerRenderTasks.last().await().getOrThrow()
+
+        // FIXME: Why doesn't layerRenderTasks.last().await().getOrThrow() work?
+        layerRenderTasks.forEach { it.await().getOrThrow() }
+
         stats.onTaskCompleted("ImageStackingTask", name)
         return snapshotRef.getAndSet(null)
     }
