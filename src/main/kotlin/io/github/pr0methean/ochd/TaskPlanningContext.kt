@@ -32,7 +32,7 @@ private val logger = LogManager.getLogger("TaskPlanningContext")
 private const val MINIMUM_CACHE_4096x4096 = 20L
 // Huge-tile Caffeine cache will be able to contain this * 64 MPx * 4 bytes/Px
 private const val MINIMUM_CACHE_16384x4096 = 4L
-fun isHugeTileImportTask(name: String) = name.startsWith("commandBlock") || name.endsWith("4x")
+fun isHugeTileImportTask(name: String): Boolean = name.startsWith("commandBlock") || name.endsWith("4x")
 
 /**
  * Holds info needed to build and deduplicate the task graph. Needs to become unreachable once the graph is built.
