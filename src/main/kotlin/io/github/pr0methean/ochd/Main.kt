@@ -79,7 +79,6 @@ suspend fun main(args: Array<String>) {
         stats.onTaskLaunched("Build task graph", "Build task graph")
         val tasks = ALL_MATERIALS.outputTasks(ctx).toList()
         val depsBuildTask = scope.launch { tasks.forEach { it.registerRecursiveDependencies() }}
-        Platform.startup {}
         val cbTasks = tasks.filter(OutputTask::isCommandBlock)
         val nonCbTasks = tasks.filterNot(OutputTask::isCommandBlock)
         val hugeTaskCache = ctx.hugeTileBackingCache
