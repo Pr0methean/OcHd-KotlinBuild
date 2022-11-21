@@ -2,11 +2,11 @@ package io.github.pr0methean.ochd.tasks.caching
 
 import com.github.benmanes.caffeine.cache.Cache
 
-class SemiStrongTaskCache<T>(private val victimCache: AbstractTaskCache<T>, private val primaryCache: Cache<SemiStrongTaskCache<*>, in T>):
+class SemiStrongTaskCache<T>(private val victimCache: AbstractTaskCache<T>, private val primaryCache: Cache<SemiStrongTaskCache<T>, T>):
         AbstractTaskCache<T>(victimCache.name) {
     @Suppress("UNCHECKED_CAST")
     override fun getNow(): T? {
-        return primaryCache.getIfPresent(this) as T? ?: victimCache.getNow()
+        return primaryCache.getIfPresent(this) ?: victimCache.getNow()
     }
 
     override fun clear() {

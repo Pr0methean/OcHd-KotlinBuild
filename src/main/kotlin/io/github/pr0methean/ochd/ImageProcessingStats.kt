@@ -6,6 +6,7 @@ import com.google.common.collect.ConcurrentHashMultiset
 import com.google.common.collect.Multiset
 import com.google.common.collect.Multisets
 import io.github.pr0methean.ochd.tasks.caching.SemiStrongTaskCache
+import javafx.scene.image.Image
 import kotlinx.coroutines.*
 import kotlinx.coroutines.debug.DebugProbes
 import org.apache.logging.log4j.Level
@@ -86,7 +87,7 @@ fun CacheStats.log(name: String, estimatedSize: Long) {
             box(hitCount()), box(missCount()), box(evictionCount()), box(estimatedSize))
 }
 
-class ImageProcessingStats(private val backingCache: Cache<SemiStrongTaskCache<*>, Result<*>>) {
+class ImageProcessingStats(private val backingCache: Cache<SemiStrongTaskCache<Image>, Image>) {
     private val taskLaunches: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val taskCompletions: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val dedupeSuccesses: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
@@ -163,7 +164,7 @@ class ImageProcessingStats(private val backingCache: Cache<SemiStrongTaskCache<*
         retries.add(howMany)
     }
 
-    fun readHugeTileCache(hugeTaskCache: Cache<SemiStrongTaskCache<*>, Result<*>>) {
+    fun readHugeTileCache(hugeTaskCache: Cache<SemiStrongTaskCache<Image>, Image>) {
         hugeCacheStats = hugeTaskCache.stats()
         hugeCacheFinalSize = hugeTaskCache.estimatedSize()
     }
