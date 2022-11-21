@@ -14,7 +14,7 @@ abstract class AbstractTaskCache<T>(val name: String) : TaskCache<T> {
             field = value
         }
 
-    override fun set(value: Result<T>?) {
+    override fun set(value: T?) {
         if (value == null) {
             clear()
         } else if (enabled) {
@@ -27,5 +27,5 @@ abstract class AbstractTaskCache<T>(val name: String) : TaskCache<T> {
 
     abstract fun clear()
 
-    abstract fun enabledSet(value: Result<T>)
+    abstract fun enabledSet(value: T)
 }

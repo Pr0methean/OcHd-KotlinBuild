@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 import javax.annotation.concurrent.GuardedBy
 import kotlin.Result.Companion.failure
+import kotlin.Result.Companion.success
 
 val AT_LOGGER: Logger = LogManager.getLogger("AbstractTask")
 private val CANCEL_BECAUSE_REPLACING = CancellationException("Being replaced")
@@ -93,7 +94,7 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
         val cached = cache.getNow()
         if (cached != null) {
             AT_LOGGER.debug("Retrieved {} from cache", cached)
-            return cached
+            return success(cached)
         }
         val coroutine = coroutine.get()
         val result = if (coroutine?.isCompleted == true) {
@@ -184,7 +185,7 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
                     cache.enabled = false
                 } else {
                     AT_LOGGER.info("Emitting result of {} into cache", name)
-                    cache.set(result)
+                    cache.set(result.getOrThrow())
                 }
             }
             if (coroutine.compareAndSet(source, null)) {
