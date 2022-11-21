@@ -142,7 +142,7 @@ private suspend fun runAll(
                     logger.info("Joined {} with result of success", task)
                     task.source.removeDirectDependentTask(task)
                 } else {
-                    logger.error("Joined {} with an error", task, result.exceptionOrNull())
+                    logger.error("Joined {} with an error: {}", task, result.exceptionOrNull()?.message)
                     stats.recordRetries(1)
                 }
             }
