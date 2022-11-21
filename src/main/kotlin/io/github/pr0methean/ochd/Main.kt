@@ -56,7 +56,6 @@ suspend fun main(args: Array<String>) {
             }
         }
     }
-    Platform.startup {}
     val tileSize = args[0].toInt()
     if (tileSize <= 0) throw IllegalArgumentException("tileSize shouldn't be zero or negative but was ${args[0]}")
     val coroutineContext = newFixedThreadPoolContext(PARALLELISM, "Main coroutine context")
@@ -80,6 +79,7 @@ suspend fun main(args: Array<String>) {
         stats.onTaskLaunched("Build task graph", "Build task graph")
         val tasks = ALL_MATERIALS.outputTasks(ctx).toList()
         val depsBuildTask = scope.launch { tasks.forEach { it.registerRecursiveDependencies() }}
+        Platform.startup {}
         val cbTasks = tasks.filter(OutputTask::isCommandBlock)
         val nonCbTasks = tasks.filterNot(OutputTask::isCommandBlock)
         val hugeTaskCache = ctx.hugeTileBackingCache
