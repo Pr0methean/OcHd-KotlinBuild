@@ -50,6 +50,9 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
         if (getNow() != null) {
             return andAllSubtasks
         }
+        if (directDependencies.none()) {
+            return setOf()
+        }
         val subtasks = mutableSetOf<Task<*>>()
         for (task in directDependencies) {
             subtasks += task.cachedSubtasks()
