@@ -172,18 +172,20 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
     @Suppress("DeferredResultUnused")
     suspend inline fun emit(result: Result<T>, source: Deferred<Result<T>>?) {
         if (result.isFailure) {
-            AT_LOGGER.error("Emitting failure for {}", name, result.exceptionOrNull())
+            AT_LOGGER.error("Emitting failure for {} due to {}", name, result.exceptionOrNull()?.message)
             timesFailed.incrementAndGet()
         } else {
             AT_LOGGER.debug("Emitting success for {}", name)
         }
         mutex.withLock(result) {
-            if (cache.enabled && directDependentTasks.size < 2) {
-                AT_LOGGER.info("Disabling caching for {} while emitting result", name)
-                cache.enabled = false
-            } else {
-                AT_LOGGER.info("Emitting result of {} into cache", name)
-                cache.set(result)
+            if (result.isSuccess) {
+                if (cache.enabled && directDependentTasks.size < 2) {
+                    AT_LOGGER.info("Disabling caching for {} while emitting result", name)
+                    cache.enabled = false
+                } else {
+                    AT_LOGGER.info("Emitting result of {} into cache", name)
+                    cache.set(result)
+                }
             }
             if (coroutine.compareAndSet(source, null)) {
                 coroutineHandle.getAndSet(null)?.dispose()
