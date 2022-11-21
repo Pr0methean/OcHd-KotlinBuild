@@ -29,7 +29,7 @@ interface Task<out T>: StringBuilderFormattable {
         subtasks
     }
 
-    fun cachedSubtasks(): Set<Task<*>>
+    fun cachedSubtasks(): List<Task<*>>
 
     fun isCachingEnabled(): Boolean
 
@@ -44,7 +44,7 @@ interface Task<out T>: StringBuilderFormattable {
     val totalSubtasks: Int
 
     fun timesFailed(): Long
-    val andAllSubtasks: Set<Task<*>>
+    val andAllSubtasks: List<Task<*>>
 }
 
 @Suppress("DeferredResultUnused")
