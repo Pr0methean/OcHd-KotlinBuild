@@ -42,7 +42,7 @@ class RepaintTask(
         return base.unstartedCacheableSubtasks() + this
     }
 
-    override fun cachedSubtasks(): Set<Task<*>> {
+    override fun cachedSubtasks(): List<Task<*>> {
         if (getNow() == null && base.getNow() == null) {
             for (repaint in base.opaqueRepaints()) {
                 if (repaint.getNow() != null) {
