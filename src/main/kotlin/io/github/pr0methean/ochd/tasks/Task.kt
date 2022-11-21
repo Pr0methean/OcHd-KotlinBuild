@@ -44,7 +44,7 @@ interface Task<out T>: StringBuilderFormattable {
     val totalSubtasks: Int
 
     fun timesFailed(): Long
-    fun andAllSubtasks(): Set<Task<*>>
+    val andAllSubtasks: Set<Task<*>>
 }
 
 @Suppress("DeferredResultUnused")

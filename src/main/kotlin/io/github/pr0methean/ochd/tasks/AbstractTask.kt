@@ -48,7 +48,7 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
 
     override fun cachedSubtasks(): Set<Task<*>> {
         if (getNow() != null) {
-            return andAllSubtasks()
+            return andAllSubtasks
         }
         val subtasks = mutableSetOf<Task<*>>()
         for (task in directDependencies) {
@@ -57,12 +57,12 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
         return subtasks
     }
 
-    override fun andAllSubtasks(): Set<Task<*>> {
+    override val andAllSubtasks: Set<Task<*>> by lazy {
         val subtasks = mutableSetOf<Task<*>>(this)
         for (task in directDependencies) {
-            subtasks += task.andAllSubtasks()
+            subtasks += task.andAllSubtasks
         }
-        return subtasks
+        subtasks
     }
 
     override suspend fun registerRecursiveDependencies(): Unit = mutex.withLock {
