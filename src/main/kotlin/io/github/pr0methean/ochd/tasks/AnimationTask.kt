@@ -6,7 +6,6 @@ import io.github.pr0methean.ochd.tasks.caching.TaskCache
 import javafx.scene.canvas.Canvas
 import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
-import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.joinAll
 import java.util.*
 
@@ -18,11 +17,6 @@ class AnimationTask(
 ): AbstractImageTask(name, cache, stats) {
     private val totalHeight = height * frames.size
     private val hashCode: Int by lazy {Objects.hash(frames, width, height)}
-
-    override suspend fun clearFailure() {
-        frames.asFlow().collect(Task<Image>::clearFailure)
-        super.clearFailure()
-    }
 
     override fun equals(other: Any?): Boolean {
         return (this === other) || (

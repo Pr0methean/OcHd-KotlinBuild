@@ -195,34 +195,6 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
         AT_LOGGER.debug("Unlocking {} after emitting result", name)
     }
 
-    override suspend fun clearFailure() {
-        AT_LOGGER.debug("Locking {} to clear failure", name)
-        if (mutex.tryLock(this@AbstractTask)) {
-            try {
-                if (getNow()?.isFailure == true) {
-                    AT_LOGGER.debug("Clearing failure from {}", name)
-                    cache.set(null)
-                    val oldCoroutine = coroutine.getAndSet(null)
-                    if (oldCoroutine?.isCompleted == false) {
-                        AT_LOGGER.debug("Canceling failed coroutine for {}", name)
-                        oldCoroutine.cancel(CANCEL_BECAUSE_REPLACING)
-                    }
-                    coroutineHandle.getAndSet(null)?.dispose()
-                    for (dependency in directDependencies) {
-                        dependency.clearFailure()
-                    }
-                } else {
-                    AT_LOGGER.debug("No failure to clear for {}", name)
-                }
-            } finally {
-                AT_LOGGER.debug("Unlocking {} after clearing failure", name)
-                mutex.unlock(this@AbstractTask)
-            }
-        } else {
-            AT_LOGGER.warn("Couldn't acquire lock for {}.clearFailure()", name)
-        }
-    }
-
     @Suppress("UNCHECKED_CAST")
     @OptIn(ExperimentalCoroutinesApi::class)
     override suspend fun mergeWithDuplicate(other: Task<*>): Task<T> {

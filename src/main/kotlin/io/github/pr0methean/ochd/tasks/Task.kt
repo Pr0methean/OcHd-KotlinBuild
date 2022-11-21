@@ -12,7 +12,6 @@ interface Task<out T>: StringBuilderFormattable {
 
     suspend fun startAsync(): Deferred<Result<T>>
 
-    suspend fun clearFailure()
     suspend fun mergeWithDuplicate(other: Task<*>): Task<T>
 
     suspend fun addDirectDependentTask(task: Task<*>)

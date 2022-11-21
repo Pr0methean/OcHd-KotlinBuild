@@ -58,8 +58,4 @@ open class TransformingTask<T, U>(
 
     override val directDependencies: List<Task<T>> = listOf(base)
 
-    override suspend fun clearFailure() {
-        base.clearFailure()
-        super.clearFailure()
-    }
 }

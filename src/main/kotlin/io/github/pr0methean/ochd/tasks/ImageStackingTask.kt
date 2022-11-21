@@ -9,7 +9,6 @@ import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
-import kotlinx.coroutines.flow.asFlow
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox.box
 import java.util.*
@@ -39,11 +38,6 @@ class ImageStackingTask(val layers: LayerList,
     }
 
     override val directDependencies: List<ImageTask> = layers.layers
-
-    override suspend fun clearFailure() {
-        layers.layers.asFlow().collect(Task<Image>::clearFailure)
-        super.clearFailure()
-    }
 
     override fun equals(other: Any?): Boolean {
         return (this === other) || (other is ImageStackingTask
