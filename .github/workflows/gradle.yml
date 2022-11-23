@@ -78,7 +78,7 @@ jobs:
         -jar OcHd-KotlinBuild-1.0-SNAPSHOT.jar ${{ matrix.size }}
 
       continue-on-error: true
-      timeout-minutes: 60
+      timeout-minutes: 40
     - name: Zip Texture Pack
       if: steps.run.outcome == 'success'
       run: cd pngout && zip -r OcHD-${{ matrix.size}}x${{ matrix.size}}.zip *
