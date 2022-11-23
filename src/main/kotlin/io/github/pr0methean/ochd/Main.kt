@@ -122,7 +122,7 @@ private suspend fun runAll(
                 val timesFailed = maybeTask.timesFailed()
                 if (timesFailed > maxRetries) {
                     maxRetries = timesFailed
-                    val cache = maybeTask.cache
+                    val cache = maybeTask.source.cache
                     if (cache is SemiStrongTaskCache<*>) {
                         cache.clearPrimaryCache()
                     }
