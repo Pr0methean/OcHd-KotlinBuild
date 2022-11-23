@@ -5,31 +5,30 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import org.apache.logging.log4j.util.StringBuilderFormattable
 
-interface Task<T>: StringBuilderFormattable {
+interface Task<out T>: StringBuilderFormattable {
     val name: String
 
     fun getNow(): Result<T>?
 
     suspend fun startAsync(): Deferred<Result<T>>
 
-    suspend fun clearFailure()
-    suspend fun mergeWithDuplicate(other: Task<T>): Task<T>
+    suspend fun mergeWithDuplicate(other: Task<*>): Task<T>
 
     suspend fun addDirectDependentTask(task: Task<*>)
 
     suspend fun removeDirectDependentTask(task: Task<*>)
 
-    fun unstartedCacheableSubtasks(): Int = if (isStartedOrAvailable() || !isCachingEnabled()) {
-        0
+    fun unstartedCacheableSubtasks(): Collection<Task<*>> = if (isStartedOrAvailable() || !isCachingEnabled()) {
+        listOf()
     } else {
-        var total = 1
+        val subtasks = mutableSetOf<Task<*>>(this)
         for (task in directDependencies) {
-            total += task.unstartedCacheableSubtasks()
+            subtasks += task.unstartedCacheableSubtasks()
         }
-        total
+        subtasks
     }
 
-    fun cachedSubtasks(): Int
+    fun cachedSubtasks(): List<Task<*>>
 
     fun isCachingEnabled(): Boolean
 
@@ -44,6 +43,7 @@ interface Task<T>: StringBuilderFormattable {
     val totalSubtasks: Int
 
     fun timesFailed(): Long
+    val andAllSubtasks: List<Task<*>>
 }
 
 @Suppress("DeferredResultUnused")

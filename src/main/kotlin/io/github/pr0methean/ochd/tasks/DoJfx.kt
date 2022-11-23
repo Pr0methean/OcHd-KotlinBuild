@@ -6,11 +6,11 @@ import org.apache.logging.log4j.LogManager
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 
-private val logger = LogManager.getLogger("doJfx")
+private val LOGGER = LogManager.getLogger("doJfx")
 @Suppress("BlockingMethodInNonBlockingContext")
 suspend fun <T> doJfx(name: String, jfxCode: CoroutineScope.() -> T): T = try {
     ByteArrayOutputStream().use { errorCatcher ->
-        abstractTaskLogger.info("Starting JFX task: {}", name)
+        LOGGER.info("Starting JFX task: {}", name)
         val result = PrintStream(errorCatcher, true, System.err.charset()).use { tempStderr ->
             withContext(Dispatchers.Main.plus(CoroutineName(name))) {
                 val oldSystemErr = System.err
@@ -31,16 +31,16 @@ suspend fun <T> doJfx(name: String, jfxCode: CoroutineScope.() -> T): T = try {
             }
             System.err.print(interceptedStdout)
         }
-        logger.info("Finished JFX task: {}", name)
+        LOGGER.info("Finished JFX task: {}", name)
         result
     }
 } catch (t: Throwable) {
-    logger.error("Error from JFX task", t)
+    LOGGER.error("Error from JFX task", t)
     // Start a new JFX thread if the old one crashed
     try {
         Platform.startup {}
     } catch (e: IllegalStateException) {
-        logger.debug("Error trying to restart JFX thread", e)
+        LOGGER.debug("Error trying to restart JFX thread", e)
     }
     throw t
 }

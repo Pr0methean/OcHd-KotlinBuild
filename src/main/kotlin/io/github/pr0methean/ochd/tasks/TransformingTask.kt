@@ -24,12 +24,12 @@ open class TransformingTask<T, U>(
         val myTransform = transform
         return coroutineScope.async(start = CoroutineStart.LAZY) {
             val result = try {
-                logger.debug("Awaiting {} to transform it in {}", myBase, this)
+                logger.debug("Awaiting {} to transform it in {}", myBase, this@TransformingTask)
                 val input = myBase.await()
-                logger.debug("Got {} from {}; transforming it in {}", input, myBase, this)
+                logger.debug("Got {} from {}; transforming it in {}", input, myBase, this@TransformingTask)
                 success(myTransform(input.getOrThrow()))
             } catch (t: Throwable) {
-                logger.error("Exception in {}", this, t)
+                logger.error("Exception in {}", this@TransformingTask, t)
                 failure(t)
             }
             result
@@ -48,9 +48,9 @@ open class TransformingTask<T, U>(
     override fun hashCode(): Int = hashCode
 
     @Suppress("UNCHECKED_CAST")
-    override suspend fun mergeWithDuplicate(other: Task<U>): Task<U> {
+    override suspend fun mergeWithDuplicate(other: Task<*>): Task<U> {
         val deduped = super.mergeWithDuplicate(other)
-        if (other !== deduped && other is TransformingTask<*, U>) {
+        if (other !== deduped && other is TransformingTask<*, *>) {
             (deduped as TransformingTask<T, U>).base.mergeWithDuplicate(other.base as Task<T>)
         }
         return deduped
@@ -58,8 +58,4 @@ open class TransformingTask<T, U>(
 
     override val directDependencies: List<Task<T>> = listOf(base)
 
-    override suspend fun clearFailure() {
-        base.clearFailure()
-        super.clearFailure()
-    }
 }

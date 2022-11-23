@@ -9,7 +9,7 @@ import java.util.*
 abstract class AbstractImageTask(name: String, cache: TaskCache<Image>,
                                  open val stats: ImageProcessingStats)
     : SimpleTask<Image>(name, cache), ImageTask {
-    override suspend fun mergeWithDuplicate(other: Task<Image>): ImageTask {
+    override suspend fun mergeWithDuplicate(other: Task<*>): ImageTask {
         if (other is ImageTask) {
             other.opaqueRepaints().forEach(this::addOpaqueRepaint)
         }

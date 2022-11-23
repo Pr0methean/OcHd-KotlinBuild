@@ -3,6 +3,7 @@ package io.github.pr0methean.ochd
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
 import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.tasks.await
+import io.github.pr0methean.ochd.tasks.caching.SemiStrongTaskCache
 import io.github.pr0methean.ochd.tasks.doJfx
 import javafx.application.Platform
 import kotlinx.coroutines.CoroutineName
@@ -10,27 +11,26 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.channels.ReceiveChannel
-import kotlinx.coroutines.channels.produce
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.plus
-import kotlinx.coroutines.selects.select
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import org.apache.logging.log4j.LogManager
 import java.nio.file.Paths
 import java.util.Comparator.comparingInt
 import java.util.Comparator.comparingLong
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.LongAdder
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
+private const val CAPACITY_PADDING_FACTOR = 2
 private val taskOrderComparator = comparingLong(OutputTask::timesFailed)
-    .then(comparingInt(OutputTask::cachedSubtasks).reversed())
-    .then(comparingInt(OutputTask::unstartedCacheableSubtasks))
+    .then(comparingInt<OutputTask> { it.cachedSubtasks().size }.reversed())
+    .then(comparingInt { it.unstartedCacheableSubtasks().size })
 private val logger = LogManager.getRootLogger()
 private const val PARALLELISM = 2
 private const val HUGE_TILE_PARALLELISM = 1
@@ -57,7 +57,6 @@ suspend fun main(args: Array<String>) {
             }
         }
     }
-    Platform.startup {}
     val tileSize = args[0].toInt()
     if (tileSize <= 0) throw IllegalArgumentException("tileSize shouldn't be zero or negative but was ${args[0]}")
     val coroutineContext = newFixedThreadPoolContext(PARALLELISM, "Main coroutine context")
@@ -80,20 +79,19 @@ suspend fun main(args: Array<String>) {
     val time = measureNanoTime {
         stats.onTaskLaunched("Build task graph", "Build task graph")
         val tasks = ALL_MATERIALS.outputTasks(ctx).toList()
-        val depsBuildTasks = tasks.map {task -> scope.launch {task.registerRecursiveDependencies()}}
+        val depsBuildTask = scope.launch { tasks.forEach { it.registerRecursiveDependencies() }}
         val cbTasks = tasks.filter(OutputTask::isCommandBlock)
         val nonCbTasks = tasks.filterNot(OutputTask::isCommandBlock)
         val hugeTaskCache = ctx.hugeTileBackingCache
-        depsBuildTasks.joinAll()
+        depsBuildTask.join()
         stats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupAndCopyMetadata.join()
         System.gc()
-        val tasksRun = LongAdder()
-        runAll(cbTasks, cbScope, tasksRun, stats, HUGE_TILE_PARALLELISM)
+        runAll(cbTasks, cbScope, stats, HUGE_TILE_PARALLELISM)
         stats.readHugeTileCache(hugeTaskCache)
         hugeTaskCache.invalidateAll()
         System.gc()
-        runAll(nonCbTasks, scope, tasksRun, stats, PARALLELISM)
+        runAll(nonCbTasks, scope, stats, PARALLELISM)
     }
     stopMonitoring()
     Platform.exit()
@@ -103,42 +101,62 @@ suspend fun main(args: Array<String>) {
     exitProcess(0)
 }
 
-@OptIn(ExperimentalCoroutinesApi::class)
 private suspend fun runAll(
     tasks: Iterable<OutputTask>,
     scope: CoroutineScope,
-    tasksRun: LongAdder,
     stats: ImageProcessingStats,
     parallelism: Int
 ) {
-    val remainingTasks = tasks.toMutableSet()
-    val pendingTasks = ConcurrentHashMap.newKeySet<ReceiveChannel<Unit>>()
-    val tasksToAttempt = remainingTasks.toMutableSet()
-    while (remainingTasks.isNotEmpty()) {
-        while (pendingTasks.size >= parallelism || (tasksToAttempt.isEmpty() && pendingTasks.isNotEmpty())) {
-            select<Unit> {
-                pendingTasks.map {task -> task.onReceive {pendingTasks.remove(task)}}
-            }
+    val unstartedTasksMutex = Mutex()
+    val unstartedTasks = tasks.sortedWith(comparingInt { it.unstartedCacheableSubtasks().size }).toMutableSet()
+    val inProgressJobs = mutableMapOf<OutputTask,Job>()
+    val finishedJobsChannel = Channel<OutputTask>(capacity = CAPACITY_PADDING_FACTOR * parallelism)
+    var maxRetries = 0L
+    do {
+        while (inProgressJobs.size >= parallelism) {
+            inProgressJobs.remove(finishedJobsChannel.receive())
         }
-        val task = tasksToAttempt.minWithOrNull(taskOrderComparator) ?: break
-        if (tasksToAttempt.remove(task)) {
-            pendingTasks.add(scope.produce {
+        val task = unstartedTasksMutex.withLock {
+            val maybeTask = unstartedTasks.minWithOrNull(taskOrderComparator)
+            if (maybeTask != null) {
+                val timesFailed = maybeTask.timesFailed()
+                if (timesFailed > maxRetries) {
+                    maxRetries = timesFailed
+                    val cache = maybeTask.source.cache
+                    if (cache is SemiStrongTaskCache<*>) {
+                        cache.clearPrimaryCache()
+                    }
+                }
+                if (!unstartedTasks.remove(maybeTask)) {
+                    throw RuntimeException("Attempted to remove task more than once: $maybeTask")
+                }
+                maybeTask
+            } else null
+        }
+        if (task == null) {
+            while (inProgressJobs.isNotEmpty()) {
+                inProgressJobs.remove(finishedJobsChannel.receive())
+            }
+        } else {
+            inProgressJobs[task] = scope.launch {
                 logger.info("Joining {}", task)
-                tasksRun.increment()
                 val result = task.await()
+                if (result.isFailure) {
+                    unstartedTasksMutex.withLock {
+                        unstartedTasks.add(task)
+                    }
+                }
+                finishedJobsChannel.send(task)
                 if (result.isSuccess) {
                     logger.info("Joined {} with result of success", task)
                     task.source.removeDirectDependentTask(task)
-                    remainingTasks.remove(task)
                 } else {
-                    logger.error("Error in {}", task, result.exceptionOrNull())
+                    logger.error("Joined {} with an error: {}", task, result.exceptionOrNull()?.message)
                     stats.recordRetries(1)
-                    task.clearFailure()
-                    tasksToAttempt.add(task)
                 }
-                send(Unit)
-            })
+            }
         }
-    }
+    } while (inProgressJobs.isNotEmpty() || unstartedTasks.isNotEmpty())
+    finishedJobsChannel.close()
 }
 

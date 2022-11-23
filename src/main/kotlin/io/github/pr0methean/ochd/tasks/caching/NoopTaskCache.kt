@@ -9,9 +9,9 @@ object NoopTaskCache: TaskCache<Any> {
         get() = false
         set(_) {/* No-op. */}
 
-    override fun getNow(): Result<Nothing>? = null
+    override fun getNow(): Nothing? = null
 
-    override fun set(value: Result<Any>?) {
+    override fun set(value: Any?) {
         // No-op.
     }
 }

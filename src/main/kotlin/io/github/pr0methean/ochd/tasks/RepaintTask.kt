@@ -20,29 +20,29 @@ class RepaintTask(
     val alpha: Double = 1.0,
     cache: TaskCache<Image>,
     stats: ImageProcessingStats
-): AbstractImageTask("$base@$paint@$alpha", cache, stats) {
+): AbstractImageTask("{$base}@$paint@$alpha", cache, stats) {
     init {
         if (alpha == 1.0) {
             base.addOpaqueRepaint(this)
         }
     }
 
-    override fun unstartedCacheableSubtasks(): Int {
-        if (getNow() != null) {
-            return 0
+    override fun unstartedCacheableSubtasks(): Collection<Task<*>> {
+        if (isStartedOrAvailable()) {
+            return listOf()
         }
         if (base.getNow() != null) {
-            return if (cache.enabled) 0 else 1
+            return if (cache.enabled) listOf() else listOf(this)
         }
         for (repaint in base.opaqueRepaints()) {
             if (repaint.isStartedOrAvailable()) {
-                return if (cache.enabled) 0 else 1
+                return if (cache.enabled) listOf() else listOf(this)
             }
         }
-        return super.unstartedCacheableSubtasks()
+        return base.unstartedCacheableSubtasks() + this
     }
 
-    override fun cachedSubtasks(): Int {
+    override fun cachedSubtasks(): List<Task<*>> {
         if (getNow() == null && base.getNow() == null) {
             for (repaint in base.opaqueRepaints()) {
                 if (repaint.getNow() != null) {
@@ -53,7 +53,7 @@ class RepaintTask(
         return super.cachedSubtasks()
     }
 
-    override suspend fun mergeWithDuplicate(other: Task<Image>): ImageTask {
+    override suspend fun mergeWithDuplicate(other: Task<*>): ImageTask {
         if (other is RepaintTask) {
             base.mergeWithDuplicate(other.base)
         }
@@ -71,10 +71,10 @@ class RepaintTask(
         var baseImage: Image? = base.getNow()?.getOrThrow()
         if (baseImage == null) {
             for (repaint in base.opaqueRepaints()) {
-                val repaintNow = repaint.getNow()
+                val repaintNow = repaint.getNow()?.getOrNull()
                 if (repaintNow != null) {
                     logger.info("Repainting {} to create {}", repaint, this)
-                    baseImage = repaintNow.getOrThrow()
+                    baseImage = repaintNow
                     break
                 }
             }

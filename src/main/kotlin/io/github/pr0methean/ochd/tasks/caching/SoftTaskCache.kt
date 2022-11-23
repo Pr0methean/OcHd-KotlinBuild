@@ -6,8 +6,8 @@ import java.lang.ref.WeakReference
 
 @Suppress("unused")
 open class SoftTaskCache<T>(name: String): AbstractTaskCache<T>(name) {
-    @Volatile var result: Reference<out Result<T>?> = nullRef
-    override fun enabledSet(value: Result<T>) {
+    @Volatile var result: Reference<out T?> = nullRef
+    override fun enabledSet(value: T) {
         result = SoftReference(value)
     }
 
@@ -19,5 +19,5 @@ open class SoftTaskCache<T>(name: String): AbstractTaskCache<T>(name) {
         result.clear()
     }
 
-    override fun getNow(): Result<T>? = result.get()
+    override fun getNow(): T? = result.get()
 }

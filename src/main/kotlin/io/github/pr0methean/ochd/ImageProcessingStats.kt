@@ -6,6 +6,7 @@ import com.google.common.collect.ConcurrentHashMultiset
 import com.google.common.collect.Multiset
 import com.google.common.collect.Multisets
 import io.github.pr0methean.ochd.tasks.caching.SemiStrongTaskCache
+import javafx.scene.image.Image
 import kotlinx.coroutines.*
 import kotlinx.coroutines.debug.DebugProbes
 import org.apache.logging.log4j.Level
@@ -86,7 +87,7 @@ fun CacheStats.log(name: String, estimatedSize: Long) {
             box(hitCount()), box(missCount()), box(evictionCount()), box(estimatedSize))
 }
 
-class ImageProcessingStats(private val backingCache: Cache<SemiStrongTaskCache<*>, Result<*>>) {
+class ImageProcessingStats(private val backingCache: Cache<SemiStrongTaskCache<Image>, Image>) {
     private val taskLaunches: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val taskCompletions: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val dedupeSuccesses: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
@@ -123,19 +124,24 @@ class ImageProcessingStats(private val backingCache: Cache<SemiStrongTaskCache<*
         val repeatedTasks = Multisets.copyHighestCountFirst(tasksByRunCount)
         repeatedTasks.logIf {repeatedTasks.count(it) >= 2}
         logger.info("")
-        logger.info("Task efficiency rates:")
+        logger.info("Task efficiency / hit rate")
         var totalUnique = 0L
         var totalActual = 0L
+        var totalWorstCase = 0L
         dedupeSuccesses.toSet().forEach { className ->
             val unique = dedupeFailures.count(className)
-            val actual = taskCompletions.count(className)
-            val cacheSuccessRate = (unique.toDouble() / actual)
-            logger.printf(Level.INFO, "%20s: %3.2f%%", className, 100.0 * cacheSuccessRate)
+            val actual = taskLaunches.count(className)
+            val worstCase = unique + dedupeSuccesses.count(className)
+            val efficiency = (unique.toDouble() / actual)
+            val hitRate = 1.0 - (actual - unique).toDouble()/(worstCase - unique)
+            logger.printf(Level.INFO, "%20s: %3.2f%% / %3.2f%%", className, 100.0 * efficiency, 100.0 * hitRate)
             totalUnique += unique
             totalActual += actual
+            totalWorstCase += worstCase
         }
-        val totalCacheSuccessRate = (totalUnique.toDouble() / totalActual)
-        logger.printf(Level.INFO, "Total               : %3.2f%%", 100.0 * totalCacheSuccessRate)
+        val totalEfficiency = (totalUnique.toDouble() / totalActual)
+        val totalHitRate = 1.0 - (totalActual - totalUnique).toDouble()/(totalWorstCase - totalUnique)
+        logger.printf(Level.INFO, "Total               : %3.2f%% / %3.2f%%", 100.0 * totalEfficiency, 100.0 * totalHitRate)
         backingCache.stats().log("main", backingCache.estimatedSize())
         hugeCacheStats.log("huge-tile", hugeCacheFinalSize)
     }
@@ -158,7 +164,7 @@ class ImageProcessingStats(private val backingCache: Cache<SemiStrongTaskCache<*
         retries.add(howMany)
     }
 
-    fun readHugeTileCache(hugeTaskCache: Cache<SemiStrongTaskCache<*>, Result<*>>) {
+    fun readHugeTileCache(hugeTaskCache: Cache<SemiStrongTaskCache<Image>, Image>) {
         hugeCacheStats = hugeTaskCache.stats()
         hugeCacheFinalSize = hugeTaskCache.estimatedSize()
     }

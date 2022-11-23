@@ -10,7 +10,6 @@ import io.github.pr0methean.ochd.tasks.RepaintTask
 import io.github.pr0methean.ochd.tasks.SvgImportTask
 import io.github.pr0methean.ochd.tasks.Task
 import io.github.pr0methean.ochd.tasks.caching.SemiStrongTaskCache
-import io.github.pr0methean.ochd.tasks.caching.SoftTaskCache
 import io.github.pr0methean.ochd.tasks.caching.TaskCache
 import io.github.pr0methean.ochd.tasks.caching.WeakTaskCache
 import javafx.scene.image.Image
@@ -33,6 +32,7 @@ private val logger = LogManager.getLogger("TaskPlanningContext")
 private const val MINIMUM_CACHE_4096x4096 = 20L
 // Huge-tile Caffeine cache will be able to contain this * 64 MPx * 4 bytes/Px
 private const val MINIMUM_CACHE_16384x4096 = 3L
+fun isHugeTileImportTask(name: String): Boolean = name.startsWith("commandBlock") || name.endsWith("4x")
 
 /**
  * Holds info needed to build and deduplicate the task graph. Needs to become unreachable once the graph is built.
@@ -52,26 +52,26 @@ class TaskPlanningContext(
         .weakKeys()
         .executor(Runnable::run) // keep eviction on same thread as population
         .maximumSize(MINIMUM_CACHE_4096x4096.shl(24) / (tileSize * tileSize))
-        .build<SemiStrongTaskCache<*>,Result<*>>()
+        .build<SemiStrongTaskCache<Image>,Image>()
     internal val hugeTileBackingCache = Caffeine.newBuilder()
         .recordStats()
         .weakKeys()
         .executor(Runnable::run) // keep eviction on same thread as population
         .maximumSize(MINIMUM_CACHE_16384x4096.shl(24) / (tileSize * tileSize))
-        .build<SemiStrongTaskCache<*>,Result<*>>()
+        .build<SemiStrongTaskCache<Image>,Image>()
     val stats: ImageProcessingStats = ImageProcessingStats(backingCache)
 
-    fun <T> createStandardTaskCache(name: String): TaskCache<T> {
+    fun createStandardTaskCache(name: String): TaskCache<Image> {
         if (name.contains("4x") || name.contains("commandBlock")) {
             // Tasks using these images are too large for the main cache to manage
-            return SemiStrongTaskCache(SoftTaskCache(name), hugeTileBackingCache)
+            return SemiStrongTaskCache(WeakTaskCache(name), hugeTileBackingCache)
         }
         return SemiStrongTaskCache(WeakTaskCache(name), backingCache)
     }
-    private fun <T> createSvgImportCache(name: String): TaskCache<T> {
+    private fun createSvgImportCache(name: String): TaskCache<Image> {
         if (name.startsWith("commandBlock") || name.endsWith("4x")) {
             // These images are too large for the main cache to manage
-            return SemiStrongTaskCache(SoftTaskCache(name), hugeTileBackingCache)
+            return SemiStrongTaskCache(WeakTaskCache(name), hugeTileBackingCache)
         }
         return SemiStrongTaskCache(WeakTaskCache(name), backingCache)
     }
@@ -174,5 +174,5 @@ class TaskPlanningContext(
 
     suspend inline fun stack(layers: LayerList): ImageTask
             = deduplicate(ImageStackingTask(layers,
-        layers.toString(), createStandardTaskCache(layers.toString()), stats))
+        createStandardTaskCache(layers.toString()), stats))
 }

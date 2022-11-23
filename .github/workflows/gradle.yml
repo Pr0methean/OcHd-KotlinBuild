@@ -14,8 +14,8 @@ on:
   pull_request:
     branches: [ "*" ]
   schedule:
-    # TODO: Switch from half-hourly back to nightly once we have enough data on which branch performs better
-    - cron: "15,45 * * * *"
+    # TODO: Switch back to nightly once we no longer need to compare revisions statistically for performance
+    - cron: "7,27,47 * * * *"
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -68,15 +68,17 @@ jobs:
       id: run
       run: >
         java -Dprism.maxvram=2560m -Dglass.platform=Monocle -Dmonocle.platform=Headless -Dquantum.multithreaded=true 
-        -XX:+UseStringDeduplication -Xms4G -Xmx4G -XX:+UnlockExperimentalVMOptions -XX:+UseParallelGC
+        -XX:+UseStringDeduplication -Xms4128m -Xmx4128m -XX:SoftMaxHeapSize=3870m -XX:MaxMetaspaceSize=64m
+        -XX:+UnlockExperimentalVMOptions -XX:+UseParallelGC
         '-Xlog:gc*=debug,gc+stats=trace,gc+heap=trace,gc+heap+exit=trace,gc+metaspace=trace,gc+nmethod=info,safepoint+stats=info' 
         -XX:+UseNUMA -XX:ConcGCThreads=2 -XX:ParallelGCThreads=2 -XX:+AlwaysPreTouch -XX:+UseTransparentHugePages
+        -XX:ZAllocationSpikeTolerance=2
         -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintFlagsFinal -XX:StringDeduplicationAgeThreshold=1
         -Dlog4j2.contextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector --enable-preview
         -jar OcHd-KotlinBuild-1.0-SNAPSHOT.jar ${{ matrix.size }}
 
       continue-on-error: true
-      timeout-minutes: 60
+      timeout-minutes: 40
     - name: Zip Texture Pack
       if: steps.run.outcome == 'success'
       run: cd pngout && zip -r OcHD-${{ matrix.size}}x${{ matrix.size}}.zip *
