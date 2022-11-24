@@ -121,7 +121,7 @@ private suspend fun runAll(
         while (inProgressJobs.size >= parallelism) {
             inProgressJobs.remove(finishedJobsChannel.receive())
         }
-        logger.info("Selecting a task from {}", unstartedTasks)
+        logger.debug("Selecting a task from {}") {unstartedTasks}
         val task = unstartedTasksMutex.withLock {
             val maybeTask = unstartedTasks.minWithOrNull(taskOrderComparator)
             if (maybeTask != null) {
@@ -136,12 +136,13 @@ private suspend fun runAll(
                 if (!unstartedTasks.remove(maybeTask)) {
                     throw RuntimeException("Attempted to remove task more than once: $maybeTask")
                 }
-                logger.info("{} is the next task to start", maybeTask.name)
+                logger.debug("{} is the next task to start") {maybeTask.name}
                 maybeTask
             } else null
         }
         if (task == null) {
             while (inProgressJobs.isNotEmpty()) {
+                logger.debug("Waiting for one of: {}") {inProgressJobs.keys}
                 inProgressJobs.remove(finishedJobsChannel.receive())
             }
         } else {
