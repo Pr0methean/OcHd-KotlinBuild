@@ -1,19 +1,19 @@
 package io.github.pr0methean.ochd.tasks
 
+import io.github.pr0methean.ochd.CanvasManager
 import io.github.pr0methean.ochd.DEFAULT_SNAPSHOT_PARAMS
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.tasks.caching.TaskCache
-import javafx.scene.canvas.Canvas
 import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
-import kotlinx.coroutines.joinAll
 import java.util.*
 
 class AnimationTask(
     val frames: List<ImageTask>,
     val width: Int, val height: Int, name: String,
     cache: TaskCache<Image>,
-    stats: ImageProcessingStats
+    stats: ImageProcessingStats,
+    private val canvasManager: CanvasManager
 ): AbstractImageTask(name, cache, stats) {
     private val totalHeight = height * frames.size
     private val hashCode: Int by lazy {Objects.hash(frames, width, height)}
@@ -41,17 +41,16 @@ class AnimationTask(
     @Suppress("DeferredResultUnused")
     override suspend fun perform(): Image {
         stats.onTaskLaunched("AnimationTask", name)
-        val canvas = Canvas(width.toDouble(), totalHeight.toDouble())
-        val canvasCtx = canvas.graphicsContext2D
-        val frameTasks = frames.mapIndexed { index, frameTask ->
-            frameTask.consumeAsync {
-                canvasCtx.drawImage(it.getOrThrow(), 0.0, (height * index).toDouble())
+        val output = canvasManager.withCanvas(width, totalHeight) { canvas ->
+            val canvasCtx = canvas.graphicsContext2D
+            frames.forEachIndexed { index, frame ->
+                canvasCtx.drawImage(frame.await().getOrThrow(), 0.0, (height * index).toDouble())
             }
-        }
-        frameTasks.joinAll()
-        val output = WritableImage(width, totalHeight)
-        doJfx("Snapshot of $name") {
-            canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
+            val output = WritableImage(width, totalHeight)
+            doJfx("Snapshot of $name") {
+                canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
+            }
+            output
         }
         if (output.isError) {
             throw output.exception

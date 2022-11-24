@@ -69,11 +69,15 @@ suspend fun main(args: Array<String>) {
         name = "MainContext",
         tileSize = tileSize,
         svgDirectory = svgDirectory,
-        outTextureRoot = outTextureRoot
+        outTextureRoot = outTextureRoot,
+        standardTileCanvases = 2 * PARALLELISM,
+        hugeTileCanvases = 2 * HUGE_TILE_PARALLELISM,
+        scope = scope
     )
     doJfx("Increase rendering thread priority") {
         Thread.currentThread().priority = Thread.MAX_PRIORITY
     }
+    val canvasManager = CanvasManager(tileSize, PARALLELISM, HUGE_TILE_PARALLELISM, scope)
     val stats = ctx.stats
     startMonitoring(stats, scope)
     val time = measureNanoTime {
@@ -90,6 +94,7 @@ suspend fun main(args: Array<String>) {
         runAll(cbTasks, cbScope, stats, HUGE_TILE_PARALLELISM)
         stats.readHugeTileCache(hugeTaskCache)
         hugeTaskCache.invalidateAll()
+        canvasManager.hugeCanvasShutdown()
         System.gc()
         runAll(nonCbTasks, scope, stats, PARALLELISM)
     }
@@ -116,6 +121,7 @@ private suspend fun runAll(
         while (inProgressJobs.size >= parallelism) {
             inProgressJobs.remove(finishedJobsChannel.receive())
         }
+        logger.info("Selecting a task from {}", unstartedTasks)
         val task = unstartedTasksMutex.withLock {
             val maybeTask = unstartedTasks.minWithOrNull(taskOrderComparator)
             if (maybeTask != null) {
@@ -130,6 +136,7 @@ private suspend fun runAll(
                 if (!unstartedTasks.remove(maybeTask)) {
                     throw RuntimeException("Attempted to remove task more than once: $maybeTask")
                 }
+                logger.info("{} is the next task to start", maybeTask.name)
                 maybeTask
             } else null
         }

@@ -15,12 +15,13 @@ import io.github.pr0methean.ochd.tasks.caching.WeakTaskCache
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import org.apache.logging.log4j.LogManager
 import java.io.File
-import java.util.*
+import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 
 fun color(web: String): Color = Color.web(web)
@@ -41,7 +42,10 @@ class TaskPlanningContext(
     val name: String,
     val tileSize: Int,
     val svgDirectory: File,
-    val outTextureRoot: File
+    val outTextureRoot: File,
+    standardTileCanvases: Int,
+    hugeTileCanvases: Int,
+    scope: CoroutineScope
 ) {
     override fun toString(): String = name
     private val svgTasks: Map<String, SvgImportTask>
@@ -60,6 +64,11 @@ class TaskPlanningContext(
         .maximumSize(MINIMUM_CACHE_16384x4096.shl(24) / (tileSize * tileSize))
         .build<SemiStrongTaskCache<Image>,Image>()
     val stats: ImageProcessingStats = ImageProcessingStats(backingCache)
+    val canvasManager: CanvasManager
+    init {
+        canvasManager = CanvasManager(tileSize, standardTileCanvases, hugeTileCanvases, scope)
+    }
+
 
     fun createStandardTaskCache(name: String): TaskCache<Image> {
         if (name.contains("4x") || name.contains("commandBlock")) {
@@ -139,7 +148,7 @@ class TaskPlanningContext(
             = layer(findSvgTask(name), paint, alpha)
 
     suspend inline fun layer(source: Task<Image>, paint: Paint? = null, alpha: Double = 1.0): ImageTask {
-        return deduplicate(RepaintTask(deduplicate(source), paint, alpha, createStandardTaskCache("$source@$paint@$alpha"), stats))
+        return deduplicate(RepaintTask(deduplicate(source), paint, alpha, createStandardTaskCache("$source@$paint@$alpha"), stats, canvasManager))
     }
 
     suspend inline fun stack(init: LayerListBuilder.() -> Unit): ImageTask {
@@ -150,7 +159,7 @@ class TaskPlanningContext(
     }
 
     suspend inline fun animate(frames: List<ImageTask>): ImageTask {
-        return deduplicate(AnimationTask(frames.asFlow().map(::deduplicate).toList(), tileSize, tileSize, frames.toString(), createStandardTaskCache(frames.toString()), stats))
+        return deduplicate(AnimationTask(frames.asFlow().map(::deduplicate).toList(), tileSize, tileSize, frames.toString(), createStandardTaskCache(frames.toString()), stats, canvasManager))
     }
 
     suspend inline fun out(source: ImageTask, vararg name: String): OutputTask {
@@ -174,5 +183,5 @@ class TaskPlanningContext(
 
     suspend inline fun stack(layers: LayerList): ImageTask
             = deduplicate(ImageStackingTask(layers,
-        createStandardTaskCache(layers.toString()), stats))
+        createStandardTaskCache(layers.toString()), stats, canvasManager))
 }
