@@ -25,7 +25,12 @@ class CanvasManager(private val tileSize: Int,
     }
     suspend fun hugeCanvasShutdown() {
         if (hugeCanvasShutdown.compareAndSet(false, true)) {
-            repeat(hugeTileCapacity) {hugeCanvasChannel.receive()}
+            var remaining = hugeTileCapacity
+            repeat(hugeTileCapacity) {
+                logger.debug("Waiting for {} huge-tile canvases to be returned", remaining)
+                hugeCanvasChannel.receive()
+                remaining--
+            }
         }
     }
     suspend fun borrowCanvas(width: Int, height: Int): Canvas {
