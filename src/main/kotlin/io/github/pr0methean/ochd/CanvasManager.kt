@@ -46,7 +46,7 @@ class CanvasManager(private val tileSize: Int,
             }
             return Canvas(width.toDouble(), height.toDouble())
         } finally {
-            logger.info("Returning a canvas to {}", currentCoroutineContext())
+            logger.info("Loaning a canvas to {}", currentCoroutineContext())
         }
     }
     suspend fun returnCanvas(canvas: Canvas) {
