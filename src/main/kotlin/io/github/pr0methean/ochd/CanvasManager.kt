@@ -18,9 +18,11 @@ class CanvasManager(private val tileSize: Int,
     private val standardCanvasChannel = Channel<Canvas>(standardTileCapacity)
     private val hugeCanvasChannel = Channel<Canvas>(hugeTileCapacity)
     private val standardCanvasInit = scope.launch(start = LAZY) {
+        logger.debug("Creating standard canvases")
         repeat(standardTileCapacity) {standardCanvasChannel.send(Canvas(tileSize.toDouble(), tileSize.toDouble()))}
     }
     private val hugeCanvasInit = scope.launch(start = LAZY) {
+        logger.debug("Creating huge-tile canvases")
         repeat(hugeTileCapacity) {hugeCanvasChannel.send(Canvas(tileSize.toDouble(), (4 * tileSize).toDouble()))}
     }
     suspend fun hugeCanvasShutdown() {
@@ -33,7 +35,7 @@ class CanvasManager(private val tileSize: Int,
             }
         }
     }
-    suspend fun borrowCanvas(width: Int, height: Int): Canvas {
+    private suspend fun borrowCanvas(width: Int, height: Int): Canvas {
         logger.debug("{} is waiting to borrow a {}x{} canvas", currentCoroutineContext(), width, height)
         try {
             if (width == tileSize) {
@@ -57,7 +59,7 @@ class CanvasManager(private val tileSize: Int,
 
         }
     }
-    suspend fun returnCanvas(canvas: Canvas) {
+    private suspend fun returnCanvas(canvas: Canvas) {
         logger.debug("{} is returning a {}x{} canvas", currentCoroutineContext(), canvas.width, canvas.height)
         if (canvas.width == tileSize.toDouble()) {
             if (canvas.height == tileSize.toDouble()) {
