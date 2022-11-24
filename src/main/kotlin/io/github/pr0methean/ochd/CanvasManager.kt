@@ -58,7 +58,7 @@ class CanvasManager(private val tileSize: Int,
             logger.debug("Lending an untracked canvas to {}", currentCoroutineContext())
             return Canvas(width.toDouble(), height.toDouble())
         } finally {
-
+            logger.debug("Exiting borrowCanvas")
         }
     }
     private suspend fun returnCanvas(canvas: Canvas) {
