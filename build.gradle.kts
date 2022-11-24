@@ -53,7 +53,7 @@ dependencies {
     implementation("org.apache.logging.log4j:log4j-api:$log4jVersion")
     implementation("org.apache.logging.log4j:log4j-core:$log4jVersion")
     implementation("org.apache.logging.log4j:log4j-iostreams:$log4jVersion")
-    implementation("com.github.ben-manes.caffeine:caffeine:3.1.1")
+    implementation("com.github.ben-manes.caffeine:caffeine:3.1.2")
     runtimeOnly("com.lmax:disruptor:3.4.4")
     constraints {
         add("implementation", "commons-io:commons-io") {
