@@ -46,7 +46,7 @@ class ImageStackingTask(val layers: LayerList,
     @Suppress("DeferredResultUnused")
     override suspend fun perform(): Image {
         stats.onTaskLaunched("ImageStackingTask", name)
-        logger.debug("Fetching first layer of {} to check size", name)
+        logger.debug("Fetching first layer of {} to check size", this)
         val firstLayer = layers.layers.first().await().getOrThrow()
         val width = firstLayer.width
         val height = firstLayer.height
@@ -56,9 +56,9 @@ class ImageStackingTask(val layers: LayerList,
             canvasCtx.drawImage(firstLayer, 0.0, 0.0)
             layers.layers.forEach { layerTask ->
                 val layerImage = layerTask.await().getOrThrow()
-                logger.debug("Rendering {} onto the stack") { layerTask }
+                logger.debug("Rendering {} onto the stack", layerTask)
                 canvasCtx.drawImage(layerImage, 0.0, 0.0)
-                logger.debug("Finished rendering {}") { layerTask }
+                logger.debug("Finished rendering {}", layerTask)
             }
             logger.debug("Taking snapshot of {}", name)
             takeSnapshot(width, height, canvas, snapshotRef)

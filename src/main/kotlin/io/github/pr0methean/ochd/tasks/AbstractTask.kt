@@ -93,7 +93,7 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
     override fun getNow(): Result<T>? {
         val cached = cache.getNow()
         if (cached != null) {
-            AT_LOGGER.debug("Retrieved {} from cache") {cached}
+            AT_LOGGER.debug("Retrieved {} from cache", cached)
             return success(cached)
         }
         val coroutine = coroutine.get()
@@ -107,7 +107,7 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
             failure(coroutine.getCancellationException())
         } else null
         if (result != null) {
-            AT_LOGGER.debug("Retrieved {} from coroutine in getNow") {result}
+            AT_LOGGER.debug("Retrieved {} from coroutine in getNow", result)
         }
         return result
     }
@@ -156,7 +156,7 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
                 }
                 newCoroutine.start()
                 val oldHandle = coroutineHandle.getAndSet(newHandle)
-                AT_LOGGER.debug("Started {}", name)
+                AT_LOGGER.debug("Started {}", this)
                 oldHandle?.dispose()
                 return newCoroutine
             }
