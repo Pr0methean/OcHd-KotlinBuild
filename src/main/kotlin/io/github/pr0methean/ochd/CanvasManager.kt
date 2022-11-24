@@ -40,6 +40,7 @@ class CanvasManager(private val tileSize: Int,
         try {
             if (width == tileSize) {
                 if (height == tileSize) {
+                    standardCanvasInit.start()
                     standardCanvasInit.join()
                     logger.debug("Lending a standard-tile canvas to {}", currentCoroutineContext())
                     return standardCanvasChannel.receive()
@@ -48,6 +49,7 @@ class CanvasManager(private val tileSize: Int,
                     if (hugeCanvasShutdown.get()) {
                         throw IllegalStateException("Already closed for huge canvases")
                     }
+                    hugeCanvasInit.start()
                     hugeCanvasInit.join()
                     logger.debug("Lending a huge-tile canvas to {}", currentCoroutineContext())
                     return hugeCanvasChannel.receive()
