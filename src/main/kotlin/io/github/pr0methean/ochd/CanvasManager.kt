@@ -34,11 +34,12 @@ class CanvasManager(private val tileSize: Int,
         }
     }
     suspend fun borrowCanvas(width: Int, height: Int): Canvas {
-        logger.info("{} is waiting to borrow a {}x{} canvas", currentCoroutineContext(), width, height)
+        logger.debug("{} is waiting to borrow a {}x{} canvas", currentCoroutineContext(), width, height)
         try {
             if (width == tileSize) {
                 if (height == tileSize) {
                     standardCanvasInit.join()
+                    logger.debug("Lending a standard-tile canvas to {}", currentCoroutineContext())
                     return standardCanvasChannel.receive()
                 }
                 if (height == 4 * tileSize) {
@@ -46,26 +47,34 @@ class CanvasManager(private val tileSize: Int,
                         throw IllegalStateException("Already closed for huge canvases")
                     }
                     hugeCanvasInit.join()
+                    logger.debug("Lending a huge-tile canvas to {}", currentCoroutineContext())
                     return hugeCanvasChannel.receive()
                 }
             }
+            logger.debug("Lending an untracked canvas to {}", currentCoroutineContext())
             return Canvas(width.toDouble(), height.toDouble())
         } finally {
-            logger.info("Loaning a canvas to {}", currentCoroutineContext())
+
         }
     }
     suspend fun returnCanvas(canvas: Canvas) {
-        logger.info("{} is returning a {}x{} canvas", currentCoroutineContext(), canvas.width, canvas.height)
+        logger.debug("{} is returning a {}x{} canvas", currentCoroutineContext(), canvas.width, canvas.height)
         if (canvas.width == tileSize.toDouble()) {
             if (canvas.height == tileSize.toDouble()) {
+                logger.debug("Putting the returned canvas in the standard-canvas channel")
                 clear(canvas)
                 standardCanvasChannel.send(canvas)
+                logger.debug("Done putting the returned canvas in the standard-canvas channel")
+                return
             } else if (canvas.height == (4 * tileSize).toDouble()) {
+                logger.debug("Putting the returned canvas in the huge-canvas channel")
                 clear(canvas)
                 hugeCanvasChannel.send(canvas)
+                logger.debug("Done putting the returned canvas in the huge-canvas channel")
+                return
             }
         }
-        logger.info("{} has finished returning a {}x{} canvas", currentCoroutineContext(), canvas.width, canvas.height)
+        logger.debug("Dropping an untracked canvas returned by {}", currentCoroutineContext())
     }
     suspend fun <T> withCanvas(width: Int, height: Int, block: suspend (Canvas) -> T): T {
         val canvas = borrowCanvas(width, height)
