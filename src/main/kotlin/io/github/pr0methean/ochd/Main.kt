@@ -1,5 +1,6 @@
 package io.github.pr0methean.ochd
 
+import com.sun.management.GarbageCollectorMXBean
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
 import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.tasks.await
@@ -37,7 +38,7 @@ private val logger = LogManager.getRootLogger()
 private const val PARALLELISM = 2
 private const val HUGE_TILE_PARALLELISM = 1
 private const val MIN_FREE_MEMORY = 512L*1024*1024
-private val memoryMxBean = ManagementFactory.getMemoryPoolMXBeans().single { it.name == "ZHeap" }
+private val gcMxBean = ManagementFactory.getGarbageCollectorMXBeans()[0] as GarbageCollectorMXBean
 
 @OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
 @Suppress("UnstableApiUsage", "DeferredResultUnused")
@@ -165,7 +166,7 @@ private suspend fun runAll(
 }
 
 fun freeMemory(): Long {
-    val usage = memoryMxBean.usage
-    return usage.max - usage.used
+    val usageAfterLastGc = gcMxBean.lastGcInfo.memoryUsageAfterGc["ZHeap"]!!
+    return usageAfterLastGc.max - usageAfterLastGc.used
 }
 
