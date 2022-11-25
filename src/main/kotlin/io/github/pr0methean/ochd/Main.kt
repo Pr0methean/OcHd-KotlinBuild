@@ -47,7 +47,9 @@ suspend fun main(args: Array<String>) {
         println("Usage: main <size>")
         return
     }
-    memoryMxBeans.forEach(logger::info)
+    memoryMxBeans.forEach {
+        logger.info("Bean name: {}, max size: {}", it.name, it.usage.max)
+    }
     val supervisorJob = SupervisorJob()
     val ioScope = CoroutineScope(Dispatchers.IO).plus(supervisorJob)
     val out = Paths.get("pngout").toAbsolutePath().toFile()
