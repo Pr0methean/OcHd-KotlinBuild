@@ -7,17 +7,11 @@ import javafx.scene.SnapshotParameters
 import javafx.scene.canvas.Canvas
 import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.async
 import org.apache.logging.log4j.LogManager
-import org.apache.logging.log4j.util.Unbox.box
 import java.util.*
 import java.util.concurrent.atomic.AtomicReference
-import kotlin.Result.Companion.failure
-import kotlin.Result.Companion.success
 
 private val logger = LogManager.getLogger("ImageStackingTask")
-private val SUCCESS = success(Unit)
 
 class ImageStackingTask(val layers: LayerList,
                         cache: TaskCache<Image>,
@@ -56,53 +50,19 @@ class ImageStackingTask(val layers: LayerList,
         val snapshotRef = AtomicReference<Image>(null)
         val canvas = Canvas(width, height)
         val canvasCtx = canvas.graphicsContext2D
-        logger.debug("Creating layer tasks for {}", this)
-        val layerRenderTasks = mutableListOf<Deferred<Result<Unit>>>()
+        logger.debug("Creating layer tasks for {}", name)
         val singleLayer = layers.layers.size == 1
-        layerRenderTasks.add(createCoroutineScope().async {
-            logger.debug("Rendering first layer ({}) of {}", firstLayer, this@ImageStackingTask)
-            canvasCtx.drawImage(firstLayer, 0.0, 0.0)
-            if (singleLayer) {
-                try {
-                    takeSnapshot(width, height, canvas, snapshotRef)
-                } catch (t: Throwable) {
-                    return@async failure(t)
-                }
-            }
-            return@async SUCCESS
-        })
+        canvasCtx.drawImage(firstLayer, 0.0, 0.0)
         if (!singleLayer) {
-            layers.layers.withIndex().drop(1).forEach { (index, layerTask) ->
-                logger.debug("Creating consumer for layer {} ({})", box(index), layerTask)
-                val previousLayerTask = layerRenderTasks[index - 1]
-                val previousLayerName = layers.layers[index - 1].name
-                val lastLayer = index == layers.layers.lastIndex
-                layerRenderTasks.add(layerTask.consumeAsync {
-                    try {
-                        logger.debug("Awaiting previous layer ({})", previousLayerName)
-                        previousLayerTask.await().getOrThrow()
-                        logger.debug("Fetching layer {} ({})", box(index), layerTask)
-                        val layerImage = it.getOrThrow()
-                        logger.debug("Rendering layer {} ({}) onto the stack", box(index), layerTask)
-                        canvasCtx.drawImage(layerImage, 0.0, 0.0)
-                        logger.debug("Finished layer {} ({})", box(index), layerTask)
-                        if (lastLayer) {
-                            logger.debug("Taking snapshot of {}", name)
-                            takeSnapshot(width, height, canvas, snapshotRef)
-                        }
-                        return@consumeAsync SUCCESS
-                    } catch (t: Throwable) {
-                        logger.error("ImageStackingTask layer failed", t)
-                        return@consumeAsync failure(t)
-                    }
-                })
+            layers.layers.drop(1).forEach { layerTask ->
+                val layerImage = layerTask.await().getOrThrow()
+                logger.debug("Rendering {} onto the stack", layerTask)
+                canvasCtx.drawImage(layerImage, 0.0, 0.0)
+                logger.debug("Finished rendering {}", layerTask)
             }
         }
-        logger.debug("Waiting for layer tasks for {}", this)
-
-        // FIXME: Why doesn't layerRenderTasks.last().await().getOrThrow() work?
-        layerRenderTasks.forEach { it.await().getOrThrow() }
-
+        logger.debug("Taking snapshot of {}", name)
+        takeSnapshot(width, height, canvas, snapshotRef)
         stats.onTaskCompleted("ImageStackingTask", name)
         return snapshotRef.getAndSet(null)
     }

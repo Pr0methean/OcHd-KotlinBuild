@@ -11,7 +11,7 @@ import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
 import javafx.scene.paint.Paint
 import org.apache.logging.log4j.LogManager
-import java.util.*
+import java.util.Objects
 
 private val logger = LogManager.getLogger("RepaintTask")
 class RepaintTask(
