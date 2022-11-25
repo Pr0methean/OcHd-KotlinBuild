@@ -118,7 +118,8 @@ private suspend fun runAll(
     val finishedJobsChannel = Channel<OutputTask>(capacity = CAPACITY_PADDING_FACTOR * parallelism)
     var maxRetries = 0L
     do {
-        while (inProgressJobs.size >= parallelism || (inProgressJobs.isNotEmpty() && shouldThrottle())) {
+        while (inProgressJobs.size >= parallelism
+                || (inProgressJobs.isNotEmpty() && (unstartedTasks.isEmpty() || shouldThrottle()))) {
             inProgressJobs.remove(finishedJobsChannel.receive())
         }
         val task = unstartedTasksMutex.withLock {
