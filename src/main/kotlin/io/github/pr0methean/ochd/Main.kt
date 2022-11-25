@@ -34,7 +34,7 @@ private val taskOrderComparator = comparingLong(OutputTask::timesFailed)
 private val logger = LogManager.getRootLogger()
 private const val PARALLELISM = 2
 private const val HUGE_TILE_PARALLELISM = 1
-private const val CANVASES_IN_POOL_PER_THREAD = 1
+private const val CANVASES_IN_POOL_PER_THREAD = 2
 
 @OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
 @Suppress("UnstableApiUsage", "DeferredResultUnused")
