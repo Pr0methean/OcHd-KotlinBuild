@@ -139,27 +139,22 @@ private suspend fun runAll(
                 maybeTask
             } else null
         }
-        if (task == null) {
-            while (inProgressJobs.isNotEmpty()) {
-                inProgressJobs.remove(finishedJobsChannel.receive())
+        task ?: continue
+        inProgressJobs[task] = scope.launch {
+            logger.info("Joining {}", task)
+            val result = task.await()
+            if (result.isFailure) {
+                unstartedTasksMutex.withLock {
+                    unstartedTasks.add(task)
+                }
             }
-        } else {
-            inProgressJobs[task] = scope.launch {
-                logger.info("Joining {}", task)
-                val result = task.await()
-                if (result.isFailure) {
-                    unstartedTasksMutex.withLock {
-                        unstartedTasks.add(task)
-                    }
-                }
-                finishedJobsChannel.send(task)
-                if (result.isSuccess) {
-                    logger.info("Joined {} with result of success", task)
-                    task.source.removeDirectDependentTask(task)
-                } else {
-                    logger.error("Joined {} with an error: {}", task, result.exceptionOrNull()?.message)
-                    stats.recordRetries(1)
-                }
+            finishedJobsChannel.send(task)
+            if (result.isSuccess) {
+                logger.info("Joined {} with result of success", task)
+                task.source.removeDirectDependentTask(task)
+            } else {
+                logger.error("Joined {} with an error: {}", task, result.exceptionOrNull()?.message)
+                stats.recordRetries(1)
             }
         }
     } while (inProgressJobs.isNotEmpty() || unstartedTasks.isNotEmpty())
