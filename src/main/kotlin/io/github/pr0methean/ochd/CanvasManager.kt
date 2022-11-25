@@ -48,11 +48,11 @@ class CanvasManager(private val tileSize: Int,
                     return standardCanvasChannel.receive()
                 }
                 if (height == 4 * tileSize) {
+                    hugeCanvasInit.start()
+                    hugeCanvasInit.join()
                     if (hugeCanvasShutdown.get()) {
                         throw IllegalStateException("Already closed for huge canvases")
                     }
-                    hugeCanvasInit.start()
-                    hugeCanvasInit.join()
                     logger.debug("Lending a huge-tile canvas to {}", currentCoroutineContext())
                     return hugeCanvasChannel.receive()
                 }
