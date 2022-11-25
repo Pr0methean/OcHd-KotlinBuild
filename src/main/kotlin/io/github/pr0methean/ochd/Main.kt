@@ -118,7 +118,7 @@ private suspend fun runAll(
     val finishedJobsChannel = Channel<OutputTask>(capacity = CAPACITY_PADDING_FACTOR * parallelism)
     var maxRetries = 0L
     do {
-        while (inProgressJobs.size >= parallelism || (inProgressJobs.isNotEmpty() && freeMemory() < MIN_FREE_MEMORY)) {
+        while (inProgressJobs.size >= parallelism || (inProgressJobs.isNotEmpty() && shouldThrottle())) {
             inProgressJobs.remove(finishedJobsChannel.receive())
         }
         val task = unstartedTasksMutex.withLock {
@@ -165,8 +165,12 @@ private suspend fun runAll(
     finishedJobsChannel.close()
 }
 
-fun freeMemory(): Long {
+fun shouldThrottle(): Boolean {
     val usageAfterLastGc = gcMxBean.lastGcInfo.memoryUsageAfterGc["ZHeap"]!!
-    return usageAfterLastGc.max - usageAfterLastGc.used
+    if (usageAfterLastGc.max - usageAfterLastGc.used < MIN_FREE_MEMORY) {
+        logger.warn("Throttling a new task because too little memory is free")
+        return true
+    }
+    return false
 }
 
