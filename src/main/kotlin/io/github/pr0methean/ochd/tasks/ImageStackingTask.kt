@@ -44,10 +44,10 @@ class ImageStackingTask(val layers: LayerList,
     override suspend fun perform(): Image {
         stats.onTaskLaunched("ImageStackingTask", name)
         logger.debug("Fetching first layer of {} to check size", this)
+        val snapshotRef = AtomicReference<Image>(null)
         val firstLayer = layers.layers.first().await().getOrThrow()
         val width = firstLayer.width
         val height = firstLayer.height
-        val snapshotRef = AtomicReference<Image>(null)
         val canvas = Canvas(width, height)
         val canvasCtx = canvas.graphicsContext2D
         canvasCtx.drawImage(firstLayer, 0.0, 0.0)
