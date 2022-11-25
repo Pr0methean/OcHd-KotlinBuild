@@ -37,7 +37,7 @@ private val taskOrderComparator = comparingLong(OutputTask::timesFailed)
 private val logger = LogManager.getRootLogger()
 private const val PARALLELISM = 2
 private const val HUGE_TILE_PARALLELISM = 1
-private const val MIN_FREE_MEMORY = 384L*1024*1024
+private const val MIN_FREE_MEMORY = 512L*1024*1024
 private val gcMxBean = ManagementFactory.getGarbageCollectorMXBeans()[0] as GarbageCollectorMXBean
 
 @OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
