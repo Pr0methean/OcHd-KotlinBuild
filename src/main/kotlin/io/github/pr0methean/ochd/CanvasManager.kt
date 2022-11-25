@@ -25,17 +25,11 @@ class CanvasManager(private val tileSize: Int,
         logger.debug("Creating huge-tile canvases")
         repeat(hugeTileCapacity) {hugeCanvasChannel.send(Canvas(tileSize.toDouble(), (4 * tileSize).toDouble()))}
     }
-    suspend fun hugeCanvasShutdown() {
+    fun hugeCanvasShutdown() {
         if (hugeCanvasShutdown.compareAndSet(false, true)) {
-            var remaining = hugeTileCapacity
-            repeat(hugeTileCapacity) {
-                logger.debug("Waiting for {} huge-tile canvases to be returned", remaining)
-                hugeCanvasChannel.receive()
-                remaining--
-            }
+            hugeCanvasChannel.close()
+            // FIXME: Why aren't the canvases sent back?
         }
-        logger.debug("All canvases returned")
-        hugeCanvasChannel.close()
     }
     private suspend fun borrowCanvas(width: Int, height: Int): Canvas {
         logger.debug("{} is waiting to borrow a {}x{} canvas", currentCoroutineContext(), width, height)
@@ -69,13 +63,13 @@ class CanvasManager(private val tileSize: Int,
             if (canvas.height == tileSize.toDouble()) {
                 logger.debug("Putting the returned canvas in the standard-canvas channel")
                 clear(canvas)
-                standardCanvasChannel.send(canvas)
+                standardCanvasChannel.trySend(canvas)
                 logger.debug("Done putting the returned canvas in the standard-canvas channel")
                 return
             } else if (canvas.height == (4 * tileSize).toDouble()) {
                 logger.debug("Putting the returned canvas in the huge-canvas channel")
                 clear(canvas)
-                hugeCanvasChannel.send(canvas)
+                hugeCanvasChannel.trySend(canvas)
                 logger.debug("Done putting the returned canvas in the huge-canvas channel")
                 return
             }
