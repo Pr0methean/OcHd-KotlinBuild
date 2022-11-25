@@ -11,6 +11,7 @@ import kotlin.Result.Companion.failure
 import kotlin.Result.Companion.success
 
 private val logger = LogManager.getLogger("TransformingTask")
+private val UNIT_SUCCESS = success(Unit)
 open class TransformingTask<T, U>(
     name: String,
     val base: Task<T>,
@@ -27,7 +28,11 @@ open class TransformingTask<T, U>(
                 logger.debug("Awaiting {} to transform it in {}", myBase, this@TransformingTask)
                 val input = myBase.await()
                 logger.debug("Got {} from {}; transforming it in {}", input, myBase, this@TransformingTask)
-                success(myTransform(input.getOrThrow()))
+                val result = myTransform(input.getOrThrow())
+                if (result === Unit) {
+                    UNIT_SUCCESS
+                }
+                success(result)
             } catch (t: Throwable) {
                 logger.error("Exception in {}", this@TransformingTask, t)
                 failure(t)
