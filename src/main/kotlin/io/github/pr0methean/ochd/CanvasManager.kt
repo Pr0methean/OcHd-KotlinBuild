@@ -34,6 +34,8 @@ class CanvasManager(private val tileSize: Int,
                 remaining--
             }
         }
+        logger.debug("All canvases returned")
+        hugeCanvasChannel.close()
     }
     private suspend fun borrowCanvas(width: Int, height: Int): Canvas {
         logger.debug("{} is waiting to borrow a {}x{} canvas", currentCoroutineContext(), width, height)
