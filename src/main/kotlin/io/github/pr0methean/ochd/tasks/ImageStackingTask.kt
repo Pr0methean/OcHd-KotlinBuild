@@ -50,10 +50,8 @@ class ImageStackingTask(val layers: LayerList,
         val snapshotRef = AtomicReference<Image>(null)
         val canvas = Canvas(width, height)
         val canvasCtx = canvas.graphicsContext2D
-        logger.debug("Creating layer tasks for {}", name)
-        val singleLayer = layers.layers.size == 1
         canvasCtx.drawImage(firstLayer, 0.0, 0.0)
-        if (!singleLayer) {
+        if (layers.layers.size > 1) {
             layers.layers.drop(1).forEach { layerTask ->
                 val layerImage = layerTask.await().getOrThrow()
                 logger.debug("Rendering {} onto the stack", layerTask)
