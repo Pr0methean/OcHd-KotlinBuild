@@ -122,7 +122,7 @@ private suspend fun runAll(
         while (inProgressJobs.size >= parallelism) {
             inProgressJobs.remove(finishedJobsChannel.receive())
         }
-        logger.info("Selecting a task from {}", unstartedTasks)
+        logger.debug("Selecting a task from {}", unstartedTasks)
         val task = unstartedTasksMutex.withLock {
             val maybeTask = unstartedTasks.minWithOrNull(taskOrderComparator)
             if (maybeTask != null) {
