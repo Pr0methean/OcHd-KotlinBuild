@@ -34,7 +34,6 @@ private val taskOrderComparator = comparingLong(OutputTask::timesFailed)
 private val logger = LogManager.getRootLogger()
 private const val PARALLELISM = 2
 private const val HUGE_TILE_PARALLELISM = 1
-private const val CANVASES_IN_POOL_PER_THREAD = 4
 
 @OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
 @Suppress("UnstableApiUsage", "DeferredResultUnused")
@@ -71,8 +70,8 @@ suspend fun main(args: Array<String>) {
         tileSize = tileSize,
         svgDirectory = svgDirectory,
         outTextureRoot = outTextureRoot,
-        standardTileCanvases = CANVASES_IN_POOL_PER_THREAD * PARALLELISM,
-        hugeTileCanvases = CANVASES_IN_POOL_PER_THREAD * HUGE_TILE_PARALLELISM,
+        standardTileCanvases = 2 * PARALLELISM,
+        hugeTileCanvases = 2 * HUGE_TILE_PARALLELISM,
         scope = scope
     )
     doJfx("Increase rendering thread priority") {
