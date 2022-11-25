@@ -22,6 +22,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox
+import java.lang.management.ManagementFactory
 import java.nio.file.Paths
 import java.util.Comparator.comparingInt
 import java.util.Comparator.comparingLong
@@ -35,6 +36,8 @@ private val taskOrderComparator = comparingLong(OutputTask::timesFailed)
 private val logger = LogManager.getRootLogger()
 private const val PARALLELISM = 2
 private const val HUGE_TILE_PARALLELISM = 1
+private const val MIN_FREE_MEMORY = 512L*1024*1024
+private val memoryMxBean = ManagementFactory.getMemoryPoolMXBeans().single()
 
 @OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
 @Suppress("UnstableApiUsage", "DeferredResultUnused")
@@ -114,7 +117,7 @@ private suspend fun runAll(
     val finishedJobsChannel = Channel<OutputTask>(capacity = CAPACITY_PADDING_FACTOR * parallelism)
     var maxRetries = 0L
     do {
-        while (inProgressJobs.size >= parallelism) {
+        while (inProgressJobs.size >= parallelism || (inProgressJobs.isNotEmpty() && freeMemory() < MIN_FREE_MEMORY)) {
             inProgressJobs.remove(finishedJobsChannel.receive())
         }
         val task = unstartedTasksMutex.withLock {
@@ -159,5 +162,10 @@ private suspend fun runAll(
         }
     } while (inProgressJobs.isNotEmpty() || unstartedTasks.isNotEmpty())
     finishedJobsChannel.close()
+}
+
+fun freeMemory(): Long {
+    val usage = memoryMxBean.usage
+    return usage.max - usage.used
 }
 
