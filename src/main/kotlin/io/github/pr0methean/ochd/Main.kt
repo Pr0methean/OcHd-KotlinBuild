@@ -37,8 +37,7 @@ private val logger = LogManager.getRootLogger()
 private const val PARALLELISM = 2
 private const val HUGE_TILE_PARALLELISM = 1
 private const val MIN_FREE_MEMORY = 512L*1024*1024
-private val memoryMxBeans = ManagementFactory.getMemoryPoolMXBeans()
-private val memoryMxBean = memoryMxBeans[0]
+private val memoryMxBean = ManagementFactory.getMemoryPoolMXBeans().single { it.name == "ZHeap" }
 
 @OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
 @Suppress("UnstableApiUsage", "DeferredResultUnused")
@@ -46,9 +45,6 @@ suspend fun main(args: Array<String>) {
     if (args.isEmpty()) {
         println("Usage: main <size>")
         return
-    }
-    memoryMxBeans.forEach {
-        logger.info("Bean name: {}, max size: {}", it.name, it.usage.max)
     }
     val supervisorJob = SupervisorJob()
     val ioScope = CoroutineScope(Dispatchers.IO).plus(supervisorJob)
