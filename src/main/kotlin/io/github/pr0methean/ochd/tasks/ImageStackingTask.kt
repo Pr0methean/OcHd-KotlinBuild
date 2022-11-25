@@ -54,7 +54,7 @@ class ImageStackingTask(val layers: LayerList,
         canvasManager.withCanvas(width.toInt(), height.toInt()) { canvas ->
             val canvasCtx = canvas.graphicsContext2D
             canvasCtx.drawImage(firstLayer, 0.0, 0.0)
-            layers.layers.forEach { layerTask ->
+            layers.layers.drop(1).forEach { layerTask ->
                 val layerImage = layerTask.await().getOrThrow()
                 logger.debug("Rendering {} onto the stack", layerTask)
                 canvasCtx.drawImage(layerImage, 0.0, 0.0)
