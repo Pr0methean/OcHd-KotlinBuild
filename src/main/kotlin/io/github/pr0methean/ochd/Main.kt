@@ -21,6 +21,7 @@ import kotlinx.coroutines.plus
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.apache.logging.log4j.LogManager
+import org.apache.logging.log4j.util.Unbox
 import java.nio.file.Paths
 import java.util.Comparator.comparingInt
 import java.util.Comparator.comparingLong
@@ -97,7 +98,7 @@ suspend fun main(args: Array<String>) {
     Platform.exit()
     stats.log()
     logger.info("")
-    logger.info("All tasks finished after $time ns")
+    logger.info("All tasks finished after {} ns", Unbox.box(time))
     exitProcess(0)
 }
 
