@@ -28,6 +28,7 @@ import java.lang.management.ManagementFactory
 import java.nio.file.Paths
 import java.util.Comparator.comparingInt
 import java.util.Comparator.comparingLong
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
@@ -117,16 +118,15 @@ private suspend fun runAll(
 ) {
     val unstartedTasksMutex = Mutex()
     val unstartedTasks = tasks.sortedWith(comparingInt { it.unstartedCacheableSubtasks().size }).toMutableSet()
-    val unfinishedTasksMutex = Mutex()
-    val unfinishedTasks = tasks.toMutableSet()
+    val unfinishedTasks = AtomicLong(unstartedTasks.size.toLong())
     val inProgressJobs = mutableMapOf<OutputTask,Job>()
     val finishedJobsChannel = Channel<OutputTask>(capacity = CAPACITY_PADDING_FACTOR * parallelism)
     var maxRetries = 0L
-    while (unfinishedTasks.isNotEmpty()) {
-        logger.info("{} unfinished tasks, {} in progress", Unbox.box(unfinishedTasks.size), inProgressJobs.keys)
+    while (unfinishedTasks.get() > 0) {
         val maybeReceive = finishedJobsChannel.tryReceive().getOrElse {
             if (inProgressJobs.size >= parallelism
-                    || ((inProgressJobs.isNotEmpty() && (unstartedTasks.isEmpty() || shouldThrottle())))) {
+                    || (inProgressJobs.isNotEmpty()
+                        && (unstartedTasksMutex.withLock { unstartedTasks.isEmpty() } || shouldThrottle()))) {
                 finishedJobsChannel.receive()
             } else null
         }
@@ -156,9 +156,7 @@ private suspend fun runAll(
             logger.info("Joining {}", task)
             val result = task.await()
             if (result.isSuccess) {
-                unfinishedTasksMutex.withLock {
-                    unfinishedTasks.remove(task)
-                }
+                unfinishedTasks.getAndDecrement()
             } else {
                 unstartedTasksMutex.withLock {
                     unstartedTasks.add(task)
