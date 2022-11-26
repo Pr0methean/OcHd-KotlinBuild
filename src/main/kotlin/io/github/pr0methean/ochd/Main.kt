@@ -31,8 +31,8 @@ import kotlin.system.measureNanoTime
 
 private const val CAPACITY_PADDING_FACTOR = 2
 private val taskOrderComparator = comparingLong(OutputTask::timesFailed)
-    .then(comparingInt<OutputTask> { it.cachedSubtasks().size }.reversed())
-    .then(comparingInt { it.unstartedCacheableSubtasks().size })
+    .then(comparingInt(OutputTask::cachedSubtasks).reversed())
+    .then(comparingInt(OutputTask::unstartedCacheableSubtasks))
 private val logger = LogManager.getRootLogger()
 private const val PARALLELISM = 2
 private const val HUGE_TILE_PARALLELISM = 1
@@ -114,7 +114,7 @@ private suspend fun runAll(
     stats: ImageProcessingStats,
     parallelism: Int
 ) {
-    val unstartedTasks = tasks.sortedWith(comparingInt { it.unstartedCacheableSubtasks().size }).toMutableSet()
+    val unstartedTasks = tasks.sortedWith(comparingInt(OutputTask::unstartedCacheableSubtasks)).toMutableSet()
     val unfinishedTasks = AtomicLong(unstartedTasks.size.toLong())
     val inProgressJobs = mutableMapOf<OutputTask,Job>()
     val finishedJobsChannel = Channel<TaskResult>(capacity = CAPACITY_PADDING_FACTOR * parallelism)

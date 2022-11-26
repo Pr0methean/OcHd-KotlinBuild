@@ -18,9 +18,9 @@ interface Task<out T>: StringBuilderFormattable {
 
     suspend fun removeDirectDependentTask(task: Task<*>)
 
-    fun unstartedCacheableSubtasks(): Collection<Task<*>>
+    fun unstartedCacheableSubtasks(): Int
 
-    fun cachedSubtasks(): List<Task<*>>
+    fun cachedSubtasks(): Int
 
     fun isCachingEnabled(): Boolean
 

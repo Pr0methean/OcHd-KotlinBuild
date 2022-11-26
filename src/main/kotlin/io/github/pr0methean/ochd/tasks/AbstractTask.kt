@@ -47,14 +47,14 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
         total
     }
 
-    override fun cachedSubtasks(): List<Task<*>> {
+    override fun cachedSubtasks(): Int {
         if (getNow() != null) {
-            return andAllSubtasks
+            return andAllSubtasks.size
         }
         if (directDependencies.none()) {
-            return listOf()
+            return 0
         }
-        val subtasks = ArrayList<Task<*>>(andAllSubtasks.size)
+        var subtasks = 0
         for (task in directDependencies) {
             subtasks += task.cachedSubtasks()
         }
@@ -253,14 +253,12 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
 
     override fun timesFailed(): Long = timesFailed.get()
     protected fun thisIfCacheable() = if (cache.enabled) listOf(this) else listOf()
-    override fun unstartedCacheableSubtasks(): Collection<Task<*>> = if (isStartedOrAvailable()) {
-        listOf()
-    } else if (directDependencies.none()) {
-        thisIfCacheable()
+    override fun unstartedCacheableSubtasks(): Int = if (isStartedOrAvailable()) {
+        0
     } else {
-        val subtasks = thisIfCacheable().toMutableList<Task<*>>()
+        var subtasks = if (cache.enabled) 1 else 0
         for (task in directDependencies) {
-            subtasks.addAll(task.unstartedCacheableSubtasks())
+            subtasks += task.unstartedCacheableSubtasks()
         }
         subtasks
     }
