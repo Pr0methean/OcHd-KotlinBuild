@@ -42,8 +42,6 @@ class RepaintTask(
         return base.unstartedCacheableSubtasks() + thisIfCacheable()
     }
 
-    private fun thisIfCacheable() = if (cache.enabled) listOf(this) else listOf()
-
     override fun cachedSubtasks(): List<Task<*>> {
         if (getNow() == null) {
             if (base.getNow() != null) {

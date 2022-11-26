@@ -11,4 +11,13 @@ interface ImageTask : StringBuilderFormattable, Task<Image> {
     fun opaqueRepaints(): Iterable<ImageTask>
 
     fun addOpaqueRepaint(repaint: ImageTask)
+    override fun unstartedCacheableSubtasks(): Collection<Task<*>> = if (isStartedOrAvailable() || !isCachingEnabled()) {
+        listOf()
+    } else {
+        val subtasks = mutableSetOf<Task<*>>(this)
+        for (task in directDependencies) {
+            subtasks += task.unstartedCacheableSubtasks()
+        }
+        subtasks
+    }
 }

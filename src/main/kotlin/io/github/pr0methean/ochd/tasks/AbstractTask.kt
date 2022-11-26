@@ -252,4 +252,16 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
     override fun isStartedOrAvailable(): Boolean = coroutine.get()?.isActive == true || getNow() != null
 
     override fun timesFailed(): Long = timesFailed.get()
+    protected fun thisIfCacheable() = if (cache.enabled) listOf(this) else listOf()
+    override fun unstartedCacheableSubtasks(): Collection<Task<*>> = if (isStartedOrAvailable()) {
+        listOf()
+    } else if (directDependencies.none()) {
+        thisIfCacheable()
+    } else {
+        val subtasks = thisIfCacheable().toMutableList<Task<*>>()
+        for (task in directDependencies) {
+            subtasks.addAll(task.unstartedCacheableSubtasks())
+        }
+        subtasks
+    }
 }
