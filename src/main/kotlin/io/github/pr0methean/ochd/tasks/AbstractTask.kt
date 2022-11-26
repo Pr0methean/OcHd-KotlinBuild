@@ -242,13 +242,4 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
 
     override fun timesFailed(): Long = timesFailed.get()
     protected fun thisIfCacheable() = if (cache.enabled) listOf(this) else listOf()
-    override fun unstartedCacheableSubtasks(): Int = if (isStartedOrAvailable()) {
-        0
-    } else {
-        var subtasks = if (cache.enabled) 1 else 0
-        for (task in directDependencies) {
-            subtasks += task.unstartedCacheableSubtasks()
-        }
-        subtasks
-    }
 }
