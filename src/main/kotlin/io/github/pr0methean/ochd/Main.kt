@@ -36,7 +36,7 @@ private val taskOrderComparator = comparingLong(OutputTask::timesFailed)
     .then(comparingInt { it.unstartedCacheableSubtasks().size })
 private val logger = LogManager.getRootLogger()
 private const val PARALLELISM = 2
-private const val HUGE_TILE_PARALLELISM = 1
+private const val MIN_FREE_MEMORY_HUGE_TILES = 1024L*1024*1024
 private const val MIN_FREE_MEMORY = 512L*1024*1024
 private val gcMxBean = ManagementFactory.getGarbageCollectorMXBeans()[0] as GarbageCollectorMXBean
 private const val HEAP_BEAN_NAME = "ZHeap"
@@ -94,11 +94,11 @@ suspend fun main(args: Array<String>) {
         stats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupAndCopyMetadata.join()
         System.gc()
-        runAll(cbTasks, cbScope, stats, HUGE_TILE_PARALLELISM)
+        runAll(cbTasks, cbScope, stats, PARALLELISM, MIN_FREE_MEMORY_HUGE_TILES)
         stats.readHugeTileCache(hugeTaskCache)
         hugeTaskCache.invalidateAll()
         System.gc()
-        runAll(nonCbTasks, scope, stats, PARALLELISM)
+        runAll(nonCbTasks, scope, stats, PARALLELISM, MIN_FREE_MEMORY)
     }
     stopMonitoring()
     Platform.exit()
@@ -114,7 +114,8 @@ private suspend fun runAll(
     tasks: Iterable<OutputTask>,
     scope: CoroutineScope,
     stats: ImageProcessingStats,
-    parallelism: Int
+    parallelism: Int,
+    minFree: Long
 ) {
     val unstartedTasks = tasks.sortedWith(comparingInt { it.unstartedCacheableSubtasks().size }).toMutableSet()
     val unfinishedTasks = AtomicLong(unstartedTasks.size.toLong())
@@ -125,7 +126,7 @@ private suspend fun runAll(
         val maybeReceive = finishedJobsChannel.tryReceive().getOrElse {
             if (inProgressJobs.size >= parallelism
                     || (inProgressJobs.isNotEmpty()
-                        && (unstartedTasks.isEmpty() || shouldThrottle()))) {
+                        && (unstartedTasks.isEmpty() || shouldThrottle(minFree)))) {
                 finishedJobsChannel.receive()
             } else null
         }
@@ -167,11 +168,11 @@ private suspend fun runAll(
     finishedJobsChannel.close()
 }
 
-fun shouldThrottle(): Boolean {
+fun shouldThrottle(minFree: Long): Boolean {
     val usageAfterLastGc = gcMxBean.lastGcInfo.memoryUsageAfterGc[HEAP_BEAN_NAME]!!
-    if (usageAfterLastGc.max - usageAfterLastGc.used < MIN_FREE_MEMORY) {
+    if (usageAfterLastGc.max - usageAfterLastGc.used < minFree) {
         val currentUsage = heapMxBean.usage
-        if (currentUsage.max - currentUsage.used < MIN_FREE_MEMORY) {
+        if (currentUsage.max - currentUsage.used < minFree) {
             logger.warn("Throttling a new task because too little memory is free")
             return true
         }
