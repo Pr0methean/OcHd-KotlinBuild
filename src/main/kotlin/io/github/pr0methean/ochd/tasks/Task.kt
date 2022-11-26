@@ -20,7 +20,7 @@ interface Task<out T>: StringBuilderFormattable {
 
     fun unstartedCacheableSubtasks(): Int
 
-    fun cachedSubtasks(): Int
+    fun startedOrAvailableSubtasks(): Int
 
     fun isCachingEnabled(): Boolean
 

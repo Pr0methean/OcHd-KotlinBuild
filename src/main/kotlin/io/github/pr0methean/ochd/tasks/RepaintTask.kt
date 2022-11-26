@@ -42,19 +42,20 @@ class RepaintTask(
         return base.unstartedCacheableSubtasks() + if (cache.enabled) 1 else 0
     }
 
-    override fun cachedSubtasks(): Int {
-        if (getNow() == null) {
+    override fun startedOrAvailableSubtasks(): Int {
+        if (isStartedOrAvailable()) {
+            return totalSubtasks
+        } else {
             if (base.getNow() != null) {
                 return base.totalSubtasks
             }
             for (repaint in base.opaqueRepaints()) {
-                if (repaint.getNow() != null) {
+                if (repaint.isStartedOrAvailable()) {
                     return base.totalSubtasks
                 }
             }
-            return super.cachedSubtasks()
         }
-        return 0
+        return super.startedOrAvailableSubtasks()
     }
 
     override suspend fun mergeWithDuplicate(other: Task<*>): ImageTask {
