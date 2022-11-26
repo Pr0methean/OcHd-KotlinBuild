@@ -115,7 +115,7 @@ private suspend fun runAll(
     parallelism: Int
 ) {
     val unstartedTasks = tasks.sortedWith(comparingInt(OutputTask::cacheableSubtasks)
-        .thenComparingInt(OutputTask::totalSubtasks))
+        .then(comparingInt(OutputTask::totalSubtasks).reversed()))
         .toMutableSet()
     val unfinishedTasks = AtomicLong(unstartedTasks.size.toLong())
     val inProgressJobs = mutableMapOf<OutputTask,Job>()
