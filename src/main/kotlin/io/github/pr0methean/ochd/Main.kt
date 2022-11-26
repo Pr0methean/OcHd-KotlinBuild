@@ -48,6 +48,8 @@ suspend fun main(args: Array<String>) {
         println("Usage: main <size>")
         return
     }
+    val tileSize = args[0].toInt()
+    if (tileSize <= 0) throw IllegalArgumentException("tileSize shouldn't be zero or negative but was ${args[0]}")
     val supervisorJob = SupervisorJob()
     val ioScope = CoroutineScope(Dispatchers.IO).plus(supervisorJob)
     val out = Paths.get("pngout").toAbsolutePath().toFile()
@@ -63,8 +65,6 @@ suspend fun main(args: Array<String>) {
             }
         }
     }
-    val tileSize = args[0].toInt()
-    if (tileSize <= 0) throw IllegalArgumentException("tileSize shouldn't be zero or negative but was ${args[0]}")
     val coroutineContext = newFixedThreadPoolContext(PARALLELISM, "Main coroutine context")
     val scope = CoroutineScope(coroutineContext).plus(supervisorJob)
     val svgDirectory = Paths.get("svg").toAbsolutePath().toFile()
