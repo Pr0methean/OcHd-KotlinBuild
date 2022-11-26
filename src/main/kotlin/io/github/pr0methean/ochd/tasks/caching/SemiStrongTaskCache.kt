@@ -23,8 +23,4 @@ class SemiStrongTaskCache<T>(private val victimCache: AbstractTaskCache<T>, priv
         victimCache.enabledSet(value)
         primaryCache.put(this, value)
     }
-
-    fun clearPrimaryCache() {
-        primaryCache.invalidateAll()
-    }
 }

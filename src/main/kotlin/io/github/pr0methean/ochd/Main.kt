@@ -4,7 +4,6 @@ import com.sun.management.GarbageCollectorMXBean
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
 import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.tasks.await
-import io.github.pr0methean.ochd.tasks.caching.SemiStrongTaskCache
 import io.github.pr0methean.ochd.tasks.doJfx
 import javafx.application.Platform
 import kotlinx.coroutines.CoroutineName
@@ -118,28 +117,13 @@ private suspend fun runAll(
     val unstartedTasks = tasks.sortedWith(comparingInt { it.unstartedCacheableSubtasks().size }).toMutableSet()
     val inProgressJobs = mutableMapOf<OutputTask,Job>()
     val finishedJobsChannel = Channel<OutputTask>(capacity = CAPACITY_PADDING_FACTOR * parallelism)
-    var maxRetries = 0L
     do {
         while (inProgressJobs.size >= parallelism
                 || (inProgressJobs.isNotEmpty() && (unstartedTasks.isEmpty() || shouldThrottle()))) {
             inProgressJobs.remove(finishedJobsChannel.receive())
         }
         val task = unstartedTasksMutex.withLock {
-            val maybeTask = unstartedTasks.minWithOrNull(taskOrderComparator)
-            if (maybeTask != null) {
-                val timesFailed = maybeTask.timesFailed()
-                if (timesFailed > maxRetries) {
-                    maxRetries = timesFailed
-                    val cache = maybeTask.source.cache
-                    if (cache is SemiStrongTaskCache<*>) {
-                        cache.clearPrimaryCache()
-                    }
-                }
-                if (!unstartedTasks.remove(maybeTask)) {
-                    throw RuntimeException("Attempted to remove task more than once: $maybeTask")
-                }
-                maybeTask
-            } else null
+            unstartedTasks.minWithOrNull(taskOrderComparator)
         }
         task ?: continue
         inProgressJobs[task] = scope.launch {
