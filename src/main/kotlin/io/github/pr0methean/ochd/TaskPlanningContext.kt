@@ -29,7 +29,7 @@ fun color(web: String, alpha: Double): Color = Color.web(web, alpha)
 
 private val logger = LogManager.getLogger("TaskPlanningContext")
 // Main Caffeine cache will be able to contain this * 16 MPx * 4 bytes/Px
-private const val MINIMUM_CACHE_4096x4096 = 23L
+private const val MINIMUM_CACHE_4096x4096 = 22L
 // Huge-tile Caffeine cache will be able to contain this * 64 MPx * 4 bytes/Px
 private const val MINIMUM_CACHE_16384x4096 = 3L
 fun isHugeTileImportTask(name: String): Boolean = name.startsWith("commandBlock") || name.endsWith("4x")
