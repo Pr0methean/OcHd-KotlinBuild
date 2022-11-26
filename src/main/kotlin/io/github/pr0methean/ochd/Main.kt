@@ -122,6 +122,7 @@ private suspend fun runAll(
     val finishedJobsChannel = Channel<OutputTask>(capacity = CAPACITY_PADDING_FACTOR * parallelism)
     var maxRetries = 0L
     while (unfinishedTasks.isNotEmpty()) {
+        logger.info("{} unfinished tasks, {} in progress", Unbox.box(unfinishedTasks.size), inProgressJobs.keys)
         val maybeReceive = finishedJobsChannel.tryReceive().getOrElse {
             if (inProgressJobs.size >= parallelism
                     || ((inProgressJobs.isNotEmpty() && (unstartedTasks.isEmpty() || shouldThrottle())))) {
