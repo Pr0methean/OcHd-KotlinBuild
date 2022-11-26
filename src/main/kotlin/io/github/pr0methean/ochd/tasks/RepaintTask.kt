@@ -45,11 +45,11 @@ class RepaintTask(
     override fun cachedSubtasks(): Int {
         if (getNow() == null) {
             if (base.getNow() != null) {
-                return base.andAllSubtasks.size
+                return base.totalSubtasks
             }
             for (repaint in base.opaqueRepaints()) {
                 if (repaint.getNow() != null) {
-                    return base.andAllSubtasks.size
+                    return base.totalSubtasks
                 }
             }
             return super.cachedSubtasks()
