@@ -125,7 +125,7 @@ private suspend fun runAll(
         val task = unstartedTasksMutex.withLock {
             unstartedTasks.minWithOrNull(taskOrderComparator)
         }
-        task ?: continue
+        task ?: if (inProgressJobs.isNotEmpty() || unstartedTasks.isNotEmpty()) { continue } else { break }
         inProgressJobs[task] = scope.launch {
             logger.info("Joining {}", task)
             val result = task.await()
