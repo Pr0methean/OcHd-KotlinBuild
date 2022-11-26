@@ -42,7 +42,7 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
     override val totalSubtasks: Int by lazy {
         var total = 1
         for (task in directDependencies) {
-            total += 1 + task.totalSubtasks
+            total += task.totalSubtasks
         }
         total
     }
