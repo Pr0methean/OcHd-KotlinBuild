@@ -46,7 +46,7 @@ class RepaintTask(
         if (getNow() == null && base.getNow() == null) {
             for (repaint in base.opaqueRepaints()) {
                 if (repaint.getNow() != null) {
-                    return base.cachedSubtasks()
+                    return base.andAllSubtasks
                 }
             }
         }

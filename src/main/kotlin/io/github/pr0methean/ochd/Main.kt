@@ -11,7 +11,6 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
@@ -42,7 +41,7 @@ private val gcMxBean = ManagementFactory.getGarbageCollectorMXBeans()[0] as Garb
 private const val HEAP_BEAN_NAME = "ZHeap"
 private val heapMxBean = ManagementFactory.getMemoryPoolMXBeans().single { it.name == HEAP_BEAN_NAME }
 
-@OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
+@OptIn(DelicateCoroutinesApi::class)
 @Suppress("UnstableApiUsage", "DeferredResultUnused")
 suspend fun main(args: Array<String>) {
     if (args.isEmpty()) {
