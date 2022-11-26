@@ -83,6 +83,13 @@ class RepaintTask(
                 }
             }
         }
+        if (baseImage == null && !base.isStartedOrAvailable()) {
+            for (repaint in base.opaqueRepaints()) {
+                if (repaint.isStartedOrAvailable()) {
+                    baseImage = repaint.await().getOrThrow()
+                }
+            }
+        }
         baseImage = baseImage ?: base.await().getOrThrow()
         stats.onTaskLaunched("RepaintTask", name)
         val canvas = Canvas(baseImage.width, baseImage.height)
