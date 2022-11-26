@@ -74,6 +74,7 @@ class RepaintTask(
                 val repaintNow = repaint.getNow()?.getOrNull()
                 if (repaintNow != null) {
                     if (repaint == this@RepaintTask) {
+                        logger.warn("perform() for {} encountered a copy of itself", name)
                         return repaintNow
                     }
                     logger.info("Repainting {} to create {}", repaint, this)
