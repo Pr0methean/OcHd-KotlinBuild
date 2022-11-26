@@ -68,7 +68,6 @@ suspend fun main(args: Array<String>) {
     if (tileSize <= 0) throw IllegalArgumentException("tileSize shouldn't be zero or negative but was ${args[0]}")
     val coroutineContext = newFixedThreadPoolContext(PARALLELISM, "Main coroutine context")
     val scope = CoroutineScope(coroutineContext).plus(supervisorJob)
-    val cbScope = CoroutineScope(coroutineContext.limitedParallelism(1)).plus(supervisorJob)
     val svgDirectory = Paths.get("svg").toAbsolutePath().toFile()
     val outTextureRoot = out.resolve("assets").resolve("minecraft").resolve("textures")
 
@@ -94,7 +93,7 @@ suspend fun main(args: Array<String>) {
         stats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupAndCopyMetadata.join()
         System.gc()
-        runAll(cbTasks, cbScope, stats, HUGE_TILE_PARALLELISM)
+        runAll(cbTasks, scope, stats, HUGE_TILE_PARALLELISM)
         stats.readHugeTileCache(hugeTaskCache)
         hugeTaskCache.invalidateAll()
         System.gc()
