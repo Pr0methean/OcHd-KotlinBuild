@@ -15,6 +15,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.getOrElse
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.newFixedThreadPoolContext
@@ -116,13 +117,21 @@ private suspend fun runAll(
 ) {
     val unstartedTasksMutex = Mutex()
     val unstartedTasks = tasks.sortedWith(comparingInt { it.unstartedCacheableSubtasks().size }).toMutableSet()
+    val unfinishedTasks = tasks.toMutableSet()
     val inProgressJobs = mutableMapOf<OutputTask,Job>()
     val finishedJobsChannel = Channel<OutputTask>(capacity = CAPACITY_PADDING_FACTOR * parallelism)
     var maxRetries = 0L
-    do {
-        while (inProgressJobs.size >= parallelism
-                || (inProgressJobs.isNotEmpty() && (unstartedTasks.isEmpty() || shouldThrottle()))) {
-            inProgressJobs.remove(finishedJobsChannel.receive())
+    while (unfinishedTasks.isNotEmpty()) {
+        val maybeReceive = finishedJobsChannel.tryReceive().getOrElse {
+            if (inProgressJobs.size >= parallelism
+                    || ((inProgressJobs.isNotEmpty() && (unstartedTasks.isEmpty() || shouldThrottle())))) {
+                finishedJobsChannel.receive()
+            } else null
+        }
+        if (maybeReceive != null) {
+            inProgressJobs.remove(maybeReceive)
+            unfinishedTasks.remove(maybeReceive)
+            continue
         }
         val task = unstartedTasksMutex.withLock {
             val maybeTask = unstartedTasks.minWithOrNull(taskOrderComparator)
@@ -159,7 +168,7 @@ private suspend fun runAll(
                 stats.recordRetries(1)
             }
         }
-    } while (inProgressJobs.isNotEmpty() || unstartedTasks.isNotEmpty())
+    }
     finishedJobsChannel.close()
 }
 
