@@ -114,7 +114,9 @@ private suspend fun runAll(
     stats: ImageProcessingStats,
     parallelism: Int
 ) {
-    val unstartedTasks = tasks.sortedWith(comparingInt(OutputTask::cacheableSubtasks)).toMutableSet()
+    val unstartedTasks = tasks.sortedWith(comparingInt(OutputTask::cacheableSubtasks)
+        .thenComparingInt(OutputTask::totalSubtasks))
+        .toMutableSet()
     val unfinishedTasks = AtomicLong(unstartedTasks.size.toLong())
     val inProgressJobs = mutableMapOf<OutputTask,Job>()
     val finishedJobsChannel = Channel<TaskResult>(capacity = CAPACITY_PADDING_FACTOR * parallelism)
