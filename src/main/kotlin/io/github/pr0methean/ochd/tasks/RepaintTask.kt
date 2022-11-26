@@ -32,15 +32,17 @@ class RepaintTask(
             return listOf()
         }
         if (base.getNow() != null) {
-            return if (cache.enabled) listOf(this) else listOf()
+            return thisIfCacheable()
         }
         for (repaint in base.opaqueRepaints()) {
             if (repaint.isStartedOrAvailable()) {
-                return if (cache.enabled) listOf(this) else listOf()
+                return thisIfCacheable()
             }
         }
-        return base.unstartedCacheableSubtasks() + this
+        return base.unstartedCacheableSubtasks() + thisIfCacheable()
     }
+
+    private fun thisIfCacheable() = if (cache.enabled) listOf(this) else listOf()
 
     override fun cachedSubtasks(): List<Task<*>> {
         if (getNow() == null) {
