@@ -51,9 +51,6 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
         if (getNow() != null) {
             return totalSubtasks
         }
-        if (directDependencies.none()) {
-            return 0
-        }
         var subtasks = 0
         for (task in directDependencies) {
             subtasks += task.cachedSubtasks()
