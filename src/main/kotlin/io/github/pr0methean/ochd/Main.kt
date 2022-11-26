@@ -20,8 +20,6 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.plus
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox
 import java.lang.management.ManagementFactory
@@ -110,59 +108,53 @@ suspend fun main(args: Array<String>) {
     exitProcess(0)
 }
 
+data class TaskResult(val task: OutputTask, val succeeded: Boolean)
+
 private suspend fun runAll(
     tasks: Iterable<OutputTask>,
     scope: CoroutineScope,
     stats: ImageProcessingStats,
     parallelism: Int
 ) {
-    val unstartedTasksMutex = Mutex()
     val unstartedTasks = tasks.sortedWith(comparingInt { it.unstartedCacheableSubtasks().size }).toMutableSet()
     val unfinishedTasks = AtomicLong(unstartedTasks.size.toLong())
     val inProgressJobs = mutableMapOf<OutputTask,Job>()
-    val finishedJobsChannel = Channel<OutputTask>(capacity = CAPACITY_PADDING_FACTOR * parallelism)
+    val finishedJobsChannel = Channel<TaskResult>(capacity = CAPACITY_PADDING_FACTOR * parallelism)
     var maxRetries = 0L
     while (unfinishedTasks.get() > 0) {
         val maybeReceive = finishedJobsChannel.tryReceive().getOrElse {
             if (inProgressJobs.size >= parallelism
                     || (inProgressJobs.isNotEmpty()
-                        && (unstartedTasksMutex.withLock { unstartedTasks.isEmpty() } || shouldThrottle()))) {
+                        && (unstartedTasks.isEmpty() || shouldThrottle()))) {
                 finishedJobsChannel.receive()
             } else null
         }
         if (maybeReceive != null) {
-            inProgressJobs.remove(maybeReceive)
+            if (!maybeReceive.succeeded) {
+                unstartedTasks.add(maybeReceive.task)
+            }
+            inProgressJobs.remove(maybeReceive.task)
             continue
         }
-        val task = unstartedTasksMutex.withLock {
-            val maybeTask = unstartedTasks.minWithOrNull(taskOrderComparator)
-            if (maybeTask != null) {
-                val timesFailed = maybeTask.timesFailed()
-                if (timesFailed > maxRetries) {
-                    maxRetries = timesFailed
-                    val cache = maybeTask.source.cache
-                    if (cache is SemiStrongTaskCache<*>) {
-                        cache.clearPrimaryCache()
-                    }
-                }
-                if (!unstartedTasks.remove(maybeTask)) {
-                    throw RuntimeException("Attempted to remove task more than once: $maybeTask")
-                }
-                maybeTask
-            } else null
+        val task = unstartedTasks.minWithOrNull(taskOrderComparator) ?: continue
+        val timesFailed = task.timesFailed()
+        if (timesFailed > maxRetries) {
+            maxRetries = timesFailed
+            val cache = task.source.cache
+            if (cache is SemiStrongTaskCache<*>) {
+                cache.clearPrimaryCache()
+            }
         }
-        task ?: continue
+        if (!unstartedTasks.remove(task)) {
+            throw RuntimeException("Attempted to remove task more than once: $task")
+        }
         inProgressJobs[task] = scope.launch {
             logger.info("Joining {}", task)
             val result = task.await()
             if (result.isSuccess) {
                 unfinishedTasks.getAndDecrement()
-            } else {
-                unstartedTasksMutex.withLock {
-                    unstartedTasks.add(task)
-                }
             }
-            finishedJobsChannel.send(task)
+            finishedJobsChannel.send(TaskResult(task, result.isSuccess))
             if (result.isSuccess) {
                 logger.info("Joined {} with result of success", task)
                 task.source.removeDirectDependentTask(task)
