@@ -117,6 +117,7 @@ private suspend fun runAll(
 ) {
     val unstartedTasksMutex = Mutex()
     val unstartedTasks = tasks.sortedWith(comparingInt { it.unstartedCacheableSubtasks().size }).toMutableSet()
+    val unfinishedTasksMutex = Mutex()
     val unfinishedTasks = tasks.toMutableSet()
     val inProgressJobs = mutableMapOf<OutputTask,Job>()
     val finishedJobsChannel = Channel<OutputTask>(capacity = CAPACITY_PADDING_FACTOR * parallelism)
@@ -131,7 +132,6 @@ private suspend fun runAll(
         }
         if (maybeReceive != null) {
             inProgressJobs.remove(maybeReceive)
-            unfinishedTasks.remove(maybeReceive)
             continue
         }
         val task = unstartedTasksMutex.withLock {
@@ -155,7 +155,11 @@ private suspend fun runAll(
         inProgressJobs[task] = scope.launch {
             logger.info("Joining {}", task)
             val result = task.await()
-            if (result.isFailure) {
+            if (result.isSuccess) {
+                unfinishedTasksMutex.withLock {
+                    unfinishedTasks.remove(task)
+                }
+            } else {
                 unstartedTasksMutex.withLock {
                     unstartedTasks.add(task)
                 }
