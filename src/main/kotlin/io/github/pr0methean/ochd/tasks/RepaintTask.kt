@@ -73,6 +73,9 @@ class RepaintTask(
             for (repaint in base.opaqueRepaints()) {
                 val repaintNow = repaint.getNow()?.getOrNull()
                 if (repaintNow != null) {
+                    if (repaint == this@RepaintTask) {
+                        return repaintNow
+                    }
                     logger.info("Repainting {} to create {}", repaint, this)
                     baseImage = repaintNow
                     break
