@@ -18,7 +18,7 @@ abstract class AbstractTaskCache<T>(val name: String) : TaskCache<T> {
         if (value == null) {
             clear()
         } else if (enabled) {
-            logger.info("Caching result {} of {}", value, name)
+            logger.info("Caching result of {}", name)
             enabledSet(value)
         }
     }
