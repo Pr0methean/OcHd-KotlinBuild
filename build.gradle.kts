@@ -56,6 +56,12 @@ dependencies {
     implementation("com.github.ben-manes.caffeine:caffeine:3.1.2")
     runtimeOnly("com.lmax:disruptor:3.4.4")
     constraints {
+        add("detekt", "org.yaml:snakeyaml") {
+            version {
+                require("1.32")
+            }
+            because("CVE-2022-25857, CVE-2022-38749, CVE-2022-38750, CVE-2022-38751, CVE-2022-38752")
+        }
         add("implementation", "commons-io:commons-io") {
             version {
                 require("2.7")
