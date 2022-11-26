@@ -39,6 +39,8 @@ private const val PARALLELISM = 2
 private const val HUGE_TILE_PARALLELISM = 1
 private const val MIN_FREE_MEMORY = 512L*1024*1024
 private val gcMxBean = ManagementFactory.getGarbageCollectorMXBeans()[0] as GarbageCollectorMXBean
+private const val HEAP_BEAN_NAME = "ZHeap"
+private val heapMxBean = ManagementFactory.getMemoryPoolMXBeans().single { it.name == HEAP_BEAN_NAME }
 
 @OptIn(ExperimentalCoroutinesApi::class, DelicateCoroutinesApi::class)
 @Suppress("UnstableApiUsage", "DeferredResultUnused")
@@ -162,10 +164,13 @@ private suspend fun runAll(
 }
 
 fun shouldThrottle(): Boolean {
-    val usageAfterLastGc = gcMxBean.lastGcInfo.memoryUsageAfterGc["ZHeap"]!!
+    val usageAfterLastGc = gcMxBean.lastGcInfo.memoryUsageAfterGc[HEAP_BEAN_NAME]!!
     if (usageAfterLastGc.max - usageAfterLastGc.used < MIN_FREE_MEMORY) {
-        logger.warn("Throttling a new task because too little memory is free")
-        return true
+        val currentUsage = heapMxBean.usage
+        if (currentUsage.max - currentUsage.used < MIN_FREE_MEMORY) {
+            logger.warn("Throttling a new task because too little memory is free")
+            return true
+        }
     }
     return false
 }
