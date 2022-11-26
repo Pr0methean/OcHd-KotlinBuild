@@ -27,6 +27,21 @@ class RepaintTask(
         }
     }
 
+    override fun unstartedCacheableSubtasks(): Int {
+        if (isStartedOrAvailable()) {
+            return 0
+        }
+        if (base.getNow() != null) {
+            return if (cache.enabled) 1 else 0
+        }
+        for (repaint in base.opaqueRepaints()) {
+            if (repaint.isStartedOrAvailable()) {
+                return if (cache.enabled) 1 else 0
+            }
+        }
+        return base.unstartedCacheableSubtasks() + if (cache.enabled) 1 else 0
+    }
+
     override fun startedOrAvailableSubtasks(): Int {
         if (isStartedOrAvailable()) {
             return totalSubtasks
