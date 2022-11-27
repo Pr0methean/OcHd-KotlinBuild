@@ -68,7 +68,7 @@ class TaskPlanningContext(
         return SemiStrongTaskCache(WeakTaskCache(name), backingCache)
     }
     private fun createSvgImportCache(name: String): TaskCache<Image> {
-        if (name.startsWith("commandBlock") || name.endsWith("4x")) {
+        if (isHugeTileImportTask(name)) {
             // These images are too large for the main cache to manage
             return SemiStrongTaskCache(WeakTaskCache(name), hugeTileBackingCache)
         }
