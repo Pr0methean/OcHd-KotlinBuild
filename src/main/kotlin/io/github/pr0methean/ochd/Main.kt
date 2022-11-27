@@ -38,7 +38,7 @@ private const val PARALLELISM = 2
 private const val HUGE_TILE_PARALLELISM = 1
 private const val MIN_FREE_MEMORY = 512L*1024*1024
 private val gcMxBean = ManagementFactory.getGarbageCollectorMXBeans()[0] as GarbageCollectorMXBean
-private const val HEAP_BEAN_NAME = "Java Heap"
+private const val HEAP_BEAN_NAME = "Heap"
 private val heapMxBean = ManagementFactory.getMemoryPoolMXBeans().single { it.name.contains(HEAP_BEAN_NAME) }
 
 @OptIn(DelicateCoroutinesApi::class)
