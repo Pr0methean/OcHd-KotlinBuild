@@ -7,12 +7,13 @@ import javafx.scene.image.Image
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
 
+const val PNG_PRESIZE = 4096
 @Suppress("FunctionName")
 fun PngCompressionTask(
     base: AbstractTask<Image>, cache: TaskCache<ByteArray>, stats: ImageProcessingStats
 ): TransformingTask<Image, ByteArray> = TransformingTask(
     "PNG compression of $base", base = base, cache = cache, transform = { image ->
-    ByteArrayOutputStream().use {
+    ByteArrayOutputStream(PNG_PRESIZE).use {
         stats.onTaskLaunched("PngCompressionTask", base.name)
         @Suppress("BlockingMethodInNonBlockingContext")
 
