@@ -37,6 +37,7 @@ private val logger = LogManager.getRootLogger()
 private const val PARALLELISM = 2
 private const val HUGE_TILE_PARALLELISM = 1
 private const val MIN_FREE_MEMORY = 512L*1024*1024
+private const val GLOBAL_MAX_RETRIES = 100L
 private val gcMxBean = ManagementFactory.getGarbageCollectorMXBeans()[0] as GarbageCollectorMXBean
 private const val HEAP_BEAN_NAME = "ZHeap"
 private val heapMxBean = ManagementFactory.getMemoryPoolMXBeans().single { it.name == HEAP_BEAN_NAME }
@@ -118,7 +119,7 @@ private suspend fun runAll(
     val unfinishedTasks = AtomicLong(unstartedTasks.size.toLong())
     val inProgressJobs = mutableMapOf<OutputTask,Job>()
     val finishedJobsChannel = Channel<TaskResult>(capacity = CAPACITY_PADDING_FACTOR * parallelism)
-    var maxRetries = 0L
+    var maxRetriesAnyTaskSoFar = 0L
     while (unfinishedTasks.get() > 0) {
         val maybeReceive = finishedJobsChannel.tryReceive().getOrElse {
             if (inProgressJobs.size >= parallelism
@@ -136,8 +137,11 @@ private suspend fun runAll(
         }
         val task = unstartedTasks.minWithOrNull(taskOrderComparator) ?: continue
         val timesFailed = task.timesFailed()
-        if (timesFailed > maxRetries) {
-            maxRetries = timesFailed
+        if (timesFailed > maxRetriesAnyTaskSoFar) {
+            if (timesFailed > GLOBAL_MAX_RETRIES) {
+                throw Error("Too many task failures!")
+            }
+            maxRetriesAnyTaskSoFar = timesFailed
             val cache = task.source.cache
             if (cache is SemiStrongTaskCache<*>) {
                 cache.clearPrimaryCache()
