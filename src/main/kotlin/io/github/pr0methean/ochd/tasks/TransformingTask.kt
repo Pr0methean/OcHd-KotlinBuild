@@ -61,6 +61,12 @@ open class TransformingTask<T, U>(
         return deduped
     }
 
+    override suspend fun removeDirectDependentTask(task: Task<*>) {
+        super.removeDirectDependentTask(task)
+        // Relies on the fact that a PngCompressionTask has only one consumer
+        base.removeDirectDependentTask(this)
+    }
+
     override val directDependencies: List<Task<T>> = listOf(base)
 
 }

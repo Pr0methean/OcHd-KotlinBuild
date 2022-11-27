@@ -5,7 +5,7 @@ import org.apache.logging.log4j.util.StringBuilderFormattable
 
 
 interface ImageTask : StringBuilderFormattable, Task<Image> {
-    val asPng: PngCompressionTask
+    val asPng: TransformingTask<Image, ByteArray>
     override suspend fun mergeWithDuplicate(other: Task<*>): ImageTask
 
     fun opaqueRepaints(): Iterable<ImageTask>

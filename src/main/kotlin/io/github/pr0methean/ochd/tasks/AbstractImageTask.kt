@@ -4,7 +4,8 @@ import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.tasks.caching.TaskCache
 import io.github.pr0methean.ochd.tasks.caching.noopTaskCache
 import javafx.scene.image.Image
-import java.util.*
+import java.util.Collections
+import java.util.WeakHashMap
 
 abstract class AbstractImageTask(name: String, cache: TaskCache<Image>,
                                  open val stats: ImageProcessingStats)
@@ -24,5 +25,5 @@ abstract class AbstractImageTask(name: String, cache: TaskCache<Image>,
         opaqueRepaints.add(repaint)
     }
 
-    override val asPng: PngCompressionTask by lazy { PngCompressionTask(this, noopTaskCache(), stats) }
+    override val asPng: TransformingTask<Image, ByteArray> by lazy { PngCompressionTask(this, noopTaskCache(), stats) }
 }

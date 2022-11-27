@@ -22,8 +22,6 @@ interface Task<out T>: StringBuilderFormattable {
 
     fun startedOrAvailableSubtasks(): Int
 
-    fun isCachingEnabled(): Boolean
-
     fun isStartedOrAvailable(): Boolean
 
     suspend fun registerRecursiveDependencies()

@@ -2,6 +2,7 @@ package io.github.pr0methean.ochd
 
 import com.sun.management.GarbageCollectorMXBean
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
+import io.github.pr0methean.ochd.tasks.AbstractTask
 import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.tasks.await
 import io.github.pr0methean.ochd.tasks.caching.SemiStrongTaskCache
@@ -142,7 +143,7 @@ private suspend fun runAll(
                 throw Error("Too many task failures!")
             }
             maxRetriesAnyTaskSoFar = timesFailed
-            val cache = task.source.cache
+            val cache = (task.source as? AbstractTask<*>)?.cache
             if (cache is SemiStrongTaskCache<*>) {
                 cache.clearPrimaryCache()
             }
@@ -159,7 +160,6 @@ private suspend fun runAll(
             finishedJobsChannel.send(TaskResult(task, result.isSuccess))
             if (result.isSuccess) {
                 logger.info("Joined {} with result of success", task)
-                task.source.removeDirectDependentTask(task)
             } else {
                 logger.error("Joined {} with an error: {}", task, result.exceptionOrNull()?.message)
                 stats.recordRetries(1)

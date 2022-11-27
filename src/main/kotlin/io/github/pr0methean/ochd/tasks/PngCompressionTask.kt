@@ -7,9 +7,11 @@ import javafx.scene.image.Image
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
 
-class PngCompressionTask(
-    base: AbstractTask<Image>, cache: TaskCache<ByteArray>, val stats: ImageProcessingStats
-): TransformingTask<Image, ByteArray>("PNG compression of $base", base = base, cache = cache, transform = { image ->
+@Suppress("FunctionName")
+fun PngCompressionTask(
+    base: AbstractTask<Image>, cache: TaskCache<ByteArray>, stats: ImageProcessingStats
+): TransformingTask<Image, ByteArray> = TransformingTask(
+    "PNG compression of $base", base = base, cache = cache, transform = { image ->
     ByteArrayOutputStream().use {
         stats.onTaskLaunched("PngCompressionTask", base.name)
         @Suppress("BlockingMethodInNonBlockingContext")
@@ -19,10 +21,4 @@ class PngCompressionTask(
         stats.onTaskCompleted("PngCompressionTask", base.name)
         packed
     }
-}) {
-    override suspend fun removeDirectDependentTask(task: Task<*>) {
-        super.removeDirectDependentTask(task)
-        // Relies on the fact that a PngCompressionTask has only one consumer
-        base.removeDirectDependentTask(this)
-    }
-}
+})

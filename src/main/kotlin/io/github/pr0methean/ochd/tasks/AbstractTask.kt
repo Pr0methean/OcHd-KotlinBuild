@@ -65,8 +65,6 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
         }
     }
 
-    override fun isCachingEnabled(): Boolean = cache.enabled
-
     final override fun toString(): String = name
 
     override fun formatTo(buffer: StringBuilder) {
@@ -163,7 +161,7 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
     suspend inline fun emit(result: Result<T>, source: Deferred<Result<T>>?) {
         if (result.isFailure) {
             AT_LOGGER.error("Emitting failure for {} due to {}", name, result.exceptionOrNull()?.message)
-            timesFailed.incrementAndGet()
+            timesFailed.getAndIncrement()
         } else {
             AT_LOGGER.debug("Emitting success for {}", name)
         }
@@ -241,7 +239,6 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
     override fun isStartedOrAvailable(): Boolean = coroutine.get()?.isActive == true || getNow() != null
 
     override fun timesFailed(): Long = timesFailed.get()
-    protected fun thisIfCacheable() = if (cache.enabled) listOf(this) else listOf()
     override fun cacheableSubtasks(): Int {
         var subtasks = if (cache.enabled) 1 else 0
         for (task in directDependencies) {
