@@ -39,7 +39,13 @@ private const val HUGE_TILE_PARALLELISM = 1
 private const val MIN_FREE_MEMORY = 512L*1024*1024
 private val gcMxBean = ManagementFactory.getGarbageCollectorMXBeans()[0] as GarbageCollectorMXBean
 private const val HEAP_BEAN_NAME = "Heap"
-private val heapMxBean = ManagementFactory.getMemoryPoolMXBeans().single { it.name.contains(HEAP_BEAN_NAME) }
+private val heapMxBean = ManagementFactory.getMemoryPoolMXBeans().single {
+    if (it.name.contains(HEAP_BEAN_NAME)) {
+        logger.info("Found heap bean {}", it.name)
+        return@single true
+    }
+    return@single false
+}
 
 @OptIn(DelicateCoroutinesApi::class)
 @Suppress("UnstableApiUsage", "DeferredResultUnused")
