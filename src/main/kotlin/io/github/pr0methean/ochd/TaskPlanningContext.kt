@@ -10,8 +10,8 @@ import io.github.pr0methean.ochd.tasks.RepaintTask
 import io.github.pr0methean.ochd.tasks.SvgImportTask
 import io.github.pr0methean.ochd.tasks.Task
 import io.github.pr0methean.ochd.tasks.caching.SemiStrongTaskCache
+import io.github.pr0methean.ochd.tasks.caching.SoftTaskCache
 import io.github.pr0methean.ochd.tasks.caching.TaskCache
-import io.github.pr0methean.ochd.tasks.caching.WeakTaskCache
 import io.github.pr0methean.ochd.tasks.caching.noopTaskCache
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
@@ -66,14 +66,14 @@ class TaskPlanningContext(
             // Tasks using these images are too large for the main cache to manage
             return SemiStrongTaskCache(noopTaskCache(), hugeTileBackingCache)
         }
-        return SemiStrongTaskCache(WeakTaskCache(name), backingCache)
+        return SemiStrongTaskCache(SoftTaskCache(name), backingCache)
     }
     private fun createSvgImportCache(name: String): TaskCache<Image> {
         if (isHugeTileImportTask(name)) {
             // These images are too large for the main cache to manage
             return SemiStrongTaskCache(noopTaskCache(), hugeTileBackingCache)
         }
-        return SemiStrongTaskCache(WeakTaskCache(name), backingCache)
+        return SemiStrongTaskCache(SoftTaskCache(name), backingCache)
     }
 
     init {
