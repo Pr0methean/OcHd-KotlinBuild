@@ -64,14 +64,14 @@ class TaskPlanningContext(
     fun createStandardTaskCache(name: String): TaskCache<Image> {
         if (name.contains("4x") || name.contains("commandBlock")) {
             // Tasks using these images are too large for the main cache to manage
-            return SemiStrongTaskCache(noopTaskCache<Image>(), hugeTileBackingCache)
+            return SemiStrongTaskCache(noopTaskCache(), hugeTileBackingCache)
         }
         return SemiStrongTaskCache(WeakTaskCache(name), backingCache)
     }
     private fun createSvgImportCache(name: String): TaskCache<Image> {
         if (isHugeTileImportTask(name)) {
             // These images are too large for the main cache to manage
-            return SemiStrongTaskCache(WeakTaskCache(name), hugeTileBackingCache)
+            return SemiStrongTaskCache(noopTaskCache(), hugeTileBackingCache)
         }
         return SemiStrongTaskCache(WeakTaskCache(name), backingCache)
     }
