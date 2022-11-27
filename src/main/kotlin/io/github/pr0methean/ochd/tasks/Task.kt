@@ -18,17 +18,9 @@ interface Task<out T>: StringBuilderFormattable {
 
     suspend fun removeDirectDependentTask(task: Task<*>)
 
-    fun unstartedCacheableSubtasks(): Collection<Task<*>> = if (isStartedOrAvailable() || !isCachingEnabled()) {
-        listOf()
-    } else {
-        val subtasks = mutableSetOf<Task<*>>(this)
-        for (task in directDependencies) {
-            subtasks += task.unstartedCacheableSubtasks()
-        }
-        subtasks
-    }
+    fun cacheableSubtasks(): Int
 
-    fun cachedSubtasks(): List<Task<*>>
+    fun startedOrAvailableSubtasks(): Int
 
     fun isCachingEnabled(): Boolean
 
@@ -43,7 +35,6 @@ interface Task<out T>: StringBuilderFormattable {
     val totalSubtasks: Int
 
     fun timesFailed(): Long
-    val andAllSubtasks: List<Task<*>>
 }
 
 @Suppress("DeferredResultUnused")

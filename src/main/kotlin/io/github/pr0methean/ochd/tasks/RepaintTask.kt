@@ -11,7 +11,7 @@ import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
 import javafx.scene.paint.Paint
 import org.apache.logging.log4j.LogManager
-import java.util.*
+import java.util.Objects
 
 private val logger = LogManager.getLogger("RepaintTask")
 class RepaintTask(
@@ -27,30 +27,20 @@ class RepaintTask(
         }
     }
 
-    override fun unstartedCacheableSubtasks(): Collection<Task<*>> {
+    override fun startedOrAvailableSubtasks(): Int {
         if (isStartedOrAvailable()) {
-            return listOf()
-        }
-        if (base.getNow() != null) {
-            return if (cache.enabled) listOf() else listOf(this)
-        }
-        for (repaint in base.opaqueRepaints()) {
-            if (repaint.isStartedOrAvailable()) {
-                return if (cache.enabled) listOf() else listOf(this)
+            return totalSubtasks
+        } else {
+            if (base.getNow() != null) {
+                return base.totalSubtasks
             }
-        }
-        return base.unstartedCacheableSubtasks() + this
-    }
-
-    override fun cachedSubtasks(): List<Task<*>> {
-        if (getNow() == null && base.getNow() == null) {
             for (repaint in base.opaqueRepaints()) {
-                if (repaint.getNow() != null) {
-                    return base.cachedSubtasks()
+                if (repaint.isStartedOrAvailable()) {
+                    return base.totalSubtasks
                 }
             }
         }
-        return super.cachedSubtasks()
+        return super.startedOrAvailableSubtasks()
     }
 
     override suspend fun mergeWithDuplicate(other: Task<*>): ImageTask {
@@ -73,6 +63,10 @@ class RepaintTask(
             for (repaint in base.opaqueRepaints()) {
                 val repaintNow = repaint.getNow()?.getOrNull()
                 if (repaintNow != null) {
+                    if (repaint == this@RepaintTask) {
+                        logger.warn("perform() for {} encountered a copy of itself", name)
+                        return repaintNow
+                    }
                     logger.info("Repainting {} to create {}", repaint, this)
                     baseImage = repaintNow
                     break

@@ -40,33 +40,22 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
     }
 
     override val totalSubtasks: Int by lazy {
-        var total = 0
+        var total = 1
         for (task in directDependencies) {
-            total += 1 + task.totalSubtasks
+            total += task.totalSubtasks
         }
         total
     }
 
-    override fun cachedSubtasks(): List<Task<*>> {
-        if (getNow() != null) {
-            return andAllSubtasks
+    override fun startedOrAvailableSubtasks(): Int {
+        if (isStartedOrAvailable()) {
+            return totalSubtasks
         }
-        if (directDependencies.none()) {
-            return listOf()
-        }
-        val subtasks = ArrayList<Task<*>>(andAllSubtasks.size)
+        var subtasks = 0
         for (task in directDependencies) {
-            subtasks += task.cachedSubtasks()
+            subtasks += task.startedOrAvailableSubtasks()
         }
         return subtasks
-    }
-
-    override val andAllSubtasks: List<Task<*>> by lazy {
-        val subtasks = mutableListOf<Task<*>>(this)
-        for (task in directDependencies) {
-            subtasks += task.andAllSubtasks
-        }
-        subtasks
     }
 
     override suspend fun registerRecursiveDependencies(): Unit = mutex.withLock {
@@ -252,4 +241,12 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
     override fun isStartedOrAvailable(): Boolean = coroutine.get()?.isActive == true || getNow() != null
 
     override fun timesFailed(): Long = timesFailed.get()
+    protected fun thisIfCacheable() = if (cache.enabled) listOf(this) else listOf()
+    override fun cacheableSubtasks(): Int {
+        var subtasks = if (cache.enabled) 1 else 0
+        for (task in directDependencies) {
+            subtasks += task.cacheableSubtasks()
+        }
+        return subtasks
+    }
 }
