@@ -5,7 +5,7 @@ import java.lang.ref.WeakReference
 
 val nullRef = WeakReference<Nothing?>(null)
 private val logger = LogManager.getLogger("AbstractTaskCache")
-abstract class AbstractTaskCache<T>(val name: String) : TaskCache<T> {
+abstract class AbstractTaskCache<T>(override val name: String) : TaskCache<T> {
     @Volatile override var enabled: Boolean = false
         set(value) {
             if (!value) {
@@ -23,9 +23,4 @@ abstract class AbstractTaskCache<T>(val name: String) : TaskCache<T> {
         }
     }
 
-    abstract fun disable()
-
-    abstract fun clear()
-
-    abstract fun enabledSet(value: T)
 }

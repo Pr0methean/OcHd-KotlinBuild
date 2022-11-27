@@ -8,8 +8,20 @@ object NoopTaskCache: TaskCache<Any> {
     override var enabled: Boolean
         get() = false
         set(_) {/* No-op. */}
+    override val name: String = "NoopTaskCache"
 
     override fun getNow(): Nothing? = null
+    override fun disable() {
+        // No-op.
+    }
+
+    override fun clear() {
+        // No-op.
+    }
+
+    override fun enabledSet(value: Any) {
+        // No-op.
+    }
 
     override fun set(value: Any?) {
         // No-op.
