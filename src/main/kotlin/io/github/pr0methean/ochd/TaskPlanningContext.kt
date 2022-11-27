@@ -10,7 +10,6 @@ import io.github.pr0methean.ochd.tasks.RepaintTask
 import io.github.pr0methean.ochd.tasks.SvgImportTask
 import io.github.pr0methean.ochd.tasks.Task
 import io.github.pr0methean.ochd.tasks.caching.SemiStrongTaskCache
-import io.github.pr0methean.ochd.tasks.caching.SoftTaskCache
 import io.github.pr0methean.ochd.tasks.caching.TaskCache
 import io.github.pr0methean.ochd.tasks.caching.noopTaskCache
 import javafx.scene.image.Image
@@ -29,8 +28,6 @@ fun color(web: String): Color = Color.web(web)
 fun color(web: String, alpha: Double): Color = Color.web(web, alpha)
 
 private val logger = LogManager.getLogger("TaskPlanningContext")
-// Main Caffeine cache will be able to contain this * 16 MPx * 4 bytes/Px
-private const val MINIMUM_CACHE_4096x4096 = 16L
 
 fun isHugeTileImportTask(name: String): Boolean = name.startsWith("commandBlock") || name.endsWith("4x")
 
@@ -51,7 +48,7 @@ class TaskPlanningContext(
         .recordStats()
         .weakKeys()
         .executor(Runnable::run) // keep eviction on same thread as population
-        .maximumSize(MINIMUM_CACHE_4096x4096.shl(24) / (tileSize * tileSize))
+        .softValues()
         .build<SemiStrongTaskCache<Image>,Image>()
     internal val hugeTileBackingCache = Caffeine.newBuilder()
         .recordStats()
@@ -66,14 +63,14 @@ class TaskPlanningContext(
             // Tasks using these images are too large for the main cache to manage
             return SemiStrongTaskCache(noopTaskCache(), hugeTileBackingCache)
         }
-        return SemiStrongTaskCache(SoftTaskCache(name), backingCache)
+        return SemiStrongTaskCache(noopTaskCache(), backingCache)
     }
     private fun createSvgImportCache(name: String): TaskCache<Image> {
         if (isHugeTileImportTask(name)) {
             // These images are too large for the main cache to manage
             return SemiStrongTaskCache(noopTaskCache(), hugeTileBackingCache)
         }
-        return SemiStrongTaskCache(SoftTaskCache(name), backingCache)
+        return SemiStrongTaskCache(noopTaskCache(), backingCache)
     }
 
     init {
