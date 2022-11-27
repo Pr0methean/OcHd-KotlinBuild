@@ -7,29 +7,30 @@ import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 
 private val LOGGER = LogManager.getLogger("doJfx")
+private val DEFAULT_ERR = System.err
+private val DEFAULT_CHARSET = DEFAULT_ERR.charset()
 @Suppress("BlockingMethodInNonBlockingContext")
 suspend fun <T> doJfx(name: String, jfxCode: CoroutineScope.() -> T): T = try {
     ByteArrayOutputStream().use { errorCatcher ->
         LOGGER.info("Starting JFX task: {}", name)
-        val result = PrintStream(errorCatcher, true, System.err.charset()).use { tempStderr ->
+        val result = PrintStream(errorCatcher, true, DEFAULT_CHARSET).use { tempStderr ->
             withContext(Dispatchers.Main.plus(CoroutineName(name))) {
-                val oldSystemErr = System.err
                 try {
                     System.setErr(tempStderr)
                     jfxCode()
                 } finally {
                     withContext(NonCancellable) {
-                        System.setErr(oldSystemErr)
+                        System.setErr(DEFAULT_ERR)
                     }
                 }
             }
         }
         if (errorCatcher.size() > 0) {
-            val interceptedStdout = errorCatcher.toString(System.err.charset())
+            val interceptedStdout = errorCatcher.toString(DEFAULT_CHARSET)
             if (interceptedStdout.contains("Exception:") || interceptedStdout.contains("Error:")) {
                 throw RuntimeException(interceptedStdout)
             }
-            System.err.print(interceptedStdout)
+            DEFAULT_ERR.print(interceptedStdout)
         }
         LOGGER.info("Finished JFX task: {}", name)
         result
