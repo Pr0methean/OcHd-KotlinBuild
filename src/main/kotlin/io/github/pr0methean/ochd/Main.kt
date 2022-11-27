@@ -171,6 +171,7 @@ fun shouldThrottle(): Boolean {
         val currentUsage = heapMxBean.usage
         if (currentUsage.max - currentUsage.used < MIN_FREE_MEMORY) {
             logger.warn("Throttling a new task because too little memory is free")
+            System.gc()
             return true
         }
     }
