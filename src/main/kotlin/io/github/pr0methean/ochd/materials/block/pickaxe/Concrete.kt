@@ -10,7 +10,7 @@ import javafx.scene.paint.Color
 object Concrete: DyedBlock("concrete") {
     override suspend fun LayerListBuilder.createTextureLayers(color: Color) {
         background(color)
-        copy(sharedLayersTaskRef.get()!!)
+        copy(sharedLayersTaskRef.get() ?: throw IllegalStateException("Set createSharedLayersTaskRef first"))
     }
 
     override suspend fun createSharedLayersTask(ctx: TaskPlanningContext): ImageTask = ctx.stack {

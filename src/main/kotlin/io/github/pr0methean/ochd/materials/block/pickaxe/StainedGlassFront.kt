@@ -11,7 +11,7 @@ import javafx.scene.paint.Color
  */
 object StainedGlassFront: DyedBlock("stained_glass") {
     override suspend fun LayerListBuilder.createTextureLayers(color: Color) {
-        layer(sharedLayersTaskRef.get()!!, color)
+        layer(sharedLayersTaskRef.get() ?: throw IllegalStateException("Set createSharedLayersTaskRef first"), color)
     }
 
     override suspend fun createSharedLayersTask(ctx: TaskPlanningContext): ImageTask = ctx.stack {

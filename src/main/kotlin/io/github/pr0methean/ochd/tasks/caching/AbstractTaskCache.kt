@@ -3,7 +3,7 @@ package io.github.pr0methean.ochd.tasks.caching
 import org.apache.logging.log4j.LogManager
 import java.lang.ref.WeakReference
 
-val nullRef = WeakReference<Nothing?>(null)
+val nullRef: WeakReference<Nothing?> = WeakReference(null)
 private val logger = LogManager.getLogger("AbstractTaskCache")
 abstract class AbstractTaskCache<T>(override val name: String) : TaskCache<T> {
     @Volatile override var enabled: Boolean = false

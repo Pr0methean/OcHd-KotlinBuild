@@ -10,9 +10,9 @@ import kotlinx.coroutines.flow.flowOf
 abstract class SingleLayerMaterial(
     override val name: String,
     override val directory: String,
-    val sourceFileName: String,
+    private val sourceFileName: String,
     val color: Paint? = null,
-    val alpha: Double = 1.0
+    private val alpha: Double = 1.0
 ) : SingleTextureMaterial {
     override suspend fun LayerListBuilder.createTextureLayers() {
         layer(sourceFileName, color, alpha)

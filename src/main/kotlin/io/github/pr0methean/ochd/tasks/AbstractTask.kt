@@ -131,9 +131,9 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
                     }
                     if (it != null) {
                         AT_LOGGER.error("Handling exception in invokeOnCompletion", it)
-                        scope.launch { emit(failure(it), newCoroutine) }
+                        scope.launch { emit(failure(it)) }
                     } else {
-                        scope.launch { emit(newCoroutine.getCompleted(), newCoroutine) }
+                        scope.launch { emit(newCoroutine.getCompleted()) }
                     }
                     runBlocking {
                         mutex.withLock {
@@ -153,12 +153,12 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
     protected abstract suspend fun createCoroutineAsync(coroutineScope: CoroutineScope): Deferred<Result<T>>
 
     @Suppress("UNCHECKED_CAST")
-    private suspend inline fun emitUnchecked(result: Result<*>, source: Deferred<Result<*>>?) {
-        emit(result as Result<T>, source as Deferred<Result<T>>)
+    private suspend inline fun emitUnchecked(result: Result<*>) {
+        emit(result as Result<T>)
     }
 
     @Suppress("DeferredResultUnused")
-    suspend inline fun emit(result: Result<T>, source: Deferred<Result<T>>?) {
+    suspend inline fun emit(result: Result<T>) {
         if (result.isFailure) {
             AT_LOGGER.error("Emitting failure for {} due to {}", name, result.exceptionOrNull()?.message)
             timesFailed.getAndIncrement()
@@ -175,7 +175,7 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
                     cache.set(result.getOrThrow())
                 }
             }
-            if (coroutine.compareAndSet(source, null)) {
+            if (coroutine.getAndSet(null) != null) {
                 coroutineHandle.getAndSet(null)?.dispose()
             }
         }
@@ -190,7 +190,7 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
         }
         val otherNow = other.getNow()
         if (otherNow != null) {
-            emitUnchecked(otherNow, (other as? AbstractTask)?.coroutine?.get())
+            emitUnchecked(otherNow)
             return this
         }
         AT_LOGGER.debug("Locking {} to merge with a duplicate", name)
@@ -200,7 +200,7 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
             }
             val result = other.getNow()
             if (result != null) {
-                emitUnchecked(result, (other as? AbstractTask)?.coroutine?.get())
+                emitUnchecked(result)
                 return this
             }
             if (coroutine.get() == null && other is AbstractTask) {
@@ -208,13 +208,13 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
                 other.mutex.withLock(this@AbstractTask) {
                     val resultWithLock = other.getNow()
                     if (resultWithLock != null) {
-                        emitUnchecked(resultWithLock, other.coroutine.get())
+                        emitUnchecked(resultWithLock)
                         return this
                     }
                     val otherCoroutine = other.coroutine.get()
                     if (otherCoroutine != null) {
                         if (otherCoroutine.isCompleted) {
-                            emitUnchecked(otherCoroutine.getCompleted(), otherCoroutine)
+                            emitUnchecked(otherCoroutine.getCompleted())
                         } else {
                             coroutine.set(createCoroutineScope().async { otherCoroutine.await() as Result<T> })
                         }
