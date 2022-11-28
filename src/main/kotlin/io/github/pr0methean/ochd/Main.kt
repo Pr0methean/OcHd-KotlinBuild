@@ -126,6 +126,7 @@ private suspend fun runAll(
             if (inProgressJobs.size >= parallelism
                     || (inProgressJobs.isNotEmpty()
                         && (unstartedTasks.isEmpty() || shouldThrottle()))) {
+                inProgressJobs.values.forEach(Job::start)
                 finishedJobsChannel.receive()
             } else null
         }
@@ -136,7 +137,11 @@ private suspend fun runAll(
             inProgressJobs.remove(maybeReceive.task)
             continue
         }
-        val task = unstartedTasks.minWithOrNull(taskOrderComparator) ?: continue
+        val task = unstartedTasks.minWithOrNull(taskOrderComparator)
+        if (task == null) {
+            logger.error("Could not get an unstarted task")
+            continue
+        }
         val timesFailed = task.timesFailed()
         if (timesFailed > maxRetriesAnyTaskSoFar) {
             if (timesFailed > GLOBAL_MAX_RETRIES) {
