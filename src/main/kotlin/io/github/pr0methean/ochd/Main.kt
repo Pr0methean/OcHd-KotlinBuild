@@ -132,6 +132,8 @@ private suspend fun runAll(
                     }
                 }
                 finishedJobsChannel.receive()
+            } else if (inProgressJobs.isEmpty() && unstartedTasks.isEmpty()) {
+                throw IllegalStateException("Have ${unfinishedTasks.get()} unfinished tasks, but none are in progress")
             } else null
         }
         if (maybeReceive != null) {
