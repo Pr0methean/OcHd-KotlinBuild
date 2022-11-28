@@ -126,7 +126,11 @@ private suspend fun runAll(
             if (inProgressJobs.size >= parallelism
                     || (inProgressJobs.isNotEmpty()
                         && (unstartedTasks.isEmpty() || shouldThrottle()))) {
-                inProgressJobs.values.forEach(Job::start)
+                inProgressJobs.forEach {(task, job) ->
+                    if (job.start()) {
+                        logger.warn("Had to start the job for {} in the fallback loop!", task)
+                    }
+                }
                 finishedJobsChannel.receive()
             } else null
         }
