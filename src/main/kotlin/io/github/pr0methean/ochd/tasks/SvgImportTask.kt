@@ -1,7 +1,6 @@
 package io.github.pr0methean.ochd.tasks
 
 import com.sun.prism.GraphicsPipeline
-import com.sun.prism.impl.Disposer
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.isHugeTileImportTask
 import io.github.pr0methean.ochd.tasks.caching.TaskCache
@@ -71,7 +70,7 @@ private class ToImageTranscoder: SVGAbstractTranscoder() {
             throw TranscoderException(ex)
         } finally {
             renderer.tree = null
-            Disposer.cleanUp()
+            ctx.dispose()
         }
     }
 }
