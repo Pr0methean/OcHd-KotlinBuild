@@ -1,5 +1,6 @@
 package io.github.pr0methean.ochd.tasks
 
+import com.sun.prism.impl.Disposer
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.tasks.caching.TaskCache
 import javafx.embed.swing.SwingFXUtils
@@ -66,6 +67,7 @@ private class ToImageTranscoder: SVGAbstractTranscoder() {
         } finally {
             renderer.tree = null
             ctx.dispose()
+            Disposer.cleanUp()
         }
     }
 }
