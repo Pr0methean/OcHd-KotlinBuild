@@ -87,13 +87,13 @@ class SvgImportTask(
         return (other === this) || other is SvgImportTask && other.file == file
     }
     private val hashCode by lazy {file.hashCode()}
+    private val input = TranscoderInput(file.toURI().toString())
 
     override fun hashCode(): Int = hashCode
 
     override suspend fun perform(): Image {
         stats.onTaskLaunched("SvgImportTask", name)
         val transcoder = batikTranscoder.get()
-        val input = TranscoderInput(file.toURI().toString())
         val image = SwingFXUtils.toFXImage(transcoder.mutex.withLock {
             transcoder.setTranscodingHints(mapOf(SVGAbstractTranscoder.KEY_WIDTH to width.toFloat()))
             transcoder.transcode(input, null)
