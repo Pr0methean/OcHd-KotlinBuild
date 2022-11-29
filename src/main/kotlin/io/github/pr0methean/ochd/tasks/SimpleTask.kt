@@ -21,6 +21,7 @@ abstract class SimpleTask<T>(name: String, cache: TaskCache<T>) : AbstractTask<T
                 logger.error("Exception in {}", this, t)
                 Result.failure(t)
             }
+            emit(result)
             result
         }
     }

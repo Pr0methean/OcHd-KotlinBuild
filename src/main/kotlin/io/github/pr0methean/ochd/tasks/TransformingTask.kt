@@ -37,6 +37,7 @@ open class TransformingTask<T, U>(
                 logger.error("Exception in {}", this@TransformingTask, t)
                 failure(t)
             }
+            emit(result)
             result
         }
     }

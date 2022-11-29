@@ -16,7 +16,6 @@ import kotlin.Result.Companion.failure
 import kotlin.Result.Companion.success
 
 val AT_LOGGER: Logger = LogManager.getLogger("AbstractTask")
-private val CANCEL_BECAUSE_REPLACING = CancellationException("Being replaced")
 private val SUPERVISOR_JOB = SupervisorJob()
 abstract class AbstractTask<T>(final override val name: String, val cache: TaskCache<T>) : Task<T> {
     val timesFailed: AtomicLong = AtomicLong(0)
@@ -73,8 +72,6 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
 
     @GuardedBy("mutex")
     val coroutine: AtomicReference<Deferred<Result<T>>?> = AtomicReference(null)
-    @GuardedBy("mutex")
-    val coroutineHandle: AtomicReference<DisposableHandle?> = AtomicReference(null)
 
     @OptIn(ExperimentalCoroutinesApi::class, InternalCoroutinesApi::class)
     override fun getNow(): Result<T>? {
@@ -98,8 +95,6 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
         }
         return result
     }
-
-    @OptIn(InternalCoroutinesApi::class, ExperimentalCoroutinesApi::class)
     override suspend fun startAsync(): Deferred<Result<T>> {
         val result = getNow()
         if (result != null) {
@@ -125,26 +120,7 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
                 return oldCoroutine
             } else {
                 AT_LOGGER.debug("Starting {}", name)
-                val newHandle = newCoroutine.invokeOnCompletion(onCancelling = true) {
-                    if (it === CANCEL_BECAUSE_REPLACING) {
-                        return@invokeOnCompletion
-                    }
-                    if (it != null) {
-                        AT_LOGGER.error("Handling exception in invokeOnCompletion", it)
-                        scope.launch { emit(failure(it)) }
-                    } else {
-                        scope.launch { emit(newCoroutine.getCompleted()) }
-                    }
-                    if (mutex.tryLock()) {
-                        try {
-                            coroutineHandle.getAndSet(null)?.dispose()
-                        } finally {
-                            mutex.unlock()
-                        }
-                    }
-                }
                 newCoroutine.start()
-                coroutineHandle.getAndSet(newHandle)?.dispose()
                 AT_LOGGER.debug("Started {}", this)
                 return newCoroutine
             }
@@ -176,9 +152,7 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
                     cache.set(result.getOrThrow())
                 }
             }
-            if (coroutine.getAndSet(null) != null) {
-                coroutineHandle.getAndSet(null)?.dispose()
-            }
+            coroutine.set(null)
         }
         AT_LOGGER.debug("Unlocking {} after emitting result", name)
     }
