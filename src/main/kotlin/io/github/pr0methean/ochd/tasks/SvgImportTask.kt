@@ -11,7 +11,6 @@ import kotlinx.coroutines.asContextElement
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
-import org.apache.batik.gvt.renderer.ImageRenderer
 import org.apache.batik.gvt.renderer.StaticRenderer
 import org.apache.batik.transcoder.SVGAbstractTranscoder
 import org.apache.batik.transcoder.TranscoderException
@@ -32,6 +31,7 @@ private class ToImageTranscoder: SVGAbstractTranscoder() {
     val mutex = Mutex()
     @Volatile
     private var lastImage: BufferedImage? = null
+    private val renderer = StaticRenderer()
 
     fun takeLastImage(): BufferedImage? {
         val lastImage = this.lastImage
@@ -55,7 +55,6 @@ private class ToImageTranscoder: SVGAbstractTranscoder() {
 
         // paint the SVG document using the bridge package
         // create the appropriate renderer
-        val renderer: ImageRenderer = StaticRenderer()
         renderer.updateOffScreen(w, h)
         // curTxf.translate(0.5, 0.5);
         renderer.transform = curTxf
@@ -69,6 +68,8 @@ private class ToImageTranscoder: SVGAbstractTranscoder() {
             lastImage = renderer.offScreen
         } catch (ex: Exception) {
             throw TranscoderException(ex)
+        } finally {
+            renderer.tree = null
         }
     }
 }
