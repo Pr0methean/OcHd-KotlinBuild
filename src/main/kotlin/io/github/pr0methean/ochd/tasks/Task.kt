@@ -28,7 +28,7 @@ interface Task<out T>: StringBuilderFormattable {
 
     val directDependencies: Iterable<Task<*>>
 
-    suspend fun createCoroutineScope(): CoroutineScope
+    suspend fun getCoroutineScope(): CoroutineScope
 
     val totalSubtasks: Int
 
@@ -37,7 +37,7 @@ interface Task<out T>: StringBuilderFormattable {
 
 @Suppress("DeferredResultUnused")
 suspend inline fun <T, R> Task<T>.consumeAsync(crossinline block: suspend (Result<T>) -> R): Deferred<R>
-        = createCoroutineScope().async {
+        = getCoroutineScope().async {
             block(await())
         }
 

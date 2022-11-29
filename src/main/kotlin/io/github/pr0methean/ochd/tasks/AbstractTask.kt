@@ -104,7 +104,7 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
         if (maybeAlreadyStarted != null) {
             return maybeAlreadyStarted
         }
-        val scope = createCoroutineScope()
+        val scope = getCoroutineScope()
         val newCoroutine = createCoroutineAsync(scope)
         AT_LOGGER.debug("Locking {} to start it", name)
         mutex.withLock {
@@ -191,7 +191,7 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
                         if (otherCoroutine.isCompleted) {
                             emitUnchecked(otherCoroutine.getCompleted())
                         } else {
-                            coroutine.set(createCoroutineScope().async { otherCoroutine.await() as Result<T> })
+                            coroutine.set(getCoroutineScope().async { otherCoroutine.await() as Result<T> })
                         }
                         return this
                     }
@@ -203,13 +203,28 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
         return this
     }
 
-    private val coroutineName = CoroutineName(name)
+    @Volatile private var coroutineScope: CoroutineScope? = null
 
-    override suspend fun createCoroutineScope(): CoroutineScope = CoroutineScope(
+    protected open suspend fun createCoroutineScope(): CoroutineScope = CoroutineScope(
         currentCoroutineContext()
-            .plus(coroutineName)
+            .plus(CoroutineName(name))
             .plus(SUPERVISOR_JOB)
     )
+
+    override suspend fun getCoroutineScope(): CoroutineScope {
+        var scopeNow = coroutineScope
+        if (scopeNow == null) {
+            scopeNow = mutex.withLock {
+                var scopeWithLock = coroutineScope
+                if (scopeWithLock == null) {
+                    scopeWithLock = createCoroutineScope()
+                    coroutineScope = scopeWithLock
+                }
+                scopeWithLock
+            }
+        }
+        return scopeNow
+    }
 
     override fun isStartedOrAvailable(): Boolean = coroutine.get()?.isActive == true || getNow() != null
 
