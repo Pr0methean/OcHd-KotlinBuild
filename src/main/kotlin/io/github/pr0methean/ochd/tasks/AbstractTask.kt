@@ -135,16 +135,17 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
                     } else {
                         scope.launch { emit(newCoroutine.getCompleted()) }
                     }
-                    runBlocking {
-                        mutex.withLock {
-                            coroutineHandle.set(null)
+                    if (mutex.tryLock()) {
+                        try {
+                            coroutineHandle.getAndSet(null)?.dispose()
+                        } finally {
+                            mutex.unlock()
                         }
                     }
                 }
                 newCoroutine.start()
-                val oldHandle = coroutineHandle.getAndSet(newHandle)
+                coroutineHandle.getAndSet(newHandle)?.dispose()
                 AT_LOGGER.debug("Started {}", this)
-                oldHandle?.dispose()
                 return newCoroutine
             }
         }
