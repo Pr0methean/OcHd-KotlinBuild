@@ -11,32 +11,65 @@ import kotlinx.coroutines.asContextElement
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import org.apache.batik.gvt.renderer.ImageRenderer
+import org.apache.batik.gvt.renderer.StaticRenderer
 import org.apache.batik.transcoder.SVGAbstractTranscoder
+import org.apache.batik.transcoder.TranscoderException
 import org.apache.batik.transcoder.TranscoderInput
 import org.apache.batik.transcoder.TranscoderOutput
-import org.apache.batik.transcoder.image.ImageTranscoder
 import org.apache.logging.log4j.Logger
 import org.apache.logging.log4j.util.Unbox.box
+import org.w3c.dom.Document
+import java.awt.Shape
+import java.awt.geom.Rectangle2D.Float
 import java.awt.image.BufferedImage
 import java.io.File
 
 private val LOGGER: Logger = org.apache.logging.log4j.LogManager.getLogger("SvgImportTask")
 private val batikTranscoder: ThreadLocal<ToImageTranscoder> = ThreadLocal.withInitial { ToImageTranscoder() }
 /** SVG decoder that stores the last image it decoded, rather than passing it to an encoder. */
-private class ToImageTranscoder: ImageTranscoder() {
+private class ToImageTranscoder: SVGAbstractTranscoder() {
     val mutex = Mutex()
     @Volatile
     private var lastImage: BufferedImage? = null
-    override fun createImage(width: Int, height: Int): BufferedImage = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
 
-    override fun writeImage(img: BufferedImage?, output: TranscoderOutput?) {
-        lastImage = img
-    }
     fun takeLastImage(): BufferedImage? {
         val lastImage = this.lastImage
         this.lastImage = null
-        root = null
         return lastImage
+    }
+
+    @Throws(TranscoderException::class)
+    override fun transcode(
+        document: Document?,
+        uri: String?,
+        output: TranscoderOutput?
+    ) {
+
+        // Sets up root, curTxf & curAoi
+        super.transcode(document, uri, null)
+
+        // prepare the image to be painted
+        val w = (width + 0.5).toInt()
+        val h = (height + 0.5).toInt()
+
+        // paint the SVG document using the bridge package
+        // create the appropriate renderer
+        val renderer: ImageRenderer = StaticRenderer()
+        renderer.updateOffScreen(w, h)
+        // curTxf.translate(0.5, 0.5);
+        renderer.transform = curTxf
+        renderer.tree = this.root
+        this.root = null // We're done with it...
+        try {
+            // now we are sure that the aoi is the image size
+            val raoi: Shape = Float(0f, 0f, width, height)
+            // Warning: the renderer's AOI must be in user space
+            renderer.repaint(curTxf.createInverse().createTransformedShape(raoi))
+            lastImage = renderer.offScreen
+        } catch (ex: Exception) {
+            throw TranscoderException(ex)
+        }
     }
 }
 
