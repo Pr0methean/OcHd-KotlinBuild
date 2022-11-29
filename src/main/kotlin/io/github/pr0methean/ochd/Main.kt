@@ -1,6 +1,5 @@
 package io.github.pr0methean.ochd
 
-import com.sun.management.GarbageCollectorMXBean
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
 import io.github.pr0methean.ochd.tasks.AbstractTask
 import io.github.pr0methean.ochd.tasks.OutputTask
@@ -22,7 +21,6 @@ import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.plus
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox
-import java.lang.management.ManagementFactory
 import java.nio.file.Paths
 import java.util.Comparator.comparingInt
 import java.util.Comparator.comparingLong
@@ -37,12 +35,7 @@ private val taskOrderComparator = comparingLong(OutputTask::timesFailed)
 private val logger = LogManager.getRootLogger()
 private const val PARALLELISM = 2
 private const val HUGE_TILE_PARALLELISM = 1
-private const val MIN_FREE_BYTES = 3L*32*1024*1024
-private const val HUGE_TILE_MIN_FREE_BYTES = 3L*128*1024*1024
 private const val GLOBAL_MAX_RETRIES = 100L
-private val gcMxBean = ManagementFactory.getGarbageCollectorMXBeans()[0] as GarbageCollectorMXBean
-private const val HEAP_BEAN_NAME = "ZHeap"
-private val heapMxBean = ManagementFactory.getMemoryPoolMXBeans().single { it.name == HEAP_BEAN_NAME }
 
 @OptIn(DelicateCoroutinesApi::class)
 @Suppress("UnstableApiUsage", "DeferredResultUnused")
@@ -95,11 +88,11 @@ suspend fun main(args: Array<String>) {
         stats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupAndCopyMetadata.join()
         System.gc()
-        runAll(cbTasks, scope, stats, HUGE_TILE_PARALLELISM, HUGE_TILE_MIN_FREE_BYTES)
+        runAll(cbTasks, scope, stats, HUGE_TILE_PARALLELISM)
         stats.readHugeTileCache(hugeTaskCache)
         hugeTaskCache.invalidateAll()
         System.gc()
-        runAll(nonCbTasks, scope, stats, PARALLELISM, MIN_FREE_BYTES)
+        runAll(nonCbTasks, scope, stats, PARALLELISM)
     }
     stopMonitoring()
     Platform.exit()
@@ -115,8 +108,7 @@ private suspend fun runAll(
     tasks: Iterable<OutputTask>,
     scope: CoroutineScope,
     stats: ImageProcessingStats,
-    parallelism: Int,
-    minFreeBytes: Long
+    parallelism: Int
 ) {
     val unstartedTasks = tasks.sortedWith(comparingInt(OutputTask::cacheableSubtasks)).toMutableSet()
     val unfinishedTasks = AtomicLong(unstartedTasks.size.toLong())
@@ -126,8 +118,7 @@ private suspend fun runAll(
     while (unfinishedTasks.get() > 0) {
         val maybeReceive = finishedJobsChannel.tryReceive().getOrElse {
             if (inProgressJobs.size >= parallelism
-                    || (inProgressJobs.isNotEmpty()
-                        && (unstartedTasks.isEmpty() || shouldThrottle(minFreeBytes)))) {
+                    || (inProgressJobs.isNotEmpty() && unstartedTasks.isEmpty())) {
                 inProgressJobs.forEach {(task, job) ->
                     if (job.start()) {
                         logger.warn("Had to start the job for {} in the fallback loop!", task)
@@ -181,17 +172,3 @@ private suspend fun runAll(
     }
     finishedJobsChannel.close()
 }
-
-fun shouldThrottle(minFreeBytes: Long): Boolean {
-    val usageAfterLastGc = gcMxBean.lastGcInfo.memoryUsageAfterGc[HEAP_BEAN_NAME]!!
-    if (usageAfterLastGc.max - usageAfterLastGc.used < minFreeBytes) {
-        val currentUsage = heapMxBean.usage
-        if (currentUsage.max - currentUsage.used < minFreeBytes) {
-            logger.warn("Throttling a new task because too little memory is free")
-            System.gc()
-            return true
-        }
-    }
-    return false
-}
-
