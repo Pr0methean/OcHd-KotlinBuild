@@ -35,6 +35,7 @@ private class ToImageTranscoder: ImageTranscoder() {
     fun takeLastImage(): BufferedImage? {
         val lastImage = this.lastImage
         this.lastImage = null
+        root = null
         return lastImage
     }
 }
