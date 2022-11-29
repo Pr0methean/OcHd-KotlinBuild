@@ -1,7 +1,6 @@
 package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.tasks.caching.TaskCache
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
@@ -20,10 +19,10 @@ open class TransformingTask<T, U>(
 )
         : AbstractTask<U>(name, cache) {
 
-    override suspend fun createCoroutineAsync(coroutineScope: CoroutineScope): Deferred<Result<U>> {
+    override suspend fun createCoroutineAsync(): Deferred<Result<U>> {
         val myBase = base
         val myTransform = transform
-        return coroutineScope.async(start = CoroutineStart.LAZY) {
+        return getCoroutineScope().async(start = CoroutineStart.LAZY) {
             val result = try {
                 logger.debug("Awaiting {} to transform it in {}", myBase, this@TransformingTask)
                 val input = myBase.await()

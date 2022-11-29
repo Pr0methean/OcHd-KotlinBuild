@@ -104,8 +104,7 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
         if (maybeAlreadyStarted != null) {
             return maybeAlreadyStarted
         }
-        val scope = getCoroutineScope()
-        val newCoroutine = createCoroutineAsync(scope)
+        val newCoroutine = createCoroutineAsync()
         AT_LOGGER.debug("Locking {} to start it", name)
         mutex.withLock {
             val resultWithLock = getNow()
@@ -127,7 +126,7 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
         }
     }
 
-    protected abstract suspend fun createCoroutineAsync(coroutineScope: CoroutineScope): Deferred<Result<T>>
+    protected abstract suspend fun createCoroutineAsync(): Deferred<Result<T>>
 
     @Suppress("UNCHECKED_CAST")
     private suspend inline fun emitUnchecked(result: Result<*>) {
