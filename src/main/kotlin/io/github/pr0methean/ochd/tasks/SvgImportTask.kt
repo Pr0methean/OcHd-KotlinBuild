@@ -70,6 +70,7 @@ private class ToImageTranscoder: SVGAbstractTranscoder() {
             throw TranscoderException(ex)
         } finally {
             renderer.tree = null
+            ctx.dispose()
         }
     }
 }
