@@ -3,6 +3,7 @@ package io.github.pr0methean.ochd.tasks
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.LayerList
 import io.github.pr0methean.ochd.tasks.caching.TaskCache
+import javafx.application.Platform
 import javafx.scene.SnapshotParameters
 import javafx.scene.canvas.Canvas
 import javafx.scene.image.Image
@@ -77,6 +78,7 @@ class ImageStackingTask(val layers: LayerList,
         params.fill = background
         val output = WritableImage(width.toInt(), height.toInt())
         val snapshot = doJfx("Snapshot of $name") {
+            Platform.requestNextPulse()
             canvas.snapshot(params, output)
         }
         if (snapshot.isError) {

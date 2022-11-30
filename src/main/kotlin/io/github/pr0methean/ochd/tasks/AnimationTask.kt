@@ -3,6 +3,7 @@ package io.github.pr0methean.ochd.tasks
 import io.github.pr0methean.ochd.DEFAULT_SNAPSHOT_PARAMS
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.tasks.caching.TaskCache
+import javafx.application.Platform.requestNextPulse
 import javafx.scene.canvas.Canvas
 import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
@@ -53,6 +54,7 @@ class AnimationTask(
         frameTasks.joinAll()
         val output = WritableImage(width, totalHeight)
         doJfx("Snapshot of $name") {
+            requestNextPulse()
             canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
         }
         if (output.isError) {
