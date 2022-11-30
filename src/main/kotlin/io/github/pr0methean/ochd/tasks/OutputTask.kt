@@ -32,6 +32,20 @@ class OutputTask(
                 throw RuntimeException("OutputTask $name appeared to succeed, but $file still doesn't exist")
             }
         }
+        for (file in files) {
+            val path = file.toPath()
+            val parent = file.parentFile ?: continue
+            val parentPath = parent.toPath()
+            for (otherFile in (parent.list() ?: arrayOf())) {
+                val otherPath = parentPath.resolve(otherFile)
+                if (files.contains(otherPath.toFile())) {
+                    continue
+                }
+                if (Files.mismatch(path, otherPath) == -1L) {
+                    throw IllegalStateException("Directed duplicate output files: $path and $otherPath")
+                }
+            }
+        }
     }
     stats.onTaskCompleted("OutputTask", name)
 }) {
