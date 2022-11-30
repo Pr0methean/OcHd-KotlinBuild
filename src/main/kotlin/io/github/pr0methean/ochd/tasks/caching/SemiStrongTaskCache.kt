@@ -12,11 +12,13 @@ class SemiStrongTaskCache<T>(private val victimCache: TaskCache<T>, private val 
     override fun clear() {
         primaryCache.invalidate(this)
         victimCache.clear()
+        super.clear()
     }
 
     override fun disable() {
         primaryCache.invalidate(this)
         victimCache.disable()
+        super.disable()
     }
 
     override fun enabledSet(value: T) {

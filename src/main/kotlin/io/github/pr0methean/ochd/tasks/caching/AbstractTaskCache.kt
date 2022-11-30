@@ -14,6 +14,20 @@ abstract class AbstractTaskCache<T>(override val name: String) : TaskCache<T> {
             field = value
         }
 
+    fun disposeIfPossible() {
+        val result = getNow() ?: return
+        val disposeMethod = result::class.java.getMethod("dispose") ?: return
+        disposeMethod.invoke(result)
+    }
+
+    override fun disable() {
+        disposeIfPossible()
+    }
+
+    override fun clear() {
+        disposeIfPossible()
+    }
+
     override fun set(value: T?) {
         if (value == null) {
             clear()

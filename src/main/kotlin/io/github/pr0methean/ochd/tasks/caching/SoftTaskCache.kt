@@ -12,10 +12,12 @@ open class SoftTaskCache<T>(name: String): AbstractTaskCache<T>(name) {
     }
 
     override fun disable() {
+        super.disable()
         result = WeakReference(getNow())
     }
 
     override fun clear() {
+        super.clear()
         result.clear()
     }
 
