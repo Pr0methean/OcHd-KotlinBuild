@@ -32,16 +32,17 @@ class OutputTask(
                 throw RuntimeException("OutputTask $name appeared to succeed, but $file still doesn't exist")
             }
         }
-        val parentDirs = files.mapNotNull(File::getParentFile).toSet()
-        for (parent in parentDirs) {
+        for (file in files) {
+            val path = file.toPath()
+            val parent = file.parentFile ?: continue
             val parentPath = parent.toPath()
             for (otherFile in (parent.list() ?: arrayOf())) {
                 val otherPath = parentPath.resolve(otherFile)
-                if (otherPath == firstFilePath || files.contains(otherPath.toFile())) {
+                if (files.contains(otherPath.toFile())) {
                     continue
                 }
-                if (Files.mismatch(firstFilePath, otherPath) == -1L) {
-                    throw IllegalStateException("Directed duplicate output files: $firstFilePath and $otherPath")
+                if (Files.mismatch(path, otherPath) == -1L) {
+                    throw IllegalStateException("Directed duplicate output files: $path and $otherPath")
                 }
             }
         }
