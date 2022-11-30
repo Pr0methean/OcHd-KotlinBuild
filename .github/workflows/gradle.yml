@@ -88,13 +88,13 @@ jobs:
       with:
         name: OcHD ${{ matrix.size }}x${{ matrix.size }}
         path: 'pngout/OcHD-${{ matrix.size}}x${{ matrix.size}}.zip'
-        if-no-files-found: ignore
     - name: Publish Heap Dumps
       if: ${{ always() }}
       uses: actions/upload-artifact@v3
       with:
         name: Heap Dump ${{ matrix.size }}x${{ matrix.size }}
         path: '*.hprof'
+        if-no-files-found: ignore
     - name: Mark Job Failed If Make Textures Failed
       if: steps.run.outcome != 'success'
       run: 'false'
