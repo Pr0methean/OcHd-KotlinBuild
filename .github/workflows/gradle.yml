@@ -88,6 +88,7 @@ jobs:
       with:
         name: OcHD ${{ matrix.size }}x${{ matrix.size }}
         path: 'pngout/OcHD-${{ matrix.size}}x${{ matrix.size}}.zip'
+        if-no-files-found: ignore
     - name: Publish Heap Dumps
       if: ${{ always() }}
       uses: actions/upload-artifact@v3
