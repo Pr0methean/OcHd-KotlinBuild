@@ -58,7 +58,7 @@ class TaskPlanningContext(
         .recordStats()
         .weakKeys()
         .executor(Runnable::run) // keep eviction on same thread as population
-        .softValues()
+        .maximumSize(MINIMUM_CACHE_16384x4096.shl(24) / (tileSize * tileSize))
         .build<SemiStrongTaskCache<Image>,Image>()
     val stats: ImageProcessingStats = ImageProcessingStats(backingCache)
 
