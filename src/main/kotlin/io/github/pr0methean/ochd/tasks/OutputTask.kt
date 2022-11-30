@@ -14,7 +14,7 @@ class OutputTask(
     val source: Task<ByteArray>,
     name: String,
     val stats: ImageProcessingStats,
-    private val files: List<File>,
+    val files: List<File>,
 ): TransformingTask<ByteArray, Unit>("Output $name", source, noopTaskCache(), transform = { bytes ->
     withContext(Dispatchers.IO.plus(CoroutineName(name))) {
         stats.onTaskLaunched("OutputTask", name)

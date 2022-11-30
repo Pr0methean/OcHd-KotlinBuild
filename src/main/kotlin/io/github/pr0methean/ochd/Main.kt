@@ -21,6 +21,8 @@ import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.plus
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox
+import java.nio.file.Files
+import java.nio.file.Path
 import java.nio.file.Paths
 import java.util.Comparator.comparingInt
 import java.util.Comparator.comparingLong
@@ -80,6 +82,12 @@ suspend fun main(args: Array<String>) {
     val time = measureNanoTime {
         stats.onTaskLaunched("Build task graph", "Build task graph")
         val tasks = ALL_MATERIALS.outputTasks(ctx).toList()
+        val filesToTasks = HashMap<Path, String>()
+        tasks.forEach { task ->
+            task.files.forEach { file ->
+                filesToTasks[file.toPath()] = task.name
+            }
+        }
         val depsBuildTask = scope.launch { tasks.forEach { it.registerRecursiveDependencies() }}
         val cbTasks = tasks.filter(OutputTask::isCommandBlock)
         val nonCbTasks = tasks.filterNot(OutputTask::isCommandBlock)
@@ -93,6 +101,13 @@ suspend fun main(args: Array<String>) {
         hugeTaskCache.invalidateAll()
         System.gc()
         runAll(nonCbTasks, scope, stats, PARALLELISM)
+        filesToTasks.forEach { (file, taskName) ->
+            filesToTasks.forEach { (otherFile, otherTaskName) ->
+                if (file != otherFile && taskName != otherTaskName && Files.mismatch(file, otherFile) == -1L) {
+                    throw IllegalStateException("$file and $otherFile are duplicates!")
+                }
+            }
+        }
     }
     stopMonitoring()
     Platform.exit()
