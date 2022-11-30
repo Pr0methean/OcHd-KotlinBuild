@@ -21,10 +21,10 @@ suspend fun <T> doJfx(name: String, jfxCode: CoroutineScope.() -> T): T = try {
     ERR_CATCHER_STREAM.flush()
     if (ERR_CATCHER.size() > 0) {
         val interceptedStderr = ERR_CATCHER.toString(DEFAULT_CHARSET)
+        ERR_CATCHER.reset()
         if (interceptedStderr.contains("Exception:") || interceptedStderr.contains("Error:")) {
             throw RuntimeException(interceptedStderr)
         }
-        ERR_CATCHER.reset()
         DEFAULT_ERR.print(interceptedStderr)
     }
     LOGGER.info("Finished JFX task: {}", name)
