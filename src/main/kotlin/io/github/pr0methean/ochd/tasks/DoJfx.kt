@@ -3,6 +3,7 @@ package io.github.pr0methean.ochd.tasks
 import javafx.application.Platform
 import kotlinx.coroutines.*
 import org.apache.logging.log4j.LogManager
+import java.io.BufferedOutputStream
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import java.util.concurrent.atomic.AtomicBoolean
@@ -11,7 +12,7 @@ private val LOGGER = LogManager.getLogger("doJfx")
 private val DEFAULT_ERR = System.err
 private val DEFAULT_CHARSET = DEFAULT_ERR.charset()
 private val ERR_CATCHER = ByteArrayOutputStream()
-private val ERR_CATCHER_STREAM = PrintStream(ERR_CATCHER, true, DEFAULT_CHARSET)
+private val ERR_CATCHER_STREAM = PrintStream(BufferedOutputStream(ERR_CATCHER), true, DEFAULT_CHARSET)
 private val SYSERR_SWITCHED = AtomicBoolean(false)
 @Suppress("BlockingMethodInNonBlockingContext")
 suspend fun <T> doJfx(name: String, jfxCode: CoroutineScope.() -> T): T = try {
