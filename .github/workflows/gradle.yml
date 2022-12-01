@@ -15,7 +15,7 @@ on:
     branches: [ "*" ]
   schedule:
     # TODO: Switch back to nightly once we no longer need to compare revisions statistically for performance
-    - cron: "17,37 * * * *"
+    - cron: "17,47 * * * *"
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
