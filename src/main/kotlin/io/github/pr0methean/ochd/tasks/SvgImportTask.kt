@@ -32,6 +32,7 @@ private class ToImageTranscoder: SVGAbstractTranscoder() {
     fun takeLastImage(): BufferedImage? {
         val lastImage = this.lastImage
         this.lastImage = null
+        renderer.clearOffScreen()
         return lastImage
     }
 
