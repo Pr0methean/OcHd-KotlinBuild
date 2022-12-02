@@ -7,7 +7,7 @@ import javafx.scene.image.Image
 import java.io.ByteArrayOutputStream
 import javax.imageio.ImageIO
 
-const val PNG_PRESIZE: Int = 4096
+const val PNG_PRESIZE: Int = 512*1024
 @Suppress("FunctionName")
 fun PngCompressionTask(
     base: AbstractTask<Image>, cache: TaskCache<ByteArray>, stats: ImageProcessingStats
