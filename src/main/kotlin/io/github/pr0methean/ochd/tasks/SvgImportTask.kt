@@ -77,6 +77,8 @@ class SvgImportTask(
         return super.createCoroutineScope().plus(batikTranscoder.asContextElement())
     }
 
+    override fun reuseCoroutineScope(): Boolean = false
+
     override val directDependencies: List<Task<Nothing>> = listOf() // SVG import doesn't depend on any other tasks
 
     override fun equals(other: Any?): Boolean {

@@ -31,6 +31,8 @@ class PngCompressionTask(
         }
     }
 }) {
+    override fun reuseCoroutineScope(): Boolean = false
+
     override suspend fun createCoroutineScope(): CoroutineScope {
         return super.createCoroutineScope().plus(THREAD_LOCAL_BAOS.asContextElement())
     }

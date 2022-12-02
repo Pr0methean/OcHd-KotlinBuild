@@ -211,6 +211,9 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
     )
 
     override suspend fun getCoroutineScope(): CoroutineScope {
+        if (!reuseCoroutineScope()) {
+            return createCoroutineScope()
+        }
         var scopeNow = coroutineScope
         if (scopeNow == null) {
             scopeNow = mutex.withLock {
@@ -224,6 +227,8 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
         }
         return scopeNow
     }
+
+    open fun reuseCoroutineScope(): Boolean = true
 
     override fun isStartedOrAvailable(): Boolean = coroutine.get()?.isActive == true || getNow() != null
 
