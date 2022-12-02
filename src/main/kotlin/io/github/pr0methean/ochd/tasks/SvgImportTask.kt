@@ -7,13 +7,12 @@ import javafx.scene.image.Image
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asContextElement
 import kotlinx.coroutines.plus
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import org.apache.batik.gvt.renderer.StaticRenderer
 import org.apache.batik.transcoder.SVGAbstractTranscoder
 import org.apache.batik.transcoder.TranscoderException
 import org.apache.batik.transcoder.TranscoderInput
 import org.apache.batik.transcoder.TranscoderOutput
+import org.apache.batik.transcoder.TranscodingHints.Key
 import org.w3c.dom.Document
 import java.awt.Shape
 import java.awt.geom.Rectangle2D.Float
@@ -23,7 +22,6 @@ import java.io.File
 private val batikTranscoder: ThreadLocal<ToImageTranscoder> = ThreadLocal.withInitial { ToImageTranscoder() }
 /** SVG decoder that stores the last image it decoded, rather than passing it to an encoder. */
 private class ToImageTranscoder: SVGAbstractTranscoder() {
-    val mutex = Mutex()
     @Volatile
     private var lastImage: BufferedImage? = null
 
@@ -93,11 +91,9 @@ class SvgImportTask(
     override suspend fun perform(): Image {
         stats.onTaskLaunched("SvgImportTask", name)
         val transcoder = batikTranscoder.get()
-        val awtImage = transcoder.mutex.withLock {
-            transcoder.setTranscodingHints(mapOf(SVGAbstractTranscoder.KEY_WIDTH to width.toFloat()))
-            transcoder.transcode(input, null)
-            transcoder.takeLastImage()!!
-        }
+        transcoder.setTranscodingHints(mapOf<Key?, kotlin.Float>(SVGAbstractTranscoder.KEY_WIDTH to width.toFloat()))
+        transcoder.transcode(input, null)
+        val awtImage = transcoder.takeLastImage()!!
         val image = SwingFXUtils.toFXImage(awtImage, null)
         awtImage.flush()
         stats.onTaskCompleted("SvgImportTask", name)
