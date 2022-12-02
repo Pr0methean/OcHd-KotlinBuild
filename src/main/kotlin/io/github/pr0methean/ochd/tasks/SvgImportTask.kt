@@ -61,7 +61,6 @@ private class ToImageTranscoder: SVGAbstractTranscoder() {
             val raoi: Shape = Float(0f, 0f, width, height)
             // Warning: the renderer's AOI must be in user space
             renderer.repaint(curTxf.createInverse().createTransformedShape(raoi))
-            renderer.clearOffScreen()
             lastImage = renderer.offScreen
         } catch (ex: Exception) {
             throw TranscoderException(ex)
