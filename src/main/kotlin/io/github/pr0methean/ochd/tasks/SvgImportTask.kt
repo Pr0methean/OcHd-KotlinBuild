@@ -22,7 +22,6 @@ import java.io.File
 private val batikTranscoder: ThreadLocal<ToImageTranscoder> = ThreadLocal.withInitial { ToImageTranscoder() }
 /** SVG decoder that stores the last image it decoded, rather than passing it to an encoder. */
 private class ToImageTranscoder: SVGAbstractTranscoder() {
-    @Volatile
     private var lastImage: BufferedImage? = null
 
     fun takeLastImage(): BufferedImage? {
