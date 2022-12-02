@@ -44,9 +44,9 @@ class AnimationTask(
         stats.onTaskLaunched("AnimationTask", name)
         val firstFrame = frames[0].await().getOrThrow()
         val canvas = Canvas(width.toDouble(), totalHeight.toDouble())
+        canvas.isCache = true
         val canvasCtx = canvas.graphicsContext2D
         canvasCtx.drawImage(firstFrame, 0.0, 0.0)
-        canvas.isCache = true
         val frameTasks = frames.withIndex().drop(1).map { (index, frameTask) ->
             frameTask.consumeAsync {
                 canvasCtx.drawImage(it.getOrThrow(), 0.0, (height * index).toDouble())
