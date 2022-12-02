@@ -4,9 +4,8 @@ import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.tasks.caching.TaskCache
 import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asContextElement
-import kotlinx.coroutines.plus
+import kotlinx.coroutines.withContext
 import org.apache.batik.gvt.renderer.StaticRenderer
 import org.apache.batik.transcoder.SVGAbstractTranscoder
 import org.apache.batik.transcoder.TranscoderException
@@ -73,11 +72,6 @@ class SvgImportTask(
     stats: ImageProcessingStats,
     taskCache: TaskCache<Image>
 ): AbstractImageTask(name, taskCache, stats) {
-    override suspend fun createCoroutineScope(): CoroutineScope {
-        return super.createCoroutineScope().plus(batikTranscoder.asContextElement())
-    }
-
-    override fun reuseCoroutineScope(): Boolean = false
 
     override val directDependencies: List<Task<Nothing>> = listOf() // SVG import doesn't depend on any other tasks
 
@@ -91,12 +85,15 @@ class SvgImportTask(
 
     override suspend fun perform(): Image {
         stats.onTaskLaunched("SvgImportTask", name)
-        val transcoder = batikTranscoder.get()
-        transcoder.setTranscodingHints(mapOf<Key?, kotlin.Float>(SVGAbstractTranscoder.KEY_WIDTH to width.toFloat()))
-        transcoder.transcode(input, null)
-        val awtImage = transcoder.takeLastImage()!!
-        val image = SwingFXUtils.toFXImage(awtImage, null)
-        awtImage.flush()
+        val image = withContext(batikTranscoder.asContextElement()) {
+            val transcoder = batikTranscoder.get()
+            transcoder.setTranscodingHints(mapOf<Key?, kotlin.Float>(SVGAbstractTranscoder.KEY_WIDTH to width.toFloat()))
+            transcoder.transcode(input, null)
+            val awtImage = transcoder.takeLastImage()!!
+            val image = SwingFXUtils.toFXImage(awtImage, null)
+            awtImage.flush()
+            image
+        }
         stats.onTaskCompleted("SvgImportTask", name)
         return image
     }
