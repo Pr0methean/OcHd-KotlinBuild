@@ -27,12 +27,10 @@ private class ToImageTranscoder: SVGAbstractTranscoder() {
     val mutex = Mutex()
     @Volatile
     private var lastImage: BufferedImage? = null
-    private val renderer = StaticRenderer()
 
     fun takeLastImage(): BufferedImage? {
         val lastImage = this.lastImage
         this.lastImage = null
-        renderer.clearOffScreen()
         return lastImage
     }
 
@@ -42,7 +40,7 @@ private class ToImageTranscoder: SVGAbstractTranscoder() {
         uri: String?,
         output: TranscoderOutput?
     ) {
-
+        val renderer = StaticRenderer()
         // Sets up root, curTxf & curAoi
         super.transcode(document, uri, null)
 
@@ -66,7 +64,7 @@ private class ToImageTranscoder: SVGAbstractTranscoder() {
         } catch (ex: Exception) {
             throw TranscoderException(ex)
         } finally {
-            renderer.tree = null
+            renderer.dispose()
             ctx.dispose()
             Disposer.cleanUp()
         }
