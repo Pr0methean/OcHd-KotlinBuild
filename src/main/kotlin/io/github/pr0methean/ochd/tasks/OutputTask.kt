@@ -16,6 +16,7 @@ class OutputTask(
     val stats: ImageProcessingStats,
     private val files: List<File>,
 ): TransformingTask<ByteArray, Unit>("Output $name", source, noopTaskCache(), transform = { bytes ->
+    stats.onTaskLaunched("OutputTask", name)
     withContext(Dispatchers.IO.plus(CoroutineName(name))) {
         val firstFile = files[0]
         firstFile.parentFile?.mkdirs()
@@ -31,6 +32,7 @@ class OutputTask(
                 throw RuntimeException("OutputTask $name appeared to succeed, but $file still doesn't exist")
             }
         }
+        stats.onTaskCompleted("OutputTask", name)
     }
 }) {
     val isCommandBlock: Boolean = name.contains("command_block")
