@@ -47,6 +47,8 @@ class OutputTask(
     override suspend fun mergeWithDuplicate(other: Task<*>): OutputTask {
         if (other is OutputTask && source == other.source) {
             files += other.files
+            source.mergeWithDuplicate(other.source)
+            return this
         }
         return super.mergeWithDuplicate(other) as OutputTask
     }
