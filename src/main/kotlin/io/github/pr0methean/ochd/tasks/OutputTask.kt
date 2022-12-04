@@ -41,4 +41,11 @@ class OutputTask(
             throw IllegalArgumentException("OutputTask with no destination files")
         }
     }
+
+    override suspend fun mergeWithDuplicate(other: Task<*>): Task<Unit> {
+        if (other is OutputTask && source == other.source) {
+            return OutputTask(source, name, stats, files + other.files)
+        }
+        return super.mergeWithDuplicate(other)
+    }
 }
