@@ -8,19 +8,16 @@ import io.github.pr0methean.ochd.tasks.OutputTask
 import javafx.scene.paint.Color
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
-import java.util.concurrent.atomic.AtomicReference
 
 abstract class DyedBlock(val name: String): Material {
-    abstract suspend fun LayerListBuilder.createTextureLayers(color: Color)
+    abstract suspend fun LayerListBuilder.createTextureLayers(color: Color, sharedLayers: ImageTask)
+
     abstract suspend fun createSharedLayersTask(ctx: TaskPlanningContext): ImageTask
-    protected var sharedLayersTaskRef: AtomicReference<ImageTask?> = AtomicReference(null)
 
     override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<OutputTask> = flow {
-        sharedLayersTaskRef.compareAndSet(null, createSharedLayersTask(ctx))
-        DYES.forEach {
-            val dyeName = it.key
-            val color = it.value
-            emit(ctx.out(ctx.stack {createTextureLayers(color)}, "block/${dyeName}_$name"))
+        val sharedLayersTask = createSharedLayersTask(ctx)
+        DYES.forEach { (dyeName, color) ->
+            emit(ctx.out(ctx.stack {createTextureLayers(color, sharedLayersTask)}, "block/${dyeName}_$name"))
         }
     }
 }

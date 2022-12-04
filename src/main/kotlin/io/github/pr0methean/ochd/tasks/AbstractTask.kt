@@ -204,19 +204,17 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
 
     @Volatile private var coroutineScope: CoroutineScope? = null
 
-    protected open suspend fun createCoroutineScope(): CoroutineScope = CoroutineScope(
-        currentCoroutineContext()
-            .plus(CoroutineName(name))
-            .plus(SUPERVISOR_JOB)
-    )
-
     override suspend fun getCoroutineScope(): CoroutineScope {
         var scopeNow = coroutineScope
         if (scopeNow == null) {
             scopeNow = mutex.withLock {
                 var scopeWithLock = coroutineScope
                 if (scopeWithLock == null) {
-                    scopeWithLock = createCoroutineScope()
+                    scopeWithLock = CoroutineScope(
+                        currentCoroutineContext()
+                            .plus(CoroutineName(name))
+                            .plus(SUPERVISOR_JOB)
+                    )
                     coroutineScope = scopeWithLock
                 }
                 scopeWithLock
