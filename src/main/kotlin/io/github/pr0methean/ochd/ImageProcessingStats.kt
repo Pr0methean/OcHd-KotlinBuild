@@ -155,9 +155,6 @@ class ImageProcessingStats(private val backingCache: Cache<SemiStrongTaskCache<I
     fun onTaskCompleted(typename: String, name: String) {
         logger.info("Completed: {}", name)
         taskCompletions.add(typename)
-        if (typename == "OutputTask" || typename == "PngCompressionTask") {
-            dedupeFailures.add(typename)
-        }
     }
 
     fun recordRetries(howMany: Long) {
