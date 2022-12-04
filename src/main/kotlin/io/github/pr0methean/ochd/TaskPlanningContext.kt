@@ -46,7 +46,7 @@ class TaskPlanningContext(
 ) {
     override fun toString(): String = name
     private val svgTasks: Map<String, SvgImportTask>
-    private val taskDeduplicationMap = ConcurrentHashMap<ImageTask, ImageTask>()
+    private val taskDeduplicationMap = ConcurrentHashMap<Task<*>, Task<*>>()
     private val dedupedSvgTasks = ConcurrentHashMultiset.create<String>()
     private val backingCache = Caffeine.newBuilder()
         .recordStats()
@@ -92,22 +92,23 @@ class TaskPlanningContext(
         svgTasks = builder.toMap()
     }
 
-    tailrec suspend fun deduplicate(task: Task<Image>): ImageTask {
+    @Suppress("UNCHECKED_CAST")
+    tailrec suspend fun <T> deduplicate(task: Task<T>): Task<T> {
         if (task is SvgImportTask) {
             // svgTasks is populated eagerly
             val name = task.name
-            return findSvgTask(name)
+            return findSvgTask(name) as Task<T>
         }
         if (task is RepaintTask
             && (task.paint == null || task.paint == Color.BLACK)
             && task.alpha == 1.0
         ) {
-            return deduplicate(task.base)
+            return deduplicate(task.base as Task<T>)
         }
         if (task is ImageStackingTask
             && task.layers.layers.size == 1
             && task.layers.background == Color.TRANSPARENT) {
-            return deduplicate(task.layers.layers[0])
+            return deduplicate(task.layers.layers[0] as Task<T>)
         }
         if (task !is ImageTask) {
             throw RuntimeException("Tried to deduplicate a task that wasn't an ImageTask")
@@ -121,7 +122,7 @@ class TaskPlanningContext(
         if (deduped !== task) {
             logger.info("Deduplicated: {}", task)
             stats.dedupeSuccesses.add(className)
-            return deduped.mergeWithDuplicate(task)
+            return deduped.mergeWithDuplicate(task) as Task<T>
         }
         return deduped
     }
@@ -140,7 +141,7 @@ class TaskPlanningContext(
             = layer(findSvgTask(name), paint, alpha)
 
     suspend inline fun layer(source: Task<Image>, paint: Paint? = null, alpha: Double = 1.0): ImageTask {
-        return deduplicate(RepaintTask(deduplicate(source), paint, alpha, createStandardTaskCache("$source@$paint@$alpha"), stats))
+        return deduplicate(RepaintTask(deduplicate(source) as ImageTask, paint, alpha, createStandardTaskCache("$source@$paint@$alpha"), stats)) as ImageTask
     }
 
     suspend inline fun stack(init: LayerListBuilder.() -> Unit): ImageTask {
@@ -151,7 +152,7 @@ class TaskPlanningContext(
     }
 
     suspend inline fun animate(frames: List<ImageTask>): ImageTask {
-        return deduplicate(AnimationTask(frames.asFlow().map(::deduplicate).toList(), tileSize, tileSize, frames.toString(), createStandardTaskCache(frames.toString()), stats))
+        return deduplicate(AnimationTask(frames.asFlow().map(::deduplicate).toList(), tileSize, tileSize, frames.toString(), createStandardTaskCache(frames.toString()), stats)) as ImageTask
     }
 
     suspend inline fun out(source: ImageTask, vararg name: String): OutputTask {
@@ -164,8 +165,8 @@ class TaskPlanningContext(
         source: ImageTask,
         destination: List<File>
     ): OutputTask {
-        val pngSource = deduplicate(source).asPng
-        val outputTask = OutputTask(pngSource, lowercaseName, stats, destination)
+        val pngSource = (deduplicate(source) as ImageTask).asPng
+        val outputTask = deduplicate(OutputTask(pngSource, lowercaseName, stats, destination)) as OutputTask
         pngSource.addDirectDependentTask(outputTask)
         return outputTask
     }
@@ -175,5 +176,5 @@ class TaskPlanningContext(
 
     suspend inline fun stack(layers: LayerList): ImageTask
             = deduplicate(ImageStackingTask(layers,
-        createStandardTaskCache(layers.toString()), stats))
+                createStandardTaskCache(layers.toString()), stats)) as ImageTask
 }

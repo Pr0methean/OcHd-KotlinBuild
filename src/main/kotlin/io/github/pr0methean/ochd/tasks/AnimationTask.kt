@@ -11,7 +11,7 @@ import kotlinx.coroutines.joinAll
 import java.util.*
 
 class AnimationTask(
-    val frames: List<ImageTask>,
+    val frames: List<Task<Image>>,
     val width: Int, val height: Int, name: String,
     cache: TaskCache<Image>,
     stats: ImageProcessingStats
@@ -64,5 +64,5 @@ class AnimationTask(
         return output
     }
 
-    override val directDependencies: List<ImageTask> = frames
+    override val directDependencies: List<Task<Image>> = frames
 }

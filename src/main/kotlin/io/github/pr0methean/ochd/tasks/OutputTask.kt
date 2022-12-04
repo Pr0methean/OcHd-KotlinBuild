@@ -42,10 +42,14 @@ class OutputTask(
         }
     }
 
-    override suspend fun mergeWithDuplicate(other: Task<*>): Task<Unit> {
+    override fun hashCode(): Int = source.hashCode() + 127
+
+    override suspend fun mergeWithDuplicate(other: Task<*>): OutputTask {
         if (other is OutputTask && source == other.source) {
             return OutputTask(source, name, stats, files + other.files)
         }
-        return super.mergeWithDuplicate(other)
+        return super.mergeWithDuplicate(other) as OutputTask
     }
+
+    override fun equals(other: Any?) = (this === other) || (other is OutputTask && source == other.source)
 }

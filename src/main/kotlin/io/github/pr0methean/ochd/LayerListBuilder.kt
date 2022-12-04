@@ -56,9 +56,9 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
     suspend fun copy(source: SingleTextureMaterial): Unit = copy(LayerListBuilder(ctx).also {source.run {createTextureLayers()}}.build())
 
     suspend fun copy(element: ImageTask): Boolean {
-        val deduped = ctx.deduplicate(element)
+        val deduped = ctx.deduplicate(element) as ImageTask
         return layers.add(deduped)
     }
     fun addAll(elements: Collection<ImageTask>): Boolean = layers.addAll(elements)
-    suspend fun build(): LayerList = LayerList(layers.asFlow().map(ctx::deduplicate).toList(), background)
+    suspend fun build(): LayerList = LayerList(layers.asFlow().map { ctx.deduplicate(it) as ImageTask }.toList(), background)
 }
