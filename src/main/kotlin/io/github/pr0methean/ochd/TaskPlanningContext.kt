@@ -162,7 +162,7 @@ class TaskPlanningContext(
         source: ImageTask,
         destination: List<File>
     ): OutputTask {
-        val pngSource = deduplicate(source.asPng)
+        val pngSource = deduplicate((deduplicate(source) as ImageTask).asPng)
         val orig = OutputTask(pngSource, lowercaseName, stats, destination)
         val deduped = deduplicate(orig) as OutputTask
         if (deduped === orig) {
