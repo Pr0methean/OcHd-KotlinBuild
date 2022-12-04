@@ -136,7 +136,9 @@ private suspend fun runAll(
             inProgressJobs.remove(maybeReceive.task)
             continue
         }
-        val task = unstartedTasks.minWithOrNull(taskOrderComparator)
+        val task = unstartedTasks.firstOrNull {
+            it.source.directDependencies.singleOrNull()?.isStartedOrAvailable() == true
+        } ?: unstartedTasks.minWithOrNull(taskOrderComparator)
         if (task == null) {
             logger.error("Could not get an unstarted task")
             continue
