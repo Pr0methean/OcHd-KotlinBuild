@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd
 
 import com.github.benmanes.caffeine.cache.Caffeine
-import com.google.common.collect.HashMultiset
+import com.google.common.collect.ConcurrentHashMultiset
 import io.github.pr0methean.ochd.tasks.AnimationTask
 import io.github.pr0methean.ochd.tasks.ImageStackingTask
 import io.github.pr0methean.ochd.tasks.ImageTask
@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.toList
 import org.apache.logging.log4j.LogManager
 import java.io.File
 import java.util.Locale
+import java.util.concurrent.ConcurrentHashMap
 
 fun color(web: String): Color = Color.web(web)
 
@@ -45,8 +46,8 @@ class TaskPlanningContext(
 ) {
     override fun toString(): String = name
     private val svgTasks: Map<String, SvgImportTask>
-    private val taskDeduplicationMap = HashMap<ImageTask, ImageTask>()
-    private val dedupedSvgTasks = HashMultiset.create<String>()
+    private val taskDeduplicationMap = ConcurrentHashMap<ImageTask, ImageTask>()
+    private val dedupedSvgTasks = ConcurrentHashMultiset.create<String>()
     private val backingCache = Caffeine.newBuilder()
         .recordStats()
         .weakKeys()
