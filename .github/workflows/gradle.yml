@@ -68,7 +68,7 @@ jobs:
       id: run
       run: >
         java -Dprism.maxvram=2560m -Dglass.platform=Monocle -Dmonocle.platform=Headless -Dquantum.multithreaded=true 
-        -XX:+UseStringDeduplication -Xms4128m -Xmx4128m -XX:MaxMetaspaceSize=64m
+        -Dprism.reftype=weak -XX:+UseStringDeduplication -Xms4128m -Xmx4128m -XX:MaxMetaspaceSize=64m
         -XX:SoftRefLRUPolicyMSPerMB=3600000
         -XX:+UnlockExperimentalVMOptions -XX:+UseZGC
         '-Xlog:gc*=debug,gc+stats=trace,gc+heap=trace,gc+heap+exit=trace,gc+metaspace=trace,gc+nmethod=info,safepoint+stats=info' 
