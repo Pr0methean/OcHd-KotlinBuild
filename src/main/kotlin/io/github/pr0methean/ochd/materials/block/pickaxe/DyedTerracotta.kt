@@ -15,9 +15,10 @@ object DyedTerracotta : DyedBlock("terracotta") {
     }
 
     override suspend fun createSharedLayersTask(ctx: TaskPlanningContext): ImageTask = ctx.stack {
+        layer("bigDotsBottomLeftTopRight", TERRACOTTA.shadow, 0.5)
         layer("bigRingsTopLeftBottomRight", TERRACOTTA.highlight)
-        layer("bigDotsBottomLeftTopRight", TERRACOTTA.shadow)
-        layer("bigRingsBottomLeftTopRight", TERRACOTTA.highlight)
+        layer("bigDotsBottomLeftTopRight", TERRACOTTA.highlight, 0.5)
+        layer("bigRingsBottomLeftTopRight", TERRACOTTA.shadow)
         layer("borderRoundDots", TERRACOTTA.color)
     }
 }
