@@ -8,9 +8,9 @@ import io.github.pr0methean.ochd.texturebase.DyedBlock
 import javafx.scene.paint.Color
 
 object Concrete: DyedBlock("concrete") {
-    override suspend fun LayerListBuilder.createTextureLayers(color: Color) {
+    override suspend fun LayerListBuilder.createTextureLayers(color: Color, sharedLayers: ImageTask) {
         background(color)
-        copy(sharedLayersTaskRef.get() ?: throw IllegalStateException("Set createSharedLayersTaskRef first"))
+        copy(sharedLayers)
     }
 
     override suspend fun createSharedLayersTask(ctx: TaskPlanningContext): ImageTask = ctx.stack {

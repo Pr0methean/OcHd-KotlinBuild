@@ -15,8 +15,8 @@ object Wool : DyedBlock("wool") {
         layer("borderDotted", DYES["light_gray"], 0.5)
     }
 
-    override suspend fun LayerListBuilder.createTextureLayers(color: Color) {
+    override suspend fun LayerListBuilder.createTextureLayers(color: Color, sharedLayers: ImageTask) {
         background(color)
-        copy(sharedLayersTaskRef.get() ?: throw IllegalStateException("Set createSharedLayersTaskRef first"))
+        copy(sharedLayers)
     }
 }

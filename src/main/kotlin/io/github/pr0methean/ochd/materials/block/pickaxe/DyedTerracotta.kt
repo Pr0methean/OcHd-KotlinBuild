@@ -9,9 +9,9 @@ import javafx.scene.paint.Color
 
 object DyedTerracotta : DyedBlock("terracotta") {
 
-    override suspend fun LayerListBuilder.createTextureLayers(color: Color) {
+    override suspend fun LayerListBuilder.createTextureLayers(color: Color, sharedLayers: ImageTask) {
         background(color)
-        copy(sharedLayersTaskRef.get() ?: throw IllegalStateException("Set createSharedLayersTaskRef first"))
+        copy(sharedLayers)
     }
 
     override suspend fun createSharedLayersTask(ctx: TaskPlanningContext): ImageTask = ctx.stack {

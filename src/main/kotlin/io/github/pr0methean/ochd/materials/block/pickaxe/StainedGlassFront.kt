@@ -10,8 +10,8 @@ import javafx.scene.paint.Color
  * This is the only material that feeds an ImageStackingTask to a RepaintTask rather than vice-versa.
  */
 object StainedGlassFront: DyedBlock("stained_glass") {
-    override suspend fun LayerListBuilder.createTextureLayers(color: Color) {
-        layer(sharedLayersTaskRef.get() ?: throw IllegalStateException("Set createSharedLayersTaskRef first"), color)
+    override suspend fun LayerListBuilder.createTextureLayers(color: Color, sharedLayers: ImageTask) {
+        layer(sharedLayers, color)
     }
 
     override suspend fun createSharedLayersTask(ctx: TaskPlanningContext): ImageTask = ctx.stack {
