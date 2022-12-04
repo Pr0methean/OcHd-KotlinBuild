@@ -45,7 +45,7 @@ class OutputTask(
     override fun hashCode(): Int = source.hashCode() + 127
 
     override suspend fun mergeWithDuplicate(other: Task<*>): OutputTask {
-        if (other is OutputTask && source == other.source) {
+        if (other !== this && other is OutputTask && source == other.source) {
             files += other.files
             source.mergeWithDuplicate(other.source)
             return this
