@@ -3,13 +3,13 @@ package io.github.pr0methean.ochd.tasks
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.LayerList
 import io.github.pr0methean.ochd.tasks.caching.TaskCache
+import javafx.application.Platform
 import javafx.scene.SnapshotParameters
 import javafx.scene.canvas.Canvas
 import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
 import org.apache.logging.log4j.LogManager
 import java.util.*
-import java.util.concurrent.atomic.AtomicReference
 
 private val logger = LogManager.getLogger("ImageStackingTask")
 
@@ -44,7 +44,6 @@ class ImageStackingTask(val layers: LayerList,
     override suspend fun perform(): Image {
         stats.onTaskLaunched("ImageStackingTask", name)
         logger.debug("Fetching first layer of {} to check size", this)
-        val snapshotRef = AtomicReference<Image>(null)
         val firstLayer = layers.layers.first().await().getOrThrow()
         val width = firstLayer.width
         val height = firstLayer.height
@@ -60,29 +59,28 @@ class ImageStackingTask(val layers: LayerList,
             }
         }
         logger.debug("Taking snapshot of {}", name)
-        takeSnapshot(width, height, canvas, snapshotRef)
+        val snapshot = takeSnapshot(width, height, canvas)
         stats.onTaskCompleted("ImageStackingTask", name)
-        return snapshotRef.getAndSet(null)
+        return snapshot
     }
 
     private val background = layers.background
 
     private suspend fun takeSnapshot(
-        width: Double,
-        height: Double,
-        canvas: Canvas,
-        snapshotRef: AtomicReference<Image>
-    ) {
+            width: Double,
+            height: Double,
+            canvas: Canvas): Image {
         val params = SnapshotParameters()
         params.fill = background
         val output = WritableImage(width.toInt(), height.toInt())
         val snapshot = doJfx("Snapshot of $name") {
+            Platform.requestNextPulse()
             canvas.snapshot(params, output)
         }
         if (snapshot.isError) {
             throw snapshot.exception
         }
-        snapshotRef.set(snapshot)
+        return snapshot
     }
 
 }

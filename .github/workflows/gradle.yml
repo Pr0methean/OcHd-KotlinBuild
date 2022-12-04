@@ -14,8 +14,7 @@ on:
   pull_request:
     branches: [ "*" ]
   schedule:
-    # TODO: Switch back to nightly once we no longer need to compare revisions statistically for performance
-    - cron: "17,37 * * * *"
+    - cron: "0 6 * * *"
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -94,6 +93,7 @@ jobs:
       with:
         name: Heap Dump ${{ matrix.size }}x${{ matrix.size }}
         path: '*.hprof'
+        if-no-files-found: ignore
     - name: Mark Job Failed If Make Textures Failed
       if: steps.run.outcome != 'success'
       run: 'false'

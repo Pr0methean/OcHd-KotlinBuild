@@ -1,20 +1,17 @@
 package io.github.pr0methean.ochd.tasks
 
-import com.sun.prism.impl.Disposer
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.tasks.caching.TaskCache
 import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.asContextElement
-import kotlinx.coroutines.plus
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.withContext
 import org.apache.batik.gvt.renderer.StaticRenderer
 import org.apache.batik.transcoder.SVGAbstractTranscoder
 import org.apache.batik.transcoder.TranscoderException
 import org.apache.batik.transcoder.TranscoderInput
 import org.apache.batik.transcoder.TranscoderOutput
+import org.apache.batik.transcoder.TranscodingHints.Key
 import org.w3c.dom.Document
 import java.awt.Shape
 import java.awt.geom.Rectangle2D.Float
@@ -24,10 +21,7 @@ import java.io.File
 private val batikTranscoder: ThreadLocal<ToImageTranscoder> = ThreadLocal.withInitial { ToImageTranscoder() }
 /** SVG decoder that stores the last image it decoded, rather than passing it to an encoder. */
 private class ToImageTranscoder: SVGAbstractTranscoder() {
-    val mutex = Mutex()
-    @Volatile
     private var lastImage: BufferedImage? = null
-    private val renderer = StaticRenderer()
 
     fun takeLastImage(): BufferedImage? {
         val lastImage = this.lastImage
@@ -41,7 +35,7 @@ private class ToImageTranscoder: SVGAbstractTranscoder() {
         uri: String?,
         output: TranscoderOutput?
     ) {
-
+        val renderer = StaticRenderer()
         // Sets up root, curTxf & curAoi
         super.transcode(document, uri, null)
 
@@ -65,9 +59,8 @@ private class ToImageTranscoder: SVGAbstractTranscoder() {
         } catch (ex: Exception) {
             throw TranscoderException(ex)
         } finally {
-            renderer.tree = null
+            renderer.dispose()
             ctx.dispose()
-            Disposer.cleanUp()
         }
     }
 }
@@ -79,9 +72,6 @@ class SvgImportTask(
     stats: ImageProcessingStats,
     taskCache: TaskCache<Image>
 ): AbstractImageTask(name, taskCache, stats) {
-    override suspend fun createCoroutineScope(): CoroutineScope {
-        return super.createCoroutineScope().plus(batikTranscoder.asContextElement())
-    }
 
     override val directDependencies: List<Task<Nothing>> = listOf() // SVG import doesn't depend on any other tasks
 
@@ -95,14 +85,15 @@ class SvgImportTask(
 
     override suspend fun perform(): Image {
         stats.onTaskLaunched("SvgImportTask", name)
-        val transcoder = batikTranscoder.get()
-        val awtImage = transcoder.mutex.withLock {
-            transcoder.setTranscodingHints(mapOf(SVGAbstractTranscoder.KEY_WIDTH to width.toFloat()))
+        val image = withContext(batikTranscoder.asContextElement()) {
+            val transcoder = batikTranscoder.get()
+            transcoder.setTranscodingHints(mapOf<Key?, kotlin.Float>(SVGAbstractTranscoder.KEY_WIDTH to width.toFloat()))
             transcoder.transcode(input, null)
-            transcoder.takeLastImage()!!
+            val awtImage = transcoder.takeLastImage()!!
+            val image = SwingFXUtils.toFXImage(awtImage, null)
+            awtImage.flush()
+            image
         }
-        val image = SwingFXUtils.toFXImage(awtImage, null)
-        awtImage.flush()
         stats.onTaskCompleted("SvgImportTask", name)
         return image
     }

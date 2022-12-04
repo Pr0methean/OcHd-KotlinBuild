@@ -42,7 +42,9 @@ enum class SimplePickaxeBlock(
     },
     MOSSY_COBBLESTONE(SimpleSoftEarth.MOSS_BLOCK) {
         override suspend fun LayerListBuilder.createTextureLayers() {
-            copy(COBBLESTONE)
+            background(COBBLESTONE.highlight)
+            layer("checksLarge",COBBLESTONE.shadow)
+            layer("checksSmall",COBBLESTONE.color)
             layer("dots3",highlight)
             layer("dots2",shadow)
             layer("dots1",color)
@@ -244,12 +246,14 @@ enum class SimplePickaxeBlock(
     },
     MOSSY_STONE_BRICKS(SimpleSoftEarth.MOSS_BLOCK) {
         override suspend fun LayerListBuilder.createTextureLayers() {
-            copy(STONE_BRICKS)
+            background(STONE.color)
+            layer("checksLarge", STONE.highlight)
             layer("dots3", shadow)
             layer("dots2", highlight)
             layer("dots1", color)
             layer("borderSolid", highlight)
             layer("borderShortDashes", shadow)
+            layer("bricks", stoneExtremeShadow)
         }
     },
     CHISELED_STONE_BRICKS(STONE_BRICKS) {

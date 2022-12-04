@@ -30,8 +30,8 @@ import kotlin.system.measureNanoTime
 
 private const val CAPACITY_PADDING_FACTOR = 2
 private val taskOrderComparator = comparingLong(OutputTask::timesFailed)
-    .then(comparingInt {it.totalSubtasks - it.startedOrAvailableSubtasks()})
     .then(comparingInt(OutputTask::startedOrAvailableSubtasks).reversed())
+    .then(comparingInt(OutputTask::cacheableSubtasks))
 private val logger = LogManager.getRootLogger()
 private const val PARALLELISM = 2
 private const val HUGE_TILE_PARALLELISM = 1
