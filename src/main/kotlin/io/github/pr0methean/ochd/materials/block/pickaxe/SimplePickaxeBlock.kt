@@ -31,20 +31,23 @@ enum class SimplePickaxeBlock(
             layer("borderSolid", stoneExtremeShadow)
         }
     },
-    COBBLESTONE(STONE) {
+    COBBLESTONE_BASE(STONE, false) {
         override suspend fun LayerListBuilder.createTextureLayers() {
             background(highlight)
             layer("checksLarge",shadow)
             layer("checksSmall",color)
+        }
+    },
+    COBBLESTONE(STONE) {
+        override suspend fun LayerListBuilder.createTextureLayers() {
+            copy(COBBLESTONE_BASE)
             layer("borderSolid", stoneExtremeHighlight)
             layer("borderShortDashes", stoneExtremeShadow)
         }
     },
     MOSSY_COBBLESTONE(SimpleSoftEarth.MOSS_BLOCK) {
         override suspend fun LayerListBuilder.createTextureLayers() {
-            background(COBBLESTONE.highlight)
-            layer("checksLarge",COBBLESTONE.shadow)
-            layer("checksSmall",COBBLESTONE.color)
+            copy(COBBLESTONE_BASE)
             layer("dots3",highlight)
             layer("dots2",shadow)
             layer("dots1",color)
