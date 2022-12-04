@@ -110,9 +110,6 @@ class TaskPlanningContext(
             && task.layers.background == Color.TRANSPARENT) {
             return deduplicate(task.layers.layers[0] as Task<T>)
         }
-        if (task !is ImageTask) {
-            throw RuntimeException("Tried to deduplicate a task that wasn't an ImageTask")
-        }
         val className = task::class.simpleName ?: "[unnamed class]"
         val deduped = taskDeduplicationMap.computeIfAbsent(task) {
             logger.info("New task: {}", task)
