@@ -17,7 +17,6 @@ class OutputTask(
     private val files: List<File>,
 ): TransformingTask<ByteArray, Unit>("Output $name", source, noopTaskCache(), transform = { bytes ->
     withContext(Dispatchers.IO.plus(CoroutineName(name))) {
-        stats.onTaskLaunched("OutputTask", name)
         val firstFile = files[0]
         firstFile.parentFile?.mkdirs()
         FileOutputStream(firstFile).use {it.write(bytes)}
@@ -33,7 +32,6 @@ class OutputTask(
             }
         }
     }
-    stats.onTaskCompleted("OutputTask", name)
 }) {
     val isCommandBlock: Boolean = name.contains("command_block")
     init {

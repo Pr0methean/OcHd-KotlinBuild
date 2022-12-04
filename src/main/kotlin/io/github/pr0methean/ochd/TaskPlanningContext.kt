@@ -162,10 +162,13 @@ class TaskPlanningContext(
         source: ImageTask,
         destination: List<File>
     ): OutputTask {
-        val pngSource = (deduplicate(source) as ImageTask).asPng
-        val outputTask = deduplicate(OutputTask(pngSource, lowercaseName, stats, destination)) as OutputTask
-        pngSource.addDirectDependentTask(outputTask)
-        return outputTask
+        val pngSource = deduplicate(source.asPng)
+        val orig = OutputTask(pngSource, lowercaseName, stats, destination)
+        val deduped = deduplicate(orig) as OutputTask
+        if (deduped !== orig) {
+            pngSource.addDirectDependentTask(deduped)
+        }
+        return deduped
     }
 
     suspend inline fun out(source: LayerListBuilder.() -> Unit, vararg names: String): OutputTask
