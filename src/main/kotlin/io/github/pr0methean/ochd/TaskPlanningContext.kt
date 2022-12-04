@@ -165,7 +165,7 @@ class TaskPlanningContext(
         val pngSource = deduplicate(source.asPng)
         val orig = OutputTask(pngSource, lowercaseName, stats, destination)
         val deduped = deduplicate(orig) as OutputTask
-        if (deduped !== orig) {
+        if (deduped === orig) {
             pngSource.addDirectDependentTask(deduped)
         }
         return deduped
