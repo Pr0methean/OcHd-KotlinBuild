@@ -15,7 +15,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.getOrElse
-import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.toSet
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.plus
@@ -79,7 +80,7 @@ suspend fun main(args: Array<String>) {
     startMonitoring(stats, scope)
     val time = measureNanoTime {
         stats.onTaskLaunched("Build task graph", "Build task graph")
-        val tasks = ALL_MATERIALS.outputTasks(ctx).toList()
+        val tasks = ALL_MATERIALS.outputTasks(ctx).map { ctx.deduplicate(it) as OutputTask }.toSet()
         val depsBuildTask = scope.launch { tasks.forEach { it.registerRecursiveDependencies() }}
         val cbTasks = tasks.filter(OutputTask::isCommandBlock)
         val nonCbTasks = tasks.filterNot(OutputTask::isCommandBlock)
