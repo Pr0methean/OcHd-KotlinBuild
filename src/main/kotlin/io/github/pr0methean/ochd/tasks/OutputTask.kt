@@ -14,7 +14,7 @@ class OutputTask(
     val source: Task<ByteArray>,
     name: String,
     val stats: ImageProcessingStats,
-    private val files: List<File>,
+    private var files: List<File>,
 ): TransformingTask<ByteArray, Unit>("Output $name", source, noopTaskCache(), transform = { bytes ->
     stats.onTaskLaunched("OutputTask", name)
     withContext(Dispatchers.IO.plus(CoroutineName(name))) {
@@ -46,7 +46,7 @@ class OutputTask(
 
     override suspend fun mergeWithDuplicate(other: Task<*>): OutputTask {
         if (other is OutputTask && source == other.source) {
-            return OutputTask(source.mergeWithDuplicate(other.source), name, stats, files + other.files)
+            files += other.files
         }
         return super.mergeWithDuplicate(other) as OutputTask
     }
