@@ -32,7 +32,7 @@ private val logger = LogManager.getLogger("TaskPlanningContext")
 // Main Caffeine cache will be able to contain this * 16 MPx * 4 bytes/Px
 private const val MINIMUM_CACHE_4096x4096 = 16L
 // Huge-tile Caffeine cache will be able to contain this * 64 MPx * 4 bytes/Px
-private const val MINIMUM_CACHE_16384x4096 = 4L
+private const val MINIMUM_CACHE_16384x4096 = 2L
 fun isHugeTileImportTask(name: String): Boolean = name.startsWith("commandBlock") || name.endsWith("4x")
 
 /**
