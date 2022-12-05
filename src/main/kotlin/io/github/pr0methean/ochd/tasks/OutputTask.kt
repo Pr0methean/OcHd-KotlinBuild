@@ -15,43 +15,33 @@ class OutputTask(
     name: String,
     val stats: ImageProcessingStats,
     private var files: List<File>,
-): TransformingTask<ByteArray, Unit>("Output $name", source, noopTaskCache(), transform = { bytes ->
-    stats.onTaskLaunched("OutputTask", name)
-    withContext(Dispatchers.IO.plus(CoroutineName(name))) {
-        val firstFile = files[0]
-        firstFile.parentFile?.mkdirs()
-        FileOutputStream(firstFile).use {it.write(bytes)}
-        if (!firstFile.exists()) {
-            throw RuntimeException("OutputTask $name appeared to succeed, but $firstFile still doesn't exist")
-        }
-        val firstFilePath = firstFile.absoluteFile.toPath()
-        for (file in files.subList(1, files.size)) {
-            file.parentFile?.mkdirs()
-            Files.copy(firstFilePath, file.absoluteFile.toPath())
-            if (!file.exists()) {
-                throw RuntimeException("OutputTask $name appeared to succeed, but $file still doesn't exist")
+): TransformingTask<ByteArray, Unit>("Output $name", source, noopTaskCache()) {
+    override suspend fun transform(input: ByteArray) {
+        stats.onTaskLaunched("OutputTask", name)
+        withContext(Dispatchers.IO.plus(CoroutineName(name))) {
+            val firstFile = files[0]
+            firstFile.parentFile?.mkdirs()
+            FileOutputStream(firstFile).use {it.write(input)}
+            if (!firstFile.exists()) {
+                throw RuntimeException("OutputTask $name appeared to succeed, but $firstFile still doesn't exist")
             }
+            val firstFilePath = firstFile.absoluteFile.toPath()
+            for (file in files.subList(1, files.size)) {
+                file.parentFile?.mkdirs()
+                Files.copy(firstFilePath, file.absoluteFile.toPath())
+                if (!file.exists()) {
+                    throw RuntimeException("OutputTask $name appeared to succeed, but $file still doesn't exist")
+                }
+            }
+            stats.onTaskCompleted("OutputTask", name)
         }
-        stats.onTaskCompleted("OutputTask", name)
     }
-}) {
+
     val isCommandBlock: Boolean = name.contains("command_block")
+
     init {
         if (files.isEmpty()) {
             throw IllegalArgumentException("OutputTask with no destination files")
         }
     }
-
-    override fun hashCode(): Int = source.hashCode() + 127
-
-    override suspend fun mergeWithDuplicate(other: Task<*>): OutputTask {
-        if (other !== this && other is OutputTask && source == other.source) {
-            files += other.files
-            source.mergeWithDuplicate(other.source)
-            return this
-        }
-        return super.mergeWithDuplicate(other) as OutputTask
-    }
-
-    override fun equals(other: Any?): Boolean = (this === other) || (other is OutputTask && source == other.source)
 }

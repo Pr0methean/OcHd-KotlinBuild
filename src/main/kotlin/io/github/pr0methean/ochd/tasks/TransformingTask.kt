@@ -11,23 +11,21 @@ import kotlin.Result.Companion.success
 
 private val logger = LogManager.getLogger("TransformingTask")
 private val UNIT_SUCCESS = success(Unit)
-open class TransformingTask<T, U>(
+abstract class TransformingTask<T, U>(
     name: String,
     val base: Task<T>,
-    cache: TaskCache<U>,
-    val transform: suspend (T) -> U
+    cache: TaskCache<U>
 )
         : AbstractTask<U>(name, cache) {
 
     override suspend fun createCoroutineAsync(): Deferred<Result<U>> {
         val myBase = base
-        val myTransform = transform
         return getCoroutineScope().async(start = CoroutineStart.LAZY) {
             val result = try {
                 logger.debug("Awaiting {} to transform it in {}", myBase, this@TransformingTask)
                 val input = myBase.await()
                 logger.debug("Got {} from {}; transforming it in {}", input, myBase, this@TransformingTask)
-                val result = myTransform(input.getOrThrow())
+                val result = transform(input.getOrThrow())
                 if (result === Unit) {
                     UNIT_SUCCESS
                 }
@@ -41,14 +39,15 @@ open class TransformingTask<T, U>(
         }
     }
 
+    abstract suspend fun transform(input: T): U
+
     override fun equals(other: Any?): Boolean {
         return (other === this) || (other is TransformingTask<*, *>
                 && javaClass == other.javaClass
-                && transform.javaClass == other.transform.javaClass
                 && base == other.base)
     }
 
-    private val hashCode by lazy {Objects.hash(javaClass, transform, base)}
+    private val hashCode by lazy {Objects.hash(javaClass, base)}
 
     override fun hashCode(): Int = hashCode
 
