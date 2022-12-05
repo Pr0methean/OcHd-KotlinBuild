@@ -47,9 +47,7 @@ abstract class TransformingTask<T, U>(
                 && base == other.base)
     }
 
-    private val hashCode by lazy {Objects.hash(javaClass, base)}
-
-    override fun hashCode(): Int = hashCode
+    override fun hashCode(): Int = Objects.hash(javaClass, base)
 
     @Suppress("UNCHECKED_CAST")
     override suspend fun mergeWithDuplicate(other: Task<*>): Task<U> {
