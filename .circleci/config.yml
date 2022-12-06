@@ -9,13 +9,13 @@ jobs:
     docker:
       - image: cimg/openjdk:19.0.1
     steps:
+      - checkout
       - restore_cache:
           keys:
             - maven-{{ checksum "build.gradle.kts" }}
             - maven-
           paths:
             - /home/circleci/.m2
-      - checkout
       - run:
           ./gradlew detekt
       - run:
