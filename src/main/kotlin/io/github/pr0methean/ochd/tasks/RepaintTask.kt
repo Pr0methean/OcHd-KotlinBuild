@@ -50,9 +50,10 @@ class RepaintTask(
     }
 
     override suspend fun perform(): Image {
-        val baseImage = base.getNow()?.getOrThrow()
-                ?: base.opaqueRepaints().firstNotNullOfOrNull { it.getNow()?.getOrThrow() }
-                ?: base.await().getOrThrow()
+        val baseImageDeferred = base.getNow()
+                ?: base.opaqueRepaints().firstNotNullOfOrNull { it.getNow() }
+                ?: base.await()
+        val baseImage = baseImageDeferred.getOrThrow()
         stats.onTaskLaunched("RepaintTask", name)
         val canvas = Canvas(baseImage.width, baseImage.height)
         val output = WritableImage(baseImage.width.toInt(), baseImage.height.toInt())
