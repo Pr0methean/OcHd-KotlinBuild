@@ -11,7 +11,9 @@ jobs:
     steps:
       - checkout
       - run:
-          ./gradlew build jar --scan --warning-mode all
+          ./gradlew detekt
+      - run:
+          ./gradlew jar --scan --warning-mode all
       - persist_to_workspace:
           root: build/libs
           paths:
