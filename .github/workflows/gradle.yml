@@ -67,13 +67,13 @@ jobs:
     - name: Install JProfiler
       run: |
         wget https://download.ej-technologies.com/jprofiler/jprofiler_linux_13_0_4.deb
-        sudo dpkg -i jprofiler_linux_13_0_4.deb -q \
-            -Vjprofiler.licenseKey=${{ secrets.JPROFILER_KEY }} \
-            -Vjprofiler.licenseName=${{ secrets.JPROFILER_USERNAME }}
+        sudo dpkg -i jprofiler_linux_13_0_4.deb
     - name: Make Textures
       id: run
       run: >
         java -agentpath:/opt/jprofiler10/bin/linux-x64/libjprofilerti.so=port=8849,nowait
+        -Vjprofiler.licenseKey=${{ secrets.JPROFILER_KEY }} \
+        -Vjprofiler.licenseName=${{ secrets.JPROFILER_USERNAME }}
         -Dprism.maxvram=2560m -Dglass.platform=Monocle -Dmonocle.platform=Headless -Dquantum.multithreaded=true 
         -XX:+UseStringDeduplication -Xms4128m -Xmx4128m -XX:MaxMetaspaceSize=64m
         -XX:SoftRefLRUPolicyMSPerMB=3600000
