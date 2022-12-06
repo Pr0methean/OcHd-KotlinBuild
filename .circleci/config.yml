@@ -11,7 +11,7 @@ jobs:
     steps:
       - restore_cache:
           keys:
-            - maven-{{ checksum "build.gradle" }}
+            - maven-{{ checksum "build.gradle.kts" }}
             - maven-
           paths:
             - /home/circleci/.m2
@@ -28,7 +28,7 @@ jobs:
           path: build/libs
           destination: "OcHd"
       - save_cache:
-          key: maven-{{ checksum "build.gradle" }}
+          key: maven-{{ checksum "build.gradle.kts" }}
           paths:
             - /home/circleci/.m2
   execute:
