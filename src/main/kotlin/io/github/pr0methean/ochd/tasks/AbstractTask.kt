@@ -242,4 +242,6 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
         }
         return subtasks
     }
+
+    override fun coroutine(): Deferred<Result<T>>? = getNow()?.run { CompletableDeferred(this) } ?: coroutine.get()
 }
