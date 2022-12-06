@@ -29,10 +29,10 @@ class RepaintTask(
     override fun startedOrAvailableSubtasks(): Int =
         if (isStartedOrAvailable()) {
             totalSubtasks
-        } else if (base.getNow() != null || base.opaqueRepaints().any(ImageTask::isStartedOrAvailable)) {
+        } else if (base.isStartedOrAvailable() || base.opaqueRepaints().any(ImageTask::isStartedOrAvailable)) {
             base.totalSubtasks
         } else {
-            super.startedOrAvailableSubtasks()
+            base.startedOrAvailableSubtasks()
         }
 
     override suspend fun mergeWithDuplicate(other: Task<*>): ImageTask {
