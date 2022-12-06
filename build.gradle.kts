@@ -5,6 +5,7 @@ plugins {
     kotlin("jvm") version "1.7.22"
     id("org.openjfx.javafxplugin") version "0.0.13"
     id("io.gitlab.arturbosch.detekt").version("1.21.0")
+    id("com.jprofiler").version("13.0.4")
 }
 
 group = "org.example"
@@ -33,6 +34,7 @@ javafx {
 
 repositories {
     mavenCentral()
+    maven("https://maven.ej-technologies.com/repository")
 }
 
 val log4jVersion = "2.19.0"
@@ -55,6 +57,7 @@ dependencies {
     implementation("org.apache.logging.log4j:log4j-iostreams:$log4jVersion")
     implementation("com.github.ben-manes.caffeine:caffeine:3.1.2")
     runtimeOnly("com.lmax:disruptor:3.4.4")
+    implementation("com.jprofiler:jprofiler-probe-injected:13.0.4")
     constraints {
         add("detekt", "org.yaml:snakeyaml") {
             version {
