@@ -42,7 +42,7 @@ private const val GLOBAL_MAX_RETRIES = 100L
 @OptIn(DelicateCoroutinesApi::class)
 @Suppress("UnstableApiUsage", "DeferredResultUnused")
 suspend fun main(args: Array<String>) {
-    ImageIO.setUseCache(false)
+    ImageIO.setUseCache(false) // Prevent intermediate disk writes when real destination is a ByteArrayOutputStream
     if (args.isEmpty()) {
         println("Usage: main <size>")
         return
