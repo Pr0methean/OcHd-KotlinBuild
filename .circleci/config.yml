@@ -1,0 +1,57 @@
+# Use the latest 2.1 version of CircleCI pipeline process engine.
+# See: https://circleci.com/docs/2.0/configuration-reference
+version: 2.1
+
+# Define a job to be invoked later in a workflow.
+# See: https://circleci.com/docs/2.0/configuration-reference/#jobs
+jobs:
+  build:
+    docker:
+      - image: cimg/openjdk:19.0.1
+    steps:
+      - checkout
+      - run:
+          ./gradlew build jar --scan --warning-mode all
+      - persist_to_workspace:
+          root: build/libs
+          paths:
+            - "OcHd-KotlinBuild-1.0-SNAPSHOT.jar"
+      - store_artifacts:
+          path: build/libs
+          destination: "OcHd"
+  execute:
+    parameters:
+      size:
+        type: integer
+    docker:
+      - image: cimg/openjdk:19.0.1
+    resource_class: xlarge
+    steps:
+      - run: >
+          java -Dprism.maxvram=2560m -Dglass.platform=Monocle -Dmonocle.platform=Headless -Dquantum.multithreaded=true 
+          -XX:+UseStringDeduplication -Xms4128m -Xmx4128m -XX:MaxMetaspaceSize=64m
+          -XX:SoftRefLRUPolicyMSPerMB=3600000
+          -XX:+UnlockExperimentalVMOptions -XX:+UseZGC
+          '-Xlog:gc*=debug,gc+stats=trace,gc+heap=trace,gc+heap+exit=trace,gc+metaspace=trace,gc+nmethod=info,safepoint+stats=info' 
+          -XX:+UseNUMA -XX:ConcGCThreads=2 -XX:ParallelGCThreads=2 -XX:+AlwaysPreTouch -XX:+UseTransparentHugePages
+          -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintFlagsFinal -XX:StringDeduplicationAgeThreshold=1
+          -Dlog4j2.contextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector --enable-preview
+          -jar OcHd-KotlinBuild-1.0-SNAPSHOT.jar << parameters.size >>
+      - run: cd pngout && zip -r OcHD-<< parameters.size >>x<< parameters.size >>.zip *
+      - store_artifacts:
+          path: 'pngout/OcHD-<< parameters.size >>x<< parameters.size >>.zip'
+      - store_test_results:
+          path: '*.hprof'
+# Invoke jobs via workflows
+# See: https://circleci.com/docs/2.0/configuration-reference/#workflows
+workflows:
+  build-and-execute:
+    jobs:
+      - build
+      - execute:
+          requires:
+            - build
+          matrix:
+            parameters:
+              size: [32,64,128,256,512,1024,2048,4096]
+          name: Make Textures << matrix.size >>x<< matrix.size >>
