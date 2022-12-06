@@ -29,6 +29,8 @@ jobs:
       - image: cimg/openjdk:19.0.1
     resource_class: large
     steps:
+      - attach_workspace:
+          at: build/libs
       - run: >
           java -Dprism.maxvram=2560m -Dglass.platform=Monocle -Dmonocle.platform=Headless -Dquantum.multithreaded=true 
           -XX:+UseStringDeduplication -Xms4128m -Xmx4128m -XX:MaxMetaspaceSize=64m
