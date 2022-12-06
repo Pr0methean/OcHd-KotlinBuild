@@ -65,7 +65,7 @@ jobs:
         wget -O gprofiler https://github.com/Granulate/gprofiler/releases/latest/download/gprofiler_`uname -m`
         sudo chmod +x gprofiler
         sudo TMPDIR=/proc/self/cwd sh -c "setsid ./gprofiler -cu --token='${{ secrets.GPROFILER_API_KEY }}' \
-            --service-name='OcHd-${{ matrix.size }}' > /dev/null 2>&1 &"
+            --service-name='OcHd' > /dev/null 2>&1 &"
     - name: Download Fat Jar
       uses: actions/download-artifact@v3
       with:
