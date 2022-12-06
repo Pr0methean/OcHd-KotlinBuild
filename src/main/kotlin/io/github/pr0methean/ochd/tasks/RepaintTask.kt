@@ -11,8 +11,6 @@ import javafx.scene.effect.ColorInput
 import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
 import javafx.scene.paint.Paint
-import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.selects.select
 import java.util.Objects
 
 class RepaintTask(
@@ -52,13 +50,9 @@ class RepaintTask(
     }
 
     override suspend fun perform(): Image {
-        val baseImage = select<Result<Image>> {
-            var started = false
-            (base.opaqueRepaints() + base).forEach { it.coroutine()?.also { started = true }?.onAwait }
-            if (!started) {
-                runBlocking { base.startAsync() }.onAwait
-            }
-        }.getOrThrow()
+        val baseImage = base.getNow()?.getOrThrow()
+                ?: base.opaqueRepaints().firstNotNullOfOrNull { it.getNow()?.getOrThrow() }
+                ?: base.await().getOrThrow()
         stats.onTaskLaunched("RepaintTask", name)
         val canvas = Canvas(baseImage.width, baseImage.height)
         val output = WritableImage(baseImage.width.toInt(), baseImage.height.toInt())
