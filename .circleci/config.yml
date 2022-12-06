@@ -12,7 +12,7 @@ jobs:
       - restore_cache:
           key: maven
           paths:
-            - .m2
+            - /home/circleci/.m2
       - checkout
       - run:
           ./gradlew detekt
@@ -28,7 +28,7 @@ jobs:
       - save_cache:
           key: maven
           paths:
-            - .m2
+            - /home/circleci/.m2
   execute:
     parameters:
       size:
