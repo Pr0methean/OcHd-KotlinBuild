@@ -1,6 +1,5 @@
 package io.github.pr0methean.ochd
 
-import com.jprofiler.api.agent.Controller
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
 import io.github.pr0methean.ochd.tasks.AbstractTask
 import io.github.pr0methean.ochd.tasks.OutputTask
@@ -44,10 +43,6 @@ private const val GLOBAL_MAX_RETRIES = 100L
 @Suppress("UnstableApiUsage", "DeferredResultUnused")
 suspend fun main(args: Array<String>) {
     ImageIO.setUseCache(false) // Prevent intermediate disk writes when real destination is a ByteArrayOutputStream
-    Controller.startAllocRecording(false)
-    Controller.startCPURecording(false)
-    Controller.startMethodStatsRecording()
-    Controller.startMonitorRecording()
     if (args.isEmpty()) {
         println("Usage: main <size>")
         return
