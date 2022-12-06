@@ -26,6 +26,7 @@ import java.nio.file.Paths
 import java.util.Comparator.comparingInt
 import java.util.Comparator.comparingLong
 import java.util.concurrent.atomic.AtomicLong
+import javax.imageio.ImageIO
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
@@ -41,6 +42,7 @@ private const val GLOBAL_MAX_RETRIES = 100L
 @OptIn(DelicateCoroutinesApi::class)
 @Suppress("UnstableApiUsage", "DeferredResultUnused")
 suspend fun main(args: Array<String>) {
+    ImageIO.setUseCache(false)
     if (args.isEmpty()) {
         println("Usage: main <size>")
         return
