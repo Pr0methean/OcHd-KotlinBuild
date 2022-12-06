@@ -10,7 +10,9 @@ jobs:
       - image: cimg/openjdk:19.0.1
     steps:
       - restore_cache:
-          key: maven
+          keys:
+            - maven-{{ checksum "build.gradle" }}
+            - maven-
           paths:
             - /home/circleci/.m2
       - checkout
@@ -26,7 +28,7 @@ jobs:
           path: build/libs
           destination: "OcHd"
       - save_cache:
-          key: maven
+          key: maven-{{ checksum "build.gradle" }}
           paths:
             - /home/circleci/.m2
   execute:
