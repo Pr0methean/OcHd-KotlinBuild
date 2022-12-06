@@ -9,6 +9,10 @@ jobs:
     docker:
       - image: cimg/openjdk:19.0.1
     steps:
+      - restore_cache:
+          key: maven
+          paths:
+            - .m2
       - checkout
       - run:
           ./gradlew detekt
@@ -21,6 +25,10 @@ jobs:
       - store_artifacts:
           path: build/libs
           destination: "OcHd"
+      - save_cache:
+          key: maven
+          paths:
+            - .m2
   execute:
     parameters:
       size:
