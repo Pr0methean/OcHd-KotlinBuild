@@ -33,6 +33,8 @@ interface Task<out T>: StringBuilderFormattable {
     val totalSubtasks: Int
 
     fun timesFailed(): Long
+
+    fun coroutine(): Deferred<Result<T>>?
 }
 
 @Suppress("DeferredResultUnused")
