@@ -156,11 +156,11 @@ private suspend fun runAll(
         inProgressJobs[task] = scope.launch {
             logger.info("Joining {}", task)
             val result = task.await()
-            finishedJobsChannel.send(TaskResult(task, result.isSuccess))
             if (result.isSuccess) {
                 unfinishedTasks.getAndDecrement()
-                logger.info("Joined {} with result of success", task)
+                finishedJobsChannel.send(TaskResult(task, true))
             } else {
+                finishedJobsChannel.send(TaskResult(task, false))
                 logger.error("Joined {} with an error: {}", task, result.exceptionOrNull()?.message)
                 stats.recordRetries(1)
             }
