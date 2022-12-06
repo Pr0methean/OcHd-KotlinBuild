@@ -125,7 +125,6 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
             if (oldCoroutine != null) {
                 AT_LOGGER.debug("Already started {}", name)
                 newCoroutine.cancel("Not started because a copy is already running")
-                coroutine.compareAndSet(oldCoroutine, null)
                 return oldCoroutine
             } else {
                 AT_LOGGER.debug("Starting {}", name)
