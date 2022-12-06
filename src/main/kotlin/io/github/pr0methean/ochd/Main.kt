@@ -125,7 +125,7 @@ private suspend fun runAll(
         val maybeReceive = finishedJobsChannel.tryReceive().getOrElse {
             if (inProgressJobs.size >= parallelism
                     || (inProgressJobs.isNotEmpty() && unstartedTasks.isEmpty())) {
-                logger.info("{} tasks remain. Waiting for one of: {}", Unbox.box(unfinishedTasks.get()), inProgressJobs)
+                logger.debug("{} tasks remain. Waiting for one of: {}", Unbox.box(unfinishedTasks.get()), inProgressJobs)
                 inProgressJobs.forEach {(task, job) ->
                     if (job.start()) {
                         logger.warn("Had to start the job for {} in the fallback loop!", task)
@@ -139,6 +139,7 @@ private suspend fun runAll(
                 unstartedTasks.add(maybeReceive.task)
             }
             inProgressJobs.remove(maybeReceive.task)
+            continue
         }
         val task = unstartedTasks.minWithOrNull(taskOrderComparator)
         checkNotNull(task) { "Could not get an unstarted task" }
@@ -165,6 +166,6 @@ private suspend fun runAll(
             }
         }
     }
-    logger.info("All jobs done; closing channel")
+    logger.debug("All jobs done; closing channel")
     finishedJobsChannel.close()
 }
