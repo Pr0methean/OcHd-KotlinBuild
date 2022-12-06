@@ -35,7 +35,7 @@ private val taskOrderComparator = comparingLong(OutputTask::timesFailed)
     .then(comparingInt(OutputTask::startedOrAvailableSubtasks).reversed())
     .then(comparingInt(OutputTask::cacheableSubtasks))
 private val logger = LogManager.getRootLogger()
-private val PARALLELISM = 2
+private val PARALLELISM = Runtime.getRuntime().availableProcessors()
 private const val HUGE_TILE_PARALLELISM = 1
 private const val GLOBAL_MAX_RETRIES = 100L
 
