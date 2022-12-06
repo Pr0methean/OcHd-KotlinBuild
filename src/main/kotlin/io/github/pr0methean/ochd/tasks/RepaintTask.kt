@@ -56,7 +56,7 @@ class RepaintTask(
                 base.opaqueRepaints().firstNotNullOfOrNull { it.getNow() } ?:
                 select<Result<Image>> {
                     var started = false
-                    (base.opaqueRepaints() + base).forEach {
+                    base.opaqueRepaints().forEach {
                         // identityHashCode comparison prevents 2 RepaintTask with same base from waiting on each other
                         if (System.identityHashCode(it) < System.identityHashCode(this@RepaintTask)) {
                             it.coroutine()?.also { started = true }?.onAwait
