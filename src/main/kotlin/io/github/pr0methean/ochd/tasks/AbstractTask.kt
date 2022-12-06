@@ -122,7 +122,7 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
                 return CompletableDeferred(resultWithLock)
             }
             val oldCoroutine = coroutine.compareAndExchange(null, newCoroutine)
-            if (oldCoroutine != null && !oldCoroutine.isCancelled) {
+            if (oldCoroutine != null) {
                 AT_LOGGER.debug("Already started {}", name)
                 newCoroutine.cancel("Not started because a copy is already running")
                 coroutine.compareAndSet(oldCoroutine, null)
