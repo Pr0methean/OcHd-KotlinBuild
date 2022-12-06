@@ -29,10 +29,11 @@ fun color(web: String): Color = Color.web(web)
 fun color(web: String, alpha: Double): Color = Color.web(web, alpha)
 
 private val logger = LogManager.getLogger("TaskPlanningContext")
-// Main Caffeine cache will be able to contain this * 16 MPx * 4 bytes/Px
-private const val MINIMUM_CACHE_4096x4096 = 16L
+private const val MAIN_CACHE_SIZE_BYTES = 1L.shl(30)
 
 fun isHugeTileImportTask(name: String): Boolean = name.startsWith("commandBlock") || name.endsWith("4x")
+
+private const val BYTES_PER_PIXEL = 4
 
 /**
  * Holds info needed to build and deduplicate the task graph. Needs to become unreachable once the graph is built.
@@ -43,6 +44,7 @@ class TaskPlanningContext(
     val svgDirectory: File,
     val outTextureRoot: File
 ) {
+    private fun bytesPerTile() = BYTES_PER_PIXEL * tileSize * tileSize
     override fun toString(): String = name
     private val svgTasks: Map<String, SvgImportTask>
     private val taskDeduplicationMap = ConcurrentHashMap<Task<*>, Task<*>>()
@@ -51,7 +53,7 @@ class TaskPlanningContext(
         .recordStats()
         .weakKeys()
         .executor(Runnable::run) // keep eviction on same thread as population
-        .maximumSize(MINIMUM_CACHE_4096x4096.shl(24) / (tileSize * tileSize))
+        .maximumSize(MAIN_CACHE_SIZE_BYTES / bytesPerTile())
         .build<SemiStrongTaskCache<Image>,Image>()
     internal val hugeTileBackingCache = Caffeine.newBuilder()
         .recordStats()
@@ -124,7 +126,8 @@ class TaskPlanningContext(
     }
 
     fun findSvgTask(name: String): SvgImportTask {
-        val task = svgTasks[name] ?: throw RuntimeException("Missing SvgImportTask for $name")
+        val task = svgTasks[name]
+        requireNotNull(task) { "Missing SvgImportTask for $name" }
         if (dedupedSvgTasks.add(name, 1) > 0) {
             stats.dedupeSuccesses.add("SvgImportTask")
         } else {
@@ -137,7 +140,11 @@ class TaskPlanningContext(
             = layer(findSvgTask(name), paint, alpha)
 
     suspend inline fun layer(source: Task<Image>, paint: Paint? = null, alpha: Double = 1.0): ImageTask {
-        return deduplicate(RepaintTask(deduplicate(source) as ImageTask, paint, alpha, createStandardTaskCache("$source@$paint@$alpha"), stats)) as ImageTask
+        return deduplicate(RepaintTask(
+                deduplicate(source) as ImageTask,
+                paint,
+                alpha,
+                createStandardTaskCache("$source@$paint@$alpha"), stats)) as ImageTask
     }
 
     suspend inline fun stack(init: LayerListBuilder.() -> Unit): ImageTask {
@@ -148,7 +155,8 @@ class TaskPlanningContext(
     }
 
     suspend inline fun animate(frames: List<ImageTask>): ImageTask {
-        return deduplicate(AnimationTask(frames.asFlow().map(::deduplicate).toList(), tileSize, tileSize, frames.toString(), createStandardTaskCache(frames.toString()), stats)) as ImageTask
+        return deduplicate(AnimationTask(frames.asFlow().map(::deduplicate).toList(),
+            tileSize, tileSize, frames.toString(), createStandardTaskCache(frames.toString()), stats)) as ImageTask
     }
 
     suspend inline fun out(source: ImageTask, vararg name: String): OutputTask {

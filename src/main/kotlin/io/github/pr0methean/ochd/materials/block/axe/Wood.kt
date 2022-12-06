@@ -448,7 +448,7 @@ enum class OverworldWood(
 }
 
 private val fungusSpotColor = c(0xff6500)
-@Suppress("unused")
+@Suppress("unused", "LongParameterList")
 enum class Fungus(
         override val color: Paint,
         override val highlight: Paint,

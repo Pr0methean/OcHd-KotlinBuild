@@ -2,13 +2,22 @@ package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.tasks.caching.NoopTaskCache
 import io.github.pr0methean.ochd.tasks.caching.TaskCache
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.InternalCoroutinesApi
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
-import java.util.*
 import java.util.Collections.newSetFromMap
+import java.util.WeakHashMap
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 import javax.annotation.concurrent.GuardedBy
@@ -113,9 +122,10 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
                 return CompletableDeferred(resultWithLock)
             }
             val oldCoroutine = coroutine.compareAndExchange(null, newCoroutine)
-            if (oldCoroutine != null) {
+            if (oldCoroutine != null && !oldCoroutine.isCancelled) {
                 AT_LOGGER.debug("Already started {}", name)
                 newCoroutine.cancel("Not started because a copy is already running")
+                coroutine.compareAndSet(oldCoroutine, null)
                 return oldCoroutine
             } else {
                 AT_LOGGER.debug("Starting {}", name)

@@ -48,7 +48,7 @@ suspend fun main(args: Array<String>) {
         return
     }
     val tileSize = args[0].toInt()
-    if (tileSize <= 0) throw IllegalArgumentException("tileSize shouldn't be zero or negative but was ${args[0]}")
+    require(tileSize > 0) { "tileSize shouldn't be zero or negative but was ${args[0]}" }
     val supervisorJob = SupervisorJob()
     val ioScope = CoroutineScope(Dispatchers.IO).plus(supervisorJob)
     val out = Paths.get("pngout").toAbsolutePath().toFile()
@@ -119,6 +119,9 @@ private suspend fun runAll(
     val finishedJobsChannel = Channel<TaskResult>(capacity = CAPACITY_PADDING_FACTOR * parallelism)
     var maxRetriesAnyTaskSoFar = 0L
     while (unfinishedTasks.get() > 0) {
+        check(inProgressJobs.isNotEmpty() || unstartedTasks.isNotEmpty()) {
+            "Have ${unfinishedTasks.get()} unfinished tasks, but none are in progress"
+        }
         val maybeReceive = finishedJobsChannel.tryReceive().getOrElse {
             if (inProgressJobs.size >= parallelism
                     || (inProgressJobs.isNotEmpty() && unstartedTasks.isEmpty())) {
@@ -128,8 +131,6 @@ private suspend fun runAll(
                     }
                 }
                 finishedJobsChannel.receive()
-            } else if (inProgressJobs.isEmpty() && unstartedTasks.isEmpty()) {
-                throw IllegalStateException("Have ${unfinishedTasks.get()} unfinished tasks, but none are in progress")
             } else null
         }
         if (maybeReceive != null) {
@@ -137,26 +138,18 @@ private suspend fun runAll(
                 unstartedTasks.add(maybeReceive.task)
             }
             inProgressJobs.remove(maybeReceive.task)
-            continue
         }
         val task = unstartedTasks.minWithOrNull(taskOrderComparator)
-        if (task == null) {
-            logger.error("Could not get an unstarted task")
-            continue
-        }
+        checkNotNull(task) { "Could not get an unstarted task" }
+        check(unstartedTasks.remove(task)) { "Attempted to remove task more than once: $task" }
         val timesFailed = task.timesFailed()
         if (timesFailed > maxRetriesAnyTaskSoFar) {
-            if (timesFailed > GLOBAL_MAX_RETRIES) {
-                throw Error("Too many task failures!")
-            }
+            check(timesFailed <= GLOBAL_MAX_RETRIES) { "Too many failures in $task!" }
             maxRetriesAnyTaskSoFar = timesFailed
             val cache = (task.source as? AbstractTask<*>)?.cache
             if (cache is SemiStrongTaskCache<*>) {
                 cache.clearPrimaryCache()
             }
-        }
-        if (!unstartedTasks.remove(task)) {
-            throw RuntimeException("Attempted to remove task more than once: $task")
         }
         inProgressJobs[task] = scope.launch {
             logger.info("Joining {}", task)

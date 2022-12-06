@@ -7,8 +7,14 @@ import com.google.common.collect.Multiset
 import com.google.common.collect.Multisets
 import io.github.pr0methean.ochd.tasks.caching.SemiStrongTaskCache
 import javafx.scene.image.Image
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.debug.DebugProbes
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.io.IoBuilder
@@ -34,6 +40,7 @@ private fun <T> Multiset<T>.logIf(predicate: (T) -> Boolean) {
 }
 private val logger = LogManager.getLogger("ImageProcessingStats")
 private const val NEED_THREAD_MONITORING = false
+private const val MAX_STACK_DEPTH = 20
 private val NEED_COROUTINE_DEBUG = logger.isDebugEnabled
 private val REPORTING_INTERVAL: Duration = 1.minutes
 val threadMxBean: ThreadMXBean = ManagementFactory.getThreadMXBean()
@@ -54,13 +61,15 @@ fun startMonitoring(stats: ImageProcessingStats, scope: CoroutineScope) {
                 val deadlocks = threadMxBean.findDeadlockedThreads()
                 if (deadlocks == null) {
                     logger.info("No deadlocked threads found.")
-                    threadMxBean.allThreadIds.map { it to threadMxBean.getThreadInfo(it, 20) }
+                    threadMxBean.allThreadIds.map { it to threadMxBean.getThreadInfo(it, MAX_STACK_DEPTH) }
                         .forEach { (id, threadInfo) ->
                             logThread(Level.INFO, id, threadInfo)
                         }
                 } else {
                     logger.error("Deadlocked threads found!")
-                    deadlocks.map { it to threadMxBean.getThreadInfo(it, 20) }.forEach { (id, threadInfo) ->
+                    deadlocks.map {
+                        it to threadMxBean.getThreadInfo(it, MAX_STACK_DEPTH)
+                    }.forEach { (id, threadInfo) ->
                         logThread(Level.ERROR, id, threadInfo)
                     }
                 }
@@ -141,7 +150,8 @@ class ImageProcessingStats(private val backingCache: Cache<SemiStrongTaskCache<I
         }
         val totalEfficiency = (totalUnique.toDouble() / totalActual)
         val totalHitRate = 1.0 - (totalActual - totalUnique).toDouble()/(totalWorstCase - totalUnique)
-        logger.printf(Level.INFO, "Total               : %3.2f%% / %3.2f%%", 100.0 * totalEfficiency, 100.0 * totalHitRate)
+        logger.printf(Level.INFO, "Total               : %3.2f%% / %3.2f%%",
+            100.0 * totalEfficiency, 100.0 * totalHitRate)
         backingCache.stats().log("main", backingCache.estimatedSize())
         hugeCacheStats.log("huge-tile", hugeCacheFinalSize)
     }

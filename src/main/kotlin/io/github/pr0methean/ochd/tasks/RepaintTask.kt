@@ -11,10 +11,8 @@ import javafx.scene.effect.ColorInput
 import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
 import javafx.scene.paint.Paint
-import org.apache.logging.log4j.LogManager
 import java.util.Objects
 
-private val logger = LogManager.getLogger("RepaintTask")
 class RepaintTask(
     val base: ImageTask,
     val paint: Paint?,
@@ -28,21 +26,14 @@ class RepaintTask(
         }
     }
 
-    override fun startedOrAvailableSubtasks(): Int {
+    override fun startedOrAvailableSubtasks(): Int =
         if (isStartedOrAvailable()) {
-            return totalSubtasks
+            totalSubtasks
+        } else if (base.getNow() != null || base.opaqueRepaints().any(ImageTask::isStartedOrAvailable)) {
+            base.totalSubtasks
         } else {
-            if (base.getNow() != null) {
-                return base.totalSubtasks
-            }
-            for (repaint in base.opaqueRepaints()) {
-                if (repaint.isStartedOrAvailable()) {
-                    return base.totalSubtasks
-                }
-            }
+            super.startedOrAvailableSubtasks()
         }
-        return super.startedOrAvailableSubtasks()
-    }
 
     override suspend fun mergeWithDuplicate(other: Task<*>): ImageTask {
         if (other is RepaintTask) {
@@ -59,22 +50,9 @@ class RepaintTask(
     }
 
     override suspend fun perform(): Image {
-        var baseImage: Image? = base.getNow()?.getOrThrow()
-        if (baseImage == null) {
-            for (repaint in base.opaqueRepaints()) {
-                val repaintNow = repaint.getNow()?.getOrNull()
-                if (repaintNow != null) {
-                    if (repaint == this@RepaintTask) {
-                        logger.warn("perform() for {} encountered a copy of itself", name)
-                        return repaintNow
-                    }
-                    logger.info("Repainting {} to create {}", repaint, this)
-                    baseImage = repaintNow
-                    break
-                }
-            }
-        }
-        baseImage = baseImage ?: base.await().getOrThrow()
+        val baseImage = base.getNow()?.getOrThrow()
+                ?: base.opaqueRepaints().firstNotNullOfOrNull { it.getNow()?.getOrThrow() }
+                ?: base.await().getOrThrow()
         stats.onTaskLaunched("RepaintTask", name)
         val canvas = Canvas(baseImage.width, baseImage.height)
         val output = WritableImage(baseImage.width.toInt(), baseImage.height.toInt())

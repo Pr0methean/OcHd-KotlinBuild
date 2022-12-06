@@ -22,5 +22,4 @@ abstract class SingleLayerMaterial(
         return flowOf(ctx.out(
             ctx.layer(sourceFileName, color, alpha), "$directory/$name"))
     }
-
 }

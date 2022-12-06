@@ -22,16 +22,12 @@ class OutputTask(
             val firstFile = files[0]
             firstFile.parentFile?.mkdirs()
             FileOutputStream(firstFile).use {it.write(input)}
-            if (!firstFile.exists()) {
-                throw RuntimeException("OutputTask $name appeared to succeed, but $firstFile still doesn't exist")
-            }
+            check(firstFile.exists()) { "OutputTask $name appeared to succeed, but $firstFile still doesn't exist" }
             val firstFilePath = firstFile.absoluteFile.toPath()
             for (file in files.subList(1, files.size)) {
                 file.parentFile?.mkdirs()
                 Files.copy(firstFilePath, file.absoluteFile.toPath())
-                if (!file.exists()) {
-                    throw RuntimeException("OutputTask $name appeared to succeed, but $file still doesn't exist")
-                }
+                check(file.exists()) { "OutputTask $name appeared to succeed, but $file still doesn't exist" }
             }
             stats.onTaskCompleted("OutputTask", name)
         }
@@ -40,8 +36,6 @@ class OutputTask(
     val isCommandBlock: Boolean = name.contains("command_block")
 
     init {
-        if (files.isEmpty()) {
-            throw IllegalArgumentException("OutputTask with no destination files")
-        }
+        check(files.isNotEmpty()) { "OutputTask $name has no destination files" }
     }
 }

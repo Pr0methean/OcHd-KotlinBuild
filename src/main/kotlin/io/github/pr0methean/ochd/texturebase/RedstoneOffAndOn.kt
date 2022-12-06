@@ -8,7 +8,8 @@ import javafx.scene.paint.Color
 import kotlinx.coroutines.flow.FlowCollector
 
 suspend fun FlowCollector<OutputTask>.redstoneOffAndOn(ctx: TaskPlanningContext, baseName: String,
-                                                       layers: suspend LayerListBuilder.(redstoneStateColor: Color) -> Unit) {
+                                                       layers:
+                                                       suspend LayerListBuilder.(redstoneStateColor: Color) -> Unit) {
     emit(ctx.out({layers(Color.BLACK)}, baseName))
     emit(ctx.out({layers(Ore.REDSTONE.highlight)}, baseName + "_on"))
 }

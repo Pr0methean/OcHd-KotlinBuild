@@ -16,7 +16,7 @@ private val logger = LogManager.getLogger("ImageStackingTask")
 class ImageStackingTask(val layers: LayerList,
                         cache: TaskCache<Image>,
                         stats: ImageProcessingStats) : AbstractImageTask(layers.toString(), cache, stats) {
-    private val hashCode by lazy {layers.hashCode() + 37}
+    @Suppress("MagicNumber") private val hashCode by lazy {layers.hashCode() + 37}
     init {
         if (layers.layers.isEmpty()) {
             throw IllegalArgumentException("Empty layer list")
@@ -82,5 +82,4 @@ class ImageStackingTask(val layers: LayerList,
         }
         return snapshot
     }
-
 }

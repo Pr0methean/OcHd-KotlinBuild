@@ -11,12 +11,12 @@ import org.apache.batik.transcoder.SVGAbstractTranscoder
 import org.apache.batik.transcoder.TranscoderException
 import org.apache.batik.transcoder.TranscoderInput
 import org.apache.batik.transcoder.TranscoderOutput
-import org.apache.batik.transcoder.TranscodingHints.Key
 import org.w3c.dom.Document
 import java.awt.Shape
 import java.awt.geom.Rectangle2D.Float
 import java.awt.image.BufferedImage
 import java.io.File
+import kotlin.math.roundToInt
 
 private val batikTranscoder: ThreadLocal<ToImageTranscoder> = ThreadLocal.withInitial { ToImageTranscoder() }
 /** SVG decoder that stores the last image it decoded, rather than passing it to an encoder. */
@@ -40,8 +40,8 @@ private class ToImageTranscoder: SVGAbstractTranscoder() {
         super.transcode(document, uri, null)
 
         // prepare the image to be painted
-        val w = (width + 0.5).toInt()
-        val h = (height + 0.5).toInt()
+        val w = width.roundToInt()
+        val h = height.roundToInt()
 
         // paint the SVG document using the bridge package
         // create the appropriate renderer
@@ -56,8 +56,6 @@ private class ToImageTranscoder: SVGAbstractTranscoder() {
             // Warning: the renderer's AOI must be in user space
             renderer.repaint(curTxf.createInverse().createTransformedShape(raoi))
             lastImage = renderer.offScreen
-        } catch (ex: Exception) {
-            throw TranscoderException(ex)
         } finally {
             renderer.dispose()
             ctx.dispose()
@@ -87,7 +85,7 @@ class SvgImportTask(
         stats.onTaskLaunched("SvgImportTask", name)
         val image = withContext(batikTranscoder.asContextElement()) {
             val transcoder = batikTranscoder.get()
-            transcoder.setTranscodingHints(mapOf<Key?, kotlin.Float>(SVGAbstractTranscoder.KEY_WIDTH to width.toFloat()))
+            transcoder.setTranscodingHints(mapOf(SVGAbstractTranscoder.KEY_WIDTH to width.toFloat()))
             transcoder.transcode(input, null)
             val awtImage = transcoder.takeLastImage()!!
             val image = SwingFXUtils.toFXImage(awtImage, null)
@@ -97,5 +95,4 @@ class SvgImportTask(
         stats.onTaskCompleted("SvgImportTask", name)
         return image
     }
-
 }

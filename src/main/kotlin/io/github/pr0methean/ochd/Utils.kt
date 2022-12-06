@@ -4,6 +4,7 @@ import javafx.scene.SnapshotParameters
 import javafx.scene.paint.Color
 import org.apache.logging.log4j.util.StringBuilderFormattable
 
+@Suppress("MagicNumber")
 fun c(value: Int): Color = Color.rgb(
     value.shr(16).and(0xff),
     value.shr(8).and(0xff),

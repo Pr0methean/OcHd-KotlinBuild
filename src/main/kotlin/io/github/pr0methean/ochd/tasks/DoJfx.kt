@@ -1,7 +1,10 @@
 package io.github.pr0methean.ochd.tasks
 
 import javafx.application.Platform
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 import org.apache.logging.log4j.LogManager
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
@@ -26,8 +29,8 @@ suspend fun <T> doJfx(name: String, jfxCode: CoroutineScope.() -> T): T = try {
     if (ERR_CATCHER.size() > 0) {
         val interceptedStderr = ERR_CATCHER.toString(DEFAULT_CHARSET)
         ERR_CATCHER.reset()
-        if (interceptedStderr.contains("Exception:") || interceptedStderr.contains("Error:")) {
-            throw RuntimeException(interceptedStderr)
+        check(!interceptedStderr.contains("Exception:") && !interceptedStderr.contains("Error:")) {
+            interceptedStderr.lineSequence().first()
         }
         DEFAULT_ERR.print(interceptedStderr)
     }

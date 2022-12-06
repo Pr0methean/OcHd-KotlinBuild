@@ -29,12 +29,13 @@ enum class DoubleTallFlower: DoubleTallBlock {
             layer("flowerStemBottomBorder", stemShadow)
         }
 
-        override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<OutputTask> = merge(super.outputTasks(ctx), flow {
-            emit(ctx.out(ctx.layer("sunflowerPetals"), "block/sunflower_back"))
-            emit(ctx.out(ctx.stack {
-                layer("sunflowerPetals", Color.YELLOW)
-                layer("sunflowerPistil")
-            }, "block/sunflower_front"))
-        })
+        override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<OutputTask> = merge(super.outputTasks(ctx),
+                flow {
+                    emit(ctx.out(ctx.layer("sunflowerPetals"), "block/sunflower_back"))
+                    emit(ctx.out(ctx.stack {
+                        layer("sunflowerPetals", Color.YELLOW)
+                        layer("sunflowerPistil")
+                    }, "block/sunflower_front"))
+                })
     };
 }

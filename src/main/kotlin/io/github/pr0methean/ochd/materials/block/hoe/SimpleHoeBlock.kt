@@ -37,15 +37,4 @@ enum class SimpleHoeBlock(
             layer("ringsCentralBullseye", shadow)
         }
     },
-    /*
-    push grassTall $target_h targetSide1 $target_s
-push ringsCentralBullseye $redstone_s targetSide2
-out_stack block/target_side
-
-push checksSmall $target_h targetTop1 $target_s
-push ringsCentralBullseye $redstone_s targetTop2
-out_stack block/target_top
-    target_h='ffffff'
-target_s='ffd7ba'
-     */
 }

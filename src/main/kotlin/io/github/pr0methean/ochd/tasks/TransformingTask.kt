@@ -4,13 +4,8 @@ import io.github.pr0methean.ochd.tasks.caching.TaskCache
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
-import org.apache.logging.log4j.LogManager
 import java.util.*
-import kotlin.Result.Companion.failure
-import kotlin.Result.Companion.success
 
-private val logger = LogManager.getLogger("TransformingTask")
-private val UNIT_SUCCESS = success(Unit)
 abstract class TransformingTask<T, U>(
     name: String,
     val base: Task<T>,
@@ -21,19 +16,7 @@ abstract class TransformingTask<T, U>(
     override suspend fun createCoroutineAsync(): Deferred<Result<U>> {
         val myBase = base
         return getCoroutineScope().async(start = CoroutineStart.LAZY) {
-            val result = try {
-                logger.debug("Awaiting {} to transform it in {}", myBase, this@TransformingTask)
-                val input = myBase.await()
-                logger.debug("Got {} from {}; transforming it in {}", input, myBase, this@TransformingTask)
-                val result = transform(input.getOrThrow())
-                if (result === Unit) {
-                    UNIT_SUCCESS
-                }
-                success(result)
-            } catch (t: Throwable) {
-                logger.error("Exception in {}", this@TransformingTask, t)
-                failure(t)
-            }
+            val result = runCatching { transform(myBase.await().getOrThrow()) }
             emit(result)
             result
         }
@@ -65,5 +48,4 @@ abstract class TransformingTask<T, U>(
     }
 
     override val directDependencies: List<Task<T>> = listOf(base)
-
 }

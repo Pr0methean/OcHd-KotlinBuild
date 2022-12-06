@@ -8,7 +8,8 @@ import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
 import javafx.scene.paint.Color
 
 @Suppress("unused")
-enum class StructureOrJigsaw(private val foregroundLayer: String?): SingleTextureMaterial, ShadowHighlightMaterial, Block {
+enum class StructureOrJigsaw(private val foregroundLayer: String?)
+        : SingleTextureMaterial, ShadowHighlightMaterial, Block {
     JIGSAW_BOTTOM(null),
     JIGSAW_TOP("jigsaw"),
     JIGSAW_SIDE("arrowUp"),

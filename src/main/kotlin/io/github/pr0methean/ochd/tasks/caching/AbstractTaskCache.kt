@@ -22,5 +22,4 @@ abstract class AbstractTaskCache<T>(override val name: String) : TaskCache<T> {
             enabledSet(value)
         }
     }
-
 }
