@@ -11,8 +11,10 @@ import javafx.scene.effect.ColorInput
 import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
 import javafx.scene.paint.Paint
+import org.apache.logging.log4j.LogManager
 import java.util.Objects
 
+private val logger = LogManager.getLogger("RepaintTask")
 class RepaintTask(
     val base: ImageTask,
     val paint: Paint?,
@@ -51,7 +53,9 @@ class RepaintTask(
 
     override suspend fun perform(): Image {
         val baseImageDeferred = base.getNow()
-                ?: base.opaqueRepaints().firstNotNullOfOrNull { it.getNow() }
+                ?: base.opaqueRepaints().firstNotNullOfOrNull { task ->
+                    task.getNow()?.also { logger.info("Repainting $task for ${this@RepaintTask}") }
+                }
                 ?: base.await()
         val baseImage = baseImageDeferred.getOrThrow()
         stats.onTaskLaunched("RepaintTask", name)
