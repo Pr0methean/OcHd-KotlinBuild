@@ -1,5 +1,5 @@
 build:
-  maxIssues: 8
+  maxIssues: 7
   excludeCorrectable: false
   weights:
     # complexity: 2
@@ -123,7 +123,7 @@ complexity:
   LongParameterList:
     active: true
     functionThreshold: 6
-    constructorThreshold: 7
+    constructorThreshold: 15
     ignoreDefaultParameters: true
     ignoreDataClasses: true
     ignoreAnnotatedParameter: []

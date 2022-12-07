@@ -33,6 +33,8 @@ private const val HUGE_TILE_CACHE_SIZE_BYTES = 1L.shl(30)
 
 fun isHugeTileImportTask(name: String): Boolean = name.startsWith("commandBlock") || name.endsWith("4x")
 
+private const val REGULAR_TILES_PER_HUGE_TILE = 4
+
 private const val BYTES_PER_PIXEL = 4
 
 /**
@@ -59,7 +61,7 @@ class TaskPlanningContext(
         .recordStats()
         .weakKeys()
         .executor(Runnable::run) // keep eviction on same thread as population
-        .maximumSize(HUGE_TILE_CACHE_SIZE_BYTES / (4 * bytesPerTile()))
+        .maximumSize(HUGE_TILE_CACHE_SIZE_BYTES / (REGULAR_TILES_PER_HUGE_TILE * bytesPerTile()))
         .build<SemiStrongTaskCache<Image>,Image>()
     val stats: ImageProcessingStats = ImageProcessingStats(backingCache)
 
