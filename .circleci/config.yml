@@ -40,7 +40,6 @@ jobs:
     resource_class: large
     steps:
       - run: cat /proc/cpuinfo
-      - run: glxinfo
       - checkout
       - attach_workspace:
           at: build/libs
