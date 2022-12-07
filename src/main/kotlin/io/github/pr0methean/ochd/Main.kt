@@ -127,11 +127,6 @@ private suspend fun runAll(
                     || (inProgressJobs.isNotEmpty() && unstartedTasks.isEmpty())) {
                 logger.debug("{} tasks remain. Waiting for one of: {}",
                         Unbox.box(unfinishedTasks.get()), inProgressJobs)
-                inProgressJobs.forEach {(task, job) ->
-                    if (job.start()) {
-                        logger.warn("Had to start the job for {} in the fallback loop!", task)
-                    }
-                }
                 finishedJobsChannel.receive()
             } else null
         }
