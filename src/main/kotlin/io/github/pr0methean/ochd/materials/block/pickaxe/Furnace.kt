@@ -42,15 +42,9 @@ object Furnace: Material {
             copy(blastFurnaceFrontBase)
             layer("blastFurnaceHoles")
         }, "block/blast_furnace_front"))
-        emit(ctx.out(ctx.animate(listOf(
-            ctx.stack {
-                copy(blastFurnaceFrontBase)
-                layer("blastFurnaceHolesLit")
-            },
-            ctx.stack {
-                copy(blastFurnaceFrontBase)
-                layer("blastFurnaceHolesLit1")
-            }
+        emit(ctx.out(ctx.animate(blastFurnaceFrontBase, listOf(
+            ctx.layer("blastFurnaceHolesLit"),
+            ctx.layer("blastFurnaceHolesLit1")
         )), "block/blast_furnace_front_on"))
     }
 }

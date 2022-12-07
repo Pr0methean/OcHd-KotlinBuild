@@ -154,9 +154,15 @@ class TaskPlanningContext(
         return stack(layerTasks)
     }
 
-    suspend inline fun animate(frames: List<ImageTask>): ImageTask {
-        return deduplicate(AnimationTask(frames.asFlow().map { deduplicate(it) as ImageTask }.toList(),
-            tileSize, tileSize, frames.toString(), createStandardTaskCache(frames.toString()), stats)) as ImageTask
+    suspend inline fun animate(background: ImageTask, frames: List<ImageTask>): ImageTask {
+        return deduplicate(AnimationTask(
+                deduplicate(background) as ImageTask,
+                frames.asFlow().map { deduplicate(it) as ImageTask }.toList(),
+                tileSize,
+                tileSize,
+                frames.toString(),
+                createStandardTaskCache(frames.toString()),
+                stats)) as ImageTask
     }
 
     suspend inline fun out(source: ImageTask, vararg name: String): OutputTask {

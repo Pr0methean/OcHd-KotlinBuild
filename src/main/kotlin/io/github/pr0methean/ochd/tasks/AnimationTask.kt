@@ -14,8 +14,9 @@ import kotlinx.coroutines.sync.withLock
 import java.util.*
 
 class AnimationTask(
-    val frames: List<ImageTask>,
-    val width: Int, val height: Int, name: String,
+    val background: ImageTask,
+    val frames: List<ImageTask>, val width: Int, val height: Int,
+    name: String,
     cache: TaskCache<Image>,
     stats: ImageProcessingStats
 ): AbstractImageTask(name, cache, stats) {
@@ -45,9 +46,13 @@ class AnimationTask(
     @Suppress("DeferredResultUnused")
     override suspend fun perform(): Image {
         stats.onTaskLaunched("AnimationTask", name)
+        val background = background.await().getOrThrow()
         val canvasMutex = Mutex()
         val canvas = Canvas(width.toDouble(), totalHeight.toDouble())
         val canvasCtx = canvas.graphicsContext2D
+        for (index in frames.indices) {
+            canvasCtx.drawImage(background, 0.0, (height * index).toDouble())
+        }
         val frameTasks = frames.withIndex().map { (index, frameTask) ->
             getCoroutineScope().launch {
                 canvasMutex.withLock {
