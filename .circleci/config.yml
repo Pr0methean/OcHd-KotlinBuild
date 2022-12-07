@@ -39,6 +39,7 @@ jobs:
       - image: cimg/openjdk:19.0.1
     resource_class: large
     steps:
+      - run: cat /proc/cpuinfo
       - checkout
       - attach_workspace:
           at: build/libs
