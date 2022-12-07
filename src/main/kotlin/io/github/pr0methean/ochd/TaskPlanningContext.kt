@@ -12,7 +12,6 @@ import io.github.pr0methean.ochd.tasks.Task
 import io.github.pr0methean.ochd.tasks.caching.SemiStrongTaskCache
 import io.github.pr0methean.ochd.tasks.caching.SoftTaskCache
 import io.github.pr0methean.ochd.tasks.caching.TaskCache
-import io.github.pr0methean.ochd.tasks.caching.noopTaskCache
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
@@ -67,14 +66,14 @@ class TaskPlanningContext(
     fun createStandardTaskCache(name: String): TaskCache<Image> {
         if (name.contains("4x") || name.contains("commandBlock")) {
             // Tasks using these images are too large for the main cache to manage
-            return SemiStrongTaskCache(noopTaskCache(), hugeTileBackingCache)
+            return SemiStrongTaskCache(SoftTaskCache(name), hugeTileBackingCache)
         }
         return SemiStrongTaskCache(SoftTaskCache(name), backingCache)
     }
     private fun createSvgImportCache(name: String): TaskCache<Image> {
         if (isHugeTileImportTask(name)) {
             // These images are too large for the main cache to manage
-            return SemiStrongTaskCache(noopTaskCache(), hugeTileBackingCache)
+            return SemiStrongTaskCache(SoftTaskCache(name), hugeTileBackingCache)
         }
         return SemiStrongTaskCache(SoftTaskCache(name), backingCache)
     }
