@@ -156,7 +156,6 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
                     AT_LOGGER.info("Disabling caching for {} while emitting result", name)
                     cache.enabled = false
                 } else {
-                    AT_LOGGER.info("Emitting result of {} into cache", name)
                     cache.set(result.getOrThrow())
                 }
             }
