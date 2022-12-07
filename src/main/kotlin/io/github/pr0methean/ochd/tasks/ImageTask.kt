@@ -1,5 +1,6 @@
 package io.github.pr0methean.ochd.tasks
 
+import javafx.scene.canvas.GraphicsContext
 import javafx.scene.image.Image
 import org.apache.logging.log4j.util.StringBuilderFormattable
 
@@ -11,4 +12,6 @@ interface ImageTask : StringBuilderFormattable, Task<Image> {
     fun opaqueRepaints(): Iterable<ImageTask>
 
     fun addOpaqueRepaint(repaint: ImageTask)
+
+    suspend fun renderOnto(context: GraphicsContext, x: Double, y: Double)
 }

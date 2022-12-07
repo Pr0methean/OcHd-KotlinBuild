@@ -51,20 +51,7 @@ class ImageStackingTask(val layers: LayerList,
         val canvasCtx = canvas.graphicsContext2D
         canvasCtx.drawImage(firstLayer, 0.0, 0.0)
         if (layers.layers.size > 1) {
-            layers.layers.drop(1).forEach { layerTask ->
-                if (layerTask is RepaintTask && layerTask.alpha == 1.0 && !layerTask.isStartedOrAvailable()) {
-                    logger.info("Collapsing {} into {}", layerTask.name, name)
-                    stats.onTaskLaunched("RepaintTask", layerTask.name)
-                    repaintToCanvas(layerTask.base.await().getOrThrow(), canvasCtx, layerTask.paint)
-                    canvasCtx.setEffect(null)
-                    stats.onTaskCompleted("RepaintTask", layerTask.name)
-                } else {
-                    val layerImage = layerTask.await().getOrThrow()
-                    logger.debug("Rendering {} onto the stack", layerTask)
-                    canvasCtx.drawImage(layerImage, 0.0, 0.0)
-                    logger.debug("Finished rendering {}", layerTask)
-                }
-            }
+            layers.layers.drop(1).forEach { it.renderOnto(canvasCtx, 0.0, 0.0) }
         }
         logger.debug("Taking snapshot of {}", name)
         val snapshot = takeSnapshot(width, height, canvas)

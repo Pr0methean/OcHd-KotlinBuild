@@ -7,11 +7,10 @@ import javafx.application.Platform.requestNextPulse
 import javafx.scene.canvas.Canvas
 import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
-import kotlinx.coroutines.joinAll
 import java.util.*
 
 class AnimationTask(
-    val frames: List<Task<Image>>,
+    val frames: List<ImageTask>,
     val width: Int, val height: Int, name: String,
     cache: TaskCache<Image>,
     stats: ImageProcessingStats
@@ -46,12 +45,9 @@ class AnimationTask(
         val canvas = Canvas(width.toDouble(), totalHeight.toDouble())
         val canvasCtx = canvas.graphicsContext2D
         canvasCtx.drawImage(firstFrame, 0.0, 0.0)
-        val frameTasks = frames.withIndex().drop(1).map { (index, frameTask) ->
-            frameTask.consumeAsync {
-                canvasCtx.drawImage(it.getOrThrow(), 0.0, (height * index).toDouble())
-            }
+        frames.withIndex().drop(1).map { (index, frameTask) ->
+            frameTask.renderOnto(canvasCtx, 0.0, (height * index).toDouble())
         }
-        frameTasks.joinAll()
         val output = WritableImage(width, totalHeight)
         doJfx("Snapshot of $name") {
             requestNextPulse()

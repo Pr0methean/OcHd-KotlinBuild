@@ -155,7 +155,7 @@ class TaskPlanningContext(
     }
 
     suspend inline fun animate(frames: List<ImageTask>): ImageTask {
-        return deduplicate(AnimationTask(frames.asFlow().map(::deduplicate).toList(),
+        return deduplicate(AnimationTask(frames.asFlow().map { deduplicate(it) as ImageTask }.toList(),
             tileSize, tileSize, frames.toString(), createStandardTaskCache(frames.toString()), stats)) as ImageTask
     }
 

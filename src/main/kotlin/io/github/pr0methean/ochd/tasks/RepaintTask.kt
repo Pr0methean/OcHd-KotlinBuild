@@ -17,19 +17,6 @@ import java.util.Objects
 
 private val logger = LogManager.getLogger("RepaintTask")
 
-fun repaintToCanvas(baseImage: Image, gfx: GraphicsContext, paint: Paint?) {
-    if (paint != null) {
-        val colorLayer = ColorInput(0.0, 0.0, baseImage.width, baseImage.height, paint)
-        val blend = Blend()
-        blend.mode = SRC_ATOP
-        blend.topInput = colorLayer
-        blend.bottomInput = null
-        gfx.setEffect(blend)
-    }
-    gfx.isImageSmoothing = false
-    gfx.drawImage(baseImage, 0.0, 0.0)
-}
-
 class RepaintTask(
     val base: ImageTask,
     val paint: Paint?,
@@ -41,6 +28,32 @@ class RepaintTask(
         if (alpha == 1.0) {
             base.addOpaqueRepaint(this)
         }
+    }
+
+    override suspend fun renderOnto(context: GraphicsContext, x: Double, y: Double) {
+        if (cache.enabled || isStartedOrAvailable() || alpha != 1.0) {
+            super.renderOnto(context, x, y)
+        } else {
+            logger.info("RepaintTask {} is drawing on an existing canvas", name)
+            stats.onTaskLaunched("RepaintTask", name)
+            drawOnto(context, x, y)
+            stats.onTaskCompleted("RepaintTask", name)
+        }
+    }
+
+    private suspend fun drawOnto(context: GraphicsContext, x: Double, y: Double) {
+        val baseImage = base.await().getOrThrow()
+        if (paint != null) {
+            val colorLayer = ColorInput(0.0, 0.0, baseImage.width, baseImage.height, paint)
+            val blend = Blend()
+            blend.mode = SRC_ATOP
+            blend.topInput = colorLayer
+            blend.bottomInput = null
+            context.setEffect(blend)
+        }
+        context.isImageSmoothing = false
+        context.drawImage(baseImage, x, y)
+        context.setEffect(null)
     }
 
     override fun startedOrAvailableSubtasks(): Int =
@@ -80,8 +93,7 @@ class RepaintTask(
         val canvas = Canvas(baseImage.width, baseImage.height)
         val output = WritableImage(baseImage.width.toInt(), baseImage.height.toInt())
         val gfx = canvas.graphicsContext2D
-        canvas.opacity = alpha
-        repaintToCanvas(baseImage, gfx, paint)
+        drawOnto(gfx, 0.0, 0.0)
         val snapshot = doJfx(name) {
             Platform.requestNextPulse()
             canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
