@@ -52,12 +52,15 @@ class RepaintTask(
     }
 
     override suspend fun perform(): Image {
+
+        // Determine whether we can repaint a repaint if it's available and the base image isn't
         val baseImageDeferred = base.getNow()
                 ?: base.opaqueRepaints().firstNotNullOfOrNull { task ->
                     task.getNow()?.also { logger.info("Repainting $task for ${this@RepaintTask}") }
                 }
                 ?: base.await()
         val baseImage = baseImageDeferred.getOrThrow()
+
         stats.onTaskLaunched("RepaintTask", name)
         val canvas = Canvas(baseImage.width, baseImage.height)
         val output = WritableImage(baseImage.width.toInt(), baseImage.height.toInt())
