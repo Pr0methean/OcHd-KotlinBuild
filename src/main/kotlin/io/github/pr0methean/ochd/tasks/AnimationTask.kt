@@ -7,6 +7,10 @@ import javafx.application.Platform.requestNextPulse
 import javafx.scene.canvas.Canvas
 import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
+import kotlinx.coroutines.joinAll
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import java.util.*
 
 class AnimationTask(
@@ -41,13 +45,17 @@ class AnimationTask(
     @Suppress("DeferredResultUnused")
     override suspend fun perform(): Image {
         stats.onTaskLaunched("AnimationTask", name)
-        val firstFrame = frames[0].await().getOrThrow()
+        val canvasMutex = Mutex()
         val canvas = Canvas(width.toDouble(), totalHeight.toDouble())
         val canvasCtx = canvas.graphicsContext2D
-        canvasCtx.drawImage(firstFrame, 0.0, 0.0)
-        frames.withIndex().drop(1).map { (index, frameTask) ->
-            frameTask.renderOnto(canvasCtx, 0.0, (height * index).toDouble())
+        val frameTasks = frames.withIndex().map { (index, frameTask) ->
+            getCoroutineScope().launch {
+                canvasMutex.withLock {
+                    frameTask.renderOnto(canvasCtx, 0.0, (height * index).toDouble())
+                }
+            }
         }
+        frameTasks.joinAll()
         val output = WritableImage(width, totalHeight)
         doJfx("Snapshot of $name") {
             requestNextPulse()

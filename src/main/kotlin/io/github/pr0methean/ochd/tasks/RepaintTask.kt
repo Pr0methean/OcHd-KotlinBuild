@@ -17,6 +17,16 @@ import java.util.Objects
 
 private val logger = LogManager.getLogger("RepaintTask")
 
+/**
+ * Task that recolors the base image and/or makes it semitransparent. RepaintTask has special handling in two
+ * ways:
+ * <ul>
+ *     <li>If the base task isn't in the cache, but another repaint of it is and has alpha 1.0, we repaint the
+ *     repaint rather than recreating the base image.</li>
+ *     <li>When alpha is 1.0 and we're a non-cacheable task, we can render directly to the consuming task's canvas
+ *     rather than allocating a {@link Canvas} and a {@link WritableImage}.</li>
+ * </ul>
+ */
 class RepaintTask(
     val base: ImageTask,
     val paint: Paint?,
