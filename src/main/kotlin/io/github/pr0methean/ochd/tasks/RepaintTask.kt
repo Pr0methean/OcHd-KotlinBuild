@@ -36,24 +36,33 @@ class RepaintTask(
         } else {
             logger.info("RepaintTask {} is drawing on an existing canvas", name)
             stats.onTaskLaunched("RepaintTask", name)
-            drawOnto(context, x, y)
+            internalRenderOnto(context, x, y)
             stats.onTaskCompleted("RepaintTask", name)
         }
     }
 
-    private suspend fun drawOnto(context: GraphicsContext, x: Double, y: Double) {
-        val baseImage = base.await().getOrThrow()
+    private suspend fun internalRenderOnto(context: GraphicsContext?, x: Double, y: Double): GraphicsContext {
+        // Determine whether we can repaint a repaint if it's available and the base image isn't
+        val baseImageDeferred = base.getNow()
+            ?: base.opaqueRepaints().firstNotNullOfOrNull { task ->
+                task.getNow()?.also { logger.info("Repainting $task for ${this@RepaintTask}") }
+            }
+            ?: base.await()
+        val baseImage = baseImageDeferred.getOrThrow()
+        val ctx = context ?: Canvas(baseImage.width, baseImage.height).graphicsContext2D
         if (paint != null) {
             val colorLayer = ColorInput(0.0, 0.0, baseImage.width, baseImage.height, paint)
             val blend = Blend()
             blend.mode = SRC_ATOP
             blend.topInput = colorLayer
             blend.bottomInput = null
-            context.setEffect(blend)
+            ctx.setEffect(blend)
         }
-        context.isImageSmoothing = false
-        context.drawImage(baseImage, x, y)
-        context.setEffect(null)
+        ctx.isImageSmoothing = false
+        ctx.drawImage(baseImage, x, y)
+        ctx.setEffect(null)
+        ctx.canvas.opacity = alpha
+        return ctx
     }
 
     override fun startedOrAvailableSubtasks(): Int =
@@ -80,20 +89,10 @@ class RepaintTask(
     }
 
     override suspend fun perform(): Image {
-
-        // Determine whether we can repaint a repaint if it's available and the base image isn't
-        val baseImageDeferred = base.getNow()
-                ?: base.opaqueRepaints().firstNotNullOfOrNull { task ->
-                    task.getNow()?.also { logger.info("Repainting $task for ${this@RepaintTask}") }
-                }
-                ?: base.await()
-        val baseImage = baseImageDeferred.getOrThrow()
-
         stats.onTaskLaunched("RepaintTask", name)
-        val canvas = Canvas(baseImage.width, baseImage.height)
-        val output = WritableImage(baseImage.width.toInt(), baseImage.height.toInt())
-        val gfx = canvas.graphicsContext2D
-        drawOnto(gfx, 0.0, 0.0)
+        val gfx = internalRenderOnto(null, 0.0, 0.0)
+        val canvas = gfx.canvas
+        val output = WritableImage(canvas.width.toInt(), canvas.height.toInt())
         val snapshot = doJfx(name) {
             Platform.requestNextPulse()
             canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
