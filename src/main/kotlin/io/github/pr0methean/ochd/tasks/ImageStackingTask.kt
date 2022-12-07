@@ -54,8 +54,10 @@ class ImageStackingTask(val layers: LayerList,
             layers.layers.drop(1).forEach { layerTask ->
                 if (layerTask is RepaintTask && layerTask.alpha == 1.0 && !layerTask.isStartedOrAvailable()) {
                     logger.info("Collapsing {} into {}", layerTask.name, name)
+                    stats.onTaskLaunched("RepaintTask", layerTask.name)
                     repaintToCanvas(layerTask.base.await().getOrThrow(), canvasCtx, layerTask.paint)
                     canvasCtx.setEffect(null)
+                    stats.onTaskCompleted("RepaintTask", layerTask.name)
                 } else {
                     val layerImage = layerTask.await().getOrThrow()
                     logger.debug("Rendering {} onto the stack", layerTask)
