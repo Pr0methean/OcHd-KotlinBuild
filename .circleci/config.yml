@@ -49,7 +49,7 @@ jobs:
           -XX:SoftRefLRUPolicyMSPerMB=3600000
           -XX:+UnlockExperimentalVMOptions -XX:+UseZGC
           '-Xlog:gc*=debug,gc+stats=trace,gc+heap=trace,gc+heap+exit=trace,gc+metaspace=trace,gc+nmethod=info,safepoint+stats=info' 
-          -XX:+UseNUMA -XX:ConcGCThreads=2 -XX:+AlwaysPreTouch -XX:+UseTransparentHugePages
+          -XX:+UseNUMA -XX:+AlwaysPreTouch -XX:+UseTransparentHugePages
           -XX:+HeapDumpOnOutOfMemoryError -XX:+PrintFlagsFinal -XX:StringDeduplicationAgeThreshold=1
           -Dlog4j2.contextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector --enable-preview
           -jar build/libs/OcHd-KotlinBuild-1.0-SNAPSHOT.jar << parameters.size >>
