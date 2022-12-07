@@ -6,7 +6,6 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.io.FileOutputStream
 import java.nio.file.Files
 
 @Suppress("BlockingMethodInNonBlockingContext")
@@ -21,13 +20,11 @@ class OutputTask(
         withContext(Dispatchers.IO.plus(CoroutineName(name))) {
             val firstFile = files[0]
             firstFile.parentFile?.mkdirs()
-            FileOutputStream(firstFile).use {it.write(input)}
-            check(firstFile.exists()) { "OutputTask $name appeared to succeed, but $firstFile still doesn't exist" }
+            Files.write(firstFile.toPath(), input)
             val firstFilePath = firstFile.absoluteFile.toPath()
             for (file in files.subList(1, files.size)) {
                 file.parentFile?.mkdirs()
                 Files.copy(firstFilePath, file.absoluteFile.toPath())
-                check(file.exists()) { "OutputTask $name appeared to succeed, but $file still doesn't exist" }
             }
             stats.onTaskCompleted("OutputTask", name)
         }
