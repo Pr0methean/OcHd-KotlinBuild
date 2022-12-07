@@ -5,8 +5,9 @@ import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.tasks.caching.TaskCache
 import javafx.application.Platform
 import javafx.scene.canvas.Canvas
+import javafx.scene.canvas.GraphicsContext
 import javafx.scene.effect.Blend
-import javafx.scene.effect.BlendMode
+import javafx.scene.effect.BlendMode.SRC_ATOP
 import javafx.scene.effect.ColorInput
 import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
@@ -15,6 +16,20 @@ import org.apache.logging.log4j.LogManager
 import java.util.Objects
 
 private val logger = LogManager.getLogger("RepaintTask")
+
+fun repaintToCanvas(baseImage: Image, gfx: GraphicsContext, paint: Paint?) {
+    if (paint != null) {
+        val colorLayer = ColorInput(0.0, 0.0, baseImage.width, baseImage.height, paint)
+        val blend = Blend()
+        blend.mode = SRC_ATOP
+        blend.topInput = colorLayer
+        blend.bottomInput = null
+        gfx.setEffect(blend)
+    }
+    gfx.isImageSmoothing = false
+    gfx.drawImage(baseImage, 0.0, 0.0)
+}
+
 class RepaintTask(
     val base: ImageTask,
     val paint: Paint?,
@@ -66,16 +81,7 @@ class RepaintTask(
         val output = WritableImage(baseImage.width.toInt(), baseImage.height.toInt())
         val gfx = canvas.graphicsContext2D
         canvas.opacity = alpha
-        if (paint != null) {
-            val colorLayer = ColorInput(0.0, 0.0, baseImage.width, baseImage.height, paint)
-            val blend = Blend()
-            blend.mode = BlendMode.SRC_ATOP
-            blend.topInput = colorLayer
-            blend.bottomInput = null
-            gfx.setEffect(blend)
-        }
-        gfx.isImageSmoothing = false
-        gfx.drawImage(baseImage, 0.0, 0.0)
+        repaintToCanvas(baseImage, gfx, paint)
         val snapshot = doJfx(name) {
             Platform.requestNextPulse()
             canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)

@@ -52,10 +52,16 @@ class ImageStackingTask(val layers: LayerList,
         canvasCtx.drawImage(firstLayer, 0.0, 0.0)
         if (layers.layers.size > 1) {
             layers.layers.drop(1).forEach { layerTask ->
-                val layerImage = layerTask.await().getOrThrow()
-                logger.debug("Rendering {} onto the stack", layerTask)
-                canvasCtx.drawImage(layerImage, 0.0, 0.0)
-                logger.debug("Finished rendering {}", layerTask)
+                if (layerTask is RepaintTask && layerTask.alpha == 1.0 && !layerTask.isStartedOrAvailable()) {
+                    logger.info("Collapsing {} into {}", layerTask.name, name)
+                    repaintToCanvas(layerTask.base.await().getOrThrow(), canvasCtx, layerTask.paint)
+                    canvasCtx.setEffect(null)
+                } else {
+                    val layerImage = layerTask.await().getOrThrow()
+                    logger.debug("Rendering {} onto the stack", layerTask)
+                    canvasCtx.drawImage(layerImage, 0.0, 0.0)
+                    logger.debug("Finished rendering {}", layerTask)
+                }
             }
         }
         logger.debug("Taking snapshot of {}", name)
