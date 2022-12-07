@@ -20,11 +20,13 @@ class OutputTask(
         withContext(Dispatchers.IO.plus(CoroutineName(name))) {
             val firstFile = files[0]
             firstFile.parentFile?.mkdirs()
-            Files.write(firstFile.toPath(), input)
             val firstFilePath = firstFile.absoluteFile.toPath()
-            for (file in files.subList(1, files.size)) {
-                file.parentFile?.mkdirs()
-                Files.copy(firstFilePath, file.absoluteFile.toPath())
+            Files.write(firstFilePath, input)
+            if (files.size > 1) {
+                for (file in files.subList(1, files.size)) {
+                    file.parentFile?.mkdirs()
+                    Files.copy(firstFilePath, file.absoluteFile.toPath())
+                }
             }
             stats.onTaskCompleted("OutputTask", name)
         }
