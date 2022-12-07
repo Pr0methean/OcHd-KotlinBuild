@@ -6,8 +6,10 @@ import io.github.pr0methean.ochd.tasks.caching.TaskCache
 import javafx.application.Platform
 import javafx.scene.SnapshotParameters
 import javafx.scene.canvas.Canvas
+import javafx.scene.canvas.GraphicsContext
 import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
+import javafx.scene.paint.Color
 import org.apache.logging.log4j.LogManager
 import java.util.*
 
@@ -16,7 +18,9 @@ private val logger = LogManager.getLogger("ImageStackingTask")
 class ImageStackingTask(val layers: LayerList,
                         cache: TaskCache<Image>,
                         stats: ImageProcessingStats) : AbstractImageTask(layers.toString(), cache, stats) {
-    @Suppress("MagicNumber") private val hashCode by lazy {layers.hashCode() + 37}
+    @Suppress("MagicNumber")
+    private val hashCode by lazy { layers.hashCode() + 37 }
+
     init {
         if (layers.layers.isEmpty()) {
             throw IllegalArgumentException("Empty layer list")
@@ -49,22 +53,44 @@ class ImageStackingTask(val layers: LayerList,
         val height = firstLayer.height
         val canvas = Canvas(width, height)
         val canvasCtx = canvas.graphicsContext2D
-        canvasCtx.drawImage(firstLayer, 0.0, 0.0)
-        if (layers.layers.size > 1) {
-            layers.layers.drop(1).forEach { it.renderOnto(canvasCtx, 0.0, 0.0) }
-        }
+        renderOntoInternal(canvasCtx, 0.0, 0.0) { canvasCtx.drawImage(firstLayer, 0.0, 0.0) }
         logger.debug("Taking snapshot of {}", name)
         val snapshot = takeSnapshot(width, height, canvas)
         stats.onTaskCompleted("ImageStackingTask", name)
         return snapshot
     }
 
+    private suspend fun renderOntoInternal(
+        canvasCtx: GraphicsContext,
+        x: Double,
+        y: Double,
+        drawFirstLayer: suspend () -> Unit
+    ) {
+        if (layers.background != Color.TRANSPARENT) {
+            canvasCtx.fill = layers.background
+            canvasCtx.fillRect(0.0, 0.0, canvasCtx.canvas.width, canvasCtx.canvas.height)
+        }
+        drawFirstLayer()
+        if (layers.layers.size > 1) {
+            layers.layers.drop(1).forEach { it.renderOnto(canvasCtx, x, y) }
+        }
+    }
+
+    override suspend fun renderOnto(context: GraphicsContext, x: Double, y: Double) {
+        if (isStartedOrAvailable() || cache.enabled) {
+            super.renderOnto(context, x, y)
+        } else {
+            renderOntoInternal(context, x, y) { layers.layers[0].renderOnto(context, x, y) }
+        }
+    }
+
     private val background = layers.background
 
     private suspend fun takeSnapshot(
-            width: Double,
-            height: Double,
-            canvas: Canvas): Image {
+        width: Double,
+        height: Double,
+        canvas: Canvas
+    ): Image {
         val params = SnapshotParameters()
         params.fill = background
         val output = WritableImage(width.toInt(), height.toInt())
