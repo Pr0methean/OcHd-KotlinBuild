@@ -57,8 +57,10 @@ jobs:
       - run: cd pngout && zip -r OcHD-<< parameters.size >>x<< parameters.size >>.zip *
       - store_artifacts:
           path: 'pngout/OcHD-<< parameters.size >>x<< parameters.size >>.zip'
+      - run:
+          zip -9 HeapDump.zip HeapDump.hprof || true
       - store_artifacts:
-          path: 'HeapDump.hprof'
+          path: 'HeapDump.zip'
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
 workflows:
