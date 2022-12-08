@@ -3,7 +3,7 @@ package io.github.pr0methean.ochd.materials.block.pickaxe
 import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.c
-import io.github.pr0methean.ochd.tasks.OutputTask
+import io.github.pr0methean.ochd.tasks.FileOutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Color
 import kotlinx.coroutines.flow.Flow
@@ -44,7 +44,7 @@ enum class CopperOxide(
         layer("cutInQuarters1", shadow)
         layer("cutInQuarters2", highlight)
     }
-    override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<OutputTask> = flow {
+    override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<FileOutputTask> = flow {
         emit(ctx.out({ uncut() }, "block/${name}_copper"))
         emit(ctx.out({ cut() }, "block/cut_${name}_copper"))
     }

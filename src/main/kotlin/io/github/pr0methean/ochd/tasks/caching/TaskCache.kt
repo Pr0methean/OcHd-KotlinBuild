@@ -1,6 +1,9 @@
 package io.github.pr0methean.ochd.tasks.caching
 
-/** Coroutine-safe. */
+/**
+ * Stores the output of a particular task for reuse, but can usually be cleared if the memory is needed. May be backed
+ * by an evictable entry in a Caffeine cache and/or a soft or weak reference.
+ */
 interface TaskCache<T> {
     var enabled: Boolean
     val name: String

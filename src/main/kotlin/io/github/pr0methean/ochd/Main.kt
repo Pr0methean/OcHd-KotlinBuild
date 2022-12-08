@@ -2,7 +2,7 @@ package io.github.pr0methean.ochd
 
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
 import io.github.pr0methean.ochd.tasks.AbstractTask
-import io.github.pr0methean.ochd.tasks.OutputTask
+import io.github.pr0methean.ochd.tasks.FileOutputTask
 import io.github.pr0methean.ochd.tasks.await
 import io.github.pr0methean.ochd.tasks.caching.SemiStrongTaskCache
 import io.github.pr0methean.ochd.tasks.doJfx
@@ -31,9 +31,9 @@ import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
 private const val CAPACITY_PADDING_FACTOR = 2
-private val taskOrderComparator = comparingLong(OutputTask::timesFailed)
-    .then(comparingInt(OutputTask::startedOrAvailableSubtasks).reversed())
-    .then(comparingInt(OutputTask::cacheableSubtasks))
+private val taskOrderComparator = comparingLong(FileOutputTask::timesFailed)
+    .then(comparingInt(FileOutputTask::startedOrAvailableSubtasks).reversed())
+    .then(comparingInt(FileOutputTask::cacheableSubtasks))
 private val logger = LogManager.getRootLogger()
 private val PARALLELISM = Runtime.getRuntime().availableProcessors()
 private const val HUGE_TILE_PARALLELISM = 1
@@ -82,10 +82,10 @@ suspend fun main(args: Array<String>) {
     startMonitoring(stats, scope)
     val time = measureNanoTime {
         stats.onTaskLaunched("Build task graph", "Build task graph")
-        val tasks = ALL_MATERIALS.outputTasks(ctx).map { ctx.deduplicate(it) as OutputTask }.toSet()
+        val tasks = ALL_MATERIALS.outputTasks(ctx).map { ctx.deduplicate(it) as FileOutputTask }.toSet()
         val depsBuildTask = scope.launch { tasks.forEach { it.registerRecursiveDependencies() }}
-        val cbTasks = tasks.filter(OutputTask::isCommandBlock)
-        val nonCbTasks = tasks.filterNot(OutputTask::isCommandBlock)
+        val cbTasks = tasks.filter(FileOutputTask::isCommandBlock)
+        val nonCbTasks = tasks.filterNot(FileOutputTask::isCommandBlock)
         val hugeTaskCache = ctx.hugeTileBackingCache
         depsBuildTask.join()
         stats.onTaskCompleted("Build task graph", "Build task graph")
@@ -105,17 +105,17 @@ suspend fun main(args: Array<String>) {
     exitProcess(0)
 }
 
-data class TaskResult(val task: OutputTask, val succeeded: Boolean)
+data class TaskResult(val task: FileOutputTask, val succeeded: Boolean)
 
 private suspend fun runAll(
-    tasks: Iterable<OutputTask>,
+    tasks: Iterable<FileOutputTask>,
     scope: CoroutineScope,
     stats: ImageProcessingStats,
     parallelism: Int
 ) {
-    val unstartedTasks = tasks.sortedWith(comparingInt(OutputTask::cacheableSubtasks)).toMutableSet()
+    val unstartedTasks = tasks.sortedWith(comparingInt(FileOutputTask::cacheableSubtasks)).toMutableSet()
     val unfinishedTasks = AtomicLong(unstartedTasks.size.toLong())
-    val inProgressJobs = mutableMapOf<OutputTask,Job>()
+    val inProgressJobs = mutableMapOf<FileOutputTask,Job>()
     val finishedJobsChannel = Channel<TaskResult>(capacity = CAPACITY_PADDING_FACTOR * parallelism)
     var maxRetriesAnyTaskSoFar = 0L
     while (unfinishedTasks.get() > 0) {

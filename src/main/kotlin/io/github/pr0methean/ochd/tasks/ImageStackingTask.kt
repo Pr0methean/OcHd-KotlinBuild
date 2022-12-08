@@ -15,6 +15,9 @@ import java.util.*
 
 private val logger = LogManager.getLogger("ImageStackingTask")
 
+/**
+ * Task that superimposes multiple images onto a background.
+ */
 class ImageStackingTask(val layers: LayerList,
                         cache: TaskCache<Image>,
                         stats: ImageProcessingStats) : AbstractImageTask(layers.toString(), cache, stats) {

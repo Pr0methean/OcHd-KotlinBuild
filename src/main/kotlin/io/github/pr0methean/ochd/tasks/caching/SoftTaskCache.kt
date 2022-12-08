@@ -4,6 +4,8 @@ import java.lang.ref.Reference
 import java.lang.ref.SoftReference
 import java.lang.ref.WeakReference
 
+/** Task cache that's backed by a soft reference. */
+
 @Suppress("unused")
 open class SoftTaskCache<T>(name: String): AbstractTaskCache<T>(name) {
     @Volatile var result: Reference<out T?> = nullRef

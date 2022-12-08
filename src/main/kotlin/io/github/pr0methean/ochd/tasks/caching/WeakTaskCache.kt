@@ -2,6 +2,7 @@ package io.github.pr0methean.ochd.tasks.caching
 
 import java.lang.ref.WeakReference
 
+/** Task cache that's backed by a weak reference. */
 @Suppress("unused")
 open class WeakTaskCache<T>(name: String): AbstractTaskCache<T>(name) {
     @Volatile var result: WeakReference<out T?> = nullRef

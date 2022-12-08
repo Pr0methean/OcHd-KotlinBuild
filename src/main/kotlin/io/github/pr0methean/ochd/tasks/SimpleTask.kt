@@ -5,6 +5,9 @@ import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 
+/**
+ * Task that either has no other tasks as input, or manages its input in subclass fields.
+ */
 abstract class SimpleTask<T>(name: String, cache: TaskCache<T>) : AbstractTask<T>(
     name, cache
 ) {

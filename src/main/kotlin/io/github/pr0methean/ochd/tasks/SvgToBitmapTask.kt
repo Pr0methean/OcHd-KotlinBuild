@@ -63,7 +63,10 @@ private class ToImageTranscoder: SVGAbstractTranscoder() {
     }
 }
 
-class SvgImportTask(
+/**
+ * Task that loads an SVG file and converts it to a bitmap of a specified size. Doesn't depend on any other task.
+ */
+class SvgToBitmapTask(
     name: String,
     private val width: Int,
     private val file: File,
@@ -74,7 +77,7 @@ class SvgImportTask(
     override val directDependencies: List<Task<Nothing>> = listOf() // SVG import doesn't depend on any other tasks
 
     override fun equals(other: Any?): Boolean {
-        return (other === this) || other is SvgImportTask && other.file == file
+        return (other === this) || other is SvgToBitmapTask && other.file == file
     }
     private val hashCode by lazy {file.hashCode()}
     private val input = TranscoderInput(file.toURI().toString())
@@ -82,7 +85,7 @@ class SvgImportTask(
     override fun hashCode(): Int = hashCode
 
     override suspend fun perform(): Image {
-        stats.onTaskLaunched("SvgImportTask", name)
+        stats.onTaskLaunched("SvgToBitmapTask", name)
         val image = withContext(batikTranscoder.asContextElement()) {
             val transcoder = batikTranscoder.get()
             transcoder.setTranscodingHints(mapOf(SVGAbstractTranscoder.KEY_WIDTH to width.toFloat()))
@@ -92,7 +95,7 @@ class SvgImportTask(
             awtImage.flush()
             image
         }
-        stats.onTaskCompleted("SvgImportTask", name)
+        stats.onTaskCompleted("SvgToBitmapTask", name)
         return image
     }
 }

@@ -3,11 +3,11 @@ package io.github.pr0methean.ochd
 import com.github.benmanes.caffeine.cache.Caffeine
 import com.google.common.collect.ConcurrentHashMultiset
 import io.github.pr0methean.ochd.tasks.AnimationTask
+import io.github.pr0methean.ochd.tasks.FileOutputTask
 import io.github.pr0methean.ochd.tasks.ImageStackingTask
 import io.github.pr0methean.ochd.tasks.ImageTask
-import io.github.pr0methean.ochd.tasks.OutputTask
 import io.github.pr0methean.ochd.tasks.RepaintTask
-import io.github.pr0methean.ochd.tasks.SvgImportTask
+import io.github.pr0methean.ochd.tasks.SvgToBitmapTask
 import io.github.pr0methean.ochd.tasks.Task
 import io.github.pr0methean.ochd.tasks.caching.SemiStrongTaskCache
 import io.github.pr0methean.ochd.tasks.caching.SoftTaskCache
@@ -48,7 +48,7 @@ class TaskPlanningContext(
 ) {
     private fun bytesPerTile() = BYTES_PER_PIXEL * tileSize * tileSize
     override fun toString(): String = name
-    private val svgTasks: Map<String, SvgImportTask>
+    private val svgTasks: Map<String, SvgToBitmapTask>
     private val taskDeduplicationMap = ConcurrentHashMap<Task<*>, Task<*>>()
     private val dedupedSvgTasks = ConcurrentHashMultiset.create<String>()
     private val backingCache = Caffeine.newBuilder()
@@ -81,10 +81,10 @@ class TaskPlanningContext(
     }
 
     init {
-        val builder = mutableMapOf<String, SvgImportTask>()
+        val builder = mutableMapOf<String, SvgToBitmapTask>()
         svgDirectory.list()!!.forEach { svgFile ->
             val shortName = svgFile.removeSuffix(".svg")
-            builder[shortName] = SvgImportTask(
+            builder[shortName] = SvgToBitmapTask(
                 shortName,
                 tileSize,
                 svgDirectory.resolve("$shortName.svg"),
@@ -97,7 +97,7 @@ class TaskPlanningContext(
 
     @Suppress("UNCHECKED_CAST")
     tailrec suspend fun <T> deduplicate(task: Task<T>): Task<T> {
-        if (task is SvgImportTask) {
+        if (task is SvgToBitmapTask) {
             // svgTasks is populated eagerly
             val name = task.name
             return findSvgTask(name) as Task<T>
@@ -127,13 +127,13 @@ class TaskPlanningContext(
         return deduped
     }
 
-    fun findSvgTask(name: String): SvgImportTask {
+    fun findSvgTask(name: String): SvgToBitmapTask {
         val task = svgTasks[name]
-        requireNotNull(task) { "Missing SvgImportTask for $name" }
+        requireNotNull(task) { "Missing SvgToBitmapTask for $name" }
         if (dedupedSvgTasks.add(name, 1) > 0) {
-            stats.dedupeSuccesses.add("SvgImportTask")
+            stats.dedupeSuccesses.add("SvgToBitmapTask")
         } else {
-            stats.dedupeFailures.add("SvgImportTask")
+            stats.dedupeFailures.add("SvgToBitmapTask")
         }
         return task
     }
@@ -167,7 +167,7 @@ class TaskPlanningContext(
                 stats)) as ImageTask
     }
 
-    suspend inline fun out(source: ImageTask, vararg name: String): OutputTask {
+    suspend inline fun out(source: ImageTask, vararg name: String): FileOutputTask {
         val lowercaseName = name.map {it.lowercase(Locale.ENGLISH)}
         return out(lowercaseName[0], source, lowercaseName.map{outTextureRoot.resolve("$it.png")})
     }
@@ -176,17 +176,17 @@ class TaskPlanningContext(
         lowercaseName: String,
         source: ImageTask,
         destination: List<File>
-    ): OutputTask {
+    ): FileOutputTask {
         val pngSource = deduplicate((deduplicate(source) as ImageTask).asPng)
-        val orig = OutputTask(pngSource, lowercaseName, stats, destination)
-        val deduped = deduplicate(orig) as OutputTask
+        val orig = FileOutputTask(pngSource, lowercaseName, stats, destination)
+        val deduped = deduplicate(orig) as FileOutputTask
         if (deduped === orig) {
             pngSource.addDirectDependentTask(deduped)
         }
         return deduped
     }
 
-    suspend inline fun out(source: LayerListBuilder.() -> Unit, vararg names: String): OutputTask
+    suspend inline fun out(source: LayerListBuilder.() -> Unit, vararg names: String): FileOutputTask
             = out(stack {source()}, *names)
 
     suspend inline fun stack(layers: LayerList): ImageTask

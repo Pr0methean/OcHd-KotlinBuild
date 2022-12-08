@@ -4,7 +4,7 @@ import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.materials.block.axe.GiantMushroom
-import io.github.pr0methean.ochd.tasks.OutputTask
+import io.github.pr0methean.ochd.tasks.FileOutputTask
 import io.github.pr0methean.ochd.texturebase.Block
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
@@ -49,7 +49,7 @@ enum class SimpleBareHandBlock(
             layer("redstoneLine", color)
         }
 
-        override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<OutputTask> {
+        override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<FileOutputTask> {
             val layers = ctx.stack {createTextureLayers()}
             return flowOf(ctx.out(layers, "block/redstone_dust_line0", "block/redstone_dust_line1"))
         }

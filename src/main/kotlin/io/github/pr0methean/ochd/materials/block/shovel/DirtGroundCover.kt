@@ -4,7 +4,7 @@ import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.materials.block.shovel.SimpleSoftEarth.POWDER_SNOW
-import io.github.pr0methean.ochd.tasks.OutputTask
+import io.github.pr0methean.ochd.tasks.FileOutputTask
 import io.github.pr0methean.ochd.texturebase.GroundCoverBlock
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Color
@@ -42,7 +42,7 @@ enum class DirtGroundCover(
             layer("veesTop", grassItemShadow)
         }
 
-        override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<OutputTask>
+        override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<FileOutputTask>
                 = merge(super.outputTasks(ctx), flowOf(ctx.out(ctx.stack {
             layer("topPart", color)
             layer("veesTop", shadow)
@@ -60,7 +60,7 @@ enum class DirtGroundCover(
             layer("borderDotted", shadow)
         }
 
-        override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<OutputTask> = flow {
+        override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<FileOutputTask> = flow {
             val top = ctx.stack { createTopLayers() }
             emit(ctx.out(top, "block/podzol_top", "block/composter_compost"))
             emit(ctx.out(ctx.stack {
@@ -95,7 +95,7 @@ enum class DirtGroundCover(
             layer("snowTopPart", shadow)
         }
 
-        override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<OutputTask> = flow {
+        override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<FileOutputTask> = flow {
             emit(ctx.out(ctx.stack { createTopLayers() }, "block/snow"))
             emit(ctx.out(ctx.stack {
                 copy(base)

@@ -30,5 +30,5 @@ abstract class AbstractImageTask(name: String, cache: TaskCache<Image>,
         context.drawImage(await().getOrThrow(), x, y)
     }
 
-    override val asPng: TransformingTask<Image, ByteArray> by lazy { PngCompressionTask(this, noopTaskCache(), stats) }
+    override val asPng: TransformingTask<Image, ByteArray> by lazy { PngEncodingTask(this, noopTaskCache(), stats) }
 }

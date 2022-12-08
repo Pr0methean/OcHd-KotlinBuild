@@ -5,8 +5,11 @@ import io.github.pr0methean.ochd.tasks.caching.noopTaskCache
 import java.io.File
 import java.nio.file.Files
 
+/**
+ * Task that saves a [ByteArray] to one or more files.
+ */
 @Suppress("BlockingMethodInNonBlockingContext")
-class OutputTask(
+class FileOutputTask(
     val source: Task<ByteArray>,
     name: String,
     val stats: ImageProcessingStats,

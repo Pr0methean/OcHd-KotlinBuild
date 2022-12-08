@@ -2,7 +2,7 @@ package io.github.pr0methean.ochd.materials.block.axe
 
 import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.TaskPlanningContext
-import io.github.pr0methean.ochd.tasks.OutputTask
+import io.github.pr0methean.ochd.tasks.FileOutputTask
 import io.github.pr0methean.ochd.texturebase.Block
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
@@ -20,7 +20,7 @@ enum class SimpleAxeBlock: SingleTextureMaterial, ShadowHighlightMaterial, Block
             layer("craftingSide", OverworldWood.DARK_OAK.color)
         }
 
-        override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<OutputTask> = flow {
+        override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<FileOutputTask> = flow {
             val layers = ctx.stack {createTextureLayers()}
             emit(ctx.out(layers, "block/crafting_table_side", "block/crafting_table_front"))
         }

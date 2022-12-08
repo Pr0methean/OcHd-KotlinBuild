@@ -3,7 +3,7 @@ package io.github.pr0methean.ochd.materials.block.pickaxe
 import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.c
-import io.github.pr0methean.ochd.tasks.OutputTask
+import io.github.pr0methean.ochd.tasks.FileOutputTask
 import io.github.pr0methean.ochd.texturebase.GroundCoverBlock
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Paint
@@ -45,7 +45,7 @@ enum class Nylium(
         }
     };
     override val base: OreBase = OreBase.NETHERRACK
-    override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<OutputTask> = flow {
+    override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<FileOutputTask> = flow {
         emit(ctx.out(ctx.stack { createTopLayers() }, "block/${name}")) // no "_top" at end
         emit(ctx.out(ctx.stack {
             copy(base)

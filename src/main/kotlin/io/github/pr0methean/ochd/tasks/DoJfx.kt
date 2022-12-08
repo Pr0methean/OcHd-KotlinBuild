@@ -16,6 +16,11 @@ private val DEFAULT_CHARSET = DEFAULT_ERR.charset()
 private val ERR_CATCHER = ByteArrayOutputStream()
 private val ERR_CATCHER_STREAM = PrintStream(ERR_CATCHER, true, DEFAULT_CHARSET)
 private val SYSERR_SWITCHED = AtomicBoolean(false)
+
+/**
+ * Dispatches the given block of code to the JavaFX rendering thread, waits for it to execute, and checks for errors
+ * logged to System.err while running.
+ */
 @Suppress("BlockingMethodInNonBlockingContext")
 suspend fun <T> doJfx(name: String, jfxCode: CoroutineScope.() -> T): T = try {
     if (SYSERR_SWITCHED.compareAndSet(false, true)) {

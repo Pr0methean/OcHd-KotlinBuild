@@ -13,6 +13,10 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.*
 
+/**
+ * Task that stacks the input images in a column. Minecraft can use this as an animated texture with the input images as
+ * frames.
+ */
 class AnimationTask(
     val background: ImageTask,
     val frames: List<ImageTask>, val width: Int, val height: Int,

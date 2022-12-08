@@ -3,13 +3,13 @@ package io.github.pr0methean.ochd.materials.block.indestructible
 import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.c
-import io.github.pr0methean.ochd.tasks.OutputTask
+import io.github.pr0methean.ochd.tasks.FileOutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
-//  9 SvgImportTask
+//  9 SvgToBitmapTask
 //  8 RepaintTask for background
 // 12 RepaintTask for grid background
 //  3 ImageStackingTask for background
@@ -67,7 +67,7 @@ enum class CommandBlock(
 
     open suspend fun LayerListBuilder.decorateBackground() {}
 
-    override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<OutputTask> = flow {
+    override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<FileOutputTask> = flow {
         val background = ctx.stack {createBackground()}
         for (sideType in enumValues<SideType>()) {
             emit(ctx.out(ctx.stack {sideType.run {

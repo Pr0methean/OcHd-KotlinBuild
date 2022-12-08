@@ -2,6 +2,11 @@ package io.github.pr0methean.ochd.tasks.caching
 
 import com.github.benmanes.caffeine.cache.Cache
 
+/**
+ * A TaskCache that's backed by a Caffeine cache (the primary cache) and another TaskCache instance (the victim cache).
+ * The primary cache should have hard references to values and be limited in size. The victim cache should be a
+ * [SoftTaskCache], [WeakTaskCache] or [NoopTaskCache].
+ */
 class SemiStrongTaskCache<T>(
         private val victimCache: TaskCache<T>,
         private val primaryCache: Cache<SemiStrongTaskCache<T>, T>

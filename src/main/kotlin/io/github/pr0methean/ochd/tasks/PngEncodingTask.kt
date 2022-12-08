@@ -11,8 +11,9 @@ import javax.imageio.ImageIO
 
 const val PNG_PRESIZE: Int = 512*1024
 private val THREAD_LOCAL_BAOS = ThreadLocal.withInitial {ByteArrayOutputStream(PNG_PRESIZE)}
+/** Class that encodes an [Image] input in PNG format into a [ByteArray]. */
 @Suppress("FunctionName")
-class PngCompressionTask(
+class PngEncodingTask(
     base: AbstractTask<Image>, cache: TaskCache<ByteArray>, val stats: ImageProcessingStats
 ): TransformingTask<Image, ByteArray>(
     "PNG compression of $base", base = base, cache = cache) {

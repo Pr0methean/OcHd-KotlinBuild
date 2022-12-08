@@ -2,7 +2,7 @@ package io.github.pr0methean.ochd.materials.block.barehand
 
 import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.c
-import io.github.pr0methean.ochd.tasks.OutputTask
+import io.github.pr0methean.ochd.tasks.FileOutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
@@ -15,7 +15,7 @@ object CaveVines: ShadowHighlightMaterial {
     override val color: Paint = c(0x507233)
     override val shadow: Paint = c(0x4f3200)
     override val highlight: Paint = c(0x70922d)
-    override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<OutputTask> = flow {
+    override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<FileOutputTask> = flow {
         val vinePlantTask = ctx.stack {
             layer("wavyVines", shadow)
             layer("waves", highlight)

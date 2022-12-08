@@ -6,6 +6,10 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import java.util.*
 
+/**
+ * Task that takes the output of another task as input.
+ * @param base the task that produces the input
+ */
 abstract class TransformingTask<T, U>(
     name: String,
     val base: Task<T>,
