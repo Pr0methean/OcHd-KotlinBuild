@@ -29,7 +29,10 @@ sealed interface Wood: ShadowHighlightMaterial {
     suspend fun LayerListBuilder.logTop()
     suspend fun LayerListBuilder.strippedLogTop()
     suspend fun LayerListBuilder.trapdoor()
-    suspend fun LayerListBuilder.doorTop(doorKnob: ImageTask)
+    suspend fun LayerListBuilder.doorTop(doorKnob: ImageTask) {
+        copy { doorBottom() }
+        layer(doorKnob)
+    }
     suspend fun LayerListBuilder.doorBottom()
 
     suspend fun LayerListBuilder.leaves()
