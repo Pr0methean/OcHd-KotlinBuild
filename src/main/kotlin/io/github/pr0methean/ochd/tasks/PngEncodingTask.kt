@@ -21,12 +21,12 @@ class PngEncodingTask(
     {
         THREAD_LOCAL_BAOS.get().run {
             try {
-                stats.onTaskLaunched("PngCompressionTask", base.name)
+                stats.onTaskLaunched("PngEncodingTask", base.name)
                 @Suppress("BlockingMethodInNonBlockingContext")
 
                 ImageIO.write(SwingFXUtils.fromFXImage(input, null), "PNG", this)
                 val packed = toByteArray()
-                stats.onTaskCompleted("PngCompressionTask", base.name)
+                stats.onTaskCompleted("PngEncodingTask", base.name)
                 packed
             } finally {
                 reset()
