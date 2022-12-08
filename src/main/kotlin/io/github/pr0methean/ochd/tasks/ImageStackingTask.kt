@@ -80,6 +80,7 @@ class ImageStackingTask(val layers: LayerList,
         if (isStartedOrAvailable() || cache.enabled) {
             super.renderOnto(context, x, y)
         } else {
+            logger.info("Rendering {} onto an existing canvas", name)
             renderOntoInternal(context, x, y) { layers.layers[0].renderOnto(context, x, y) }
         }
     }

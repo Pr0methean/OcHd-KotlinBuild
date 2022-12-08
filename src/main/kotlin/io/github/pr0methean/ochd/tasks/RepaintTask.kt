@@ -44,7 +44,7 @@ class RepaintTask(
         if (cache.enabled || isStartedOrAvailable() || alpha != 1.0) {
             super.renderOnto(context, x, y)
         } else {
-            logger.info("RepaintTask {} is drawing on an existing canvas", name)
+            logger.info("Rendering {} onto an existing canvas", name)
             stats.onTaskLaunched("RepaintTask", name)
             internalRenderOnto(context, x, y)
             stats.onTaskCompleted("RepaintTask", name)
