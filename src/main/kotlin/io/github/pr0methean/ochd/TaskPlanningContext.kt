@@ -96,35 +96,36 @@ class TaskPlanningContext(
     }
 
     @Suppress("UNCHECKED_CAST")
-    tailrec suspend fun <T> deduplicate(task: Task<T>): Task<T> {
-        if (task is SvgToBitmapTask) {
+    tailrec suspend fun <T, TTask : Task<T>> deduplicate(task: Task<T>): TTask = when {
+        task is SvgToBitmapTask -> {
             // svgTasks is populated eagerly
             val name = task.name
-            return findSvgTask(name) as Task<T>
+            findSvgTask(name) as TTask
         }
-        if (task is RepaintTask
-            && (task.paint == null || task.paint == Color.BLACK)
-            && task.alpha == 1.0
-        ) {
-            return deduplicate(task.base as Task<T>)
+        task is RepaintTask
+                && (task.paint == null || task.paint == Color.BLACK)
+                && task.alpha == 1.0
+        -> {
+            deduplicate(task.base)
         }
-        if (task is ImageStackingTask
-            && task.layers.layers.size == 1
-            && task.layers.background == Color.TRANSPARENT) {
-            return deduplicate(task.layers.layers[0] as Task<T>)
+        task is ImageStackingTask
+                && task.layers.layers.size == 1
+                && task.layers.background == Color.TRANSPARENT -> {
+            deduplicate(task.layers.layers[0] as TTask)
         }
-        val className = task::class.simpleName ?: "[unnamed class]"
-        val deduped = taskDeduplicationMap.computeIfAbsent(task) {
-            logger.info("New task: {}", task)
-            stats.dedupeFailures.add(className)
-            task
+        else -> {
+            val className = task::class.simpleName ?: "[unnamed class]"
+            val deduped = taskDeduplicationMap.computeIfAbsent(task) {
+                logger.info("New task: {}", task)
+                stats.dedupeFailures.add(className)
+                task as TTask
+            }
+            if (deduped !== task) {
+                logger.info("Deduplicated: {}", task)
+                stats.dedupeSuccesses.add(className)
+                deduped.mergeWithDuplicate(task) as TTask
+            } else deduped as TTask
         }
-        if (deduped !== task) {
-            logger.info("Deduplicated: {}", task)
-            stats.dedupeSuccesses.add(className)
-            return deduped.mergeWithDuplicate(task) as Task<T>
-        }
-        return deduped
     }
 
     fun findSvgTask(name: String): SvgToBitmapTask {
