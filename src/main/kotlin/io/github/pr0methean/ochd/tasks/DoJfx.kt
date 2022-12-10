@@ -1,5 +1,6 @@
 package io.github.pr0methean.ochd.tasks
 
+import com.sun.prism.impl.Disposer
 import javafx.application.Platform
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -28,6 +29,7 @@ suspend fun <T> doJfx(name: String, jfxCode: CoroutineScope.() -> T): T = try {
     }
     LOGGER.info("Starting JFX task: {}", name)
     val result = withContext(Dispatchers.Main.plus(CoroutineName(name))) {
+        Disposer.cleanUp()
         jfxCode()
     }
     ERR_CATCHER_STREAM.flush()
