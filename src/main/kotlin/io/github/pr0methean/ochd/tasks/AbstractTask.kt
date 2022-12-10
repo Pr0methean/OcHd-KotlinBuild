@@ -83,20 +83,15 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
     val coroutine: AtomicReference<Deferred<Result<T>>?> = AtomicReference(null)
 
     @OptIn(ExperimentalCoroutinesApi::class, InternalCoroutinesApi::class)
-    override fun getNow(): Result<T>? {
-        val cached = cache.getNow()
-        if (cached != null) {
-            AT_LOGGER.debug("Retrieved {} from cache", cached)
-            return success(cached)
-        }
-        val coroutine = coroutine.get()
-        val result = if (coroutine?.isCompleted == true) {
+    override fun getNow(): Result<T>? = cache.getNow()?.let {success(it)}
+            ?: coroutine.get()?.let { coroutine ->
+        val result = if (coroutine.isCompleted) {
             try {
                 coroutine.getCompleted()
             } catch (t: Throwable) {
                 failure(t)
             }
-        } else if (coroutine?.isCancelled == true) {
+        } else if (coroutine.isCancelled) {
             failure(coroutine.getCancellationException())
         } else null
         if (result != null) {
@@ -104,7 +99,7 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
         }
         return result
     }
-    override suspend fun startAsync(): Deferred<Result<T>> = getNow()?.let { CompletableDeferred(it) }
+    override suspend fun startAsync(): Deferred<Result<T>> = getNow()?.let(::CompletableDeferred)
                 ?: coroutine.get()
                 ?: createCoroutineAsync().let { newCoroutine ->
         AT_LOGGER.debug("Locking {} to start it", name)
