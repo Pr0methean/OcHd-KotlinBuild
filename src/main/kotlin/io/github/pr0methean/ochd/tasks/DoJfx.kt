@@ -23,7 +23,7 @@ private val SYSERR_SWITCHED = AtomicBoolean(false)
  * logged to System.err while running.
  */
 @Suppress("BlockingMethodInNonBlockingContext")
-suspend fun <T> doJfx(name: String, jfxCode: CoroutineScope.() -> T): T = try {
+suspend fun <T> doJfx(name: String, jfxCode: CoroutineScope.() -> T): T = runCatching {
     if (SYSERR_SWITCHED.compareAndSet(false, true)) {
         System.setErr(ERR_CATCHER_STREAM)
     }
@@ -49,7 +49,7 @@ suspend fun <T> doJfx(name: String, jfxCode: CoroutineScope.() -> T): T = try {
     }
     LOGGER.info("Finished JFX task: {}", name)
     result
-} catch (t: Throwable) {
+}.onFailure{ t ->
     LOGGER.error("Error from JFX task", t)
     // Start a new JFX thread if the old one crashed
     try {
@@ -57,5 +57,4 @@ suspend fun <T> doJfx(name: String, jfxCode: CoroutineScope.() -> T): T = try {
     } catch (e: IllegalStateException) {
         LOGGER.debug("Error trying to restart JFX thread", e)
     }
-    throw t
-}
+}.getOrThrow()
