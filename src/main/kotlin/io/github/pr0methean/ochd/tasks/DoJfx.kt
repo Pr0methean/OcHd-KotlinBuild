@@ -29,8 +29,11 @@ suspend fun <T> doJfx(name: String, jfxCode: CoroutineScope.() -> T): T = try {
     }
     LOGGER.info("Starting JFX task: {}", name)
     val result = withContext(Dispatchers.Main.plus(CoroutineName(name))) {
-        Disposer.cleanUp()
-        jfxCode()
+        try {
+            jfxCode()
+        } finally {
+            Disposer.cleanUp()
+        }
     }
     ERR_CATCHER_STREAM.flush()
     if (ERR_CATCHER.size() > 0) {
