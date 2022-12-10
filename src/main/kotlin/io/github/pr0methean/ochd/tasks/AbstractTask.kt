@@ -104,33 +104,26 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
         }
         return result
     }
-    override suspend fun startAsync(): Deferred<Result<T>> {
-        val result = getNow()
-        if (result != null) {
-            return CompletableDeferred(result)
-        }
-        val maybeAlreadyStarted = coroutine.get()
-        if (maybeAlreadyStarted != null) {
-            return maybeAlreadyStarted
-        }
-        val newCoroutine = createCoroutineAsync()
+    override suspend fun startAsync(): Deferred<Result<T>> = getNow()?.let { CompletableDeferred(it) }
+                ?: coroutine.get()
+                ?: createCoroutineAsync().let { newCoroutine ->
         AT_LOGGER.debug("Locking {} to start it", name)
         mutex.withLock {
             val resultWithLock = getNow()
             if (resultWithLock != null) {
                 AT_LOGGER.debug("Found result {} before we could start {}", resultWithLock, name)
-                return CompletableDeferred(resultWithLock)
+                return@let CompletableDeferred(resultWithLock)
             }
             val oldCoroutine = coroutine.compareAndExchange(null, newCoroutine)
             if (oldCoroutine != null) {
                 AT_LOGGER.debug("Already started {}", name)
                 newCoroutine.cancel("Not started because a copy is already running")
-                return oldCoroutine
+                return@let oldCoroutine
             } else {
                 AT_LOGGER.debug("Starting {}", name)
                 newCoroutine.start()
                 AT_LOGGER.debug("Started {}", this)
-                return newCoroutine
+                return@let newCoroutine
             }
         }
     }
