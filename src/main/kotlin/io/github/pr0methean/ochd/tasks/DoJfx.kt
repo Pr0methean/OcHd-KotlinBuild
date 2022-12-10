@@ -33,16 +33,19 @@ suspend fun <T> doJfx(name: String, jfxCode: CoroutineScope.() -> T): T = try {
             jfxCode()
         } finally {
             Disposer.cleanUp()
+            ERR_CATCHER_STREAM.flush()
+            if (ERR_CATCHER.size() > 0) {
+                val interceptedStderr = ERR_CATCHER.toString(DEFAULT_CHARSET)
+                ERR_CATCHER.reset()
+                try {
+                    check(!interceptedStderr.contains("Exception:") && !interceptedStderr.contains("Error:")) {
+                        interceptedStderr.lineSequence().first()
+                    }
+                } finally {
+                    DEFAULT_ERR.print(interceptedStderr)
+                }
+            }
         }
-    }
-    ERR_CATCHER_STREAM.flush()
-    if (ERR_CATCHER.size() > 0) {
-        val interceptedStderr = ERR_CATCHER.toString(DEFAULT_CHARSET)
-        ERR_CATCHER.reset()
-        check(!interceptedStderr.contains("Exception:") && !interceptedStderr.contains("Error:")) {
-            interceptedStderr.lineSequence().first()
-        }
-        DEFAULT_ERR.print(interceptedStderr)
     }
     LOGGER.info("Finished JFX task: {}", name)
     result
