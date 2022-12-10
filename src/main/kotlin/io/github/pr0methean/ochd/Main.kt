@@ -1,10 +1,8 @@
 package io.github.pr0methean.ochd
 
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
-import io.github.pr0methean.ochd.tasks.AbstractTask
 import io.github.pr0methean.ochd.tasks.FileOutputTask
 import io.github.pr0methean.ochd.tasks.await
-import io.github.pr0methean.ochd.tasks.caching.SemiStrongTaskCache
 import io.github.pr0methean.ochd.tasks.doJfx
 import javafx.application.Platform
 import kotlinx.coroutines.CoroutineName
@@ -117,7 +115,6 @@ private suspend fun runAll(
     val unfinishedTasks = AtomicLong(unstartedTasks.size.toLong())
     val inProgressJobs = mutableMapOf<FileOutputTask,Job>()
     val finishedJobsChannel = Channel<TaskResult>(capacity = CAPACITY_PADDING_FACTOR * parallelism)
-    var maxRetriesAnyTaskSoFar = 0L
     while (unfinishedTasks.get() > 0) {
         check(inProgressJobs.isNotEmpty() || unstartedTasks.isNotEmpty()) {
             "Have ${unfinishedTasks.get()} unfinished tasks, but none are in progress"
@@ -140,15 +137,7 @@ private suspend fun runAll(
         val task = unstartedTasks.minWithOrNull(taskOrderComparator)
         checkNotNull(task) { "Could not get an unstarted task" }
         check(unstartedTasks.remove(task)) { "Attempted to remove task more than once: $task" }
-        val timesFailed = task.timesFailed()
-        if (timesFailed > maxRetriesAnyTaskSoFar) {
-            check(timesFailed <= GLOBAL_MAX_RETRIES) { "Too many failures in $task!" }
-            maxRetriesAnyTaskSoFar = timesFailed
-            val cache = (task.source as? AbstractTask<*>)?.cache
-            if (cache is SemiStrongTaskCache<*>) {
-                cache.clearPrimaryCache()
-            }
-        }
+        check(task.timesFailed.get() <= GLOBAL_MAX_RETRIES) { "Too many failures in $task!" }
         inProgressJobs[task] = scope.launch {
             logger.info("Joining {}", task)
             val result = task.await()
