@@ -83,13 +83,11 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
     val coroutine: AtomicReference<Deferred<Result<T>>?> = AtomicReference(null)
 
     @OptIn(ExperimentalCoroutinesApi::class, InternalCoroutinesApi::class)
-    override fun getNow(): Result<T>? = cache.getNow()?.let {success(it)}
+    override fun getNow(): Result<T>? = cache.getNow()?.let(::success)
             ?: coroutine.get()?.let { coroutine ->
         val result = if (coroutine.isCompleted) {
-            try {
-                coroutine.getCompleted()
-            } catch (t: Throwable) {
-                failure(t)
+            runCatching {
+                coroutine.getCompleted().getOrThrow()
             }
         } else if (coroutine.isCancelled) {
             failure(coroutine.getCancellationException())
