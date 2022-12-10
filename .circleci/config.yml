@@ -35,12 +35,6 @@ jobs:
     parameters:
       size:
         type: integer
-      resource_class:
-        type: string
-        default: small
-      heap_size:
-        type: string
-        default: 1536m
     docker:
       - image: cimg/openjdk:19.0.1
     resource_class: large
@@ -51,7 +45,7 @@ jobs:
           at: build/libs
       - run: >
           java -Dprism.maxvram=2560m -Dglass.platform=Monocle -Dmonocle.platform=Headless -Dquantum.multithreaded=true 
-          -XX:+UseStringDeduplication -Xms<< parameters.heap_size >> -Xmx<< parameters.heap_size >> -XX:MaxMetaspaceSize=64m
+          -XX:+UseStringDeduplication -Xms7680m -Xmx7680m -XX:MaxMetaspaceSize=64m
           -XX:SoftRefLRUPolicyMSPerMB=3600000
           -XX:+UnlockExperimentalVMOptions -XX:+UseZGC
           '-Xlog:gc*=debug,gc+stats=trace,gc+heap=trace,gc+heap+exit=trace,gc+metaspace=trace,gc+nmethod=info,safepoint+stats=info' 
@@ -74,41 +68,9 @@ workflows:
     jobs:
       - build
       - execute:
-        - requires:
-          - build
-          parameters:
-            size: 32
-        - requires:
+          requires:
             - build
-          parameters:
-            size: 64
-        - requires:
-            - build
-          parameters:
-            size: 128
-        - requires:
-            - build
-          parameters:
-            size: 256
-        - requires:
-            - build
-          parameters:
-            size: 512
-        - requires:
-            - build
-          parameters:
-            size: 1024
-            resource_class: medium
-            heap_size: 3584m
-        - requires:
-            - build
-          parameters:
-            size: 2048
-            resource_class: large
-            heap_size: 7680m
-        - requires:
-            - build
-          parameters:
-            size: 4096
-            resource_class: large
-            heap_size: 7680m
+          matrix:
+            parameters:
+              size: [32,64,128,256,512,1024,2048,4096]
+          name: Make Textures << matrix.size >>x<< matrix.size >>
