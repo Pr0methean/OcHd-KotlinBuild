@@ -22,7 +22,7 @@ enum class SimpleAxeBlock: SingleTextureMaterial, ShadowHighlightMaterial, Block
 
         override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<FileOutputTask> = flow {
             val layers = ctx.stack {createTextureLayers()}
-            emit(ctx.out(layers, "block/crafting_table_side", "block/crafting_table_front"))
+            emit(ctx.out(layers, arrayOf("block/crafting_table_side", "block/crafting_table_front")))
         }
     },
     CRAFTING_TABLE_TOP {

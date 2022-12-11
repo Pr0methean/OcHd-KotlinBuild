@@ -168,10 +168,12 @@ class TaskPlanningContext(
                 stats)) as ImageTask
     }
 
-    suspend inline fun out(source: ImageTask, vararg name: String): FileOutputTask {
-        val lowercaseName = name.map {it.lowercase(Locale.ENGLISH)}
+    suspend inline fun out(source: ImageTask, names: Array<String>): FileOutputTask {
+        val lowercaseName = names.map {it.lowercase(Locale.ENGLISH)}
         return out(lowercaseName[0], source, lowercaseName.map{outTextureRoot.resolve("$it.png")})
     }
+
+    suspend inline fun out(source: ImageTask, name: String): FileOutputTask = out(source, arrayOf(name))
 
     suspend inline fun out(
         lowercaseName: String,
@@ -187,8 +189,11 @@ class TaskPlanningContext(
         return deduped
     }
 
-    suspend inline fun out(source: LayerListBuilder.() -> Unit, vararg names: String): FileOutputTask
-            = out(stack {source()}, *names)
+    suspend inline fun out(source: LayerListBuilder.() -> Unit, names: Array<String>): FileOutputTask
+            = out(stack {source()}, names)
+
+    suspend inline fun out(source: LayerListBuilder.() -> Unit, name: String): FileOutputTask
+            = out(stack {source()}, arrayOf(name))
 
     suspend inline fun stack(layers: LayerList): ImageTask
             = deduplicate(ImageStackingTask(layers,

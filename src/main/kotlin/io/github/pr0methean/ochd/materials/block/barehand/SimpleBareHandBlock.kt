@@ -51,7 +51,7 @@ enum class SimpleBareHandBlock(
 
         override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<FileOutputTask> {
             val layers = ctx.stack {createTextureLayers()}
-            return flowOf(ctx.out(layers, "block/redstone_dust_line0", "block/redstone_dust_line1"))
+            return flowOf(ctx.out(layers, arrayOf("block/redstone_dust_line0", "block/redstone_dust_line1")))
         }
     },
     TWISTING_VINES_PLANT(c(0x008383), c(0x00b485), c(0x005e5e)) {

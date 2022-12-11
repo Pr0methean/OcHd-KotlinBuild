@@ -90,7 +90,7 @@ enum class Ore(
             emit(ctx.out({ ingot() }, "item/quartz"))
             emit(ctx.out(ctx.stack {
                     copy(OreBase.NETHERRACK)
-                copy {item()}
+                    copy { item() }
                 }, "block/nether_quartz_ore"))
             emit(ctx.out({
                 background(color)
@@ -98,8 +98,8 @@ enum class Ore(
                 layer("borderSolid", shadow)
                 layer("borderSolidTopLeft", highlight)
             }, "block/quartz_block_top"))
-            emit(ctx.out({rawBlock()}, "block/quartz_block_bottom"))
-            emit(ctx.out({block()}, "block/quartz_block_side"))
+            emit(ctx.out({ rawBlock() }, "block/quartz_block_bottom"))
+            emit(ctx.out({ block() }, "block/quartz_block_side"))
         }
 
     },

@@ -62,7 +62,7 @@ enum class DirtGroundCover(
 
         override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<FileOutputTask> = flow {
             val top = ctx.stack { createTopLayers() }
-            emit(ctx.out(top, "block/podzol_top", "block/composter_compost"))
+            emit(ctx.out(top, arrayOf("block/podzol_top", "block/composter_compost")))
             emit(ctx.out(ctx.stack {
                 copy(top)
                 layer("bonemealSmallNoBorder")
