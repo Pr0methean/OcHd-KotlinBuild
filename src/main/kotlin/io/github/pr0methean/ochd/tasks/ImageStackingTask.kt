@@ -2,7 +2,7 @@ package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.LayerList
-import io.github.pr0methean.ochd.tasks.caching.TaskCache
+import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import javafx.application.Platform
 import javafx.scene.SnapshotParameters
 import javafx.scene.canvas.Canvas
@@ -12,15 +12,19 @@ import javafx.scene.image.WritableImage
 import javafx.scene.paint.Color
 import org.apache.logging.log4j.LogManager
 import java.util.*
+import kotlin.coroutines.CoroutineContext
 
 private val logger = LogManager.getLogger("ImageStackingTask")
 
 /**
  * Task that superimposes multiple images onto a background.
  */
-class ImageStackingTask(val layers: LayerList,
-                        cache: TaskCache<Image>,
-                        stats: ImageProcessingStats) : AbstractImageTask(layers.toString(), cache, stats) {
+class ImageStackingTask(
+    val layers: LayerList,
+    cache: DeferredTaskCache<Image>,
+    ctx: CoroutineContext,
+    stats: ImageProcessingStats
+) : AbstractImageTask(layers.toString(), cache, ctx, stats) {
     @Suppress("MagicNumber")
     private val hashCode by lazy { layers.hashCode() + 37 }
 
@@ -51,7 +55,7 @@ class ImageStackingTask(val layers: LayerList,
     override suspend fun perform(): Image {
         stats.onTaskLaunched("ImageStackingTask", name)
         logger.debug("Fetching first layer of {} to check size", this)
-        val firstLayer = layers.layers.first().await().getOrThrow()
+        val firstLayer = layers.layers.first().await()
         val width = firstLayer.width
         val height = firstLayer.height
         val canvas = Canvas(width, height)
@@ -80,7 +84,7 @@ class ImageStackingTask(val layers: LayerList,
     }
 
     override suspend fun renderOnto(context: GraphicsContext, x: Double, y: Double) {
-        if (isStartedOrAvailable() || cache.enabled) {
+        if (isStartedOrAvailable() || cache.isEnabled()) {
             super.renderOnto(context, x, y)
         } else {
             logger.info("Rendering {} onto an existing canvas", name)

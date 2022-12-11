@@ -9,19 +9,22 @@ import io.github.pr0methean.ochd.tasks.ImageTask
 import io.github.pr0methean.ochd.tasks.RepaintTask
 import io.github.pr0methean.ochd.tasks.SvgToBitmapTask
 import io.github.pr0methean.ochd.tasks.Task
-import io.github.pr0methean.ochd.tasks.caching.SemiStrongTaskCache
-import io.github.pr0methean.ochd.tasks.caching.SoftTaskCache
-import io.github.pr0methean.ochd.tasks.caching.TaskCache
+import io.github.pr0methean.ochd.tasks.caching.CaffeineDeferredTaskCache
+import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
+import io.github.pr0methean.ochd.tasks.caching.VictimReferenceDeferredTaskCache
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import org.apache.logging.log4j.LogManager
 import java.io.File
+import java.lang.ref.SoftReference
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.coroutines.CoroutineContext
 
 fun color(web: String): Color = Color.web(web)
 
@@ -31,7 +34,7 @@ private val logger = LogManager.getLogger("TaskPlanningContext")
 private const val MAIN_CACHE_SIZE_BYTES = 1L.shl(31)
 private const val HUGE_TILE_CACHE_SIZE_BYTES = 1L.shl(29)
 
-fun isHugeTileImportTask(name: String): Boolean = name.startsWith("commandBlock") || name.endsWith("4x")
+fun isHugeTileTask(name: String): Boolean = name.contains("commandBlock") || name.contains("4x")
 
 private const val REGULAR_TILES_PER_HUGE_TILE = 4
 
@@ -44,7 +47,8 @@ class TaskPlanningContext(
     val name: String,
     val tileSize: Int,
     val svgDirectory: File,
-    val outTextureRoot: File
+    val outTextureRoot: File,
+    val ctx: CoroutineContext
 ) {
     private fun bytesPerTile() = BYTES_PER_PIXEL * tileSize * tileSize
     override fun toString(): String = name
@@ -56,28 +60,19 @@ class TaskPlanningContext(
         .weakKeys()
         .executor(Runnable::run) // keep eviction on same thread as population
         .maximumSize(MAIN_CACHE_SIZE_BYTES / bytesPerTile())
-        .build<SemiStrongTaskCache<Image>,Image>()
+        .build<DeferredTaskCache<Image>, Deferred<Image>>()
     internal val hugeTileBackingCache = Caffeine.newBuilder()
         .recordStats()
         .weakKeys()
         .executor(Runnable::run) // keep eviction on same thread as population
         .maximumSize(HUGE_TILE_CACHE_SIZE_BYTES / (REGULAR_TILES_PER_HUGE_TILE * bytesPerTile()))
-        .build<SemiStrongTaskCache<Image>,Image>()
+        .build<DeferredTaskCache<Image>, Deferred<Image>>()
     val stats: ImageProcessingStats = ImageProcessingStats(backingCache)
 
-    fun createStandardTaskCache(name: String): TaskCache<Image> {
-        if (name.contains("4x") || name.contains("commandBlock")) {
-            // Tasks using these images are too large for the main cache to manage
-            return SemiStrongTaskCache(SoftTaskCache(name), hugeTileBackingCache)
-        }
-        return SemiStrongTaskCache(SoftTaskCache(name), backingCache)
-    }
-    private fun createSvgImportCache(name: String): TaskCache<Image> {
-        if (isHugeTileImportTask(name)) {
-            // These images are too large for the main cache to manage
-            return SemiStrongTaskCache(SoftTaskCache(name), hugeTileBackingCache)
-        }
-        return SemiStrongTaskCache(SoftTaskCache(name), backingCache)
+    fun createTaskCache(name: String): DeferredTaskCache<Image> {
+        return VictimReferenceDeferredTaskCache(
+                CaffeineDeferredTaskCache(if (isHugeTileTask(name)) hugeTileBackingCache else backingCache),
+                ::SoftReference)
     }
 
     init {
@@ -88,8 +83,9 @@ class TaskPlanningContext(
                 shortName,
                 tileSize,
                 svgDirectory.resolve("$shortName.svg"),
-                stats,
-                createSvgImportCache(shortName)
+                createTaskCache(shortName),
+                ctx,
+                stats
             )
         }
         svgTasks = builder.toMap()
@@ -143,11 +139,15 @@ class TaskPlanningContext(
             = layer(findSvgTask(name), paint, alpha)
 
     suspend inline fun layer(source: Task<Image>, paint: Paint? = null, alpha: Double = 1.0): ImageTask {
-        return deduplicate(RepaintTask(
+        return deduplicate(
+            RepaintTask(
                 deduplicate(source) as ImageTask,
                 paint,
                 alpha,
-                createStandardTaskCache("$source@$paint@$alpha"), stats)) as ImageTask
+                createTaskCache("$source@$paint@$alpha"),
+                ctx,
+                stats
+            )) as ImageTask
     }
 
     suspend inline fun stack(init: LayerListBuilder.() -> Unit): ImageTask {
@@ -158,21 +158,30 @@ class TaskPlanningContext(
     }
 
     suspend inline fun animate(background: ImageTask, frames: List<ImageTask>): ImageTask {
-        return deduplicate(AnimationTask(
+        return deduplicate(
+            AnimationTask(
                 deduplicate(background) as ImageTask,
                 frames.asFlow().map { deduplicate(it) as ImageTask }.toList(),
                 tileSize,
                 tileSize,
                 frames.toString(),
-                createStandardTaskCache(frames.toString()),
-                stats)) as ImageTask
+                createTaskCache(frames.toString()),
+                ctx,
+                stats
+            )) as ImageTask
     }
 
     suspend inline fun out(source: ImageTask, names: Array<String>): FileOutputTask {
         val lowercaseName = names.map { it.lowercase(Locale.ENGLISH) }
         val pngSource = deduplicate((deduplicate(source) as ImageTask).asPng)
         val orig =
-            FileOutputTask(pngSource, lowercaseName[0], stats, lowercaseName.map { outTextureRoot.resolve("$it.png") })
+            FileOutputTask(
+                lowercaseName[0],
+                pngSource,
+                lowercaseName.map { outTextureRoot.resolve("$it.png") },
+                ctx,
+                stats
+            )
         val deduped = deduplicate(orig) as FileOutputTask
         if (deduped === orig) {
             pngSource.addDirectDependentTask(deduped)
@@ -186,6 +195,11 @@ class TaskPlanningContext(
             = out(stack {source()}, arrayOf(name))
 
     suspend inline fun stack(layers: LayerList): ImageTask
-            = deduplicate(ImageStackingTask(layers,
-                createStandardTaskCache(layers.toString()), stats)) as ImageTask
+            = deduplicate(
+        ImageStackingTask(
+            layers,
+            createTaskCache(layers.toString()),
+            ctx,
+            stats
+        )) as ImageTask
 }

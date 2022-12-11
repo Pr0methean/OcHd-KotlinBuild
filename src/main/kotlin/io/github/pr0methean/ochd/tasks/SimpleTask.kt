@@ -1,23 +1,27 @@
 package io.github.pr0methean.ochd.tasks
 
-import io.github.pr0methean.ochd.tasks.caching.TaskCache
+import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
+import kotlin.coroutines.CoroutineContext
 
 /**
  * Task that either has no other tasks as input, or manages its input in subclass fields.
  */
-abstract class SimpleTask<T>(name: String, cache: TaskCache<T>) : AbstractTask<T>(
-    name, cache
+abstract class SimpleTask<T>(name: String, cache: DeferredTaskCache<T>, ctx: CoroutineContext) : AbstractTask<T>(
+    name, cache, ctx
 ) {
     abstract suspend fun perform(): T
 
-    override suspend fun createCoroutineAsync(): Deferred<Result<T>> {
-        return getCoroutineScope().async (start = CoroutineStart.LAZY) {
-            val result = runCatching {perform()}
-            emit(result)
-            result
+    override fun createCoroutineAsync(): Deferred<T> {
+        return coroutineScope.async (start = CoroutineStart.LAZY) {
+            try {
+                return@async perform()
+            } catch (t: Throwable) {
+                logFailure(t)
+                throw t
+            }
         }
     }
 }

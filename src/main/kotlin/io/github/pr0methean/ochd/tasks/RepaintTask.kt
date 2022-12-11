@@ -2,7 +2,7 @@ package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.DEFAULT_SNAPSHOT_PARAMS
 import io.github.pr0methean.ochd.ImageProcessingStats
-import io.github.pr0methean.ochd.tasks.caching.TaskCache
+import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import javafx.application.Platform
 import javafx.scene.canvas.Canvas
 import javafx.scene.canvas.GraphicsContext
@@ -14,6 +14,7 @@ import javafx.scene.image.WritableImage
 import javafx.scene.paint.Paint
 import org.apache.logging.log4j.LogManager
 import java.util.Objects
+import kotlin.coroutines.CoroutineContext
 
 private val logger = LogManager.getLogger("RepaintTask")
 
@@ -22,7 +23,7 @@ private val logger = LogManager.getLogger("RepaintTask")
  * <ul>
  *     <li>If the base task isn't in the cache, but another repaint of it is and has alpha 1.0, we repaint the
  *     repaint rather than recreating the base image.</li>
- *     <li>When alpha is 1.0 and we're a non-cacheable task, we can render directly to the consuming task's canvas
+ *     <li>When alpha is 1.0, and we're a non-cacheable task, we can render directly to the consuming task's canvas
  *     rather than allocating a {@link Canvas} and a {@link WritableImage}.</li>
  * </ul>
  * @param base the task whose output is recolored
@@ -33,9 +34,10 @@ class RepaintTask(
     val base: ImageTask,
     val paint: Paint?,
     val alpha: Double = 1.0,
-    cache: TaskCache<Image>,
+    cache: DeferredTaskCache<Image>,
+    ctx: CoroutineContext,
     stats: ImageProcessingStats
-): AbstractImageTask("{$base}@$paint@$alpha", cache, stats) {
+): AbstractImageTask("{$base}@$paint@$alpha", cache, ctx, stats) {
     init {
         if (alpha == 1.0) {
             base.addOpaqueRepaint(this)
@@ -43,7 +45,7 @@ class RepaintTask(
     }
 
     override suspend fun renderOnto(context: GraphicsContext, x: Double, y: Double) {
-        if (cache.enabled || isStartedOrAvailable() || alpha != 1.0) {
+        if (cache.isEnabled() || isStartedOrAvailable() || alpha != 1.0) {
             super.renderOnto(context, x, y)
         } else {
             logger.info("Rendering {} onto an existing canvas", name)
@@ -55,12 +57,11 @@ class RepaintTask(
 
     private suspend fun internalRenderOnto(context: GraphicsContext?, x: Double, y: Double): GraphicsContext {
         // Determine whether we can repaint a repaint if it's available and the base image isn't
-        val baseImageDeferred = base.getNow()
+        val baseImage = base.getNow()
             ?: base.opaqueRepaints().firstNotNullOfOrNull { task ->
                 task.getNow()?.also { logger.info("Repainting $task for ${this@RepaintTask}") }
             }
             ?: base.await()
-        val baseImage = baseImageDeferred.getOrThrow()
         val ctx = context ?: Canvas(baseImage.width, baseImage.height).graphicsContext2D
         if (paint != null) {
             val colorLayer = ColorInput(0.0, 0.0, baseImage.width, baseImage.height, paint)

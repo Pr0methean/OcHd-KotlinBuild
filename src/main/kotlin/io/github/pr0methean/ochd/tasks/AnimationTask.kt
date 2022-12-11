@@ -2,7 +2,7 @@ package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.DEFAULT_SNAPSHOT_PARAMS
 import io.github.pr0methean.ochd.ImageProcessingStats
-import io.github.pr0methean.ochd.tasks.caching.TaskCache
+import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import javafx.application.Platform.requestNextPulse
 import javafx.scene.canvas.Canvas
 import javafx.scene.image.Image
@@ -12,6 +12,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.*
+import kotlin.coroutines.CoroutineContext
 
 /**
  * Task that stacks the input images in a column. Minecraft can use this as an animated texture with the input images as
@@ -21,9 +22,10 @@ class AnimationTask(
     val background: ImageTask,
     val frames: List<ImageTask>, val width: Int, val height: Int,
     name: String,
-    cache: TaskCache<Image>,
+    cache: DeferredTaskCache<Image>,
+    ctx: CoroutineContext,
     stats: ImageProcessingStats
-): AbstractImageTask(name, cache, stats) {
+): AbstractImageTask(name, cache, ctx, stats) {
     private val totalHeight = height * frames.size
     private val hashCode: Int by lazy {Objects.hash(frames, width, height)}
 
@@ -50,7 +52,7 @@ class AnimationTask(
     @Suppress("DeferredResultUnused")
     override suspend fun perform(): Image {
         stats.onTaskLaunched("AnimationTask", name)
-        val background = background.await().getOrThrow()
+        val background = background.await()
         val canvasMutex = Mutex()
         val canvas = Canvas(width.toDouble(), totalHeight.toDouble())
         val canvasCtx = canvas.graphicsContext2D
@@ -58,7 +60,7 @@ class AnimationTask(
             canvasCtx.drawImage(background, 0.0, (height * index).toDouble())
         }
         val frameTasks = frames.withIndex().map { (index, frameTask) ->
-            getCoroutineScope().launch {
+            coroutineScope.launch {
                 canvasMutex.withLock {
                     frameTask.renderOnto(canvasCtx, 0.0, (height * index).toDouble())
                 }

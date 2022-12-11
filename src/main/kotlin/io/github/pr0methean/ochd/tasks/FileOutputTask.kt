@@ -1,20 +1,22 @@
 package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.ImageProcessingStats
-import io.github.pr0methean.ochd.tasks.caching.noopTaskCache
+import io.github.pr0methean.ochd.tasks.caching.noopDeferredTaskCache
 import java.io.File
 import java.nio.file.Files
+import kotlin.coroutines.CoroutineContext
 
 /**
  * Task that saves a [ByteArray] to one or more files.
  */
 @Suppress("BlockingMethodInNonBlockingContext")
 class FileOutputTask(
-    source: Task<ByteArray>,
     name: String,
-    val stats: ImageProcessingStats,
+    source: Task<ByteArray>,
     private val files: List<File>,
-): TransformingTask<ByteArray, Unit>("Output $name", source, noopTaskCache()) {
+    ctx: CoroutineContext,
+    val stats: ImageProcessingStats,
+): TransformingTask<ByteArray, Unit>("Output $name", source, noopDeferredTaskCache(), ctx) {
     override suspend fun transform(input: ByteArray) {
         stats.onTaskLaunched("FileOutputTask", name)
         val firstFile = files[0]

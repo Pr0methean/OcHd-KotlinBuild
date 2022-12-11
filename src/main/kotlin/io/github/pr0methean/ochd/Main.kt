@@ -2,7 +2,6 @@ package io.github.pr0methean.ochd
 
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
 import io.github.pr0methean.ochd.tasks.FileOutputTask
-import io.github.pr0methean.ochd.tasks.await
 import io.github.pr0methean.ochd.tasks.doJfx
 import javafx.application.Platform
 import kotlinx.coroutines.CoroutineName
@@ -71,7 +70,8 @@ suspend fun main(args: Array<String>) {
         name = "MainContext",
         tileSize = tileSize,
         svgDirectory = svgDirectory,
-        outTextureRoot = outTextureRoot
+        outTextureRoot = outTextureRoot,
+        ctx = coroutineContext
     )
     doJfx("Increase rendering thread priority") {
         Thread.currentThread().priority = Thread.MAX_PRIORITY
@@ -140,13 +140,13 @@ private suspend fun runAll(
         check(task.timesFailed.get() <= GLOBAL_MAX_RETRIES) { "Too many failures in $task!" }
         inProgressJobs[task] = scope.launch {
             logger.info("Joining {}", task)
-            val result = task.await()
-            if (result.isSuccess) {
+            try {
+                task.await()
                 unfinishedTasks.getAndDecrement()
                 finishedJobsChannel.send(TaskResult(task, true))
-            } else {
+            } catch (t: Throwable) {
                 finishedJobsChannel.send(TaskResult(task, false))
-                logger.error("Joined {} with an error: {}", task, result.exceptionOrNull()?.message)
+                logger.error("Joined {} with {}: {}", task, t::class.simpleName, t.message)
                 stats.recordRetries(1)
             }
         }

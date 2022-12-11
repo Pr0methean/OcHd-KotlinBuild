@@ -5,10 +5,11 @@ import com.github.benmanes.caffeine.cache.stats.CacheStats
 import com.google.common.collect.ConcurrentHashMultiset
 import com.google.common.collect.Multiset
 import com.google.common.collect.Multisets
-import io.github.pr0methean.ochd.tasks.caching.SemiStrongTaskCache
+import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import javafx.scene.image.Image
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
@@ -96,7 +97,7 @@ fun CacheStats.log(name: String, estimatedSize: Long) {
             box(hitCount()), box(missCount()), box(evictionCount()), box(estimatedSize))
 }
 
-class ImageProcessingStats(private val backingCache: Cache<SemiStrongTaskCache<Image>, Image>) {
+class ImageProcessingStats(private val backingCache: Cache<DeferredTaskCache<Image>, Deferred<Image>>) {
     private val taskLaunches: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val taskCompletions: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val dedupeSuccesses: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
@@ -171,7 +172,7 @@ class ImageProcessingStats(private val backingCache: Cache<SemiStrongTaskCache<I
         retries.add(howMany)
     }
 
-    fun readHugeTileCache(hugeTaskCache: Cache<SemiStrongTaskCache<Image>, Image>) {
+    fun readHugeTileCache(hugeTaskCache: Cache<*, *>) {
         hugeCacheStats = hugeTaskCache.stats()
         hugeCacheFinalSize = hugeTaskCache.estimatedSize()
     }

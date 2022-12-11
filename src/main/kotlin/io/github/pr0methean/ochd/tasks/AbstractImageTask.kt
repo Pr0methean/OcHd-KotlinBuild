@@ -1,16 +1,20 @@
 package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.ImageProcessingStats
-import io.github.pr0methean.ochd.tasks.caching.TaskCache
-import io.github.pr0methean.ochd.tasks.caching.noopTaskCache
+import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
+import io.github.pr0methean.ochd.tasks.caching.noopDeferredTaskCache
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.image.Image
 import java.util.Collections
 import java.util.WeakHashMap
+import kotlin.coroutines.CoroutineContext
 
-abstract class AbstractImageTask(name: String, cache: TaskCache<Image>,
-                                 open val stats: ImageProcessingStats)
-    : SimpleTask<Image>(name, cache), ImageTask {
+abstract class AbstractImageTask(
+    name: String, cache: DeferredTaskCache<Image>,
+    ctx: CoroutineContext,
+    open val stats: ImageProcessingStats
+)
+    : SimpleTask<Image>(name, cache, ctx), ImageTask {
     override suspend fun mergeWithDuplicate(other: Task<*>): ImageTask {
         if (other is ImageTask) {
             other.opaqueRepaints().forEach(this::addOpaqueRepaint)
@@ -27,8 +31,12 @@ abstract class AbstractImageTask(name: String, cache: TaskCache<Image>,
     }
 
     override suspend fun renderOnto(context: GraphicsContext, x: Double, y: Double) {
-        context.drawImage(await().getOrThrow(), x, y)
+        context.drawImage(await(), x, y)
     }
 
-    override val asPng: TransformingTask<Image, ByteArray> by lazy { PngEncodingTask(this, noopTaskCache(), stats) }
+    override val asPng: TransformingTask<Image, ByteArray> by lazy { PngEncodingTask(
+        this,
+        noopDeferredTaskCache(), ctx,
+        stats
+    ) }
 }

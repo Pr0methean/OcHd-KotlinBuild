@@ -1,18 +1,14 @@
 package io.github.pr0methean.ochd.tasks
 
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Deferred
 import org.apache.logging.log4j.util.StringBuilderFormattable
 
 /**
- * Cacheable, retryable unit of work.
+ * Unit of work that wraps its coroutine to support reuse (including under heap-constrained conditions) and retrying.
  */
 interface Task<out T>: StringBuilderFormattable {
     val name: String
 
-    fun getNow(): Result<T>?
-
-    suspend fun startAsync(): Deferred<Result<T>>
+    fun getNow(): T?
 
     suspend fun mergeWithDuplicate(other: Task<*>): Task<T>
 
@@ -30,11 +26,8 @@ interface Task<out T>: StringBuilderFormattable {
 
     val directDependencies: Iterable<Task<*>>
 
-    suspend fun getCoroutineScope(): CoroutineScope
-
     val totalSubtasks: Int
 
     fun timesFailed(): Long
+    suspend fun await(): T
 }
-
-suspend inline fun <T> Task<T>.await(): Result<T> = startAsync().await()
