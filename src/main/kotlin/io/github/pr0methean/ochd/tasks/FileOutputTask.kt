@@ -16,7 +16,7 @@ class FileOutputTask(
     private val files: List<File>,
 ): TransformingTask<ByteArray, Unit>("Output $name", source, noopTaskCache()) {
     override suspend fun transform(input: ByteArray) {
-        stats.onTaskLaunched("OutputTask", name)
+        stats.onTaskLaunched("FileOutputTask", name)
         val firstFile = files[0]
         firstFile.parentFile?.mkdirs()
         val firstFilePath = firstFile.absoluteFile.toPath()
@@ -27,12 +27,12 @@ class FileOutputTask(
                 Files.copy(firstFilePath, file.absoluteFile.toPath())
             }
         }
-        stats.onTaskCompleted("OutputTask", name)
+        stats.onTaskCompleted("FileOutputTask", name)
     }
 
     val isCommandBlock: Boolean = name.contains("command_block")
 
     init {
-        check(files.isNotEmpty()) { "OutputTask $name has no destination files" }
+        check(files.isNotEmpty()) { "FileOutputTask $name has no destination files" }
     }
 }
