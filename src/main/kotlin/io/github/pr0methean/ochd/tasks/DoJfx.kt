@@ -10,6 +10,7 @@ import org.apache.logging.log4j.LogManager
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicReference
 
 private val LOGGER = LogManager.getLogger("doJfx")
 private val DEFAULT_ERR = System.err
@@ -28,18 +29,22 @@ suspend fun <T> doJfx(name: String, jfxCode: CoroutineScope.() -> T): T = runCat
         System.setErr(ERR_CATCHER_STREAM)
     }
     LOGGER.info("Starting JFX task: {}", name)
+    val caughtStderr = AtomicReference<String?>(null)
     val result = withContext(Dispatchers.Main.plus(CoroutineName(name))) {
         try {
             jfxCode()
         } finally {
             ERR_CATCHER_STREAM.flush()
             Disposer.cleanUp()
+            if (ERR_CATCHER.size() > 0) {
+                caughtStderr.set(ERR_CATCHER.toString(DEFAULT_CHARSET))
+                ERR_CATCHER.reset()
+            }
         }
     }
-    if (ERR_CATCHER.size() > 0) {
-        val interceptedStderr = ERR_CATCHER.toString(DEFAULT_CHARSET)
+    val interceptedStderr = caughtStderr.getAndSet(null)
+    if (interceptedStderr != null) {
         try {
-            ERR_CATCHER.reset()
             check(!interceptedStderr.contains("Exception:") && !interceptedStderr.contains("Error:")) {
                 interceptedStderr.lineSequence().first()
             }
