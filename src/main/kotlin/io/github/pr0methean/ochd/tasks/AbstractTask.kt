@@ -152,49 +152,38 @@ abstract class AbstractTask<T>(final override val name: String, val cache: TaskC
 
     @Suppress("UNCHECKED_CAST")
     @OptIn(ExperimentalCoroutinesApi::class)
-    override suspend fun mergeWithDuplicate(other: Task<*>): Task<T> {
-        if (other === this || getNow() != null) {
-            return this
-        }
-        val otherNow = other.getNow()
-        if (otherNow != null) {
-            emitUnchecked(otherNow)
-            return this
-        }
-        AT_LOGGER.debug("Locking {} to merge with a duplicate", name)
-        mutex.withLock(other) {
-            if (getNow() != null) {
-                return@withLock
-            }
-            val result = other.getNow()
-            if (result != null) {
-                emitUnchecked(result)
-                return this
-            }
-            if (coroutine.get() == null && other is AbstractTask) {
-                AT_LOGGER.debug("Locking {} to merge into {}", other.name, name)
-                other.mutex.withLock(this@AbstractTask) {
-                    val resultWithLock = other.getNow()
-                    if (resultWithLock != null) {
-                        emitUnchecked(resultWithLock)
-                        return this
-                    }
-                    val otherCoroutine = other.coroutine.get()
-                    if (otherCoroutine != null) {
-                        if (otherCoroutine.isCompleted) {
-                            emitUnchecked(otherCoroutine.getCompleted())
+    override suspend fun mergeWithDuplicate(other: Task<*>): Task<T> =
+        if (other === this || getNow() != null || other.getNow()?.also { emitUnchecked(it) } != null) {
+            this
+        } else {
+            AT_LOGGER.debug("Locking {} to merge with a duplicate", name)
+            mutex.withLock(other) {
+                if (getNow() == null
+                        && other.getNow()?.also { emitUnchecked(it) } == null
+                        && coroutine.get() == null
+                        && other is AbstractTask) {
+                    AT_LOGGER.debug("Locking {} to merge into {}", other.name, name)
+                    other.mutex.withLock(this@AbstractTask) {
+                        val resultWithLock = other.getNow()
+                        if (resultWithLock != null) {
+                            emitUnchecked(resultWithLock)
                         } else {
-                            coroutine.set(getCoroutineScope().async { otherCoroutine.await() as Result<T> })
+                            other.coroutine.get()?.let { otherCoroutine ->
+                                if (otherCoroutine.isCompleted) {
+                                    emitUnchecked(otherCoroutine.getCompleted())
+                                } else {
+                                    coroutine.set(getCoroutineScope().async { otherCoroutine.await() as Result<T> })
+                                }
+                                return this
+                            }
                         }
-                        return this
                     }
+                    AT_LOGGER.debug("Unlocking {} after merging it into {}", other.name, name)
                 }
-                AT_LOGGER.debug("Unlocking {} after merging it into {}", other.name, name)
             }
+            AT_LOGGER.debug("Unlocking {} after merging a duplicate into it", name)
+            this
         }
-        AT_LOGGER.debug("Unlocking {} after merging a duplicate into it", name)
-        return this
-    }
 
     @Volatile private var coroutineScope: CoroutineScope? = null
 
