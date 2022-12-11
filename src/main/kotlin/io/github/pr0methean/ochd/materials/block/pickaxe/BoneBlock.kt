@@ -16,14 +16,15 @@ object BoneBlock: Material {
         emit(ctx.out({
             background(shadow)
             layer("borderSolid", highlight)
-            layer("bonesXor", highlight)
+            layer("boneBottomLeftTopRightNoCross", highlight)
+            layer("boneTopLeftBottomRightNoCross", color)
         }, "block/bone_block_top"))
         emit(ctx.out({
             background(color)
             layer("borderSolid", shadow)
             layer("borderDotted", highlight)
-            layer("boneBottomLeftTopRight", shadow)
-            layer("boneTopLeftBottomRight", highlight)
+            layer("boneBottomLeftTopRightNoCross", shadow)
+            layer("boneTopLeftBottomRightNoCross", highlight)
         }, "block/bone_block_side"))
     }
 }
