@@ -13,7 +13,7 @@ class FileOutputTask(
     source: Task<ByteArray>,
     name: String,
     val stats: ImageProcessingStats,
-    private var files: List<File>,
+    private val files: List<File>,
 ): TransformingTask<ByteArray, Unit>("Output $name", source, noopTaskCache()) {
     override suspend fun transform(input: ByteArray) {
         stats.onTaskLaunched("OutputTask", name)
