@@ -10,7 +10,7 @@ import java.nio.file.Files
  */
 @Suppress("BlockingMethodInNonBlockingContext")
 class FileOutputTask(
-    val source: Task<ByteArray>,
+    source: Task<ByteArray>,
     name: String,
     val stats: ImageProcessingStats,
     private var files: List<File>,

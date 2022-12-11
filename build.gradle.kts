@@ -10,7 +10,7 @@ plugins {
 group = "org.example"
 version = "1.0-SNAPSHOT"
 
-val myMainClassName = "io.github.pr0methean.ochd.MainKt"
+val myMainClassName: String = "io.github.pr0methean.ochd.MainKt"
 
 application {
     mainClass.set(myMainClassName)
@@ -35,9 +35,9 @@ repositories {
     mavenCentral()
 }
 
-val log4jVersion = "2.19.0"
-val kotlinXCoroutinesVersion = "1.6.4"
-val batikVersion = "1.16"
+val log4jVersion: String = "2.19.0"
+val kotlinXCoroutinesVersion: String = "1.6.4"
+val batikVersion: String = "1.16"
 
 dependencies {
     testImplementation(kotlin("test"))
