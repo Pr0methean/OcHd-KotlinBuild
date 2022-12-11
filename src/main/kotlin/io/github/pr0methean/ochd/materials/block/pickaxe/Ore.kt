@@ -45,8 +45,8 @@ enum class Ore(
         override suspend fun LayerListBuilder.block() {
             background(color)
             layer("streaks", refinedHighlight)
-            layer("coal", refinedShadow)
             layer("coalBorder", refinedHighlight)
+            layer("coal", refinedShadow)
             layer("borderSolid", refinedShadow)
             layer("borderSolidTopLeft", refinedHighlight)
         }
