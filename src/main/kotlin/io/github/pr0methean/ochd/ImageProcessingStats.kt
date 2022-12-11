@@ -103,8 +103,7 @@ class ImageProcessingStats(private val backingCache: Cache<SemiStrongTaskCache<I
     val dedupeFailures: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     private val retries = LongAdder()
     private val tasksByRunCount = ConcurrentHashMultiset.create<Pair<String, String>>()
-    @Volatile lateinit var hugeCacheStats: CacheStats
-    @Volatile var hugeCacheFinalSize: Long = -1
+
     init {
         dedupeFailures.add("Build task graph")
 
@@ -153,7 +152,6 @@ class ImageProcessingStats(private val backingCache: Cache<SemiStrongTaskCache<I
         logger.printf(Level.INFO, "Total               : %3.2f%% / %3.2f%%",
             100.0 * totalEfficiency, 100.0 * totalHitRate)
         backingCache.stats().log("main", backingCache.estimatedSize())
-        hugeCacheStats.log("huge-tile", hugeCacheFinalSize)
     }
 
     fun onTaskLaunched(typename: String, name: String) {
@@ -171,8 +169,4 @@ class ImageProcessingStats(private val backingCache: Cache<SemiStrongTaskCache<I
         retries.add(howMany)
     }
 
-    fun readHugeTileCache(hugeTaskCache: Cache<SemiStrongTaskCache<Image>, Image>) {
-        hugeCacheStats = hugeTaskCache.stats()
-        hugeCacheFinalSize = hugeTaskCache.estimatedSize()
-    }
 }

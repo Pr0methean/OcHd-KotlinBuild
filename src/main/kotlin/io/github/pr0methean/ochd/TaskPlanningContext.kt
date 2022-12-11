@@ -1,6 +1,6 @@
 package io.github.pr0methean.ochd
 
-import com.github.benmanes.caffeine.cache.Caffeine
+import com.github.benmanes.caffeine.cache.Cache
 import com.google.common.collect.ConcurrentHashMultiset
 import io.github.pr0methean.ochd.tasks.AnimationTask
 import io.github.pr0methean.ochd.tasks.FileOutputTask
@@ -28,14 +28,6 @@ fun color(web: String): Color = Color.web(web)
 fun color(web: String, alpha: Double): Color = Color.web(web, alpha)
 
 private val logger = LogManager.getLogger("TaskPlanningContext")
-private const val MAIN_CACHE_SIZE_BYTES = 1L.shl(31)
-private const val HUGE_TILE_CACHE_SIZE_BYTES = 1L.shl(29)
-
-fun isHugeTileImportTask(name: String): Boolean = name.startsWith("commandBlock") || name.endsWith("4x")
-
-private const val REGULAR_TILES_PER_HUGE_TILE = 4
-
-private const val BYTES_PER_PIXEL = 4
 
 /**
  * Holds info needed to build and deduplicate the task graph. Needs to become unreachable once the graph is built.
@@ -44,39 +36,19 @@ class TaskPlanningContext(
     val name: String,
     val tileSize: Int,
     val svgDirectory: File,
-    val outTextureRoot: File
+    val outTextureRoot: File,
+    val backingCache: Cache<SemiStrongTaskCache<Image>,Image>
 ) {
-    private fun bytesPerTile() = BYTES_PER_PIXEL * tileSize * tileSize
     override fun toString(): String = name
     private val svgTasks: Map<String, SvgToBitmapTask>
     private val taskDeduplicationMap = ConcurrentHashMap<Task<*>, Task<*>>()
     private val dedupedSvgTasks = ConcurrentHashMultiset.create<String>()
-    private val backingCache = Caffeine.newBuilder()
-        .recordStats()
-        .weakKeys()
-        .executor(Runnable::run) // keep eviction on same thread as population
-        .maximumSize(MAIN_CACHE_SIZE_BYTES / bytesPerTile())
-        .build<SemiStrongTaskCache<Image>,Image>()
-    internal val hugeTileBackingCache = Caffeine.newBuilder()
-        .recordStats()
-        .weakKeys()
-        .executor(Runnable::run) // keep eviction on same thread as population
-        .maximumSize(HUGE_TILE_CACHE_SIZE_BYTES / (REGULAR_TILES_PER_HUGE_TILE * bytesPerTile()))
-        .build<SemiStrongTaskCache<Image>,Image>()
     val stats: ImageProcessingStats = ImageProcessingStats(backingCache)
 
     fun createStandardTaskCache(name: String): TaskCache<Image> {
-        if (name.contains("4x") || name.contains("commandBlock")) {
-            // Tasks using these images are too large for the main cache to manage
-            return SemiStrongTaskCache(SoftTaskCache(name), hugeTileBackingCache)
-        }
         return SemiStrongTaskCache(SoftTaskCache(name), backingCache)
     }
     private fun createSvgImportCache(name: String): TaskCache<Image> {
-        if (isHugeTileImportTask(name)) {
-            // These images are too large for the main cache to manage
-            return SemiStrongTaskCache(SoftTaskCache(name), hugeTileBackingCache)
-        }
         return SemiStrongTaskCache(SoftTaskCache(name), backingCache)
     }
 

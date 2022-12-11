@@ -1,5 +1,6 @@
 package io.github.pr0methean.ochd
 
+import com.github.benmanes.caffeine.cache.Caffeine
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
 import io.github.pr0methean.ochd.tasks.FileOutputTask
 import io.github.pr0methean.ochd.tasks.await
@@ -13,6 +14,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.getOrElse
+import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toSet
 import kotlinx.coroutines.launch
@@ -36,17 +38,23 @@ private val logger = LogManager.getRootLogger()
 private val PARALLELISM = Runtime.getRuntime().availableProcessors()
 private const val HUGE_TILE_PARALLELISM = 1
 private const val GLOBAL_MAX_RETRIES = 100L
+private const val MAIN_CACHE_SIZE_BYTES = 1L.shl(31)
+private const val HUGE_TILE_CACHE_SIZE_BYTES = 1L.shl(29)
+private const val REGULAR_TILES_PER_HUGE_TILE = 4
+
+private const val BYTES_PER_PIXEL = 4
 
 @OptIn(DelicateCoroutinesApi::class)
 @Suppress("UnstableApiUsage", "DeferredResultUnused")
 suspend fun main(args: Array<String>) {
     ImageIO.setUseCache(false) // Prevent intermediate disk writes when real destination is a ByteArrayOutputStream
-    if (args.isEmpty()) {
-        println("Usage: main <size>")
+    if (args.size < 2) {
+        println("Usage: main <size> <hugeTileJobs>")
         return
     }
     val tileSize = args[0].toInt()
     require(tileSize > 0) { "tileSize shouldn't be zero or negative but was ${args[0]}" }
+    val hugeTileJobs = args[1].toBoolean()
     val supervisorJob = SupervisorJob()
     val ioScope = CoroutineScope(Dispatchers.IO).plus(supervisorJob)
     val out = Paths.get("pngout").toAbsolutePath().toFile()
@@ -66,12 +74,27 @@ suspend fun main(args: Array<String>) {
     val scope = CoroutineScope(coroutineContext).plus(supervisorJob)
     val svgDirectory = Paths.get("svg").toAbsolutePath().toFile()
     val outTextureRoot = out.resolve("assets").resolve("minecraft").resolve("textures")
-
+    val bytesPerTile = BYTES_PER_PIXEL * tileSize * tileSize
     val ctx = TaskPlanningContext(
         name = "MainContext",
         tileSize = tileSize,
         svgDirectory = svgDirectory,
-        outTextureRoot = outTextureRoot
+        outTextureRoot = outTextureRoot,
+        backingCache = if (hugeTileJobs) {
+            Caffeine.newBuilder()
+                .recordStats()
+                .weakKeys()
+                .executor(Runnable::run) // keep eviction on same thread as population
+                .maximumSize(HUGE_TILE_CACHE_SIZE_BYTES / (REGULAR_TILES_PER_HUGE_TILE * bytesPerTile))
+                .build()
+        } else {
+            Caffeine.newBuilder()
+                .recordStats()
+                .weakKeys()
+                .executor(Runnable::run) // keep eviction on same thread as population
+                .maximumSize(MAIN_CACHE_SIZE_BYTES / bytesPerTile)
+                .build()
+        }
     )
     doJfx("Increase rendering thread priority") {
         Thread.currentThread().priority = Thread.MAX_PRIORITY
@@ -80,20 +103,15 @@ suspend fun main(args: Array<String>) {
     startMonitoring(stats, scope)
     val time = measureNanoTime {
         stats.onTaskLaunched("Build task graph", "Build task graph")
-        val tasks = ALL_MATERIALS.outputTasks(ctx).map { ctx.deduplicate(it) as FileOutputTask }.toSet()
+        val tasks = ALL_MATERIALS.outputTasks(ctx)
+            .map { ctx.deduplicate(it) as FileOutputTask }
+            .filter { it.isCommandBlock == hugeTileJobs }.toSet()
         val depsBuildTask = scope.launch { tasks.forEach { it.registerRecursiveDependencies() }}
-        val cbTasks = tasks.filter(FileOutputTask::isCommandBlock)
-        val nonCbTasks = tasks.filterNot(FileOutputTask::isCommandBlock)
-        val hugeTaskCache = ctx.hugeTileBackingCache
         depsBuildTask.join()
         stats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupAndCopyMetadata.join()
         System.gc()
-        runAll(cbTasks, scope, stats, HUGE_TILE_PARALLELISM)
-        stats.readHugeTileCache(hugeTaskCache)
-        hugeTaskCache.invalidateAll()
-        System.gc()
-        runAll(nonCbTasks, scope, stats, PARALLELISM)
+        runAll(tasks, scope, stats, HUGE_TILE_PARALLELISM)
     }
     stopMonitoring()
     Platform.exit()

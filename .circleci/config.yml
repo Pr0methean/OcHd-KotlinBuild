@@ -35,6 +35,8 @@ jobs:
     parameters:
       size:
         type: integer
+      hugeTile:
+        type: boolean
     docker:
       - image: cimg/openjdk:19.0.1
     resource_class: large
@@ -53,14 +55,27 @@ jobs:
           -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=HeapDump.hprof
           -XX:+PrintFlagsFinal -XX:StringDeduplicationAgeThreshold=1
           -Dlog4j2.contextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector --enable-preview
-          -jar build/libs/OcHd-KotlinBuild-1.0-SNAPSHOT.jar << parameters.size >>
-      - run: cd pngout && zip -9 -r OcHD-<< parameters.size >>x<< parameters.size >>.zip *
-      - store_artifacts:
-          path: 'pngout/OcHD-<< parameters.size >>x<< parameters.size >>.zip'
+          -jar build/libs/OcHd-KotlinBuild-1.0-SNAPSHOT.jar << parameters.size >> << parameters.hugeTile >>
+      - run: mv pngout pngout-<< parameters.size >>
+      - persist_to_workspace:
+          root: 'pngout-<< parameters.size >>'
+          paths:
+            - '*'
       - run:
           zip -9 HeapDump.zip HeapDump.hprof || true
       - store_artifacts:
           path: 'HeapDump.zip'
+  combine-and-zip:
+    parameters:
+      size:
+        type: integer
+    machine: ubuntu-2204
+    resource_class: small
+    steps:
+      - attach_workspace:
+            at: 'pngout-<< parameters.size >>'
+      - run: cd pngout-<< parameters.size >> && zip -9 -r OcHD-<< parameters.size >>x<< parameters.size >>.zip *
+
 # Invoke jobs via workflows
 # See: https://circleci.com/docs/2.0/configuration-reference/#workflows
 workflows:
@@ -73,4 +88,12 @@ workflows:
           matrix:
             parameters:
               size: [32,64,128,256,512,1024,2048,4096]
-          name: Make Textures << matrix.size >>x<< matrix.size >>
+              hugeTile: [false,true]
+          name: MakeTextures-<< matrix.size >>-<< matrix.hugeTile >>
+      - combine-and-zip:
+          requires:
+            - MakeTextures-<< matrix.size >>-false
+            - MakeTextures-<< matrix.size >>-true
+          matrix:
+            parameters:
+              size: [32,64,128,256,512,1024,2048,4096]
