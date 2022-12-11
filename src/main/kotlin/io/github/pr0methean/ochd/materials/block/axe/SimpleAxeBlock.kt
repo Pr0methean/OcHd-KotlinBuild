@@ -57,10 +57,11 @@ enum class SimpleAxeBlock: SingleTextureMaterial, ShadowHighlightMaterial, Block
     },
     JUKEBOX_SIDE {
         override suspend fun LayerListBuilder.createTextureLayers() {
-            background(color)
-            layer("strokeTopLeftBottomRight4", highlight)
+            background(highlight)
+            layer("strokeTopLeftBottomRight4", shadow)
             layer("strokeBottomLeftTopRight4", shadow)
             layer("borderSolidThick", color)
+            layer("borderSolid", highlight)
             layer("borderDotted", shadow)
         }
     },

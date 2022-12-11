@@ -76,9 +76,9 @@ enum class SimplePickaxeBlock(
     },
     SANDSTONE_TOP(SimpleSoftEarth.SAND) {
         override suspend fun LayerListBuilder.createTextureLayers() {
-            copy(SANDSTONE_BASE)
-            layer("borderSolidThick", shadow)
+            background(color)
             layer("borderSolid", highlight)
+            layer("checksLarge", shadow)
         }
     },
     SANDSTONE(SimpleSoftEarth.SAND) {
@@ -107,6 +107,7 @@ enum class SimplePickaxeBlock(
     RED_SANDSTONE_BASE(SimpleSoftEarth.RED_SAND, hasOutput = false) {
         override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
+            layer("borderSolid", highlight)
             layer("checksLarge", highlight)
             layer("checksLargeOutline", shadow)
         }
@@ -126,9 +127,9 @@ enum class SimplePickaxeBlock(
     },
     CUT_RED_SANDSTONE(SimpleSoftEarth.RED_SAND) {
         override suspend fun LayerListBuilder.createTextureLayers() {
-            copy(RED_SANDSTONE_BASE)
-            layer("borderSolidThick", color)
+            background(color)
             layer("borderSolid", shadow)
+            layer("checksLarge", highlight)
             layer("borderSolidTopLeft", highlight)
         }
     },
@@ -227,9 +228,9 @@ enum class SimplePickaxeBlock(
     MUD_BRICKS(SimpleSoftEarth.PACKED_MUD) {
         override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
+            layer("bricks", SimpleSoftEarth.MUD.shadow)
             layer("strokeTopLeftBottomRight2", highlight)
             layer("strokeBottomLeftTopRight2", shadow)
-            layer("bricks", SimpleSoftEarth.MUD.shadow)
             layer("borderDotted", SimpleSoftEarth.MUD.highlight)
         }
     },
@@ -251,18 +252,17 @@ enum class SimplePickaxeBlock(
         override suspend fun LayerListBuilder.createTextureLayers() {
             background(STONE.color)
             layer("checksLarge", STONE.highlight)
+            layer("bricks", stoneExtremeShadow)
             layer("dots3", shadow)
             layer("dots2", highlight)
             layer("dots1", color)
             layer("borderSolid", highlight)
             layer("borderShortDashes", shadow)
-            layer("bricks", stoneExtremeShadow)
         }
     },
     CHISELED_STONE_BRICKS(STONE_BRICKS) {
         override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
-            layer("checksLarge", highlight)
             layer("ringsCentralBullseye", stoneExtremeHighlight)
             layer("rings2", stoneExtremeShadow)
             layer("borderSolid", stoneExtremeShadow)

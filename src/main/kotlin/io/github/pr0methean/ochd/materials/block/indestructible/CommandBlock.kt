@@ -28,7 +28,7 @@ enum class CommandBlock(
             layer("commandBlockChains4x")
         }
     },
-    REPEATING_COMMAND_BLOCK(c(0x6a4fc7),c(0x553b9b),c(0x915431)) {
+    REPEATING_COMMAND_BLOCK(c(0x6a4fc7),c(0x553b9b),c(0x9b8bcf)) {
         override suspend fun LayerListBuilder.decorateBackground() {
             layer("loopArrow4x")
         }

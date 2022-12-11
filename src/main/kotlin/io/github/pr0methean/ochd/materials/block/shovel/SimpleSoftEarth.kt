@@ -17,6 +17,7 @@ enum class SimpleSoftEarth(
     SAND(c(0xdfd5aa), c(0xd1ba8a), c(0xEaEaD0)) {
         override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
+            layer("borderSolid", shadow)
             layer("checksSmall", shadow)
             layer("checksSmallOutline", highlight)
         }
@@ -31,6 +32,7 @@ enum class SimpleSoftEarth(
     RED_SAND(c(0xbf6721), c(0xac5700), c(0xd97b30)) {
         override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
+            layer("borderSolid", highlight)
             layer("checksSmall", highlight)
             layer("checksSmallOutline", shadow)
         }
