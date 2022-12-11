@@ -35,8 +35,6 @@ jobs:
     parameters:
       size:
         type: integer
-      hugeTile:
-        type: boolean
     docker:
       - image: cimg/openjdk:19.0.1
     resource_class: large
