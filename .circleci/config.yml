@@ -69,6 +69,8 @@ jobs:
     parameters:
       size:
         type: integer
+    executor: machine
+    machine: ubuntu-2204
     resource_class: small
     steps:
       - attach_workspace:
