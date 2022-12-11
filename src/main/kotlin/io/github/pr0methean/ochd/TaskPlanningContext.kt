@@ -169,19 +169,10 @@ class TaskPlanningContext(
     }
 
     suspend inline fun out(source: ImageTask, names: Array<String>): FileOutputTask {
-        val lowercaseName = names.map {it.lowercase(Locale.ENGLISH)}
-        return out(lowercaseName[0], source, lowercaseName.map{outTextureRoot.resolve("$it.png")})
-    }
-
-    suspend inline fun out(source: ImageTask, name: String): FileOutputTask = out(source, arrayOf(name))
-
-    suspend inline fun out(
-        lowercaseName: String,
-        source: ImageTask,
-        destination: List<File>
-    ): FileOutputTask {
+        val lowercaseName = names.map { it.lowercase(Locale.ENGLISH) }
         val pngSource = deduplicate((deduplicate(source) as ImageTask).asPng)
-        val orig = FileOutputTask(pngSource, lowercaseName, stats, destination)
+        val orig =
+            FileOutputTask(pngSource, lowercaseName[0], stats, lowercaseName.map { outTextureRoot.resolve("$it.png") })
         val deduped = deduplicate(orig) as FileOutputTask
         if (deduped === orig) {
             pngSource.addDirectDependentTask(deduped)
@@ -189,8 +180,7 @@ class TaskPlanningContext(
         return deduped
     }
 
-    suspend inline fun out(source: LayerListBuilder.() -> Unit, names: Array<String>): FileOutputTask
-            = out(stack {source()}, names)
+    suspend inline fun out(source: ImageTask, name: String): FileOutputTask = out(source, arrayOf(name))
 
     suspend inline fun out(source: LayerListBuilder.() -> Unit, name: String): FileOutputTask
             = out(stack {source()}, arrayOf(name))
