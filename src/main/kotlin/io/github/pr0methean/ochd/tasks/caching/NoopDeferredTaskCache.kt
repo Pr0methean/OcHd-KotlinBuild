@@ -15,8 +15,8 @@ object NoopDeferredTaskCache : DeferredTaskCache<Any?>() {
 
     override fun enable(): Boolean = false
 
-    @Suppress("DeferredIsResult")
-    override suspend fun computeIfAbsent(coroutineCreator: () -> Deferred<Any?>): Deferred<Any?> = coroutineCreator()
+    @Suppress("DeferredIsResult", "OVERRIDE_BY_INLINE")
+    override suspend inline fun computeIfAbsent(coroutineCreator: () -> Deferred<Any?>): Deferred<Any?> = coroutineCreator()
 }
 
 /**

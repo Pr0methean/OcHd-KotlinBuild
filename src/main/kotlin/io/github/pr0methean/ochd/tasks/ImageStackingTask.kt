@@ -67,11 +67,11 @@ class ImageStackingTask(
         return snapshot
     }
 
-    private suspend fun renderOntoInternal(
+    private suspend inline fun renderOntoInternal(
         canvasCtx: GraphicsContext,
         x: Double,
         y: Double,
-        drawFirstLayer: suspend () -> Unit
+        drawFirstLayer: () -> Unit
     ) {
         if (layers.background != Color.TRANSPARENT) {
             canvasCtx.fill = layers.background
