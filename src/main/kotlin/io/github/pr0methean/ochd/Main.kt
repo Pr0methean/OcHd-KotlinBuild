@@ -143,6 +143,7 @@ private suspend fun runAll(
                 unfinishedTasks.getAndDecrement()
                 finishedJobsChannel.send(TaskResult(task, true))
             } catch (t: Throwable) {
+                task.clearCache()
                 finishedJobsChannel.send(TaskResult(task, false))
                 logger.error("Joined {} with {}: {}", task, t::class.simpleName, t.message)
                 stats.recordRetries(1)

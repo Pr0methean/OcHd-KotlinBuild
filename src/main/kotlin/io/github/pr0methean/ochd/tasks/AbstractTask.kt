@@ -121,4 +121,15 @@ abstract class AbstractTask<T>(
         }
         return subtasks
     }
+
+    override fun clearCache() {
+        cache.clear()
+        directDependencies.forEach {
+            try {
+                it.getNow()
+            } catch (t: Throwable) {
+                it.clearCache()
+            }
+        }
+    }
 }

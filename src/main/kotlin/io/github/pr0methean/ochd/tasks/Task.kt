@@ -30,4 +30,5 @@ interface Task<out T>: StringBuilderFormattable {
 
     fun timesFailed(): Long
     suspend fun await(): T
+    fun clearCache()
 }
