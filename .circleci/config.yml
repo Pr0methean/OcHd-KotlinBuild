@@ -47,9 +47,9 @@ jobs:
           java -Dprism.maxvram=2G -Dglass.platform=Monocle -Dmonocle.platform=Headless -Dquantum.multithreaded=true 
           -XX:+UseStringDeduplication -Xms7680m -Xmx7680m -XX:MaxMetaspaceSize=64m
           -XX:SoftRefLRUPolicyMSPerMB=3600000
-          -XX:+UnlockExperimentalVMOptions -XX:+UseZGC
+          -XX:+UnlockExperimentalVMOptions -XX:+UseParallelGC
           '-Xlog:gc*=debug,gc+stats=trace,gc+heap=trace,gc+heap+exit=trace,gc+metaspace=trace,gc+nmethod=info,safepoint+stats=info' 
-          -XX:+UseNUMA -XX:ConcGCThreads=2 -XX:+AlwaysPreTouch -XX:+UseTransparentHugePages
+          -XX:+UseNUMA -XX:+AlwaysPreTouch -XX:+UseTransparentHugePages
           -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=HeapDump-${CIRCLE_BUILD_NUM}.hprof
           -XX:+PrintFlagsFinal -XX:StringDeduplicationAgeThreshold=1
           -Dlog4j2.contextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector --enable-preview
