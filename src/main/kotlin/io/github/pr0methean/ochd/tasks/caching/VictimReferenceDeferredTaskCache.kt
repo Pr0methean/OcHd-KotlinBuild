@@ -27,14 +27,11 @@ class VictimReferenceDeferredTaskCache<T>(
     }
 
     @Suppress("DeferredIsResult", "LABEL_NAME_CLASH")
-    override fun computeIfAbsent(coroutineCreator: () -> Deferred<T>): Deferred<T> = primaryCache.computeIfAbsent {
-        val coroutine = coroutineCreator()
-        return@computeIfAbsent coroutineRef.updateAndGet {
-            if (it.get() != null) {
-                it
-            } else {
-                referenceCreator(coroutine)
-            }
-        }.get()!!
+    override fun computeIfAbsent(coroutineCreator: () -> Deferred<T>): Deferred<T> {
+        val nowAsync = coroutineRef.get().get()
+        if (nowAsync != null) {
+            return nowAsync
+        }
+        return primaryCache.computeIfAbsent { coroutineCreator().also { coroutineRef.set(referenceCreator(it)) } }
     }
 }
