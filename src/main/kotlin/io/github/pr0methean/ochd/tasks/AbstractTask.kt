@@ -95,7 +95,7 @@ abstract class AbstractTask<T>(
         timesFailed.getAndIncrement()
     }
 
-    @Suppress("UNCHECKED_CAST")
+    @Suppress("UNCHECKED_CAST", "ReturnCount")
     override suspend fun mergeWithDuplicate(other: Task<*>): Task<T> {
         return if (other === this || getNow() != null) {
             this
