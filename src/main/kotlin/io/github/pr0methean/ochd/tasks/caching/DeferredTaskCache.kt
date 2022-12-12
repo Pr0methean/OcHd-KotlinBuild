@@ -11,7 +11,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * own members) should be the only objects that reference the coroutine once it's completed.
  */
 abstract class DeferredTaskCache<T> {
-    private val enabled = AtomicBoolean(false)
+    protected val enabled = AtomicBoolean(false)
     abstract fun getNowAsync(): Deferred<T>?
 
     abstract fun clear()
