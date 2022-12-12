@@ -21,7 +21,10 @@ class VictimReferenceDeferredTaskCache<T>(
 
     override fun disable(): Boolean {
         val disabledPrimary = primaryCache.disable()
-        val disabledSuper = super.disable()
+        val disabledSuper = enabled.getAndSet(false)
+        if (disabledSuper) {
+            coroutineRef.updateAndGet { WeakReference(it.get()) }
+        }
         return disabledPrimary || disabledSuper
     }
 
