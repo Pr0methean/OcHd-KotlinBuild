@@ -33,7 +33,6 @@ private val taskOrderComparator = comparingLong(FileOutputTask::timesFailed)
     .then(comparingInt(FileOutputTask::cacheableSubtasks))
 private val logger = LogManager.getRootLogger()
 private val PARALLELISM = Runtime.getRuntime().availableProcessors()
-private const val HUGE_TILE_PARALLELISM = 1
 private const val GLOBAL_MAX_RETRIES = 100L
 
 @OptIn(DelicateCoroutinesApi::class)
@@ -89,7 +88,7 @@ suspend fun main(args: Array<String>) {
         stats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupAndCopyMetadata.join()
         System.gc()
-        runAll(cbTasks, scope, stats, HUGE_TILE_PARALLELISM)
+        runAll(cbTasks, scope, stats, PARALLELISM)
         stats.readHugeTileCache(hugeTaskCache)
         hugeTaskCache.invalidateAll()
         System.gc()
