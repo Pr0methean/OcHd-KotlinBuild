@@ -128,6 +128,7 @@ abstract class AbstractTask<T>(
             try {
                 it.getNow()
             } catch (t: Throwable) {
+                AT_LOGGER.debug("Clearing failure in subtask {} of {}", it, this, t)
                 it.clearCache()
             }
         }
