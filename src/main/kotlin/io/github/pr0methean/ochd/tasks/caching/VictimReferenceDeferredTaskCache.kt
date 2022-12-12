@@ -31,7 +31,10 @@ class VictimReferenceDeferredTaskCache<T>(
         if (disabledSuper) {
             val ref = coroutineRef.get()
             if (ref !is WeakReference<*>) {
-                coroutineRef.compareAndSet(ref, WeakReference<Deferred<T>>(ref.get()))
+                val coroutine = ref.get()
+                if (coroutine != null) {
+                    coroutineRef.compareAndSet(ref, WeakReference(coroutine))
+                }
             }
         }
         return disabledPrimary || disabledSuper
