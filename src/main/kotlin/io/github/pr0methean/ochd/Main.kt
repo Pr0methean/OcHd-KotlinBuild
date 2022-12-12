@@ -32,7 +32,7 @@ private val taskOrderComparator = comparingLong(FileOutputTask::timesFailed)
     .then(comparingInt(FileOutputTask::startedOrAvailableSubtasks).reversed())
     .then(comparingInt(FileOutputTask::cacheableSubtasks))
 private val logger = LogManager.getRootLogger()
-private val PARALLELISM = 2 * Runtime.getRuntime().availableProcessors()
+private val PARALLELISM = 3 * Runtime.getRuntime().availableProcessors() / 2
 private const val GLOBAL_MAX_RETRIES = 100L
 
 @OptIn(DelicateCoroutinesApi::class)
