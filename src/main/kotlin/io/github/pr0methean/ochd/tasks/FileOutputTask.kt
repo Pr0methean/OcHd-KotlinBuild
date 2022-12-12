@@ -32,6 +32,10 @@ class FileOutputTask(
         stats.onTaskCompleted("FileOutputTask", name)
     }
 
+    fun clearCache() {
+        cache.clear()
+    }
+
     val isCommandBlock: Boolean = name.contains("command_block")
 
     init {
