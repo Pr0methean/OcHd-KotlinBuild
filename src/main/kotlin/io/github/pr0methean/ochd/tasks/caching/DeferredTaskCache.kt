@@ -20,7 +20,7 @@ abstract class DeferredTaskCache<out T> {
 
     open fun enable(): Boolean = !enabled.getAndSet(true)
 
-    fun disable(): Boolean {
+    open fun disable(): Boolean {
         if (enabled.getAndSet(false)) {
             clear()
             return true

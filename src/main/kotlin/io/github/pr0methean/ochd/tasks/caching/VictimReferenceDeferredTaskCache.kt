@@ -13,6 +13,13 @@ class VictimReferenceDeferredTaskCache<T>(
 ): DeferredTaskCache<T>() {
     private val coroutineRef: AtomicReference<Reference<out Deferred<T>?>> = AtomicReference(nullReference)
     override fun getNowAsync(): Deferred<T>? = primaryCache.getNowAsync() ?: coroutineRef.get().get()
+    override fun enable(): Boolean {
+        val enabledSuper = super.enable()
+        val enabledPrimary = primaryCache.enable()
+        return enabledPrimary || enabledSuper
+    }
+
+    override fun disable(): Boolean = primaryCache.disable()
 
     override fun clear() {
         primaryCache.clear()
