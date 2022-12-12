@@ -136,7 +136,10 @@ private suspend fun runAll(
         val task = unstartedTasks.minWithOrNull(taskOrderComparator)
         checkNotNull(task) { "Could not get an unstarted task" }
         check(unstartedTasks.remove(task)) { "Attempted to remove task more than once: $task" }
-        check(task.timesFailed.get() <= GLOBAL_MAX_RETRIES) { "Too many failures in $task!" }
+        if(task.timesFailed.get() > GLOBAL_MAX_RETRIES) {
+            logger.fatal("Too many failures in $task!")
+            System.exit(1)
+        }
         inProgressJobs[task] = scope.launch {
             logger.info("Joining {}", task)
             try {
