@@ -62,7 +62,16 @@ class ImageStackingTask(
         val canvasCtx = canvas.graphicsContext2D
         renderOntoInternal(canvasCtx, 0.0, 0.0) { canvasCtx.drawImage(firstLayer, 0.0, 0.0) }
         logger.debug("Taking snapshot of {}", name)
-        val snapshot = takeSnapshot(width, height, canvas)
+        val params = SnapshotParameters()
+        params.fill = background
+        val output = WritableImage(width.toInt(), height.toInt())
+        val snapshot = doJfx("Snapshot of $name") {
+            Platform.requestNextPulse()
+            canvas.snapshot(params, output)
+        }
+        if (snapshot.isError) {
+            throw snapshot.exception
+        }
         stats.onTaskCompleted("ImageStackingTask", name)
         return snapshot
     }
@@ -94,21 +103,4 @@ class ImageStackingTask(
 
     private val background = layers.background
 
-    private suspend fun takeSnapshot(
-        width: Double,
-        height: Double,
-        canvas: Canvas
-    ): Image {
-        val params = SnapshotParameters()
-        params.fill = background
-        val output = WritableImage(width.toInt(), height.toInt())
-        val snapshot = doJfx("Snapshot of $name") {
-            Platform.requestNextPulse()
-            canvas.snapshot(params, output)
-        }
-        if (snapshot.isError) {
-            throw snapshot.exception
-        }
-        return snapshot
-    }
 }
