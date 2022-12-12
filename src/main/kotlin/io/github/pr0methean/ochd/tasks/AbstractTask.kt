@@ -86,7 +86,7 @@ abstract class AbstractTask<T>(
             coroutine.getCompleted()
         } else null
     }
-    override suspend fun await(): T = cache.computeIfAbsent { createCoroutineAsync() }.apply(Deferred<T>::start).await()
+    override suspend fun await(): T = cache.computeIfAbsent { createCoroutineAsync() }.await()
 
     protected abstract fun createCoroutineAsync(): Deferred<T>
 
