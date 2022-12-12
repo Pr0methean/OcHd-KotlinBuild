@@ -88,11 +88,11 @@ suspend fun main(args: Array<String>) {
         stats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupAndCopyMetadata.join()
         System.gc()
-        runAll(cbTasks, scope, stats, PARALLELISM)
+        runAll(cbTasks, scope, stats)
         stats.readHugeTileCache(hugeTaskCache)
         hugeTaskCache.invalidateAll()
         System.gc()
-        runAll(nonCbTasks, scope, stats, PARALLELISM)
+        runAll(nonCbTasks, scope, stats)
     }
     stopMonitoring()
     Platform.exit()
@@ -107,19 +107,18 @@ data class TaskResult(val task: FileOutputTask, val succeeded: Boolean)
 private suspend fun runAll(
     tasks: Iterable<FileOutputTask>,
     scope: CoroutineScope,
-    stats: ImageProcessingStats,
-    parallelism: Int
+    stats: ImageProcessingStats
 ) {
     val unstartedTasks = tasks.sortedWith(comparingInt(FileOutputTask::cacheableSubtasks)).toMutableSet()
     val unfinishedTasks = AtomicLong(unstartedTasks.size.toLong())
     val inProgressJobs = mutableMapOf<FileOutputTask,Job>()
-    val finishedJobsChannel = Channel<TaskResult>(capacity = CAPACITY_PADDING_FACTOR * parallelism)
+    val finishedJobsChannel = Channel<TaskResult>(capacity = CAPACITY_PADDING_FACTOR * PARALLELISM)
     while (unfinishedTasks.get() > 0) {
         check(inProgressJobs.isNotEmpty() || unstartedTasks.isNotEmpty()) {
             "Have ${unfinishedTasks.get()} unfinished tasks, but none are in progress"
         }
         val maybeReceive = finishedJobsChannel.tryReceive().getOrElse {
-            if (inProgressJobs.size >= parallelism
+            if (inProgressJobs.size >= PARALLELISM
                     || (inProgressJobs.isNotEmpty() && unstartedTasks.isEmpty())) {
                 logger.debug("{} tasks remain. Waiting for one of: {}",
                         Unbox.box(unfinishedTasks.get()), inProgressJobs)
