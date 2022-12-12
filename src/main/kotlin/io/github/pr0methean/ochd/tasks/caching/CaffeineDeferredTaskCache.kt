@@ -3,6 +3,9 @@ package io.github.pr0methean.ochd.tasks.caching
 import com.github.benmanes.caffeine.cache.Cache
 import kotlinx.coroutines.Deferred
 
+/**
+ * DeferredTaskCache backed by a Caffeine cache.
+ */
 class CaffeineDeferredTaskCache<T>(private val caffeineCache: Cache<in CaffeineDeferredTaskCache<T>, Deferred<T>>)
     : DeferredTaskCache<T>() {
     override fun getNowAsync(): Deferred<T>? = caffeineCache.getIfPresent(this)

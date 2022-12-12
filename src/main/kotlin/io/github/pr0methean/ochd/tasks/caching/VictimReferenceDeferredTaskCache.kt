@@ -7,6 +7,11 @@ import java.util.concurrent.atomic.AtomicReference
 
 private val nullReference = WeakReference<Nothing?>(null)
 
+/**
+ * A TaskCache that's backed by a Caffeine cache (the primary cache) and a soft or weak reference (the victim cache).
+ * So named because the cached coroutine will tend to last longer than if we only used the soft reference, but not as
+ * long as if the Caffeine cache was unlimited.
+ */
 class VictimReferenceDeferredTaskCache<T>(
     private val primaryCache: DeferredTaskCache<T>,
     val referenceCreator: (Deferred<T>) -> Reference<Deferred<T>>
