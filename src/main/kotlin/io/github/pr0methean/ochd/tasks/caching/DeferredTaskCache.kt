@@ -30,12 +30,6 @@ abstract class DeferredTaskCache<out T> {
 
     fun isEnabled(): Boolean = enabled.get()
 
-    fun getAsync(coroutineCreator: () -> Deferred<@UnsafeVariance T>): Deferred<T> = if (enabled.get()) {
-        computeIfAbsent(coroutineCreator)
-    } else {
-        coroutineCreator()
-    }
-
     @Suppress("DeferredIsResult")
-    abstract fun computeIfAbsent(coroutineCreator: () -> Deferred<@UnsafeVariance T>): Deferred<T>
+    abstract suspend fun computeIfAbsent(coroutineCreator: () -> Deferred<@UnsafeVariance T>): Deferred<T>
 }

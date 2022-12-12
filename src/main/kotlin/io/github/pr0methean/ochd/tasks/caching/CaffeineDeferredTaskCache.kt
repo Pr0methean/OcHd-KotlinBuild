@@ -10,6 +10,9 @@ class CaffeineDeferredTaskCache<T>(private val caffeineCache: Cache<in CaffeineD
     override fun clear(): Unit = caffeineCache.invalidate(this)
 
     @Suppress("DeferredIsResult")
-    override fun computeIfAbsent(coroutineCreator: () -> Deferred<T>): Deferred<T>
-            = caffeineCache.get(this) {coroutineCreator()}
+    override suspend fun computeIfAbsent(coroutineCreator: () -> Deferred<T>): Deferred<T> {
+        return if(isEnabled()) {
+            caffeineCache.get(this) { coroutineCreator() }
+        } else coroutineCreator()
+    }
 }

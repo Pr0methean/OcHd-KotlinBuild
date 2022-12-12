@@ -86,7 +86,7 @@ abstract class AbstractTask<T>(
             coroutine.getCompleted()
         } else null
     }
-    override suspend fun await(): T = cache.getAsync(::createCoroutineAsync).await()
+    override suspend fun await(): T = cache.computeIfAbsent { createCoroutineAsync() }.await()
 
     protected abstract fun createCoroutineAsync(): Deferred<T>
 
@@ -103,7 +103,7 @@ abstract class AbstractTask<T>(
             if (other is AbstractTask) {
                 val otherCoroutine = other.cache.getNowAsync()
                 if (otherCoroutine != null
-                        && cache.getAsync { otherCoroutine as Deferred<T> } == otherCoroutine) {
+                        && cache.computeIfAbsent { otherCoroutine as Deferred<T> } == otherCoroutine) {
                     return this
                 }
             }
