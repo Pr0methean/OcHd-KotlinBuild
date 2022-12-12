@@ -33,7 +33,7 @@ private val taskOrderComparator = comparingLong(FileOutputTask::timesFailed)
     .then(comparingInt(FileOutputTask::cacheableSubtasks))
 private val logger = LogManager.getRootLogger()
 @Suppress("MagicNumber") // detekt bug
-private const val JOBS_PER_CPU = 1.5
+private const val JOBS_PER_CPU = 1.25
 private val PARALLELISM = (JOBS_PER_CPU * Runtime.getRuntime().availableProcessors()).toInt()
 private const val GLOBAL_MAX_RETRIES = 100L
 
