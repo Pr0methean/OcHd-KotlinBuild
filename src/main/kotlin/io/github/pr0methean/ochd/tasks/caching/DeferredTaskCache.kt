@@ -10,7 +10,7 @@ import java.util.concurrent.atomic.AtomicBoolean
  * instance is needed for each Task (unless it uses [NoopDeferredTaskCache]), and that Task (and the DeferredTaskCache's
  * own members) should be the only objects that reference the coroutine once it's completed.
  */
-abstract class DeferredTaskCache<out T> {
+abstract class DeferredTaskCache<T> {
     private val enabled = AtomicBoolean(false)
     abstract fun getNowAsync(): Deferred<T>?
 
@@ -29,5 +29,5 @@ abstract class DeferredTaskCache<out T> {
     fun isEnabled(): Boolean = enabled.get()
 
     @Suppress("DeferredIsResult")
-    abstract suspend fun computeIfAbsent(coroutineCreator: () -> Deferred<@UnsafeVariance T>): Deferred<T>
+    abstract suspend fun computeIfAbsent(coroutineCreator: () -> Deferred<T>): Deferred<T>
 }
