@@ -2,7 +2,7 @@ package io.github.pr0methean.ochd.tasks
 
 import kotlinx.coroutines.sync.Semaphore
 
-const val MAX_CANVASES: Int = 8
+val MAX_CANVASES: Int = Runtime.getRuntime().availableProcessors()
 
 /**
  * Taken when creating a canvas, and released when it becomes unreachable. Keeps the number of canvases in the live set

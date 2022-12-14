@@ -1,6 +1,7 @@
 package io.github.pr0methean.ochd
 
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
+import io.github.pr0methean.ochd.tasks.CANVAS_SEMAPHORE
 import io.github.pr0methean.ochd.tasks.FileOutputTask
 import io.github.pr0methean.ochd.tasks.doJfx
 import javafx.application.Platform
@@ -17,6 +18,7 @@ import kotlinx.coroutines.flow.toSet
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.plus
+import kotlinx.coroutines.sync.withPermit
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox
 import java.nio.file.Paths
@@ -139,18 +141,20 @@ private suspend fun runAll(
             logger.fatal("Too many failures in $task!")
             exitProcess(1)
         }
-        inProgressJobs[task] = scope.launch {
-            logger.info("Joining {}", task)
-            try {
-                task.await()
-                task.base.removeDirectDependentTask(task)
-                unfinishedTasks.getAndDecrement()
-                finishedJobsChannel.send(TaskResult(task, true))
-            } catch (t: Throwable) {
-                task.clearCache()
-                finishedJobsChannel.send(TaskResult(task, false))
-                logger.error("Joined {} with {}: {}", task, t::class.simpleName, t.message)
-                stats.recordRetries(1)
+        inProgressJobs[task] = CANVAS_SEMAPHORE.withPermit {
+            scope.launch {
+                logger.info("Joining {}", task)
+                try {
+                    task.await()
+                    task.base.removeDirectDependentTask(task)
+                    unfinishedTasks.getAndDecrement()
+                    finishedJobsChannel.send(TaskResult(task, true))
+                } catch (t: Throwable) {
+                    task.clearCache()
+                    finishedJobsChannel.send(TaskResult(task, false))
+                    logger.error("Joined {} with {}: {}", task, t::class.simpleName, t.message)
+                    stats.recordRetries(1)
+                }
             }
         }
     }
