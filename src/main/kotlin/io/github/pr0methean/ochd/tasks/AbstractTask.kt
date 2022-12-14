@@ -42,9 +42,12 @@ abstract class AbstractTask<T>(
     override suspend fun removeDirectDependentTask(task: Task<*>) {
         if (mutex.withLock {
                 directDependentTasks.remove(task)
-                directDependentTasks.isEmpty() && cache.disable()
+                directDependentTasks.isEmpty()
         }) {
-            AT_LOGGER.info("Disabled caching for {}", name)
+            directDependencies.forEach { it.removeDirectDependentTask(this) }
+            if (cache.disable()) {
+                AT_LOGGER.info("Disabled caching for {}", name)
+            }
         }
     }
 
