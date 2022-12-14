@@ -138,7 +138,7 @@ private suspend fun runAll(
         check(unstartedTasks.remove(task)) { "Attempted to remove task more than once: $task" }
         if(task.timesFailed.get() > GLOBAL_MAX_RETRIES) {
             logger.fatal("Too many failures in $task!")
-            System.exit(1)
+            exitProcess(1)
         }
         inProgressJobs[task] = scope.launch {
             logger.info("Joining {}", task)
