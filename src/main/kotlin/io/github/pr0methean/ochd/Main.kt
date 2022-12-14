@@ -144,6 +144,7 @@ private suspend fun runAll(
             logger.info("Joining {}", task)
             try {
                 task.await()
+                task.base.removeDirectDependentTask(task)
                 unfinishedTasks.getAndDecrement()
                 finishedJobsChannel.send(TaskResult(task, true))
             } catch (t: Throwable) {

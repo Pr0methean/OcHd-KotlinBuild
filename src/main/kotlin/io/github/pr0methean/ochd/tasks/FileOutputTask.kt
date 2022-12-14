@@ -12,11 +12,11 @@ import kotlin.coroutines.CoroutineContext
 @Suppress("BlockingMethodInNonBlockingContext")
 class FileOutputTask(
     name: String,
-    source: Task<ByteArray>,
+    base: Task<ByteArray>,
     private val files: List<File>,
     ctx: CoroutineContext,
     val stats: ImageProcessingStats,
-): TransformingTask<ByteArray, Unit>("Output $name", source, noopDeferredTaskCache(), ctx) {
+): TransformingTask<ByteArray, Unit>("Output $name", base, noopDeferredTaskCache(), ctx) {
     override suspend fun transform(input: ByteArray) {
         stats.onTaskLaunched("FileOutputTask", name)
         val firstFile = files[0]
