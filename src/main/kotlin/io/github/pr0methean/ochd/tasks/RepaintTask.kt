@@ -12,6 +12,7 @@ import javafx.scene.effect.ColorInput
 import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
 import javafx.scene.paint.Paint
+import kotlinx.coroutines.sync.withLock
 import org.apache.logging.log4j.LogManager
 import java.util.Objects
 import kotlin.coroutines.CoroutineContext
@@ -45,7 +46,7 @@ class RepaintTask(
     }
 
     override suspend fun renderOnto(context: GraphicsContext, x: Double, y: Double) {
-        if (directDependentTasks.size > 1 || isStartedOrAvailable() || alpha != 1.0) {
+        if (alpha != 1.0 || isStartedOrAvailable() || mutex.withLock { directDependentTasks.size } > 1) {
             super.renderOnto(context, x, y)
         } else {
             logger.info("Rendering {} onto an existing canvas", name)

@@ -10,6 +10,7 @@ import javafx.scene.canvas.GraphicsContext
 import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
 import javafx.scene.paint.Color
+import kotlinx.coroutines.sync.withLock
 import org.apache.logging.log4j.LogManager
 import java.util.*
 import kotlin.coroutines.CoroutineContext
@@ -95,7 +96,7 @@ class ImageStackingTask(
     }
 
     override suspend fun renderOnto(context: GraphicsContext, x: Double, y: Double) {
-        if (isStartedOrAvailable() || directDependentTasks.size > 1) {
+        if (isStartedOrAvailable() || mutex.withLock { directDependentTasks.size } > 1) {
             super.renderOnto(context, x, y)
         } else {
             logger.info("Rendering {} onto an existing canvas", name)

@@ -28,7 +28,7 @@ abstract class AbstractTask<T>(
     }
 
     val timesFailed: AtomicLong = AtomicLong(0)
-    private val mutex: Mutex = Mutex()
+    protected val mutex: Mutex = Mutex()
     @GuardedBy("mutex")
     val directDependentTasks: MutableSet<Task<*>> = newSetFromMap(WeakHashMap())
     override suspend fun addDirectDependentTask(task: Task<*>) {
