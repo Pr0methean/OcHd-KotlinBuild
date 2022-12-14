@@ -46,7 +46,7 @@ class RepaintTask(
     }
 
     override suspend fun renderOnto(context: GraphicsContext, x: Double, y: Double) {
-        if (cache.isEnabled() || isStartedOrAvailable() || alpha != 1.0) {
+        if (directDependentTasks.size > 1 || isStartedOrAvailable() || alpha != 1.0) {
             super.renderOnto(context, x, y)
         } else {
             logger.info("Rendering {} onto an existing canvas", name)

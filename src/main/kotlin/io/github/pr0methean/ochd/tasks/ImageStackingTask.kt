@@ -99,7 +99,7 @@ class ImageStackingTask(
     }
 
     override suspend fun renderOnto(context: GraphicsContext, x: Double, y: Double) {
-        if (isStartedOrAvailable() || cache.isEnabled()) {
+        if (isStartedOrAvailable() || directDependentTasks.size > 1) {
             super.renderOnto(context, x, y)
         } else {
             logger.info("Rendering {} onto an existing canvas", name)
