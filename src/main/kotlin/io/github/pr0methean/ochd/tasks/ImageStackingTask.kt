@@ -58,6 +58,7 @@ class ImageStackingTask(
         val firstLayer = layers.layers.first().await()
         val width = firstLayer.width
         val height = firstLayer.height
+        logger.info("Allocating a canvas for {}", name)
         val canvas = Canvas(width, height)
         val canvasCtx = canvas.graphicsContext2D
         renderOntoInternal(canvasCtx, 0.0, 0.0) { canvasCtx.drawImage(firstLayer, 0.0, 0.0) }
@@ -69,6 +70,7 @@ class ImageStackingTask(
             Platform.requestNextPulse()
             canvas.snapshot(params, output)
         }
+        logger.info("Canvas is now unreachable for {}", name)
         if (snapshot.isError) {
             throw snapshot.exception
         }

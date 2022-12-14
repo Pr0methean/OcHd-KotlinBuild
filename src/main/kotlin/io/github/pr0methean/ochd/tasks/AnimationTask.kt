@@ -11,8 +11,11 @@ import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import org.apache.logging.log4j.LogManager
 import java.util.*
 import kotlin.coroutines.CoroutineContext
+
+private val logger = LogManager.getLogger("AnimationTask")
 
 /**
  * Task that stacks the input images in a column. Minecraft can use this as an animated texture with the input images as
@@ -53,6 +56,7 @@ class AnimationTask(
     override suspend fun perform(): Image {
         stats.onTaskLaunched("AnimationTask", name)
         val background = background.await()
+        logger.info("Allocating a canvas for {}", name)
         val canvasMutex = Mutex()
         val canvas = Canvas(width.toDouble(), totalHeight.toDouble())
         val canvasCtx = canvas.graphicsContext2D
@@ -72,6 +76,7 @@ class AnimationTask(
             requestNextPulse()
             canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
         }
+        logger.info("Canvas is now unreachable for {}", name)
         if (output.isError) {
             throw output.exception
         }
