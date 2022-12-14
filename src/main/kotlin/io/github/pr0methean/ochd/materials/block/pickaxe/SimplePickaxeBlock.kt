@@ -96,6 +96,7 @@ enum class SimplePickaxeBlock(
             layer("checksLargeOutline", highlight)
             layer("borderSolid", shadow)
             layer("borderSolidTopLeft", highlight)
+            layer("borderLongDashes", color)
         }
     },
     CHISELED_SANDSTONE(SimpleSoftEarth.SAND) {
