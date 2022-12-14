@@ -62,7 +62,9 @@ class RepaintTask(
                 task.getNow()?.also { logger.info("Repainting $task for ${this@RepaintTask}") }
             }
             ?: base.await()
-        val ctx = context ?: Canvas(baseImage.width, baseImage.height).graphicsContext2D
+        val ctx = context ?: Canvas(baseImage.width, baseImage.height).graphicsContext2D.also {
+            logger.info("Allocating a canvas for {}", name)
+        }
         if (paint != null) {
             val colorLayer = ColorInput(0.0, 0.0, baseImage.width, baseImage.height, paint)
             val blend = Blend()
@@ -110,6 +112,7 @@ class RepaintTask(
             Platform.requestNextPulse()
             canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
         }
+        logger.info("Canvas is now unreachable for {}", name)
         if (snapshot.isError) {
             throw output.exception
         }
