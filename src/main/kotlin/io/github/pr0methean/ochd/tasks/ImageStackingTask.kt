@@ -10,6 +10,7 @@ import javafx.scene.canvas.GraphicsContext
 import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
 import javafx.scene.paint.Color
+import kotlinx.coroutines.sync.withPermit
 import org.apache.logging.log4j.LogManager
 import java.util.*
 import kotlin.coroutines.CoroutineContext
@@ -59,16 +60,19 @@ class ImageStackingTask(
         val width = firstLayer.width
         val height = firstLayer.height
         logger.info("Allocating a canvas for {}", name)
-        val canvas = Canvas(width, height)
-        val canvasCtx = canvas.graphicsContext2D
-        renderOntoInternal(canvasCtx, 0.0, 0.0) { canvasCtx.drawImage(firstLayer, 0.0, 0.0) }
-        logger.debug("Taking snapshot of {}", name)
-        val params = SnapshotParameters()
-        params.fill = background
-        val output = WritableImage(width.toInt(), height.toInt())
-        val snapshot = doJfx("Snapshot of $name") {
-            Platform.requestNextPulse()
-            canvas.snapshot(params, output)
+        val snapshot = CANVAS_SEMAPHORE.withPermit {
+            val canvas = Canvas(width, height)
+            val canvasCtx = canvas.graphicsContext2D
+            renderOntoInternal(canvasCtx, 0.0, 0.0) { canvasCtx.drawImage(firstLayer, 0.0, 0.0) }
+            logger.debug("Taking snapshot of {}", name)
+            val params = SnapshotParameters()
+            params.fill = background
+            val output = WritableImage(width.toInt(), height.toInt())
+            val snapshot = doJfx("Snapshot of $name") {
+                Platform.requestNextPulse()
+                return@doJfx canvas.snapshot(params, output)
+            }
+            return@withPermit snapshot
         }
         logger.info("Canvas is now unreachable for {}", name)
         if (snapshot.isError) {

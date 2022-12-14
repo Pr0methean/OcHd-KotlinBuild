@@ -5,6 +5,7 @@ import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
 import kotlinx.coroutines.asContextElement
+import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
 import org.apache.batik.gvt.renderer.StaticRenderer
 import org.apache.batik.transcoder.SVGAbstractTranscoder
@@ -89,13 +90,15 @@ class SvgToBitmapTask(
     override suspend fun perform(): Image {
         stats.onTaskLaunched("SvgToBitmapTask", name)
         val image = withContext(batikTranscoder.asContextElement()) {
-            val transcoder = batikTranscoder.get()
-            transcoder.setTranscodingHints(mapOf(SVGAbstractTranscoder.KEY_WIDTH to width.toFloat()))
-            transcoder.transcode(input, null)
-            val awtImage = transcoder.takeLastImage()!!
-            val image = SwingFXUtils.toFXImage(awtImage, null)
-            awtImage.flush()
-            image
+            CANVAS_SEMAPHORE.withPermit {
+                val transcoder = batikTranscoder.get()
+                transcoder.setTranscodingHints(mapOf(SVGAbstractTranscoder.KEY_WIDTH to width.toFloat()))
+                transcoder.transcode(input, null)
+                val awtImage = transcoder.takeLastImage()!!
+                val image = SwingFXUtils.toFXImage(awtImage, null)
+                awtImage.flush()
+                image
+            }
         }
         stats.onTaskCompleted("SvgToBitmapTask", name)
         return image

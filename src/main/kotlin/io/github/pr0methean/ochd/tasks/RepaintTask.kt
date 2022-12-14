@@ -12,6 +12,7 @@ import javafx.scene.effect.ColorInput
 import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
 import javafx.scene.paint.Paint
+import kotlinx.coroutines.sync.withPermit
 import org.apache.logging.log4j.LogManager
 import java.util.Objects
 import kotlin.coroutines.CoroutineContext
@@ -105,16 +106,19 @@ class RepaintTask(
 
     override suspend fun perform(): Image {
         stats.onTaskLaunched("RepaintTask", name)
-        val gfx = internalRenderOnto(null, 0.0, 0.0)
-        val canvas = gfx.canvas
-        val output = WritableImage(canvas.width.toInt(), canvas.height.toInt())
-        val snapshot = doJfx(name) {
-            Platform.requestNextPulse()
-            canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
+        val snapshot = CANVAS_SEMAPHORE.withPermit {
+            val gfx = internalRenderOnto(null, 0.0, 0.0)
+            val canvas = gfx.canvas
+            val output = WritableImage(canvas.width.toInt(), canvas.height.toInt())
+            val snapshot = doJfx(name) {
+                Platform.requestNextPulse()
+                return@doJfx canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
+            }
+            return@withPermit snapshot
         }
         logger.info("Canvas is now unreachable for {}", name)
         if (snapshot.isError) {
-            throw output.exception
+            throw snapshot.exception
         }
         stats.onTaskCompleted("RepaintTask", name)
         return snapshot

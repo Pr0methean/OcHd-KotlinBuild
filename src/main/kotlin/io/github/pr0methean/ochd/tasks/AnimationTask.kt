@@ -11,6 +11,7 @@ import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.coroutines.sync.withPermit
 import org.apache.logging.log4j.LogManager
 import java.util.*
 import kotlin.coroutines.CoroutineContext
@@ -57,24 +58,27 @@ class AnimationTask(
         stats.onTaskLaunched("AnimationTask", name)
         val background = background.await()
         logger.info("Allocating a canvas for {}", name)
-        val canvasMutex = Mutex()
-        val canvas = Canvas(width.toDouble(), totalHeight.toDouble())
-        val canvasCtx = canvas.graphicsContext2D
-        for (index in frames.indices) {
-            canvasCtx.drawImage(background, 0.0, (height * index).toDouble())
-        }
-        val frameTasks = frames.withIndex().map { (index, frameTask) ->
-            coroutineScope.launch {
-                canvasMutex.withLock {
-                    frameTask.renderOnto(canvasCtx, 0.0, (height * index).toDouble())
+        val output = CANVAS_SEMAPHORE.withPermit {
+            val canvasMutex = Mutex()
+            val canvas = Canvas(width.toDouble(), totalHeight.toDouble())
+            val canvasCtx = canvas.graphicsContext2D
+            for (index in frames.indices) {
+                canvasCtx.drawImage(background, 0.0, (height * index).toDouble())
+            }
+            val frameTasks = frames.withIndex().map { (index, frameTask) ->
+                coroutineScope.launch {
+                    canvasMutex.withLock {
+                        frameTask.renderOnto(canvasCtx, 0.0, (height * index).toDouble())
+                    }
                 }
             }
-        }
-        frameTasks.joinAll()
-        val output = WritableImage(width, totalHeight)
-        doJfx("Snapshot of $name") {
-            requestNextPulse()
-            canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
+            frameTasks.joinAll()
+            val output = WritableImage(width, totalHeight)
+            val snapshot = doJfx("Snapshot of $name") {
+                requestNextPulse()
+                return@doJfx canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
+            }
+            return@withPermit snapshot
         }
         logger.info("Canvas is now unreachable for {}", name)
         if (output.isError) {

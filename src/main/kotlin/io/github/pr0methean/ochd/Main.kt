@@ -119,8 +119,7 @@ private suspend fun runAll(
             "Have ${unfinishedTasks.get()} unfinished tasks, but none are in progress"
         }
         val maybeReceive = finishedJobsChannel.tryReceive().getOrElse {
-            if (inProgressJobs.size >= PARALLELISM
-                    || (inProgressJobs.isNotEmpty() && unstartedTasks.isEmpty())) {
+            if (inProgressJobs.isNotEmpty() && unstartedTasks.isEmpty()) {
                 logger.debug("{} tasks remain. Waiting for one of: {}",
                         Unbox.box(unfinishedTasks.get()), inProgressJobs)
                 finishedJobsChannel.receive()
