@@ -33,11 +33,11 @@ private val taskOrderComparator = comparingLong(FileOutputTask::timesFailed)
     .then(comparingInt(FileOutputTask::cacheableSubtasks))
 private val logger = LogManager.getRootLogger()
 private const val THREADS_PER_CPU = 1.0
-private val PARALLELISM = perCpu(THREADS_PER_CPU)
-private const val MAX_JOBS_PER_CPU = 1.25
-private val MAX_JOBS = perCpu(MAX_JOBS_PER_CPU)
-private const val MAX_HUGE_TILE_JOBS_PER_CPU = 1.0
-private val MAX_HUGE_TILE_JOBS = perCpu(MAX_HUGE_TILE_JOBS_PER_CPU)
+private val THREADS = perCpu(THREADS_PER_CPU)
+private const val MAX_OUTPUT_TASKS_PER_CPU = 1.25
+private val MAX_OUTPUT_TASKS = perCpu(MAX_OUTPUT_TASKS_PER_CPU)
+private const val MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU = 1.0
+private val MAX_HUGE_TILE_OUTPUT_TASKS = perCpu(MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU)
 
 private fun perCpu(amount: Double) = (amount * Runtime.getRuntime().availableProcessors()).toInt()
 private const val GLOBAL_MAX_RETRIES = 100L
@@ -67,7 +67,7 @@ suspend fun main(args: Array<String>) {
             }
         }
     }
-    val coroutineContext = newFixedThreadPoolContext(PARALLELISM, "Main coroutine context")
+    val coroutineContext = newFixedThreadPoolContext(THREADS, "Main coroutine context")
     val scope = CoroutineScope(coroutineContext).plus(supervisorJob)
     val svgDirectory = Paths.get("svg").toAbsolutePath().toFile()
     val outTextureRoot = out.resolve("assets").resolve("minecraft").resolve("textures")
@@ -95,11 +95,11 @@ suspend fun main(args: Array<String>) {
         stats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupAndCopyMetadata.join()
         System.gc()
-        runAll(cbTasks, scope, stats, MAX_HUGE_TILE_JOBS)
+        runAll(cbTasks, scope, stats, MAX_HUGE_TILE_OUTPUT_TASKS)
         stats.readHugeTileCache(hugeTaskCache)
         hugeTaskCache.invalidateAll()
         System.gc()
-        runAll(nonCbTasks, scope, stats, MAX_JOBS)
+        runAll(nonCbTasks, scope, stats, MAX_OUTPUT_TASKS)
     }
     stopMonitoring()
     Platform.exit()
@@ -120,7 +120,7 @@ private suspend fun runAll(
     val unstartedTasks = tasks.sortedWith(comparingInt(FileOutputTask::cacheableSubtasks)).toMutableSet()
     val unfinishedTasks = AtomicLong(unstartedTasks.size.toLong())
     val inProgressJobs = mutableMapOf<FileOutputTask,Job>()
-    val finishedJobsChannel = Channel<TaskResult>(capacity = CAPACITY_PADDING_FACTOR * PARALLELISM)
+    val finishedJobsChannel = Channel<TaskResult>(capacity = CAPACITY_PADDING_FACTOR * THREADS)
     while (unfinishedTasks.get() > 0) {
         check(inProgressJobs.isNotEmpty() || unstartedTasks.isNotEmpty()) {
             "Have ${unfinishedTasks.get()} unfinished tasks, but none are in progress"
