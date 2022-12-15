@@ -33,9 +33,13 @@ private val taskOrderComparator = comparingLong(FileOutputTask::timesFailed)
     .then(comparingInt(FileOutputTask::cacheableSubtasks))
 private val logger = LogManager.getRootLogger()
 private const val THREADS_PER_CPU = 1.0
-private val PARALLELISM = (THREADS_PER_CPU * Runtime.getRuntime().availableProcessors()).toInt()
+private val PARALLELISM = perCpu(THREADS_PER_CPU)
 private const val MAX_JOBS_PER_CPU = 1.5
-private val MAX_JOBS = (MAX_JOBS_PER_CPU * Runtime.getRuntime().availableProcessors()).toInt()
+private val MAX_JOBS = perCpu(MAX_JOBS_PER_CPU)
+private const val MAX_HUGE_TILE_JOBS_PER_CPU = 1.0
+private val MAX_HUGE_TILE_JOBS = perCpu(MAX_HUGE_TILE_JOBS_PER_CPU)
+
+private fun perCpu(amount: Double) = (amount * Runtime.getRuntime().availableProcessors()).toInt()
 private const val GLOBAL_MAX_RETRIES = 100L
 
 @OptIn(DelicateCoroutinesApi::class)
@@ -91,11 +95,11 @@ suspend fun main(args: Array<String>) {
         stats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupAndCopyMetadata.join()
         System.gc()
-        runAll(cbTasks, scope, stats)
+        runAll(cbTasks, scope, stats, MAX_HUGE_TILE_JOBS)
         stats.readHugeTileCache(hugeTaskCache)
         hugeTaskCache.invalidateAll()
         System.gc()
-        runAll(nonCbTasks, scope, stats)
+        runAll(nonCbTasks, scope, stats, MAX_JOBS)
     }
     stopMonitoring()
     Platform.exit()
@@ -110,7 +114,8 @@ data class TaskResult(val task: FileOutputTask, val succeeded: Boolean)
 private suspend fun runAll(
     tasks: Iterable<FileOutputTask>,
     scope: CoroutineScope,
-    stats: ImageProcessingStats
+    stats: ImageProcessingStats,
+    maxJobs: Int
 ) {
     val unstartedTasks = tasks.sortedWith(comparingInt(FileOutputTask::cacheableSubtasks)).toMutableSet()
     val unfinishedTasks = AtomicLong(unstartedTasks.size.toLong())
@@ -121,7 +126,7 @@ private suspend fun runAll(
             "Have ${unfinishedTasks.get()} unfinished tasks, but none are in progress"
         }
         val maybeReceive = finishedJobsChannel.tryReceive().getOrElse {
-            if (inProgressJobs.size >= MAX_JOBS
+            if (inProgressJobs.size >= maxJobs
                     || (inProgressJobs.isNotEmpty() && unstartedTasks.isEmpty())) {
                 logger.debug("{} tasks remain. Waiting for one of: {}",
                         Unbox.box(unfinishedTasks.get()), inProgressJobs)
