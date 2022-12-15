@@ -7,7 +7,7 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: cimg/openjdk:19.0.1
+      - image: cimg/openjdk:874704052618a465049458f7dc4ff081bd205f9de833595cb87c22b5dbecb9c2
     steps:
       - checkout
       - restore_cache:
@@ -36,7 +36,7 @@ jobs:
       size:
         type: integer
     docker:
-      - image: cimg/openjdk:19.0.1
+      - image: cimg/openjdk:874704052618a465049458f7dc4ff081bd205f9de833595cb87c22b5dbecb9c2
     resource_class: large
     steps:
       - run: cat /proc/cpuinfo
