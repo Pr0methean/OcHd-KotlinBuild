@@ -1,6 +1,5 @@
 package io.github.pr0methean.ochd
 
-import com.sun.management.GarbageCollectorMXBean
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
 import io.github.pr0methean.ochd.tasks.FileOutputTask
 import io.github.pr0methean.ochd.tasks.doJfx
@@ -20,8 +19,6 @@ import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.plus
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox
-import java.lang.management.ManagementFactory
-import java.lang.management.MemoryUsage
 import java.nio.file.Paths
 import java.util.Comparator.comparingInt
 import java.util.Comparator.comparingLong
@@ -38,10 +35,6 @@ private val logger = LogManager.getRootLogger()
 private const val JOBS_PER_CPU = 1.0
 private val PARALLELISM = (JOBS_PER_CPU * Runtime.getRuntime().availableProcessors()).toInt()
 private const val GLOBAL_MAX_RETRIES = 100L
-private const val MIN_FREE_MEMORY = 1024 * 1024 * 1024L
-private val GC_MX_BEAN = ManagementFactory.getGarbageCollectorMXBeans().first { it is GarbageCollectorMXBean }
-        as GarbageCollectorMXBean
-private val MEMORY_MX_BEAN = ManagementFactory.getMemoryMXBean()
 
 @OptIn(DelicateCoroutinesApi::class)
 @Suppress("UnstableApiUsage", "DeferredResultUnused")
@@ -126,13 +119,8 @@ private suspend fun runAll(
             "Have ${unfinishedTasks.get()} unfinished tasks, but none are in progress"
         }
         val maybeReceive = finishedJobsChannel.tryReceive().getOrElse {
-            val currentFree = freeBytes(MEMORY_MX_BEAN.heapMemoryUsage)
-            val lastGcInfo = GC_MX_BEAN.lastGcInfo?.memoryUsageAfterGc?.values?.maxByOrNull { it.max }
-            if (inProgressJobs.isNotEmpty()
-                    && (unstartedTasks.isEmpty() ||
-                            (currentFree < MIN_FREE_MEMORY
-                            && lastGcInfo != null
-                            && freeBytes(lastGcInfo) < MIN_FREE_MEMORY))) {
+            if (inProgressJobs.size >= PARALLELISM
+                    || (inProgressJobs.isNotEmpty() && unstartedTasks.isEmpty())) {
                 logger.debug("{} tasks remain. Waiting for one of: {}",
                         Unbox.box(unfinishedTasks.get()), inProgressJobs)
                 finishedJobsChannel.receive()
@@ -170,5 +158,3 @@ private suspend fun runAll(
     logger.debug("All jobs done; closing channel")
     finishedJobsChannel.close()
 }
-
-private fun freeBytes(usage: MemoryUsage): Long = usage.max - usage.used
