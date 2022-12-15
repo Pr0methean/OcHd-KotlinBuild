@@ -112,7 +112,6 @@ suspend fun main(args: Array<String>) {
 
 data class TaskResult(val task: FileOutputTask, val succeeded: Boolean)
 
-@Suppress("ComplexCondition")
 private suspend fun runAll(
     tasks: Iterable<FileOutputTask>,
     scope: CoroutineScope,
