@@ -32,8 +32,10 @@ private val taskOrderComparator = comparingLong(FileOutputTask::timesFailed)
     .then(comparingInt(FileOutputTask::startedOrAvailableSubtasks).reversed())
     .then(comparingInt(FileOutputTask::cacheableSubtasks))
 private val logger = LogManager.getRootLogger()
-private const val JOBS_PER_CPU = 1.0
-private val PARALLELISM = (JOBS_PER_CPU * Runtime.getRuntime().availableProcessors()).toInt()
+private const val THREADS_PER_CPU = 1.0
+private val PARALLELISM = (THREADS_PER_CPU * Runtime.getRuntime().availableProcessors()).toInt()
+private const val MAX_JOBS_PER_CPU = 1.5
+private val MAX_JOBS = (MAX_JOBS_PER_CPU * Runtime.getRuntime().availableProcessors()).toInt()
 private const val GLOBAL_MAX_RETRIES = 100L
 
 @OptIn(DelicateCoroutinesApi::class)
@@ -119,7 +121,7 @@ private suspend fun runAll(
             "Have ${unfinishedTasks.get()} unfinished tasks, but none are in progress"
         }
         val maybeReceive = finishedJobsChannel.tryReceive().getOrElse {
-            if (inProgressJobs.size >= PARALLELISM
+            if (inProgressJobs.size >= MAX_JOBS
                     || (inProgressJobs.isNotEmpty() && unstartedTasks.isEmpty())) {
                 logger.debug("{} tasks remain. Waiting for one of: {}",
                         Unbox.box(unfinishedTasks.get()), inProgressJobs)
