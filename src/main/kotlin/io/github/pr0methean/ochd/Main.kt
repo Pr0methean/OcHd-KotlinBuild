@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.toSet
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.plus
+import kotlinx.coroutines.yield
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox
 import java.lang.management.ManagementFactory
@@ -126,17 +127,25 @@ private suspend fun runAll(
         check(inProgressJobs.isNotEmpty() || unstartedTasks.isNotEmpty()) {
             "Have ${unfinishedTasks.get()} unfinished tasks, but none are in progress"
         }
-        val maybeReceive = finishedJobsChannel.tryReceive().getOrElse {
-            val currentFree = freeBytes(MEMORY_MX_BEAN.heapMemoryUsage)
-            val lastGcInfo = GC_MX_BEAN.lastGcInfo?.memoryUsageAfterGc?.values?.maxByOrNull { it.max }
-            if (inProgressJobs.isNotEmpty()
-                    && (unstartedTasks.isEmpty() ||
-                            (currentFree < MIN_FREE_MEMORY
-                            && lastGcInfo != null
-                            && freeBytes(lastGcInfo) < MIN_FREE_MEMORY))) {
-                logger.debug("{} tasks remain. Waiting for one of: {}",
+        val maybeReceive = finishedJobsChannel.tryReceive().getOrElse<TaskResult?> {
+            if (inProgressJobs.isNotEmpty()) {
+                if (unstartedTasks.isEmpty()) {
+                    logger.debug("{} tasks remain. Waiting for one of: {}",
                         Unbox.box(unfinishedTasks.get()), inProgressJobs)
-                finishedJobsChannel.receive()
+                    return@getOrElse finishedJobsChannel.receive()
+                } else {
+                    val currentFree = freeBytes(MEMORY_MX_BEAN.heapMemoryUsage)
+                    val lastGcInfo = GC_MX_BEAN.lastGcInfo?.memoryUsageAfterGc?.values?.maxByOrNull { it.max }
+                    if (currentFree < MIN_FREE_MEMORY
+                        && lastGcInfo != null
+                        && freeBytes(lastGcInfo) < MIN_FREE_MEMORY
+                    ) {
+                        return@getOrElse finishedJobsChannel.receive()
+                    } else if (inProgressJobs.size >= PARALLELISM) {
+                        yield()
+                        return@getOrElse finishedJobsChannel.tryReceive().getOrNull()
+                    } else null
+                }
             } else null
         }
         if (maybeReceive != null) {
