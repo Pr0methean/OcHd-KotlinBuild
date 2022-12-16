@@ -14,7 +14,8 @@ object Concrete: DyedBlock("concrete") {
     }
 
     override suspend fun createSharedLayersTask(ctx: TaskPlanningContext): ImageTask = ctx.stack {
-        layer("x", DYES["gray"], 0.25)
-        layer("borderLongDashes", DYES["light_gray"], 0.25)
+        layer("strokeBottomLeftTopRight", DYES["gray"], 0.25)
+        layer("strokeTopLeftBottomRight", DYES["gray"], 0.25)
+        layer("borderShortDashes", DYES["light_gray"], 0.25)
     }
 }

@@ -11,7 +11,8 @@ enum class SimpleShearBlock: SingleTextureMaterial, Block {
     COBWEB {
         override suspend fun LayerListBuilder.createTextureLayers() {
             layer("ringsCentralBullseye", Color.WHITE, 0.75)
-            layer("x", Color.WHITE, 0.85)
+            layer("strokeBottomLeftTopRight", Color.WHITE, 0.85)
+            layer("strokeTopLeftBottomRight", Color.WHITE, 0.85)
             layer("cross", Color.WHITE, 0.85)
         }
     },

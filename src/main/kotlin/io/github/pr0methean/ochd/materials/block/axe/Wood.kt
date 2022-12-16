@@ -103,7 +103,8 @@ enum class OverworldWood(
                 layer("borderSolid", highlight)
                 layer("bigDiamond", shadow)
             }
-            layer("x", color)
+            layer("strokeBottomLeftTopRight", color)
+            layer("strokeTopLeftBottomRight", color)
             layer("doorHingesBig", STONE.shadow)
             layer("doorHinges", STONE.highlight)
         }

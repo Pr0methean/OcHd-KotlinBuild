@@ -157,7 +157,8 @@ enum class SimplePickaxeBlock(
             layer("borderLongDashes", shadow)
             layer("bigRingsBottomLeftTopRight", highlight)
             layer("bigRingsTopLeftBottomRight", shadow)
-            layer("x", color)
+            layer("strokeBottomLeftTopRight", color)
+            layer("strokeTopLeftBottomRight", color)
             layer("bigDiamond", color)
         }
     },
