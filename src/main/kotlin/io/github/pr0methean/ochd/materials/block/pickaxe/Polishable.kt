@@ -3,6 +3,7 @@ package io.github.pr0methean.ochd.materials.block.pickaxe
 import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.c
+import io.github.pr0methean.ochd.materials.block.pickaxe.Ore.GOLD
 import io.github.pr0methean.ochd.tasks.FileOutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Color
@@ -18,8 +19,6 @@ enum class Polishable(
 ): ShadowHighlightMaterial {
     ANDESITE(c(0x8b8b8b),c(0x737373),c(0xaaaaaa)) {
         override suspend fun LayerListBuilder.createTextureLayersBase() {
-            /*push bigRingsBottomLeftTopRight ${andesite_h} a1 ${andesite}
-push bigRingsTopLeftBottomRight ${andesite_s} a2*/
             background(color)
             layer("bigRingsBottomLeftTopRight", highlight)
             layer("bigRingsTopLeftBottomRight", shadow)
@@ -54,7 +53,7 @@ push bigRingsTopLeftBottomRight ${andesite_s} a2*/
             emit(ctx.out(polishedTextureTask, "block/polished_blackstone"))
             emit(ctx.out(ctx.stack {
                 copy(polishedTextureTask)
-                layer("bigRingsBottomLeftTopRight", color)
+                layer("bigRingsBottomLeftTopRight", GOLD.color)
             }, "block/gilded_blackstone"))
             emit(ctx.out(ctx.stack {
                 background(shadow)
