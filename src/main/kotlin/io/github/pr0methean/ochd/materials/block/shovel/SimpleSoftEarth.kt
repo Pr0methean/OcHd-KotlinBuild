@@ -40,10 +40,10 @@ enum class SimpleSoftEarth(
     CLAY(c(0x9aa3b3), c(0x9494a4), c(0xA8BEC5)) {
         override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
-            layer("diagonalChecksTopLeftBottomRight", shadow)
-            layer("diagonalChecksBottomLeftTopRight", highlight)
-            layer("diagonalOutlineChecksTopLeftBottomRight", highlight)
-            layer("diagonalOutlineChecksBottomLeftTopRight", shadow)
+            layer("diagonalChecksTopLeftBottomRight", highlight)
+            layer("diagonalChecksBottomLeftTopRight", shadow)
+            layer("diagonalChecksFillTopLeftBottomRight", shadow)
+            layer("diagonalChecksFillBottomLeftTopRight", highlight)
         }
     },
     MUD(c(0x3a3a3a), c(0x333333), c(0x515151)) {

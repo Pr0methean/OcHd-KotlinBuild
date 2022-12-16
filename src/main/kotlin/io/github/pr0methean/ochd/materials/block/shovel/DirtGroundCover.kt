@@ -78,15 +78,15 @@ enum class DirtGroundCover(
             background(color)
             layer("diagonalChecksTopLeftBottomRight", shadow)
             layer("diagonalChecksBottomLeftTopRight", highlight)
-            layer("diagonalOutlineChecksTopLeftBottomRight", highlight)
-            layer("diagonalOutlineChecksBottomLeftTopRight", shadow)
+            layer("diagonalChecksFillTopLeftBottomRight", highlight)
+            layer("diagonalChecksFillBottomLeftTopRight", shadow)
         }
         override suspend fun LayerListBuilder.createCoverSideLayers() {
             layer("topPart", color)
             layer("diagonalChecksTopLeft", shadow)
             layer("diagonalChecksTopRight", highlight)
-            layer("diagonalOutlineChecksTopLeft", highlight)
-            layer("diagonalOutlineChecksTopRight", shadow)
+            layer("diagonalChecksFillTopLeft", highlight)
+            layer("diagonalChecksFillTopRight", shadow)
         }
     },
     SNOW(POWDER_SNOW.color,  POWDER_SNOW.shadow, POWDER_SNOW.highlight) {

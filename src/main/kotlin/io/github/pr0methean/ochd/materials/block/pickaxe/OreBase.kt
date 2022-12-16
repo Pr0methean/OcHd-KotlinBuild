@@ -49,8 +49,10 @@ enum class OreBase(
     NETHERRACK(c(0x723232), c(0x411616), c(0x854242), "nether_") {
         override suspend fun LayerListBuilder.createTextureLayers() {
             background(color)
-            layer("diagonalOutlineChecksTopLeftBottomRight", NETHERRACK.shadow)
-            layer("diagonalOutlineChecksBottomLeftTopRight", NETHERRACK.highlight)
+            layer("diagonalChecksTopLeftBottomRight", shadow)
+            layer("diagonalChecksBottomLeftTopRight", highlight)
+            layer("diagonalChecksFillBottomLeftTopRight", color)
+            layer("diagonalChecksFillBottomLeftTopRight", color)
         }
     };
 
