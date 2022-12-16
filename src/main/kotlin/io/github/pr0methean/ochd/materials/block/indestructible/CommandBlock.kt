@@ -60,8 +60,8 @@ enum class CommandBlock(
 
     private suspend fun LayerListBuilder.createBackground() {
         background(color)
-        layer("diagonalChecks4x", highlight)
-        layer("diagonalOutlineChecks4x", shadow)
+        layer("diagonalChecks4x", shadow)
+        layer("diagonalChecksFill4x", highlight)
         decorateBackground()
     }
 
