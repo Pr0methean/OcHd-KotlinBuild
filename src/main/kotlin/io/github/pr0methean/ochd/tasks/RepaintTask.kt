@@ -39,11 +39,6 @@ class RepaintTask(
     ctx: CoroutineContext,
     stats: ImageProcessingStats
 ): AbstractImageTask("{$base}@$paint@$alpha", cache, ctx, stats) {
-    init {
-        if (alpha == 1.0) {
-            base.addOpaqueRepaint(this)
-        }
-    }
 
     override suspend fun renderOnto(context: GraphicsContext, x: Double, y: Double) {
         if (alpha != 1.0 || isStartedOrAvailable() || mutex.withLock { directDependentTasks.size } > 1) {
@@ -58,11 +53,7 @@ class RepaintTask(
 
     private suspend fun internalRenderOnto(context: GraphicsContext?, x: Double, y: Double): GraphicsContext {
         // Determine whether we can repaint a repaint if it's available and the base image isn't
-        val baseImage = base.getNow()
-            ?: base.opaqueRepaints().firstNotNullOfOrNull { task ->
-                task.getNow()?.also { logger.info("Repainting $task for ${this@RepaintTask}") }
-            }
-            ?: base.await()
+        val baseImage = base.await()
         val ctx = context ?: Canvas(baseImage.width, baseImage.height).graphicsContext2D.also {
             logger.info("Allocating a canvas for {}", name)
         }
@@ -84,7 +75,7 @@ class RepaintTask(
     override fun startedOrAvailableSubtasks(): Int =
         if (isStartedOrAvailable()) {
             totalSubtasks
-        } else if (base.isStartedOrAvailable() || base.opaqueRepaints().any(ImageTask::isStartedOrAvailable)) {
+        } else if (base.isStartedOrAvailable()) {
             base.totalSubtasks
         } else {
             base.startedOrAvailableSubtasks()
@@ -95,13 +86,6 @@ class RepaintTask(
             base.mergeWithDuplicate(other.base)
         }
         return super.mergeWithDuplicate(other)
-    }
-
-    override fun addOpaqueRepaint(repaint: ImageTask) {
-        if (alpha == 1.0) {
-            base.addOpaqueRepaint(repaint)
-        }
-        super.addOpaqueRepaint(repaint)
     }
 
     override suspend fun perform(): Image {

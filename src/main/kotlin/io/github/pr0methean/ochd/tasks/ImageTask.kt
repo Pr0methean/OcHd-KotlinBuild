@@ -9,12 +9,5 @@ import org.apache.logging.log4j.util.StringBuilderFormattable
 interface ImageTask : StringBuilderFormattable, Task<Image> {
     override suspend fun mergeWithDuplicate(other: Task<*>): ImageTask
 
-    /**
-     * These can be used by [RepaintTask] to repaint a repaint if it's cached or in progress and the original isn't.
-     */
-    fun opaqueRepaints(): Iterable<ImageTask>
-
-    fun addOpaqueRepaint(repaint: ImageTask)
-
     suspend fun renderOnto(context: GraphicsContext, x: Double, y: Double)
 }
