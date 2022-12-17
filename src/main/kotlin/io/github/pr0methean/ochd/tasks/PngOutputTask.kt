@@ -15,7 +15,7 @@ import kotlin.coroutines.CoroutineContext
 @Suppress("BlockingMethodInNonBlockingContext")
 class PngOutputTask(
     name: String,
-    private val base: Task<Image>,
+    val base: Task<Image>,
     private val files: List<File>,
     ctx: CoroutineContext,
     private val stats: ImageProcessingStats,
