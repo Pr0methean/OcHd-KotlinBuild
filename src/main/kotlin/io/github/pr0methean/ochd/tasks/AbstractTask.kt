@@ -3,9 +3,11 @@ package io.github.pr0methean.ochd.tasks
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.async
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.apache.logging.log4j.LogManager
@@ -95,9 +97,20 @@ abstract class AbstractTask<T>(
     override suspend fun start(): Deferred<T>
             = cache.computeIfAbsent { createCoroutineAsync() }.apply(Deferred<T>::start)
 
-    protected abstract fun createCoroutineAsync(): Deferred<T>
+    private fun createCoroutineAsync(): Deferred<T> {
+        return coroutineScope.async (start = CoroutineStart.LAZY) {
+            try {
+                return@async perform()
+            } catch (t: Throwable) {
+                logFailure(t)
+                throw t
+            }
+        }
+    }
 
-    fun logFailure(throwable: Throwable) {
+    abstract suspend fun perform(): T
+
+    private fun logFailure(throwable: Throwable) {
         AT_LOGGER.error("{} failed due to {}: {}", name, throwable::class.simpleName, throwable.message)
         timesFailed.getAndIncrement()
     }
