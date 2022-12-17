@@ -11,7 +11,7 @@ abstract class AbstractImageTask(
     ctx: CoroutineContext,
     open val stats: ImageProcessingStats
 )
-    : SimpleTask<Image>(name, cache, ctx), ImageTask {
+    : AbstractTask<Image>(name, cache, ctx), ImageTask {
     override suspend fun mergeWithDuplicate(other: Task<*>): ImageTask {
         return super.mergeWithDuplicate(other) as ImageTask
     }

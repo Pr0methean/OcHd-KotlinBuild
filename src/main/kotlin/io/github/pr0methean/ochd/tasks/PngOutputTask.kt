@@ -21,7 +21,7 @@ class PngOutputTask(
     private val files: List<File>,
     ctx: CoroutineContext,
     private val stats: ImageProcessingStats,
-): SimpleTask<Unit>("Output $name", noopDeferredTaskCache(), ctx) {
+): AbstractTask<Unit>("Output $name", noopDeferredTaskCache(), ctx) {
     override val directDependencies: Iterable<Task<*>> = listOf(base)
 
     override suspend fun perform() {
