@@ -30,7 +30,7 @@ interface Task<out T>: StringBuilderFormattable {
     val totalSubtasks: Int
 
     fun timesFailed(): Long
-    suspend fun await(): T
     fun clearCache()
     suspend fun start(): Deferred<T>
+    suspend fun await(): T = start().await()
 }
