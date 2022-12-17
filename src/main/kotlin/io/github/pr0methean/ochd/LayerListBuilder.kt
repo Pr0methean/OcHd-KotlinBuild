@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd
 
 import io.github.pr0methean.ochd.tasks.AbstractImageTask
-import io.github.pr0methean.ochd.tasks.Task
+import io.github.pr0methean.ochd.tasks.AbstractTask
 import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
@@ -33,7 +33,11 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
         return layer
     }
 
-    suspend inline fun layer(source: Task<Image>, paint: Paint? = null, alpha: Double = 1.0): AbstractImageTask {
+    suspend inline fun layer(
+        source: AbstractTask<Image>,
+        paint: Paint? = null,
+        alpha: Double = 1.0
+    ): AbstractImageTask {
         val layer = ctx.layer(source, paint, alpha)
         copy(layer)
         return layer

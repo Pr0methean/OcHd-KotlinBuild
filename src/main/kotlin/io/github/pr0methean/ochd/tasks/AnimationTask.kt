@@ -42,7 +42,7 @@ class AnimationTask(
 
     override fun hashCode(): Int = hashCode
 
-    override suspend fun mergeWithDuplicate(other: Task<*>): AbstractImageTask {
+    override suspend fun mergeWithDuplicate(other: AbstractTask<*>): AbstractImageTask {
         val deduped = super.mergeWithDuplicate(other)
         if (deduped !== other && deduped is AnimationTask && other is AnimationTask) {
             for ((index, frame) in deduped.frames.withIndex()) {
@@ -84,5 +84,5 @@ class AnimationTask(
         return output
     }
 
-    override val directDependencies: List<Task<Image>> = frames
+    override val directDependencies: List<AbstractTask<Image>> = frames
 }
