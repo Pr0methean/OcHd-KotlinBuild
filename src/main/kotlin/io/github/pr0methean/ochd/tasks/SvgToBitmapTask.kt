@@ -86,6 +86,12 @@ class SvgToBitmapTask(
 
     override fun hashCode(): Int = hashCode
 
+    /**
+     * Deduplication of SVG tasks is done by the [io.github.pr0methean.ochd.TaskPlanningContext] based on duplicate
+     * file names, so we don't need to assimilate any state from another [SvgToBitmapTask].
+     */
+    override suspend fun mergeWithDuplicate(other: Task<*>): ImageTask = this
+
     override suspend fun perform(): Image {
         stats.onTaskLaunched("SvgToBitmapTask", name)
         val image = withContext(batikTranscoder.asContextElement()) {
