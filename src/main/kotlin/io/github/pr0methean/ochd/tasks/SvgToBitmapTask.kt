@@ -76,7 +76,8 @@ class SvgToBitmapTask(
     stats: ImageProcessingStats
 ): AbstractImageTask(name, cache, ctx, stats) {
 
-    override val directDependencies: List<AbstractTask<Nothing>> = listOf() // SVG import doesn't depend on any other tasks
+    /** SVG import doesn't depend on any other tasks, so this returns an empty list. */
+    override val directDependencies: List<AbstractTask<Nothing>> = listOf()
 
     override fun equals(other: Any?): Boolean {
         return (other === this) || other is SvgToBitmapTask && other.file == file
