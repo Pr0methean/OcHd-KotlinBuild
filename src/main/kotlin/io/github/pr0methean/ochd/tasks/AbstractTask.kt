@@ -3,7 +3,7 @@ package io.github.pr0methean.ochd.tasks
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CoroutineStart
+import kotlinx.coroutines.CoroutineStart.LAZY
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
@@ -95,25 +95,19 @@ abstract class AbstractTask<T>(
 
     @Suppress("DeferredIsResult")
     override suspend fun start(): Deferred<T>
-            = cache.computeIfAbsent { createCoroutineAsync() }.apply(Deferred<T>::start)
-
-    private fun createCoroutineAsync(): Deferred<T> {
-        return coroutineScope.async (start = CoroutineStart.LAZY) {
+            = cache.computeIfAbsent {
+        coroutineScope.async(start = LAZY) {
             try {
                 return@async perform()
             } catch (t: Throwable) {
-                logFailure(t)
+                AT_LOGGER.error("{} failed due to {}: {}", name, t::class.simpleName, t.message)
+                timesFailed.getAndIncrement()
                 throw t
             }
         }
-    }
+    }.apply(Deferred<T>::start)
 
     abstract suspend fun perform(): T
-
-    private fun logFailure(throwable: Throwable) {
-        AT_LOGGER.error("{} failed due to {}: {}", name, throwable::class.simpleName, throwable.message)
-        timesFailed.getAndIncrement()
-    }
 
     @Suppress("UNCHECKED_CAST", "ReturnCount")
     override suspend fun mergeWithDuplicate(other: Task<*>): Task<T> {
