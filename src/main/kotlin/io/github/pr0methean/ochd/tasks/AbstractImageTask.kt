@@ -6,6 +6,7 @@ import javafx.scene.canvas.GraphicsContext
 import javafx.scene.image.Image
 import kotlin.coroutines.CoroutineContext
 
+/** Specialization of [AbstractTask]&lt;[Image]&gt;. */
 abstract class AbstractImageTask(
     name: String, cache: DeferredTaskCache<Image>,
     ctx: CoroutineContext,
