@@ -31,6 +31,8 @@ interface Task<out T>: StringBuilderFormattable {
 
     fun timesFailed(): Long
     fun clearCache()
+
+    @Suppress("DeferredIsResult")
     suspend fun start(): Deferred<T>
     suspend fun await(): T = start().await()
 }
