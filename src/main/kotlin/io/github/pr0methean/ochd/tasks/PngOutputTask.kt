@@ -6,9 +6,11 @@ import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
 import java.io.File
 import java.nio.file.Files
+import java.util.concurrent.ConcurrentHashMap
 import javax.imageio.ImageIO
 import kotlin.coroutines.CoroutineContext
 
+private val mkdirsedPaths = ConcurrentHashMap.newKeySet<File>()
 /**
  * Task that saves an image to one or more PNG files.
  */
@@ -24,7 +26,11 @@ class PngOutputTask(
 
     override suspend fun perform() {
         stats.onTaskLaunched("PngOutputTask", name)
-        files.map(File::getParentFile).distinct().filterNotNull().forEach(File::mkdirs)
+        files.map(File::getParentFile).distinct().filterNotNull().forEach { parent ->
+            if (mkdirsedPaths.add(parent)) {
+                parent.mkdirs()
+            }
+        }
         val firstFile = files[0]
         val firstFilePath = firstFile.absoluteFile.toPath()
         ImageIO.write(SwingFXUtils.fromFXImage(base.await(), null), "PNG", firstFile)
