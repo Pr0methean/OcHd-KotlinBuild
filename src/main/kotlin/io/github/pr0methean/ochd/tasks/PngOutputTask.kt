@@ -17,12 +17,12 @@ private val mkdirsedPaths = ConcurrentHashMap.newKeySet<File>()
 @Suppress("BlockingMethodInNonBlockingContext")
 class PngOutputTask(
     name: String,
-    val base: Task<Image>,
+    val base: AbstractTask<Image>,
     private val files: List<File>,
     ctx: CoroutineContext,
     private val stats: ImageProcessingStats,
 ): AbstractTask<Unit>("Output $name", noopDeferredTaskCache(), ctx) {
-    override val directDependencies: Iterable<Task<*>> = listOf(base)
+    override val directDependencies: Iterable<AbstractTask<*>> = listOf(base)
 
     override suspend fun perform() {
         val baseTask = base.start()

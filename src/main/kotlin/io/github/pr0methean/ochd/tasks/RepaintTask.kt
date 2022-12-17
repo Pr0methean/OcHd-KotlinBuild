@@ -71,7 +71,7 @@ class RepaintTask(
         return ctx
     }
 
-    override suspend fun mergeWithDuplicate(other: Task<*>): AbstractImageTask {
+    override suspend fun mergeWithDuplicate(other: AbstractTask<*>): AbstractImageTask {
         if (other is RepaintTask) {
             base.mergeWithDuplicate(other.base)
         }

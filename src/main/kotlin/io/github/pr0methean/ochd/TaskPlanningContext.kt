@@ -3,12 +3,12 @@ package io.github.pr0methean.ochd
 import com.github.benmanes.caffeine.cache.Caffeine
 import com.google.common.collect.ConcurrentHashMultiset
 import io.github.pr0methean.ochd.tasks.AbstractImageTask
+import io.github.pr0methean.ochd.tasks.AbstractTask
 import io.github.pr0methean.ochd.tasks.AnimationTask
 import io.github.pr0methean.ochd.tasks.ImageStackingTask
 import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.tasks.RepaintTask
 import io.github.pr0methean.ochd.tasks.SvgToBitmapTask
-import io.github.pr0methean.ochd.tasks.Task
 import io.github.pr0methean.ochd.tasks.caching.CaffeineDeferredTaskCache
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import io.github.pr0methean.ochd.tasks.caching.VictimReferenceDeferredTaskCache
@@ -53,7 +53,7 @@ class TaskPlanningContext(
     private fun bytesPerTile() = BYTES_PER_PIXEL * tileSize * tileSize
     override fun toString(): String = name
     private val svgTasks: Map<String, SvgToBitmapTask>
-    private val taskDeduplicationMap = ConcurrentHashMap<Task<*>, Task<*>>()
+    private val taskDeduplicationMap = ConcurrentHashMap<AbstractTask<*>, AbstractTask<*>>()
     private val dedupedSvgTasks = ConcurrentHashMultiset.create<String>()
     private val backingCache = Caffeine.newBuilder()
         .recordStats()
@@ -92,7 +92,7 @@ class TaskPlanningContext(
     }
 
     @Suppress("UNCHECKED_CAST")
-    tailrec suspend fun <T, TTask : Task<T>> deduplicate(task: Task<T>): TTask = when {
+    tailrec suspend fun <T, TTask : AbstractTask<T>> deduplicate(task: AbstractTask<T>): TTask = when {
         task is SvgToBitmapTask -> {
             // svgTasks is populated eagerly
             val name = task.name
@@ -138,7 +138,11 @@ class TaskPlanningContext(
     suspend inline fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): AbstractImageTask
             = layer(findSvgTask(name), paint, alpha)
 
-    suspend inline fun layer(source: Task<Image>, paint: Paint? = null, alpha: Double = 1.0): AbstractImageTask {
+    suspend inline fun layer(
+        source: AbstractTask<Image>,
+        paint: Paint? = null,
+        alpha: Double = 1.0
+    ): AbstractImageTask {
         return deduplicate(
             RepaintTask(
                 deduplicate(source) as AbstractImageTask,

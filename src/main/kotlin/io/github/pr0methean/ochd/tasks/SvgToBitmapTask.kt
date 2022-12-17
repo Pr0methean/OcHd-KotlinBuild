@@ -76,7 +76,7 @@ class SvgToBitmapTask(
     stats: ImageProcessingStats
 ): AbstractImageTask(name, cache, ctx, stats) {
 
-    override val directDependencies: List<Task<Nothing>> = listOf() // SVG import doesn't depend on any other tasks
+    override val directDependencies: List<AbstractTask<Nothing>> = listOf() // SVG import doesn't depend on any other tasks
 
     override fun equals(other: Any?): Boolean {
         return (other === this) || other is SvgToBitmapTask && other.file == file
@@ -91,7 +91,7 @@ class SvgToBitmapTask(
      * Deduplication of SVG tasks is done by the [io.github.pr0methean.ochd.TaskPlanningContext] based on duplicate
      * file names, so we don't need to assimilate any state from another [SvgToBitmapTask].
      */
-    override suspend fun mergeWithDuplicate(other: Task<*>): AbstractImageTask = this
+    override suspend fun mergeWithDuplicate(other: AbstractTask<*>): AbstractImageTask = this
 
     override suspend fun perform(): Image {
         stats.onTaskLaunched("SvgToBitmapTask", name)

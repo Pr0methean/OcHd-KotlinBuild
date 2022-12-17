@@ -35,7 +35,7 @@ class ImageStackingTask(
         }
     }
 
-    override suspend fun mergeWithDuplicate(other: Task<*>): AbstractImageTask {
+    override suspend fun mergeWithDuplicate(other: AbstractTask<*>): AbstractImageTask {
         val deduped = super.mergeWithDuplicate(other)
         if (deduped !== other && deduped is ImageStackingTask && other is ImageStackingTask) {
             deduped.layers.mergeWithDuplicate(other.layers)

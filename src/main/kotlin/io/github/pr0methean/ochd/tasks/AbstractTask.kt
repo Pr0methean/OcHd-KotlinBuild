@@ -12,6 +12,7 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
+import org.apache.logging.log4j.util.StringBuilderFormattable
 import java.util.Collections.newSetFromMap
 import java.util.WeakHashMap
 import java.util.concurrent.atomic.AtomicLong
@@ -20,32 +21,33 @@ import kotlin.coroutines.CoroutineContext
 
 val AT_LOGGER: Logger = LogManager.getLogger("AbstractTask")
 private val SUPERVISOR_JOB = SupervisorJob()
-abstract class AbstractTask<T>(
-    final override val name: String,
-    val cache: DeferredTaskCache<T>,
+abstract class AbstractTask<out T>(
+    val name: String,
+    val cache: DeferredTaskCache<@UnsafeVariance T>,
     val ctx: CoroutineContext
-) : Task<T> {
+) : StringBuilderFormattable {
     protected val coroutineScope: CoroutineScope by lazy {
         CoroutineScope(ctx.plus(CoroutineName(name)).plus(SUPERVISOR_JOB))
     }
 
     val timesFailed: AtomicLong = AtomicLong(0)
     protected val mutex: Mutex = Mutex()
+
     @GuardedBy("mutex")
-    val directDependentTasks: MutableSet<Task<*>> = newSetFromMap(WeakHashMap())
-    override suspend fun addDirectDependentTask(task: Task<*>) {
+    val directDependentTasks: MutableSet<AbstractTask<*>> = newSetFromMap(WeakHashMap())
+    suspend fun addDirectDependentTask(task: AbstractTask<*>) {
         if (mutex.withLock {
                 directDependentTasks.add(task) && directDependentTasks.size >= 2 && cache.enable()
-        }) {
+            }) {
             AT_LOGGER.info("Enabling caching for {}", name)
         }
     }
 
-    override suspend fun removeDirectDependentTask(task: Task<*>) {
+    suspend fun removeDirectDependentTask(task: AbstractTask<*>) {
         if (mutex.withLock {
                 directDependentTasks.remove(task)
                 directDependentTasks.isEmpty()
-        }) {
+            }) {
             directDependencies.forEach { it.removeDirectDependentTask(this) }
             if (cache.disable()) {
                 AT_LOGGER.info("Disabled caching for {}", name)
@@ -53,15 +55,16 @@ abstract class AbstractTask<T>(
         }
     }
 
-    override val totalSubtasks: Int by lazy {
+    val totalSubtasks: Int by lazy {
         var total = 1
         for (task in directDependencies) {
             total += task.totalSubtasks
         }
         total
     }
+    abstract val directDependencies: Iterable<AbstractTask<*>>
 
-    override fun startedOrAvailableSubtasks(): Int {
+    fun startedOrAvailableSubtasks(): Int {
         if (isStartedOrAvailable()) {
             return totalSubtasks
         }
@@ -72,7 +75,7 @@ abstract class AbstractTask<T>(
         return subtasks
     }
 
-    override suspend fun registerRecursiveDependencies(): Unit = mutex.withLock {
+    suspend fun registerRecursiveDependencies(): Unit = mutex.withLock {
         directDependencies.forEach {
             it.addDirectDependentTask(this@AbstractTask)
             it.registerRecursiveDependencies()
@@ -86,7 +89,7 @@ abstract class AbstractTask<T>(
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    override fun getNow(): T? {
+    fun getNow(): T? {
         val coroutine = cache.getNowAsync() ?: return null
         return if (coroutine.isCompleted) {
             coroutine.getCompleted()
@@ -94,8 +97,7 @@ abstract class AbstractTask<T>(
     }
 
     @Suppress("DeferredIsResult")
-    override suspend fun start(): Deferred<T>
-            = cache.computeIfAbsent {
+    suspend fun start(): Deferred<T> = cache.computeIfAbsent {
         coroutineScope.async(start = LAZY) {
             try {
                 return@async perform()
@@ -110,14 +112,15 @@ abstract class AbstractTask<T>(
     abstract suspend fun perform(): T
 
     @Suppress("UNCHECKED_CAST", "ReturnCount")
-    override suspend fun mergeWithDuplicate(other: Task<*>): Task<T> {
+    open suspend fun mergeWithDuplicate(other: AbstractTask<*>): AbstractTask<T> {
         return if (other === this || getNow() != null) {
             this
         } else {
-            if (other is AbstractTask) {
+            if (true) {
                 val otherCoroutine = other.cache.getNowAsync()
                 if (otherCoroutine != null
-                        && cache.computeIfAbsent { otherCoroutine as Deferred<T> } == otherCoroutine) {
+                    && cache.computeIfAbsent { otherCoroutine as Deferred<T> } == otherCoroutine
+                ) {
                     return this
                 }
             }
@@ -125,10 +128,10 @@ abstract class AbstractTask<T>(
         }
     }
 
-    override fun isStartedOrAvailable(): Boolean = cache.getNowAsync()?.run { isActive || isCompleted } ?: false
+    fun isStartedOrAvailable(): Boolean = cache.getNowAsync()?.run { isActive || isCompleted } ?: false
 
-    override fun timesFailed(): Long = timesFailed.get()
-    override fun cacheableSubtasks(): Int {
+    fun timesFailed(): Long = timesFailed.get()
+    fun cacheableSubtasks(): Int {
         var subtasks = if (cache.isEnabled()) 1 else 0
         for (task in directDependencies) {
             subtasks += task.cacheableSubtasks()
@@ -136,7 +139,7 @@ abstract class AbstractTask<T>(
         return subtasks
     }
 
-    override fun clearCache() {
+    fun clearCache() {
         cache.clear()
         directDependencies.forEach {
             try {
@@ -147,4 +150,6 @@ abstract class AbstractTask<T>(
             }
         }
     }
+
+    suspend fun await(): T = start().await()
 }
