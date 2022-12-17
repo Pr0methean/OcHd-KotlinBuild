@@ -52,7 +52,6 @@ class RepaintTask(
     }
 
     private suspend fun internalRenderOnto(context: GraphicsContext?, x: Double, y: Double): GraphicsContext {
-        // Determine whether we can repaint a repaint if it's available and the base image isn't
         val baseImage = base.await()
         val ctx = context ?: Canvas(baseImage.width, baseImage.height).graphicsContext2D.also {
             logger.info("Allocating a canvas for {}", name)
@@ -71,15 +70,6 @@ class RepaintTask(
         ctx.canvas.opacity = alpha
         return ctx
     }
-
-    override fun startedOrAvailableSubtasks(): Int =
-        if (isStartedOrAvailable()) {
-            totalSubtasks
-        } else if (base.isStartedOrAvailable()) {
-            base.totalSubtasks
-        } else {
-            base.startedOrAvailableSubtasks()
-        }
 
     override suspend fun mergeWithDuplicate(other: Task<*>): ImageTask {
         if (other is RepaintTask) {
