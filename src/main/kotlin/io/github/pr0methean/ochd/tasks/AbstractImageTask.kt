@@ -11,12 +11,12 @@ abstract class AbstractImageTask(
     ctx: CoroutineContext,
     open val stats: ImageProcessingStats
 )
-    : AbstractTask<Image>(name, cache, ctx), ImageTask {
-    override suspend fun mergeWithDuplicate(other: Task<*>): ImageTask {
-        return super.mergeWithDuplicate(other) as ImageTask
+    : AbstractTask<Image>(name, cache, ctx) {
+    override suspend fun mergeWithDuplicate(other: Task<*>): AbstractImageTask {
+        return super.mergeWithDuplicate(other) as AbstractImageTask
     }
 
-    override suspend fun renderOnto(context: GraphicsContext, x: Double, y: Double) {
+    open suspend fun renderOnto(context: GraphicsContext, x: Double, y: Double) {
         context.drawImage(await(), x, y)
     }
 

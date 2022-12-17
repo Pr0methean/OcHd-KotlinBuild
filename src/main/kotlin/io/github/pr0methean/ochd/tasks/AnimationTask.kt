@@ -22,15 +22,15 @@ private val logger = LogManager.getLogger("AnimationTask")
  * frames.
  */
 class AnimationTask(
-    val background: ImageTask,
-    val frames: List<ImageTask>, val width: Int, val height: Int,
+    val background: AbstractImageTask,
+    val frames: List<AbstractImageTask>, val width: Int, val height: Int,
     name: String,
     cache: DeferredTaskCache<Image>,
     ctx: CoroutineContext,
     stats: ImageProcessingStats
 ): AbstractImageTask(name, cache, ctx, stats) {
     private val totalHeight = height * frames.size
-    private val hashCode: Int by lazy {Objects.hash(frames, width, height)}
+    private val hashCode: Int by lazy { Objects.hash(frames, width, height) }
 
     override fun equals(other: Any?): Boolean {
         return (this === other) || (
@@ -42,7 +42,7 @@ class AnimationTask(
 
     override fun hashCode(): Int = hashCode
 
-    override suspend fun mergeWithDuplicate(other: Task<*>): ImageTask {
+    override suspend fun mergeWithDuplicate(other: Task<*>): AbstractImageTask {
         val deduped = super.mergeWithDuplicate(other)
         if (deduped !== other && deduped is AnimationTask && other is AnimationTask) {
             for ((index, frame) in deduped.frames.withIndex()) {

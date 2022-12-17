@@ -81,7 +81,8 @@ class SvgToBitmapTask(
     override fun equals(other: Any?): Boolean {
         return (other === this) || other is SvgToBitmapTask && other.file == file
     }
-    private val hashCode by lazy {file.hashCode()}
+
+    private val hashCode by lazy { file.hashCode() }
     private val input = TranscoderInput(file.toURI().toString())
 
     override fun hashCode(): Int = hashCode
@@ -90,7 +91,7 @@ class SvgToBitmapTask(
      * Deduplication of SVG tasks is done by the [io.github.pr0methean.ochd.TaskPlanningContext] based on duplicate
      * file names, so we don't need to assimilate any state from another [SvgToBitmapTask].
      */
-    override suspend fun mergeWithDuplicate(other: Task<*>): ImageTask = this
+    override suspend fun mergeWithDuplicate(other: Task<*>): AbstractImageTask = this
 
     override suspend fun perform(): Image {
         stats.onTaskLaunched("SvgToBitmapTask", name)

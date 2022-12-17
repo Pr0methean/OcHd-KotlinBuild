@@ -32,7 +32,7 @@ private val logger = LogManager.getLogger("RepaintTask")
  * @alpha a multiplier applied to the image's opacity
  */
 class RepaintTask(
-    val base: ImageTask,
+    val base: AbstractImageTask,
     val paint: Paint?,
     val alpha: Double = 1.0,
     cache: DeferredTaskCache<Image>,
@@ -71,7 +71,7 @@ class RepaintTask(
         return ctx
     }
 
-    override suspend fun mergeWithDuplicate(other: Task<*>): ImageTask {
+    override suspend fun mergeWithDuplicate(other: Task<*>): AbstractImageTask {
         if (other is RepaintTask) {
             base.mergeWithDuplicate(other.base)
         }
@@ -95,7 +95,7 @@ class RepaintTask(
         return snapshot
     }
 
-    override val directDependencies: List<ImageTask> = listOf(base)
+    override val directDependencies: List<AbstractImageTask> = listOf(base)
 
     override fun equals(other: Any?): Boolean {
         return (this === other) || (other is RepaintTask
@@ -103,6 +103,7 @@ class RepaintTask(
                 && other.paint == paint
                 && other.alpha == alpha)
     }
+
     private val hashCode = Objects.hash(base, paint, alpha)
     override fun hashCode(): Int = hashCode
 }

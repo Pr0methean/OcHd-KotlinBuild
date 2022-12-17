@@ -2,9 +2,9 @@ package io.github.pr0methean.ochd
 
 import com.github.benmanes.caffeine.cache.Caffeine
 import com.google.common.collect.ConcurrentHashMultiset
+import io.github.pr0methean.ochd.tasks.AbstractImageTask
 import io.github.pr0methean.ochd.tasks.AnimationTask
 import io.github.pr0methean.ochd.tasks.ImageStackingTask
-import io.github.pr0methean.ochd.tasks.ImageTask
 import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.tasks.RepaintTask
 import io.github.pr0methean.ochd.tasks.SvgToBitmapTask
@@ -135,45 +135,45 @@ class TaskPlanningContext(
         return task
     }
 
-    suspend inline fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): ImageTask
+    suspend inline fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): AbstractImageTask
             = layer(findSvgTask(name), paint, alpha)
 
-    suspend inline fun layer(source: Task<Image>, paint: Paint? = null, alpha: Double = 1.0): ImageTask {
+    suspend inline fun layer(source: Task<Image>, paint: Paint? = null, alpha: Double = 1.0): AbstractImageTask {
         return deduplicate(
             RepaintTask(
-                deduplicate(source) as ImageTask,
+                deduplicate(source) as AbstractImageTask,
                 paint,
                 alpha,
                 createTaskCache("$source@$paint@$alpha"),
                 ctx,
                 stats
-            )) as ImageTask
+            )) as AbstractImageTask
     }
 
-    suspend inline fun stack(init: LayerListBuilder.() -> Unit): ImageTask {
+    suspend inline fun stack(init: LayerListBuilder.() -> Unit): AbstractImageTask {
         val layerTasksBuilder = LayerListBuilder(this)
         layerTasksBuilder.init()
         val layerTasks = layerTasksBuilder.build()
         return stack(layerTasks)
     }
 
-    suspend inline fun animate(background: ImageTask, frames: List<ImageTask>): ImageTask {
+    suspend inline fun animate(background: AbstractImageTask, frames: List<AbstractImageTask>): AbstractImageTask {
         return deduplicate(
             AnimationTask(
-                deduplicate(background) as ImageTask,
-                frames.asFlow().map { deduplicate(it) as ImageTask }.toList(),
+                deduplicate(background) as AbstractImageTask,
+                frames.asFlow().map { deduplicate(it) as AbstractImageTask }.toList(),
                 tileSize,
                 tileSize,
                 frames.toString(),
                 createTaskCache(frames.toString()),
                 ctx,
                 stats
-            )) as ImageTask
+            )) as AbstractImageTask
     }
 
-    suspend inline fun out(source: ImageTask, names: Array<String>): PngOutputTask {
+    suspend inline fun out(source: AbstractImageTask, names: Array<String>): PngOutputTask {
         val lowercaseName = names.map { it.lowercase(Locale.ENGLISH) }
-        val dedupedSource = deduplicate(source) as ImageTask
+        val dedupedSource = deduplicate(source) as AbstractImageTask
         val orig =
             PngOutputTask(
                 lowercaseName[0],
@@ -189,17 +189,17 @@ class TaskPlanningContext(
         return deduped
     }
 
-    suspend inline fun out(source: ImageTask, name: String): PngOutputTask = out(source, arrayOf(name))
+    suspend inline fun out(source: AbstractImageTask, name: String): PngOutputTask = out(source, arrayOf(name))
 
     suspend inline fun out(source: LayerListBuilder.() -> Unit, name: String): PngOutputTask
             = out(stack {source()}, arrayOf(name))
 
-    suspend inline fun stack(layers: LayerList): ImageTask
-            = deduplicate(
+    suspend inline fun stack(layers: LayerList): AbstractImageTask = deduplicate(
         ImageStackingTask(
             layers,
             createTaskCache(layers.toString()),
             ctx,
             stats
-        )) as ImageTask
+        )
+    ) as AbstractImageTask
 }

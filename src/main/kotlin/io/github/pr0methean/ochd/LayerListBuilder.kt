@@ -1,6 +1,6 @@
 package io.github.pr0methean.ochd
 
-import io.github.pr0methean.ochd.tasks.ImageTask
+import io.github.pr0methean.ochd.tasks.AbstractImageTask
 import io.github.pr0methean.ochd.tasks.Task
 import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
 import javafx.scene.image.Image
@@ -11,7 +11,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 
 class LayerListBuilder(val ctx: TaskPlanningContext) {
-    val layers: MutableList<ImageTask> = mutableListOf()
+    val layers: MutableList<AbstractImageTask> = mutableListOf()
     var background: Paint = Color.TRANSPARENT
     fun background(paint: Paint, opacity: Double = 1.0) {
         background = if (opacity == 1.0 || paint !is Color) {
@@ -27,13 +27,13 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
         background = c(color)
     }
 
-    suspend inline fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): ImageTask {
+    suspend inline fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): AbstractImageTask {
         val layer = ctx.layer(name, paint, alpha)
         copy(layer)
         return layer
     }
 
-    suspend inline fun layer(source: Task<Image>, paint: Paint? = null, alpha: Double = 1.0): ImageTask {
+    suspend inline fun layer(source: Task<Image>, paint: Paint? = null, alpha: Double = 1.0): AbstractImageTask {
         val layer = ctx.layer(source, paint, alpha)
         copy(layer)
         return layer
@@ -57,11 +57,11 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
         source.run {createTextureLayers()}
     }.build())
 
-    suspend fun copy(element: ImageTask): Boolean {
-        val deduped = ctx.deduplicate(element) as ImageTask
+    suspend fun copy(element: AbstractImageTask): Boolean {
+        val deduped = ctx.deduplicate(element) as AbstractImageTask
         return layers.add(deduped)
     }
-    fun addAll(elements: Collection<ImageTask>): Boolean = layers.addAll(elements)
-    suspend fun build(): LayerList = LayerList(layers.asFlow().map { ctx.deduplicate(it) as ImageTask }.toList(),
+    fun addAll(elements: Collection<AbstractImageTask>): Boolean = layers.addAll(elements)
+    suspend fun build(): LayerList = LayerList(layers.asFlow().map { ctx.deduplicate(it) as AbstractImageTask }.toList(),
             background)
 }
