@@ -5,7 +5,7 @@ import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.STONE
 import io.github.pr0methean.ochd.materials.block.shovel.DirtGroundCover
-import io.github.pr0methean.ochd.tasks.ImageTask
+import io.github.pr0methean.ochd.tasks.AbstractImageTask
 import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Color
@@ -29,7 +29,7 @@ sealed interface Wood: ShadowHighlightMaterial {
     suspend fun LayerListBuilder.logTop()
     suspend fun LayerListBuilder.strippedLogTop()
     suspend fun LayerListBuilder.trapdoor()
-    suspend fun LayerListBuilder.doorTop(doorKnob: ImageTask) {
+    suspend fun LayerListBuilder.doorTop(doorKnob: AbstractImageTask) {
         copy { doorBottom() }
         layer(doorKnob)
     }
@@ -92,7 +92,7 @@ enum class OverworldWood(
             layer("trapdoorHinges", STONE.highlight)
         }
 
-        override suspend fun LayerListBuilder.doorTop(doorKnob: ImageTask) {
+        override suspend fun LayerListBuilder.doorTop(doorKnob: AbstractImageTask) {
             copy { doorBottom() }
             copy(doorKnob)
         }
@@ -139,7 +139,7 @@ enum class OverworldWood(
             layer("trapdoorHingesBig", STONE.shadow)
         }
 
-        override suspend fun LayerListBuilder.doorTop(doorKnob: ImageTask) {
+        override suspend fun LayerListBuilder.doorTop(doorKnob: AbstractImageTask) {
             copy {
                 background(Color.WHITE)
                 layer("borderSolidExtraThick", color)
@@ -190,7 +190,7 @@ enum class OverworldWood(
             layer("trapdoorHingesBig", STONE.highlight)
         }
 
-        override suspend fun LayerListBuilder.doorTop(doorKnob: ImageTask) {
+        override suspend fun LayerListBuilder.doorTop(doorKnob: AbstractImageTask) {
             copy {doorBottom()}
             copy(doorKnob)
         }
@@ -233,7 +233,7 @@ enum class OverworldWood(
             layer("trapdoorHinges", STONE.color)
         }
 
-        override suspend fun LayerListBuilder.doorTop(doorKnob: ImageTask) {
+        override suspend fun LayerListBuilder.doorTop(doorKnob: AbstractImageTask) {
             layer("trapdoor2", color)
             layer("borderShortDashes", highlight)
             copy {
@@ -284,7 +284,7 @@ enum class OverworldWood(
             layer("trapdoorHinges", STONE.shadow)
         }
 
-        override suspend fun LayerListBuilder.doorTop(doorKnob: ImageTask) {
+        override suspend fun LayerListBuilder.doorTop(doorKnob: AbstractImageTask) {
             copy {doorBottom()}
             copy(doorKnob)
         }
@@ -327,7 +327,7 @@ enum class OverworldWood(
             layer("trapdoorHinges", STONE.shadow)
         }
 
-        override suspend fun LayerListBuilder.doorTop(doorKnob: ImageTask) {
+        override suspend fun LayerListBuilder.doorTop(doorKnob: AbstractImageTask) {
             copy {doorBottom()}
             copy(doorKnob)
         }
@@ -368,7 +368,7 @@ enum class OverworldWood(
             layer("trapdoorHinges", STONE.highlight)
         }
 
-        override suspend fun LayerListBuilder.doorTop(doorKnob: ImageTask) {
+        override suspend fun LayerListBuilder.doorTop(doorKnob: AbstractImageTask) {
             copy {
                 layer("borderSolidThick", color)
                 layer("borderSolid", highlight)
@@ -487,7 +487,7 @@ enum class Fungus(
                 layer("trapdoorHinges", STONE.shadow)
             }
 
-            override suspend fun LayerListBuilder.doorTop(doorKnob: ImageTask) {
+            override suspend fun LayerListBuilder.doorTop(doorKnob: AbstractImageTask) {
                 copy {doorBottom()}
                 copy(doorKnob)
             }
@@ -536,7 +536,7 @@ enum class Fungus(
             layer("trapdoorHinges", STONE.highlight)
         }
 
-        override suspend fun LayerListBuilder.doorTop(doorKnob: ImageTask) {
+        override suspend fun LayerListBuilder.doorTop(doorKnob: AbstractImageTask) {
             copy {doorBottom()}
             copy(doorKnob)
         }
