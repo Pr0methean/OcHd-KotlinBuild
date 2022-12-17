@@ -24,13 +24,12 @@ class PngOutputTask(
 
     override suspend fun perform() {
         stats.onTaskLaunched("PngOutputTask", name)
+        files.map(File::getParentFile).distinct().filterNotNull().forEach(File::mkdirs)
         val firstFile = files[0]
-        firstFile.parentFile?.mkdirs()
         val firstFilePath = firstFile.absoluteFile.toPath()
         ImageIO.write(SwingFXUtils.fromFXImage(base.await(), null), "PNG", firstFile)
         if (files.size > 1) {
             for (file in files.subList(1, files.size)) {
-                file.parentFile?.mkdirs()
                 Files.copy(firstFilePath, file.absoluteFile.toPath())
             }
         }
