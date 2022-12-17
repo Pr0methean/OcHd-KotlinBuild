@@ -26,7 +26,7 @@ abstract class AbstractTask<out T>(
     val cache: DeferredTaskCache<@UnsafeVariance T>,
     val ctx: CoroutineContext
 ) : StringBuilderFormattable {
-    protected val coroutineScope: CoroutineScope by lazy {
+    val coroutineScope: CoroutineScope by lazy {
         CoroutineScope(ctx.plus(CoroutineName(name)).plus(SUPERVISOR_JOB))
     }
 
@@ -55,7 +55,7 @@ abstract class AbstractTask<out T>(
         }
     }
 
-    val totalSubtasks: Int by lazy {
+    private val totalSubtasks: Int by lazy {
         var total = 1
         for (task in directDependencies) {
             total += task.totalSubtasks
@@ -84,7 +84,7 @@ abstract class AbstractTask<out T>(
 
     final override fun toString(): String = name
 
-    override fun formatTo(buffer: StringBuilder) {
+    final override fun formatTo(buffer: StringBuilder) {
         buffer.append(name)
     }
 
@@ -97,7 +97,7 @@ abstract class AbstractTask<out T>(
     }
 
     @Suppress("DeferredIsResult")
-    suspend fun start(): Deferred<T> = cache.computeIfAbsent {
+    suspend inline fun start(): Deferred<T> = cache.computeIfAbsent {
         coroutineScope.async(start = LAZY) {
             try {
                 return@async perform()
@@ -151,5 +151,5 @@ abstract class AbstractTask<out T>(
         }
     }
 
-    suspend fun await(): T = start().await()
+    suspend inline fun await(): T = start().await()
 }
