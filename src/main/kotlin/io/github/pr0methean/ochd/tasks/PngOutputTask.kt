@@ -15,17 +15,19 @@ import kotlin.coroutines.CoroutineContext
 @Suppress("BlockingMethodInNonBlockingContext")
 class PngOutputTask(
     name: String,
-    base: Task<Image>,
+    private val base: Task<Image>,
     private val files: List<File>,
     ctx: CoroutineContext,
     private val stats: ImageProcessingStats,
-): TransformingTask<Image, Unit>("Output $name", base, noopDeferredTaskCache(), ctx) {
-    override suspend fun transform(input: Image) {
+): SimpleTask<Unit>("Output $name", noopDeferredTaskCache(), ctx) {
+    override val directDependencies: Iterable<Task<*>> = listOf(base)
+
+    override suspend fun perform() {
         stats.onTaskLaunched("PngOutputTask", name)
         val firstFile = files[0]
         firstFile.parentFile?.mkdirs()
         val firstFilePath = firstFile.absoluteFile.toPath()
-        ImageIO.write(SwingFXUtils.fromFXImage(input, null), "PNG", firstFile)
+        ImageIO.write(SwingFXUtils.fromFXImage(base.await(), null), "PNG", firstFile)
         if (files.size > 1) {
             for (file in files.subList(1, files.size)) {
                 file.parentFile?.mkdirs()
