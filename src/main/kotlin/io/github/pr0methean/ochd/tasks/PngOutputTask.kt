@@ -25,6 +25,7 @@ class PngOutputTask(
     override val directDependencies: Iterable<Task<*>> = listOf(base)
 
     override suspend fun perform() {
+        val baseTask = base.start()
         stats.onTaskLaunched("PngOutputTask", name)
         files.map(File::getParentFile).distinct().filterNotNull().forEach { parent ->
             if (mkdirsedPaths.add(parent)) {
@@ -33,7 +34,7 @@ class PngOutputTask(
         }
         val firstFile = files[0]
         val firstFilePath = firstFile.absoluteFile.toPath()
-        ImageIO.write(SwingFXUtils.fromFXImage(base.await(), null), "PNG", firstFile)
+        ImageIO.write(SwingFXUtils.fromFXImage(baseTask.await(), null), "PNG", firstFile)
         if (files.size > 1) {
             for (file in files.subList(1, files.size)) {
                 Files.copy(firstFilePath, file.absoluteFile.toPath())

@@ -1,5 +1,6 @@
 package io.github.pr0methean.ochd.tasks
 
+import kotlinx.coroutines.Deferred
 import org.apache.logging.log4j.util.StringBuilderFormattable
 
 /**
@@ -31,4 +32,5 @@ interface Task<out T>: StringBuilderFormattable {
     fun timesFailed(): Long
     suspend fun await(): T
     fun clearCache()
+    suspend fun start(): Deferred<T>
 }
