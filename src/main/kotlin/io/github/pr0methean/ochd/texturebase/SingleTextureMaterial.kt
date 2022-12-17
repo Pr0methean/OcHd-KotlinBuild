@@ -2,7 +2,7 @@ package io.github.pr0methean.ochd.texturebase
 
 import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.TaskPlanningContext
-import io.github.pr0methean.ochd.tasks.FileOutputTask
+import io.github.pr0methean.ochd.tasks.PngOutputTask
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
 
@@ -16,7 +16,7 @@ interface SingleTextureMaterial: Material {
     suspend fun copyTo(dest: LayerListBuilder) {
         dest.copy(LayerListBuilder(dest.ctx).apply {createTextureLayers()}.build())
     }
-    override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<FileOutputTask> = flowOf(
+    override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<PngOutputTask> = flowOf(
         ctx.out(ctx.stack { createTextureLayers() }, "$directory/$name")
     )
 }

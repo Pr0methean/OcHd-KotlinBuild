@@ -5,8 +5,8 @@ import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.STONE
 import io.github.pr0methean.ochd.materials.block.shovel.DirtGroundCover
-import io.github.pr0methean.ochd.tasks.FileOutputTask
 import io.github.pr0methean.ochd.tasks.ImageTask
+import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
@@ -38,7 +38,7 @@ sealed interface Wood: ShadowHighlightMaterial {
     suspend fun LayerListBuilder.leaves()
     suspend fun LayerListBuilder.sapling()
 
-    override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<FileOutputTask> = flow {
+    override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<PngOutputTask> = flow {
         val doorKnob = ctx.stack {
             layer("doorKnob", STONE.highlight)
             layer("doorKnobShadow", STONE.shadow)

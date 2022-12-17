@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd
 
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
-import io.github.pr0methean.ochd.tasks.FileOutputTask
+import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.tasks.doJfx
 import javafx.application.Platform
 import kotlinx.coroutines.CoroutineName
@@ -28,9 +28,9 @@ import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
 private const val CAPACITY_PADDING_FACTOR = 2
-private val taskOrderComparator = comparingLong(FileOutputTask::timesFailed)
-    .then(comparingInt(FileOutputTask::startedOrAvailableSubtasks).reversed())
-    .then(comparingInt(FileOutputTask::cacheableSubtasks))
+private val taskOrderComparator = comparingLong(PngOutputTask::timesFailed)
+    .then(comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed())
+    .then(comparingInt(PngOutputTask::cacheableSubtasks))
 private val logger = LogManager.getRootLogger()
 private const val THREADS_PER_CPU = 1.0
 private val THREADS = perCpu(THREADS_PER_CPU)
@@ -86,10 +86,10 @@ suspend fun main(args: Array<String>) {
     startMonitoring(stats, scope)
     val time = measureNanoTime {
         stats.onTaskLaunched("Build task graph", "Build task graph")
-        val tasks = ALL_MATERIALS.outputTasks(ctx).map { ctx.deduplicate(it) as FileOutputTask }.toSet()
+        val tasks = ALL_MATERIALS.outputTasks(ctx).map { ctx.deduplicate(it) as PngOutputTask }.toSet()
         val depsBuildTask = scope.launch { tasks.forEach { it.registerRecursiveDependencies() }}
-        val cbTasks = tasks.filter(FileOutputTask::isCommandBlock)
-        val nonCbTasks = tasks.filterNot(FileOutputTask::isCommandBlock)
+        val cbTasks = tasks.filter(PngOutputTask::isCommandBlock)
+        val nonCbTasks = tasks.filterNot(PngOutputTask::isCommandBlock)
         val hugeTaskCache = ctx.hugeTileBackingCache
         depsBuildTask.join()
         stats.onTaskCompleted("Build task graph", "Build task graph")
@@ -109,17 +109,17 @@ suspend fun main(args: Array<String>) {
     exitProcess(0)
 }
 
-data class TaskResult(val task: FileOutputTask, val succeeded: Boolean)
+data class TaskResult(val task: PngOutputTask, val succeeded: Boolean)
 
 private suspend fun runAll(
-    tasks: Iterable<FileOutputTask>,
+    tasks: Iterable<PngOutputTask>,
     scope: CoroutineScope,
     stats: ImageProcessingStats,
     maxJobs: Int
 ) {
-    val unstartedTasks = tasks.sortedWith(comparingInt(FileOutputTask::cacheableSubtasks)).toMutableSet()
+    val unstartedTasks = tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks)).toMutableSet()
     val unfinishedTasks = AtomicLong(unstartedTasks.size.toLong())
-    val inProgressJobs = mutableMapOf<FileOutputTask,Job>()
+    val inProgressJobs = mutableMapOf<PngOutputTask,Job>()
     val finishedJobsChannel = Channel<TaskResult>(capacity = CAPACITY_PADDING_FACTOR * THREADS)
     while (unfinishedTasks.get() > 0) {
         check(inProgressJobs.isNotEmpty() || unstartedTasks.isNotEmpty()) {

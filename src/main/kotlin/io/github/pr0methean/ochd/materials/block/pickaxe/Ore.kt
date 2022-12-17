@@ -3,8 +3,8 @@ package io.github.pr0methean.ochd.materials.block.pickaxe
 import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.c
-import io.github.pr0methean.ochd.tasks.FileOutputTask
 import io.github.pr0methean.ochd.tasks.ImageTask
+import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Color
 import kotlinx.coroutines.flow.Flow
@@ -86,7 +86,7 @@ enum class Ore(
         highlight = Color.WHITE,
         substrates = NETHER
     ) {
-        override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<FileOutputTask> = flow {
+        override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<PngOutputTask> = flow {
             emit(ctx.out({ ingot() }, "item/quartz"))
             emit(ctx.out(ctx.stack {
                     copy(OreBase.NETHERRACK)
@@ -193,7 +193,7 @@ enum class Ore(
         item()
     }
 
-    override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<FileOutputTask> = flow {
+    override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<PngOutputTask> = flow {
         substrates.forEach { oreBase ->
             emit(ctx.out(oreBlock(ctx, oreBase), "block/${oreBase.orePrefix}${name}_ore"))
         }

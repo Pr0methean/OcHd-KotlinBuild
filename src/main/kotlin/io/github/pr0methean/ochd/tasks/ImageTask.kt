@@ -7,7 +7,6 @@ import org.apache.logging.log4j.util.StringBuilderFormattable
 
 /** Specialization of [Task]&lt;[Image]&gt;. */
 interface ImageTask : StringBuilderFormattable, Task<Image> {
-    val asPng: TransformingTask<Image, ByteArray>
     override suspend fun mergeWithDuplicate(other: Task<*>): ImageTask
 
     /**
