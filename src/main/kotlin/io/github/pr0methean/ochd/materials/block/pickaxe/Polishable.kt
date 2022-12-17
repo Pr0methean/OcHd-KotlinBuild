@@ -4,7 +4,7 @@ import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.materials.block.pickaxe.Ore.GOLD
-import io.github.pr0methean.ochd.tasks.FileOutputTask
+import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
@@ -46,7 +46,7 @@ enum class Polishable(
             layer("bigDotsBottomLeftTopRight", highlight)
             layer("bigDotsTopLeftBottomRight", color)
         }
-        override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<FileOutputTask> = flow {
+        override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<PngOutputTask> = flow {
 
             emit(ctx.out(ctx.stack { createTextureLayersBase() }, "block/blackstone"))
             val polishedTextureTask = ctx.stack { createPolishedTexture() }
@@ -69,7 +69,7 @@ enum class Polishable(
         layer("borderSolidTopLeft", highlight)
     }
 
-    override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<FileOutputTask> = flow {
+    override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<PngOutputTask> = flow {
         emit(ctx.out(ctx.stack {createTextureLayersBase()}, "block/$name"))
         emit(ctx.out(ctx.stack {createPolishedTexture()}, "block/polished_$name"))
     }

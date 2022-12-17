@@ -2,7 +2,7 @@ package io.github.pr0methean.ochd.materials.block.pickaxe
 
 import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.c
-import io.github.pr0methean.ochd.tasks.FileOutputTask
+import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.texturebase.Material
 import io.github.pr0methean.ochd.texturebase.redstoneOffAndOn
 import javafx.scene.paint.Color
@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
 object MiscRedstone: Material {
-    override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<FileOutputTask> = flow {
+    override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<PngOutputTask> = flow {
         val repeaterComparatorCommonBase = ctx.stack {
             copy(SimplePickaxeBlock.SMOOTH_STONE)
             layer("repeaterSideInputs", OreBase.STONE.shadow)

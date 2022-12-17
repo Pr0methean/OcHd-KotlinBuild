@@ -1,14 +1,14 @@
 package io.github.pr0methean.ochd.materials.block.pickaxe
 
 import io.github.pr0methean.ochd.TaskPlanningContext
-import io.github.pr0methean.ochd.tasks.FileOutputTask
+import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.texturebase.Material
 import javafx.scene.paint.Color
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
 object Furnace: Material {
-    override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<FileOutputTask> = flow {
+    override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<PngOutputTask> = flow {
         val furnaceSide = ctx.stack {
             background(OreBase.STONE.color)
             layer("bottomHalf", OreBase.STONE.highlight)

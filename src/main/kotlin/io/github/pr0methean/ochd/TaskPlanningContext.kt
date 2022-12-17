@@ -3,9 +3,9 @@ package io.github.pr0methean.ochd
 import com.github.benmanes.caffeine.cache.Caffeine
 import com.google.common.collect.ConcurrentHashMultiset
 import io.github.pr0methean.ochd.tasks.AnimationTask
-import io.github.pr0methean.ochd.tasks.FileOutputTask
 import io.github.pr0methean.ochd.tasks.ImageStackingTask
 import io.github.pr0methean.ochd.tasks.ImageTask
+import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.tasks.RepaintTask
 import io.github.pr0methean.ochd.tasks.SvgToBitmapTask
 import io.github.pr0methean.ochd.tasks.Task
@@ -171,27 +171,27 @@ class TaskPlanningContext(
             )) as ImageTask
     }
 
-    suspend inline fun out(source: ImageTask, names: Array<String>): FileOutputTask {
+    suspend inline fun out(source: ImageTask, names: Array<String>): PngOutputTask {
         val lowercaseName = names.map { it.lowercase(Locale.ENGLISH) }
-        val pngSource = deduplicate((deduplicate(source) as ImageTask).asPng)
+        val dedupedSource = deduplicate(source) as ImageTask
         val orig =
-            FileOutputTask(
+            PngOutputTask(
                 lowercaseName[0],
-                pngSource,
+                dedupedSource,
                 lowercaseName.map { outTextureRoot.resolve("$it.png") },
                 ctx,
                 stats
             )
-        val deduped = deduplicate(orig) as FileOutputTask
+        val deduped = deduplicate(orig) as PngOutputTask
         if (deduped === orig) {
-            pngSource.addDirectDependentTask(deduped)
+            dedupedSource.addDirectDependentTask(deduped)
         }
         return deduped
     }
 
-    suspend inline fun out(source: ImageTask, name: String): FileOutputTask = out(source, arrayOf(name))
+    suspend inline fun out(source: ImageTask, name: String): PngOutputTask = out(source, arrayOf(name))
 
-    suspend inline fun out(source: LayerListBuilder.() -> Unit, name: String): FileOutputTask
+    suspend inline fun out(source: LayerListBuilder.() -> Unit, name: String): PngOutputTask
             = out(stack {source()}, arrayOf(name))
 
     suspend inline fun stack(layers: LayerList): ImageTask

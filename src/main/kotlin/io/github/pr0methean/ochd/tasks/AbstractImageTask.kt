@@ -2,7 +2,6 @@ package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
-import io.github.pr0methean.ochd.tasks.caching.noopDeferredTaskCache
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.image.Image
 import java.util.Collections
@@ -34,9 +33,4 @@ abstract class AbstractImageTask(
         context.drawImage(await(), x, y)
     }
 
-    override val asPng: TransformingTask<Image, ByteArray> by lazy { PngEncodingTask(
-        this,
-        noopDeferredTaskCache(), ctx,
-        stats
-    ) }
 }
