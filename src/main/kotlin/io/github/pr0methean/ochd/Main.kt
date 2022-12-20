@@ -110,7 +110,7 @@ suspend fun main(args: Array<String>) {
 }
 
 @Suppress("ExplicitGarbageCollectionCall")
-fun gcIfUsingLargeTiles(tileSize: Int) {
+private fun gcIfUsingLargeTiles(tileSize: Int) {
     if (tileSize >= MIN_TILE_SIZE_FOR_EXPLICIT_GC) {
         System.gc()
     }
