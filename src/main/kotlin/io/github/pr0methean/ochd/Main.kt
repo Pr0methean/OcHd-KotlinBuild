@@ -38,6 +38,7 @@ private const val MAX_OUTPUT_TASKS_PER_CPU = 1.5
 private val MAX_OUTPUT_TASKS = perCpu(MAX_OUTPUT_TASKS_PER_CPU)
 private const val MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU = 1.0
 private val MAX_HUGE_TILE_OUTPUT_TASKS = perCpu(MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU)
+private const val MIN_TILE_SIZE_FOR_EXPLICIT_GC = 512
 
 private fun perCpu(amount: Double) = (amount * Runtime.getRuntime().availableProcessors()).toInt()
 private const val GLOBAL_MAX_RETRIES = 100L
@@ -94,11 +95,11 @@ suspend fun main(args: Array<String>) {
         depsBuildTask.join()
         stats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupAndCopyMetadata.join()
-        System.gc()
+        gcIfUsingLargeTiles(tileSize)
         runAll(cbTasks, scope, stats, MAX_HUGE_TILE_OUTPUT_TASKS)
         stats.readHugeTileCache(hugeTaskCache)
         hugeTaskCache.invalidateAll()
-        System.gc()
+        gcIfUsingLargeTiles(tileSize)
         runAll(nonCbTasks, scope, stats, MAX_OUTPUT_TASKS)
     }
     stopMonitoring()
@@ -107,6 +108,12 @@ suspend fun main(args: Array<String>) {
     logger.info("")
     logger.info("All tasks finished after {} ns", Unbox.box(time))
     exitProcess(0)
+}
+
+fun gcIfUsingLargeTiles(tileSize: Int) {
+    if (tileSize >= MIN_TILE_SIZE_FOR_EXPLICIT_GC) {
+        System.gc()
+    }
 }
 
 data class TaskResult(val task: PngOutputTask, val succeeded: Boolean)
