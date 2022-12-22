@@ -11,6 +11,7 @@ import io.github.pr0methean.ochd.tasks.RepaintTask
 import io.github.pr0methean.ochd.tasks.SvgToBitmapTask
 import io.github.pr0methean.ochd.tasks.caching.CaffeineDeferredTaskCache
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
+import io.github.pr0methean.ochd.tasks.caching.VictimReferenceDeferredTaskCache
 import io.github.pr0methean.ochd.tasks.caching.noopDeferredTaskCache
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
@@ -18,6 +19,7 @@ import javafx.scene.paint.Paint
 import kotlinx.coroutines.Deferred
 import org.apache.logging.log4j.LogManager
 import java.io.File
+import java.lang.ref.SoftReference
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.CoroutineContext
@@ -63,7 +65,11 @@ class TaskPlanningContext(
     val stats: ImageProcessingStats = ImageProcessingStats(backingCache)
 
     fun createTaskCache(name: String): DeferredTaskCache<Image> {
-        return CaffeineDeferredTaskCache(if (isHugeTileTask(name)) hugeTileBackingCache else backingCache)
+        return if (isHugeTileTask(name)) {
+            VictimReferenceDeferredTaskCache(CaffeineDeferredTaskCache(hugeTileBackingCache), ::SoftReference)
+        } else {
+            CaffeineDeferredTaskCache(backingCache)
+        }
     }
 
     init {
