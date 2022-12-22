@@ -127,7 +127,7 @@ abstract class AbstractTask<out T>(
         return this
     }
 
-    fun isStartedOrAvailable(): Boolean = cache.getNowAsync() != null
+    fun isStartedOrAvailable(): Boolean = cache.getNowAsync()?.run { isActive || isCompleted } ?: false
 
     fun timesFailed(): Long = timesFailed.get()
     fun cacheableSubtasks(): Int {
