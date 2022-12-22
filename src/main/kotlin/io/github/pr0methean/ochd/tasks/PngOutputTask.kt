@@ -27,7 +27,7 @@ class PngOutputTask(
     override suspend fun perform() {
         val baseTask = base.start()
         stats.onTaskLaunched("PngOutputTask", name)
-        files.map(File::getParentFile).distinct().filterNotNull().forEach { parent ->
+        files.mapNotNull(File::getParentFile).distinct().forEach { parent ->
             if (mkdirsedPaths.add(parent)) {
                 parent.mkdirs()
             }
