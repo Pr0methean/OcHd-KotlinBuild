@@ -84,5 +84,5 @@ class AnimationTask(
         return output
     }
 
-    override val directDependencies: List<AbstractTask<Image>> = frames
+    override val directDependencies: List<AbstractTask<Image>> = frames + background
 }
