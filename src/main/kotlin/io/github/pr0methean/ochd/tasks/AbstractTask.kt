@@ -102,6 +102,7 @@ abstract class AbstractTask<out T>(
 
     @Suppress("DeferredIsResult")
     suspend inline fun start(): Deferred<T> = cache.computeIfAbsent {
+        AT_LOGGER.info("Creating a new coroutine for {}", name)
         coroutineScope.async(start = LAZY) {
             try {
                 return@async perform()
@@ -138,12 +139,12 @@ abstract class AbstractTask<out T>(
     }
 
     fun clearCache() {
+        AT_LOGGER.info("Clearing cache for {}", name)
         cache.clear()
         directDependencies.forEach {
             try {
                 it.getNow()
             } catch (t: Throwable) {
-                AT_LOGGER.debug("Clearing failure in subtask {} of {}", it, this, t)
                 it.clearCache()
             }
         }
