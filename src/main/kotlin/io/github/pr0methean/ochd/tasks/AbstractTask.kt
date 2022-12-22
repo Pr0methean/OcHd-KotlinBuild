@@ -138,6 +138,7 @@ abstract class AbstractTask<out T>(
         return subtasks
     }
 
+    @Suppress("SwallowedException")
     fun clearCache() {
         AT_LOGGER.info("Clearing cache for {}", name)
         cache.clear()
