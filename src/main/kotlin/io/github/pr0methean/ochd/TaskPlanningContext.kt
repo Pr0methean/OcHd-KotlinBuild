@@ -12,13 +12,11 @@ import io.github.pr0methean.ochd.tasks.SvgToBitmapTask
 import io.github.pr0methean.ochd.tasks.caching.CaffeineDeferredTaskCache
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import io.github.pr0methean.ochd.tasks.caching.VictimReferenceDeferredTaskCache
+import io.github.pr0methean.ochd.tasks.caching.noopDeferredTaskCache
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.toList
 import org.apache.logging.log4j.LogManager
 import java.io.File
 import java.lang.ref.SoftReference
@@ -165,11 +163,11 @@ class TaskPlanningContext(
         return deduplicate(
             AnimationTask(
                 deduplicate(background) as AbstractImageTask,
-                frames.asFlow().map { deduplicate(it) as AbstractImageTask }.toList(),
+                frames.map { deduplicate(it) as AbstractImageTask },
                 tileSize,
                 tileSize,
                 frames.toString(),
-                createTaskCache(frames.toString()),
+                noopDeferredTaskCache(),
                 ctx,
                 stats
             )) as AbstractImageTask
