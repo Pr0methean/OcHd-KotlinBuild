@@ -28,6 +28,10 @@ fun color(web: String, alpha: Double): Color = Color.web(web, alpha)
 
 private val logger = LogManager.getLogger("TaskPlanningContext")
 
+private const val REGULAR_TILES_PER_HUGE_TILE = 4
+private const val BYTES_PER_PIXEL = 4
+private const val HUGE_TILE_CACHE_SIZE_BYTES = 1L.shl(30)
+
 fun isHugeTileTask(name: String): Boolean = name.contains("commandBlock") || name.contains("4x")
 
 /**
@@ -40,6 +44,7 @@ class TaskPlanningContext(
     val outTextureRoot: File,
     val ctx: CoroutineContext
 ) {
+    private fun bytesPerTile() = BYTES_PER_PIXEL * tileSize * tileSize
     override fun toString(): String = name
     private val svgTasks: Map<String, SvgToBitmapTask>
     private val taskDeduplicationMap = ConcurrentHashMap<AbstractTask<*>, AbstractTask<*>>()
@@ -52,6 +57,7 @@ class TaskPlanningContext(
     internal val hugeTileBackingCache = Caffeine.newBuilder()
         .recordStats()
         .weakKeys()
+        .maximumSize(HUGE_TILE_CACHE_SIZE_BYTES / (REGULAR_TILES_PER_HUGE_TILE * bytesPerTile()))
         .executor(Runnable::run) // keep eviction on same thread as population
         .build<DeferredTaskCache<Image>, Deferred<Image>>()
     val stats: ImageProcessingStats = ImageProcessingStats(backingCache)
