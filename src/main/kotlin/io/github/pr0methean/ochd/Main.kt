@@ -98,7 +98,6 @@ suspend fun main(args: Array<String>) {
         runAll(cbTasks, scope, stats, MAX_HUGE_TILE_OUTPUT_TASKS)
         stats.readHugeTileCache(hugeTaskCache)
         hugeTaskCache.invalidateAll()
-        hugeTaskCache.cleanUp()
         gcIfUsingLargeTiles(tileSize)
         runAll(nonCbTasks, scope, stats, MAX_OUTPUT_TASKS)
     }
