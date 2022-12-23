@@ -31,6 +31,7 @@ class AnimationTask(
 ): AbstractImageTask(name, cache, ctx, stats) {
     private val totalHeight = height * frames.size
     private val hashCode: Int by lazy { Objects.hash(frames, width, height) }
+    private val dependencies = frames + background
 
     override fun equals(other: Any?): Boolean {
         return (this === other) || (
@@ -84,5 +85,5 @@ class AnimationTask(
         return output
     }
 
-    override val directDependencies: List<AbstractTask<Image>> = frames + background
+    override val directDependencies: List<AbstractTask<Image>> = dependencies
 }
