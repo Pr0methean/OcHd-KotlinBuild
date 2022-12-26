@@ -31,7 +31,7 @@ fun color(web: String, alpha: Double): Color = Color.web(web, alpha)
 
 private val logger = LogManager.getLogger("TaskPlanningContext")
 private const val MAIN_CACHE_SIZE_BYTES = 1L.shl(31)
-private const val HUGE_TILE_CACHE_SIZE_BYTES = 1L.shl(30)
+private const val HUGE_TILE_CACHE_SIZE_BYTES = 1L.shl(29) + 1L.shl(28)
 
 fun isHugeTileTask(name: String): Boolean = name.contains("commandBlock") || name.contains("4x")
 
