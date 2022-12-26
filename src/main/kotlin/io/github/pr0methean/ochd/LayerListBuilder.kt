@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 
+@OcHdDslMarker
 class LayerListBuilder(val ctx: TaskPlanningContext) {
     val layers: MutableList<AbstractImageTask> = mutableListOf()
     var background: Paint = Color.TRANSPARENT
