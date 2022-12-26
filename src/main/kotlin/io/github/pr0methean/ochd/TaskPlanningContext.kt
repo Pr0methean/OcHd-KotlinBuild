@@ -1,7 +1,6 @@
 package io.github.pr0methean.ochd
 
 import com.github.benmanes.caffeine.cache.Caffeine
-import com.github.benmanes.caffeine.cache.RemovalListener
 import com.google.common.collect.ConcurrentHashMultiset
 import io.github.pr0methean.ochd.tasks.AbstractImageTask
 import io.github.pr0methean.ochd.tasks.AbstractTask
@@ -39,14 +38,10 @@ private const val REGULAR_TILES_PER_HUGE_TILE = 4
 
 private const val BYTES_PER_PIXEL = 4
 
-private val removalLogger = RemovalListener<DeferredTaskCache<Image>, Deferred<Image>> {
-        key, _, cause -> logger.warn("{} evicted from cache: {}", key?.name, cause) }
-
 private fun createCaffeineCache(maxEntries: Long) = Caffeine.newBuilder()
     .recordStats()
     .weakKeys()
     .executor(Runnable::run) // keep eviction on same thread as population
-    .evictionListener(removalLogger)
     .maximumSize(maxEntries)
     .build<DeferredTaskCache<Image>, Deferred<Image>>()
 
