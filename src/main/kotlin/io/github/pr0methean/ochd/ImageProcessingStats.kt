@@ -1,15 +1,10 @@
 package io.github.pr0methean.ochd
 
-import com.github.benmanes.caffeine.cache.Cache
-import com.github.benmanes.caffeine.cache.stats.CacheStats
 import com.google.common.collect.ConcurrentHashMultiset
 import com.google.common.collect.Multiset
 import com.google.common.collect.Multisets
-import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
-import javafx.scene.image.Image
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.cancel
@@ -92,20 +87,14 @@ fun stopMonitoring() {
     monitoringJob?.cancel("Monitoring stopped")
 }
 
-fun CacheStats.log(name: String, estimatedSize: Long) {
-    logger.info("Stats for {} cache: {} hits, {} misses, {} evictions, {} entries", name,
-            box(hitCount()), box(missCount()), box(evictionCount()), box(estimatedSize))
-}
-
-class ImageProcessingStats(private val backingCache: Cache<DeferredTaskCache<Image>, Deferred<Image>>) {
+class ImageProcessingStats {
     private val taskLaunches: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val taskCompletions: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val dedupeSuccesses: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val dedupeFailures: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     private val retries = LongAdder()
     private val tasksByRunCount = ConcurrentHashMultiset.create<Pair<String, String>>()
-    @Volatile lateinit var hugeCacheStats: CacheStats
-    @Volatile var hugeCacheFinalSize: Long = -1
+
     init {
         dedupeFailures.add("Build task graph")
 
@@ -153,8 +142,6 @@ class ImageProcessingStats(private val backingCache: Cache<DeferredTaskCache<Ima
         val totalHitRate = 1.0 - (totalActual - totalUnique).toDouble()/(totalWorstCase - totalUnique)
         logger.printf(Level.INFO, "Total               : %3.2f%% / %3.2f%%",
             100.0 * totalEfficiency, 100.0 * totalHitRate)
-        backingCache.stats().log("main", backingCache.estimatedSize())
-        hugeCacheStats.log("huge-tile", hugeCacheFinalSize)
     }
 
     fun onTaskLaunched(typename: String, name: String) {
@@ -172,8 +159,4 @@ class ImageProcessingStats(private val backingCache: Cache<DeferredTaskCache<Ima
         retries.add(howMany)
     }
 
-    fun readHugeTileCache(hugeTaskCache: Cache<*, *>) {
-        hugeCacheStats = hugeTaskCache.stats()
-        hugeCacheFinalSize = hugeTaskCache.estimatedSize()
-    }
 }

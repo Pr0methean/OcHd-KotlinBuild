@@ -1,7 +1,5 @@
 package io.github.pr0methean.ochd
 
-import com.github.benmanes.caffeine.cache.Caffeine
-import com.github.benmanes.caffeine.cache.RemovalListener
 import com.google.common.collect.ConcurrentHashMultiset
 import io.github.pr0methean.ochd.tasks.AbstractImageTask
 import io.github.pr0methean.ochd.tasks.AbstractTask
@@ -10,14 +8,12 @@ import io.github.pr0methean.ochd.tasks.ImageStackingTask
 import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.tasks.RepaintTask
 import io.github.pr0methean.ochd.tasks.SvgToBitmapTask
-import io.github.pr0methean.ochd.tasks.caching.CaffeineDeferredTaskCache
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import io.github.pr0methean.ochd.tasks.caching.VictimReferenceDeferredTaskCache
 import io.github.pr0methean.ochd.tasks.caching.noopDeferredTaskCache
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
-import kotlinx.coroutines.Deferred
 import org.apache.logging.log4j.LogManager
 import java.io.File
 import java.lang.ref.SoftReference
@@ -30,25 +26,6 @@ fun color(web: String): Color = Color.web(web)
 fun color(web: String, alpha: Double): Color = Color.web(web, alpha)
 
 private val logger = LogManager.getLogger("TaskPlanningContext")
-private const val MAIN_CACHE_SIZE_BYTES = 1L.shl(31)
-private const val HUGE_TILE_CACHE_SIZE_BYTES = 1L.shl(29) + 1L.shl(28)
-
-fun isHugeTileTask(name: String): Boolean = name.contains("commandBlock") || name.contains("4x")
-
-private const val REGULAR_TILES_PER_HUGE_TILE = 4
-
-private const val BYTES_PER_PIXEL = 4
-
-private val removalLogger = RemovalListener<DeferredTaskCache<Image>, Deferred<Image>> {
-        key, _, cause -> logger.warn("{} evicted from cache: {}", key?.name, cause) }
-
-private fun createCaffeineCache(maxEntries: Long) = Caffeine.newBuilder()
-    .recordStats()
-    .weakKeys()
-    .executor(Runnable::run) // keep eviction on same thread as population
-    .evictionListener(removalLogger)
-    .maximumSize(maxEntries)
-    .build<DeferredTaskCache<Image>, Deferred<Image>>()
 
 /**
  * Holds info needed to build and deduplicate the task graph. Needs to become unreachable once the graph is built.
@@ -61,20 +38,14 @@ class TaskPlanningContext(
     val ctx: CoroutineContext
 ) {
 
-    private fun bytesPerTile() = BYTES_PER_PIXEL * tileSize * tileSize
     override fun toString(): String = name
     private val svgTasks: Map<String, SvgToBitmapTask>
     private val taskDeduplicationMap = ConcurrentHashMap<AbstractTask<*>, AbstractTask<*>>()
     private val dedupedSvgTasks = ConcurrentHashMultiset.create<String>()
-    private val backingCache = createCaffeineCache(MAIN_CACHE_SIZE_BYTES / bytesPerTile())
-    internal val hugeTileBackingCache = createCaffeineCache(
-            HUGE_TILE_CACHE_SIZE_BYTES / (REGULAR_TILES_PER_HUGE_TILE * bytesPerTile()))
-    val stats: ImageProcessingStats = ImageProcessingStats(backingCache)
+    val stats: ImageProcessingStats = ImageProcessingStats()
 
     fun createTaskCache(name: String): DeferredTaskCache<Image> {
-        return VictimReferenceDeferredTaskCache(
-                CaffeineDeferredTaskCache(if (isHugeTileTask(name)) hugeTileBackingCache else backingCache, name),
-                ::SoftReference)
+        return VictimReferenceDeferredTaskCache(noopDeferredTaskCache(), ::SoftReference, name)
     }
 
     init {
