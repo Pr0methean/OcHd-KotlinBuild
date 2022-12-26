@@ -31,6 +31,9 @@ class ReferenceTaskCache<T>(
                 return currentCoroutine
             }
             val newCoroutine = coroutineCreator()
+            if (!isEnabled()) {
+                return newCoroutine
+            }
             if (coroutineRef.compareAndSet(currentCoroutineRef, referenceCreator(newCoroutine))) {
                 return newCoroutine
             }
