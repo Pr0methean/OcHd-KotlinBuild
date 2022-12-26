@@ -16,7 +16,7 @@ private val nullReference = WeakReference<Nothing?>(null)
 class VictimReferenceDeferredTaskCache<T>(
     val primaryCache: DeferredTaskCache<T>,
     val referenceCreator: (Deferred<T>) -> Reference<Deferred<T>>
-): DeferredTaskCache<T>() {
+): DeferredTaskCache<T>(primaryCache.name) {
     val coroutineRef: AtomicReference<Reference<out Deferred<T>?>> = AtomicReference(nullReference)
     override fun getNowAsync(): Deferred<T>? = primaryCache.getNowAsync() ?: coroutineRef.get().get()
     override fun enable(): Boolean {

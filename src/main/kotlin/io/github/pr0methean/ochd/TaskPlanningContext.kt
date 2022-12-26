@@ -40,7 +40,7 @@ private const val REGULAR_TILES_PER_HUGE_TILE = 4
 private const val BYTES_PER_PIXEL = 4
 
 private val removalLogger = RemovalListener<DeferredTaskCache<Image>, Deferred<Image>> {
-        key, _, cause -> logger.warn("{} evicted from cache: {}", key, cause) }
+        key, _, cause -> logger.warn("{} evicted from cache: {}", key?.name, cause) }
 
 private fun createCaffeineCache(maxEntries: Long) = Caffeine.newBuilder()
     .recordStats()
@@ -73,7 +73,7 @@ class TaskPlanningContext(
 
     fun createTaskCache(name: String): DeferredTaskCache<Image> {
         return VictimReferenceDeferredTaskCache(
-                CaffeineDeferredTaskCache(if (isHugeTileTask(name)) hugeTileBackingCache else backingCache),
+                CaffeineDeferredTaskCache(if (isHugeTileTask(name)) hugeTileBackingCache else backingCache, name),
                 ::SoftReference)
     }
 

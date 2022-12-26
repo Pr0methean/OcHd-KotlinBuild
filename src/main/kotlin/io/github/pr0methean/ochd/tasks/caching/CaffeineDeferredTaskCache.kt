@@ -6,8 +6,9 @@ import kotlinx.coroutines.Deferred
 /**
  * DeferredTaskCache backed by a Caffeine cache.
  */
-class CaffeineDeferredTaskCache<T>(val caffeineCache: Cache<in CaffeineDeferredTaskCache<T>, Deferred<T>>)
-    : DeferredTaskCache<T>() {
+class CaffeineDeferredTaskCache<T>(val caffeineCache: Cache<in CaffeineDeferredTaskCache<T>, Deferred<T>>,
+        name: String)
+    : DeferredTaskCache<T>(name) {
     override fun getNowAsync(): Deferred<T>? = caffeineCache.getIfPresent(this)
 
     override fun clear(): Unit = caffeineCache.invalidate(this)
