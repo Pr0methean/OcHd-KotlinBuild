@@ -35,9 +35,9 @@ private val taskOrderComparator = comparingLong(PngOutputTask::timesFailed)
 private val logger = LogManager.getRootLogger()
 private const val THREADS_PER_CPU = 1.0
 private val THREADS = perCpu(THREADS_PER_CPU)
-private const val MAX_OUTPUT_TASKS_PER_CPU = 4.0
+private const val MAX_OUTPUT_TASKS_PER_CPU = 3.0
 private val MAX_OUTPUT_TASKS = perCpu(MAX_OUTPUT_TASKS_PER_CPU)
-private const val MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU = 2.0
+private const val MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU = 1.5
 private val MAX_HUGE_TILE_OUTPUT_TASKS = perCpu(MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU)
 private const val MIN_TILE_SIZE_FOR_EXPLICIT_GC = 2048
 
