@@ -9,31 +9,16 @@ import java.util.concurrent.atomic.AtomicReference
 private val nullReference = WeakReference<Nothing?>(null)
 
 /**
- * A TaskCache that's backed by a Caffeine cache (the primary cache) and a soft or weak reference (the victim cache).
- * So named because the cached coroutine will tend to last longer than if we only used the soft reference, but not as
- * long as if the Caffeine cache was unlimited.
+ * A TaskCache that's backed by a soft or weak reference.
  */
-class VictimReferenceDeferredTaskCache<T>(
-    val primaryCache: DeferredTaskCache<T>,
+class ReferenceTaskCache<T>(
     val referenceCreator: (Deferred<T>) -> Reference<Deferred<T>>,
     name: String
 ): DeferredTaskCache<T>(name) {
     val coroutineRef: AtomicReference<Reference<out Deferred<T>?>> = AtomicReference(nullReference)
-    override fun getNowAsync(): Deferred<T>? = primaryCache.getNowAsync() ?: coroutineRef.get().get()
-    override fun enable(): Boolean {
-        val enabledSuper = super.enable()
-        val enabledPrimary = primaryCache.enable()
-        return enabledPrimary || enabledSuper
-    }
-
-    override fun disable(): Boolean {
-        val disabledPrimary = primaryCache.disable()
-        val disabledSuper = super.disable()
-        return disabledPrimary || disabledSuper
-    }
+    override fun getNowAsync(): Deferred<T>? = coroutineRef.get().get()
 
     override fun clear() {
-        primaryCache.clear()
         coroutineRef.getAndSet(nullReference).clear()
     }
 
@@ -47,7 +32,7 @@ class VictimReferenceDeferredTaskCache<T>(
             }
             val newCoroutine = coroutineCreator()
             if (coroutineRef.compareAndSet(currentCoroutineRef, referenceCreator(newCoroutine))) {
-                return if (isEnabled()) primaryCache.computeIfAbsent {newCoroutine} else newCoroutine
+                return newCoroutine
             }
             yield() // Spin wait
         }

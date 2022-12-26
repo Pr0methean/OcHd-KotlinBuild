@@ -9,7 +9,7 @@ import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.tasks.RepaintTask
 import io.github.pr0methean.ochd.tasks.SvgToBitmapTask
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
-import io.github.pr0methean.ochd.tasks.caching.VictimReferenceDeferredTaskCache
+import io.github.pr0methean.ochd.tasks.caching.ReferenceTaskCache
 import io.github.pr0methean.ochd.tasks.caching.noopDeferredTaskCache
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
@@ -45,7 +45,7 @@ class TaskPlanningContext(
     val stats: ImageProcessingStats = ImageProcessingStats()
 
     fun createTaskCache(name: String): DeferredTaskCache<Image> {
-        return VictimReferenceDeferredTaskCache(noopDeferredTaskCache(), ::SoftReference, name)
+        return ReferenceTaskCache(::SoftReference, name)
     }
 
     init {
