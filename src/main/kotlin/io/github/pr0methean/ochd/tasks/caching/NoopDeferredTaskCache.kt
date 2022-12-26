@@ -6,7 +6,7 @@ import kotlinx.coroutines.Deferred
  * If a task uses this, results will not be stored. Every request for the result of the task will trigger a new
  * computation.
  */
-object NoopDeferredTaskCache : DeferredTaskCache<Any?>() {
+object NoopDeferredTaskCache : DeferredTaskCache<Any?>("NoopDeferredTaskCache") {
     override fun getNowAsync(): Deferred<*>? = null
 
     override fun clear() {
