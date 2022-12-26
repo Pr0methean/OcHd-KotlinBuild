@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.toSet
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.plus
+import kotlinx.coroutines.yield
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox
 import java.nio.file.Paths
@@ -130,11 +131,15 @@ private suspend fun runAll(
             "Have ${unfinishedTasks.get()} unfinished tasks, but none are in progress"
         }
         val maybeReceive = finishedJobsChannel.tryReceive().getOrElse {
-            if (inProgressJobs.size >= maxJobs
-                    || (inProgressJobs.isNotEmpty() && unstartedTasks.isEmpty())) {
+            val currentInProgressJobs = inProgressJobs.size
+            if (currentInProgressJobs >= maxJobs
+                    || (currentInProgressJobs > 0 && unstartedTasks.isEmpty())) {
                 logger.debug("{} tasks remain. Waiting for one of: {}",
                         Unbox.box(unfinishedTasks.get()), inProgressJobs)
                 finishedJobsChannel.receive()
+            } else if (currentInProgressJobs >= THREADS) {
+                yield()
+                finishedJobsChannel.tryReceive().getOrNull()
             } else null
         }
         if (maybeReceive != null) {
