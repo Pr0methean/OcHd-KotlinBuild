@@ -60,8 +60,13 @@ dependencies {
             version {
                 require("1.33")
             }
-            because("CVE-2022-25857, CVE-2022-38749, CVE-2022-38750, CVE-2022-38751, CVE-2022-38752",
-                    "CVE-2022-1471")
+            because("""
+                CVE-2022-25857, 
+                CVE-2022-38749, 
+                CVE-2022-38750, 
+                CVE-2022-38751, 
+                CVE-2022-38752,
+                CVE-2022-1471""".trimIndent())
         }
         add("implementation", "commons-io:commons-io") {
             version {
