@@ -1,6 +1,7 @@
 package io.github.pr0methean.ochd
 
 import com.github.benmanes.caffeine.cache.Caffeine
+import com.github.benmanes.caffeine.cache.RemovalListener
 import com.google.common.collect.ConcurrentHashMultiset
 import io.github.pr0methean.ochd.tasks.AbstractImageTask
 import io.github.pr0methean.ochd.tasks.AbstractTask
@@ -38,6 +39,17 @@ private const val REGULAR_TILES_PER_HUGE_TILE = 4
 
 private const val BYTES_PER_PIXEL = 4
 
+private val removalLogger = RemovalListener<DeferredTaskCache<Image>, Deferred<Image>> {
+        key, _, cause -> logger.warn("{} evicted from cache: {}", key, cause) }
+
+private fun createCaffeineCache(maxEntries: Long) = Caffeine.newBuilder()
+    .recordStats()
+    .weakKeys()
+    .executor(Runnable::run) // keep eviction on same thread as population
+    .evictionListener(removalLogger)
+    .maximumSize(maxEntries)
+    .build<DeferredTaskCache<Image>, Deferred<Image>>()
+
 /**
  * Holds info needed to build and deduplicate the task graph. Needs to become unreachable once the graph is built.
  */
@@ -48,23 +60,15 @@ class TaskPlanningContext(
     val outTextureRoot: File,
     val ctx: CoroutineContext
 ) {
+
     private fun bytesPerTile() = BYTES_PER_PIXEL * tileSize * tileSize
     override fun toString(): String = name
     private val svgTasks: Map<String, SvgToBitmapTask>
     private val taskDeduplicationMap = ConcurrentHashMap<AbstractTask<*>, AbstractTask<*>>()
     private val dedupedSvgTasks = ConcurrentHashMultiset.create<String>()
-    private val backingCache = Caffeine.newBuilder()
-        .recordStats()
-        .weakKeys()
-        .executor(Runnable::run) // keep eviction on same thread as population
-        .maximumSize(MAIN_CACHE_SIZE_BYTES / bytesPerTile())
-        .build<DeferredTaskCache<Image>, Deferred<Image>>()
-    internal val hugeTileBackingCache = Caffeine.newBuilder()
-        .recordStats()
-        .weakKeys()
-        .executor(Runnable::run) // keep eviction on same thread as population
-        .maximumSize(HUGE_TILE_CACHE_SIZE_BYTES / (REGULAR_TILES_PER_HUGE_TILE * bytesPerTile()))
-        .build<DeferredTaskCache<Image>, Deferred<Image>>()
+    private val backingCache = createCaffeineCache(MAIN_CACHE_SIZE_BYTES / bytesPerTile())
+    internal val hugeTileBackingCache = createCaffeineCache(
+            HUGE_TILE_CACHE_SIZE_BYTES / (REGULAR_TILES_PER_HUGE_TILE * bytesPerTile()))
     val stats: ImageProcessingStats = ImageProcessingStats(backingCache)
 
     fun createTaskCache(name: String): DeferredTaskCache<Image> {
@@ -143,7 +147,7 @@ class TaskPlanningContext(
     ): AbstractImageTask {
         return deduplicate(
             RepaintTask(
-                deduplicate(source) as AbstractImageTask,
+                deduplicate(source),
                 paint,
                 alpha,
                 createTaskCache("$source@$paint@$alpha"),
