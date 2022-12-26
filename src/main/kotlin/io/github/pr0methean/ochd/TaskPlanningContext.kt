@@ -17,7 +17,10 @@ import io.github.pr0methean.ochd.tasks.caching.noopDeferredTaskCache
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
+import kotlinx.coroutines.CoroutineName
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.launch
 import org.apache.logging.log4j.LogManager
 import java.io.File
 import java.lang.ref.SoftReference
@@ -41,14 +44,6 @@ private const val BYTES_PER_PIXEL = 4
 
 private val removalLogger = RemovalListener<DeferredTaskCache<Image>, Deferred<Image>> {
         key, _, cause -> logger.warn("{} evicted from cache: {}", key?.name, cause) }
-
-private fun createCaffeineCache(maxEntries: Long) = Caffeine.newBuilder()
-    .recordStats()
-    .weakKeys()
-    .executor(Runnable::run) // keep eviction on same thread as population
-    .evictionListener(removalLogger)
-    .maximumSize(maxEntries)
-    .build<DeferredTaskCache<Image>, Deferred<Image>>()
 
 /**
  * Holds info needed to build and deduplicate the task graph. Needs to become unreachable once the graph is built.
@@ -76,6 +71,16 @@ class TaskPlanningContext(
                 CaffeineDeferredTaskCache(if (isHugeTileTask(name)) hugeTileBackingCache else backingCache, name),
                 ::SoftReference)
     }
+
+    private val cacheCoroutineScope = CoroutineScope(ctx.plus(CoroutineName("Caffeine cache executor")))
+
+    private fun createCaffeineCache(maxEntries: Long) = Caffeine.newBuilder()
+        .recordStats()
+        .weakKeys()
+        .executor { cacheCoroutineScope.launch {it.run()} }
+        .evictionListener(removalLogger)
+        .maximumSize(maxEntries)
+        .build<DeferredTaskCache<Image>, Deferred<Image>>()
 
     init {
         val builder = mutableMapOf<String, SvgToBitmapTask>()
