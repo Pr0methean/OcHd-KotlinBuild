@@ -86,7 +86,8 @@ class ImageStackingTask(
         drawFirstLayer: () -> Unit
     ) {
         if (layers.background != Color.TRANSPARENT) {
-            canvasCtx.clearRect(0.0, 0.0, canvasCtx.canvas.width, canvasCtx.canvas.height)
+            canvasCtx.fill = layers.background
+            canvasCtx.fillRect(0.0, 0.0, canvasCtx.canvas.width, canvasCtx.canvas.height)
         }
         drawFirstLayer()
         if (layers.layers.size > 1) {
