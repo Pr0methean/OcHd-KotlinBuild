@@ -30,9 +30,7 @@ private fun Multiset<*>.log() {
     }
     logger.info("Total: {}", box(total))
 }
-private fun <T> Multiset<T>.logIf(predicate: (T) -> Boolean) {
-    toSet().forEach { if (predicate(it)) {logger.info("{}: {}", it, count(it))} }
-}
+
 private val logger = LogManager.getLogger("ImageProcessingStats")
 private const val NEED_THREAD_MONITORING = false
 private const val MAX_STACK_DEPTH = 20
@@ -117,7 +115,8 @@ class ImageProcessingStats {
         logger.info("")
         logger.info("Tasks repeated due to cache misses:")
         val repeatedTasks = Multisets.copyHighestCountFirst(tasksByRunCount)
-        repeatedTasks.logIf {repeatedTasks.count(it) >= 2}
+        repeatedTasks.toSet().forEach {
+            if (repeatedTasks.count(it) >= 2) {logger.info("{}: {}", it, repeatedTasks.count(it))} }
         logger.info("")
         logger.info("Task efficiency / hit rate")
         var totalUnique = 0L
