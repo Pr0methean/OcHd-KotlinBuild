@@ -93,7 +93,10 @@ class ImageStackingTask(
         }
         drawFirstLayer()
         if (layers.layers.size > 1) {
-            layers.layers.drop(1).forEach { it.renderOnto(canvasCtx, x, y) }
+            layers.layers.drop(1).forEach {
+                it.renderOnto(canvasCtx, x, y)
+                it.removeDirectDependentTask(this@ImageStackingTask)
+            }
         }
     }
 

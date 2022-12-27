@@ -69,8 +69,8 @@ class AnimationTask(
             coroutineScope.launch {
                 canvasMutex.withLock {
                     frameTask.renderOnto(canvasCtx, 0.0, (height * index).toDouble())
-                    frameTask.removeDirectDependentTask(this@AnimationTask)
                 }
+                frameTask.removeDirectDependentTask(this@AnimationTask)
             }
         }
         frameTasks.joinAll()
