@@ -9,16 +9,15 @@ import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.tasks.RepaintTask
 import io.github.pr0methean.ochd.tasks.SvgToBitmapTask
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
+import io.github.pr0methean.ochd.tasks.caching.HardTaskCache
 import io.github.pr0methean.ochd.tasks.caching.ReferenceTaskCache
 import io.github.pr0methean.ochd.tasks.caching.noopDeferredTaskCache
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
-import kotlinx.coroutines.Deferred
 import org.apache.logging.log4j.LogManager
 import java.io.File
 import java.lang.ref.SoftReference
-import java.lang.ref.WeakReference
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.CoroutineContext
@@ -55,12 +54,7 @@ class TaskPlanningContext(
     private fun createSvgToBitmapTaskCache(shortName: String): DeferredTaskCache<Image> {
         return if (isHugeTileTask(shortName)) {
             createTaskCache(shortName)
-        } else ReferenceTaskCache(shortName) {
-            object : WeakReference<Deferred<Image>>(null) {
-                @Suppress("unused")
-                private val hardReference = it
-            }
-        }
+        } else HardTaskCache(shortName)
     }
 
     init {
