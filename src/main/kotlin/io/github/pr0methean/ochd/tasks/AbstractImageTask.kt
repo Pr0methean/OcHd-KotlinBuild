@@ -24,6 +24,7 @@ abstract class AbstractImageTask(
         val canvas = threadLocalCanvas.get()
         canvas.width = width
         canvas.height = height
+        canvas.graphicsContext2D.clearRect(0.0, 0.0, width, height)
         return canvas
     }
 
