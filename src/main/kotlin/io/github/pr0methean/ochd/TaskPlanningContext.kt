@@ -29,6 +29,8 @@ fun color(web: String, alpha: Double): Color = Color.web(web, alpha)
 
 private val logger = LogManager.getLogger("TaskPlanningContext")
 
+private fun isHugeTileTask(name: String): Boolean = name.contains("commandBlock") || name.contains("4x")
+
 /**
  * Holds info needed to build and deduplicate the task graph. Needs to become unreachable once the graph is built.
  */
@@ -51,7 +53,9 @@ class TaskPlanningContext(
     }
 
     private fun createSvgToBitmapTaskCache(shortName: String): DeferredTaskCache<Image> {
-        return ReferenceTaskCache(shortName) {
+        return if (isHugeTileTask(shortName)) {
+            createTaskCache(shortName)
+        } else ReferenceTaskCache(shortName) {
             object : WeakReference<Deferred<Image>>(null) {
                 @Suppress("unused")
                 private val hardReference = it
