@@ -42,7 +42,7 @@ console-reports:
 
 output-reports:
   active: true
-  exclude:
+  # exclude:
   # - 'TxtOutputReport'
   # - 'XmlOutputReport'
   # - 'HtmlOutputReport'
@@ -550,7 +550,7 @@ style:
     active: true
     ignoreOverridableFunction: true
     ignoreActualFunction: true
-    excludedFunctions: ''
+    # excludedFunctions: ''
   LibraryCodeMustSpecifyReturnType:
     active: true
     excludes: ['**']
