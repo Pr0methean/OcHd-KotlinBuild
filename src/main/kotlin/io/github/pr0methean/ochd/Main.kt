@@ -17,6 +17,7 @@ import kotlinx.coroutines.flow.toSet
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.plus
+import kotlinx.coroutines.yield
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox
 import java.nio.file.Paths
@@ -34,9 +35,9 @@ private val taskOrderComparator = comparingLong(PngOutputTask::timesFailed)
 private val logger = LogManager.getRootLogger()
 private const val THREADS_PER_CPU = 1.0
 private val THREADS = perCpu(THREADS_PER_CPU)
-private const val MAX_OUTPUT_TASKS_PER_CPU = 1.5
+private const val MAX_OUTPUT_TASKS_PER_CPU = 3.0
 private val MAX_OUTPUT_TASKS = perCpu(MAX_OUTPUT_TASKS_PER_CPU)
-private const val MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU = 1.0
+private const val MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU = 1.5
 private val MAX_HUGE_TILE_OUTPUT_TASKS = perCpu(MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU)
 private const val MIN_TILE_SIZE_FOR_EXPLICIT_GC = 2048
 
@@ -90,15 +91,11 @@ suspend fun main(args: Array<String>) {
         val tasks = ALL_MATERIALS.outputTasks(ctx).map { ctx.deduplicate(it) as PngOutputTask }.toSet()
         val depsBuildTask = scope.launch { tasks.forEach { it.registerRecursiveDependencies() }}
         val (cbTasks, nonCbTasks) = tasks.partition(PngOutputTask::isCommandBlock)
-        val hugeTaskCache = ctx.hugeTileBackingCache
         depsBuildTask.join()
         stats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupAndCopyMetadata.join()
         gcIfUsingLargeTiles(tileSize)
         runAll(cbTasks, scope, stats, MAX_HUGE_TILE_OUTPUT_TASKS)
-        stats.readHugeTileCache(hugeTaskCache)
-        hugeTaskCache.invalidateAll()
-        hugeTaskCache.cleanUp()
         gcIfUsingLargeTiles(tileSize)
         runAll(nonCbTasks, scope, stats, MAX_OUTPUT_TASKS)
     }
@@ -134,11 +131,15 @@ private suspend fun runAll(
             "Have ${unfinishedTasks.get()} unfinished tasks, but none are in progress"
         }
         val maybeReceive = finishedJobsChannel.tryReceive().getOrElse {
-            if (inProgressJobs.size >= maxJobs
-                    || (inProgressJobs.isNotEmpty() && unstartedTasks.isEmpty())) {
+            val currentInProgressJobs = inProgressJobs.size
+            if (currentInProgressJobs >= maxJobs
+                    || (currentInProgressJobs > 0 && unstartedTasks.isEmpty())) {
                 logger.debug("{} tasks remain. Waiting for one of: {}",
                         Unbox.box(unfinishedTasks.get()), inProgressJobs)
                 finishedJobsChannel.receive()
+            } else if (currentInProgressJobs >= THREADS) {
+                yield()
+                finishedJobsChannel.tryReceive().getOrNull()
             } else null
         }
         if (maybeReceive != null) {
