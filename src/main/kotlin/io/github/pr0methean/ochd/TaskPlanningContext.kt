@@ -66,22 +66,16 @@ class TaskPlanningContext(
 
     @Suppress("UNCHECKED_CAST")
     tailrec suspend fun <T, TTask : AbstractTask<T>> deduplicate(task: AbstractTask<T>): TTask = when {
-        task is SvgToBitmapTask -> {
-            // svgTasks is populated eagerly
-            val name = task.name
-            findSvgTask(name) as TTask
-        }
+        task is SvgToBitmapTask
+        -> findSvgTask(task.name) as TTask
         task is RepaintTask
                 && (task.paint == null || task.paint == Color.BLACK)
                 && task.alpha == 1.0
-        -> {
-            deduplicate(task.base)
-        }
+        -> deduplicate(task.base)
         task is ImageStackingTask
                 && task.layers.layers.size == 1
-                && task.layers.background == Color.TRANSPARENT -> {
-            deduplicate(task.layers.layers[0] as TTask)
-        }
+                && task.layers.background == Color.TRANSPARENT
+        -> deduplicate(task.layers.layers[0] as TTask)
         else -> {
             val className = task::class.simpleName ?: "[unnamed class]"
             val deduped = taskDeduplicationMap.computeIfAbsent(task) {
