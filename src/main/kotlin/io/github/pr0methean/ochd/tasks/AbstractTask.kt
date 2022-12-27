@@ -22,7 +22,7 @@ val AT_LOGGER: Logger = LogManager.getLogger("AbstractTask")
 private val SUPERVISOR_JOB = SupervisorJob()
 
 /**
- * Unit of work that wraps its coroutine to support reuse (including under heap-constrained conditions) and retrying.
+ * Unit of work that wraps its coroutine to support reuse (including under heap-constrained conditions).
  */
 abstract class AbstractTask<out T>(
     val name: String,
