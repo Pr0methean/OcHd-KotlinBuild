@@ -17,6 +17,7 @@ import java.util.Collections.newSetFromMap
 import java.util.WeakHashMap
 import javax.annotation.concurrent.GuardedBy
 import kotlin.coroutines.CoroutineContext
+import kotlin.system.exitProcess
 
 val AT_LOGGER: Logger = LogManager.getLogger("AbstractTask")
 private val SUPERVISOR_JOB = SupervisorJob()
@@ -105,8 +106,8 @@ abstract class AbstractTask<out T>(
             try {
                 return@async perform()
             } catch (t: Throwable) {
-                AT_LOGGER.error("{} failed due to {}: {}", name, t::class.simpleName, t.message)
-                throw t
+                AT_LOGGER.fatal("{} failed due to {}: {}", name, t::class.simpleName, t.message)
+                exitProcess(1)
             }
         }
     }.apply(Deferred<T>::start)

@@ -143,12 +143,7 @@ private suspend fun runAll(
         check(unstartedTasks.remove(task)) { "Attempted to remove task more than once: $task" }
         inProgressJobs[task] = scope.launch {
             logger.info("Joining {}", task)
-            try {
-                task.await()
-            } catch (t: Throwable) {
-                logger.fatal("Joined {} with {}: {}", task, t::class.simpleName, t.message)
-                exitProcess(1)
-            }
+            task.await()
             unfinishedTasks.getAndDecrement()
             finishedJobsChannel.send(task)
         }
