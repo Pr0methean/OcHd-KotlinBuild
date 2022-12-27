@@ -56,13 +56,15 @@ class ImageStackingTask(
     override suspend fun perform(): Image {
         stats.onTaskLaunched("ImageStackingTask", name)
         logger.debug("Fetching first layer of {} to check size", this)
-        val firstLayer = layers.layers.first().await()
-        val width = firstLayer.width
-        val height = firstLayer.height
+        val firstLayer = layers.layers.first()
+        val firstLayerImage = firstLayer.await()
+        firstLayer.removeDirectDependentTask(this)
+        val width = firstLayerImage.width
+        val height = firstLayerImage.height
         logger.info("Allocating a canvas for {}", name)
         val canvas = Canvas(width, height)
         val canvasCtx = canvas.graphicsContext2D
-        renderOntoInternal(canvasCtx, 0.0, 0.0) { canvasCtx.drawImage(firstLayer, 0.0, 0.0) }
+        renderOntoInternal(canvasCtx, 0.0, 0.0) { canvasCtx.drawImage(firstLayerImage, 0.0, 0.0) }
         logger.debug("Taking snapshot of {}", name)
         val params = SnapshotParameters()
         params.fill = background

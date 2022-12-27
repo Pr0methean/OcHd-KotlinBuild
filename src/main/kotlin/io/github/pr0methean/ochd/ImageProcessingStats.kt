@@ -18,7 +18,6 @@ import org.apache.logging.log4j.util.Unbox.box
 import java.lang.management.ManagementFactory
 import java.lang.management.ThreadInfo
 import java.lang.management.ThreadMXBean
-import java.util.concurrent.atomic.LongAdder
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
@@ -31,9 +30,7 @@ private fun Multiset<*>.log() {
     }
     logger.info("Total: {}", box(total))
 }
-private fun <T> Multiset<T>.logIf(predicate: (T) -> Boolean) {
-    toSet().forEach { if (predicate(it)) {logger.info("{}: {}", it, count(it))} }
-}
+
 private val logger = LogManager.getLogger("ImageProcessingStats")
 private const val NEED_THREAD_MONITORING = false
 private const val MAX_STACK_DEPTH = 20
@@ -92,12 +89,10 @@ class ImageProcessingStats {
     val taskCompletions: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val dedupeSuccesses: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val dedupeFailures: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
-    private val retries = LongAdder()
     private val tasksByRunCount = ConcurrentHashMultiset.create<Pair<String, String>>()
 
     init {
         dedupeFailures.add("Build task graph")
-
     }
 
     @Suppress("UnstableApiUsage")
@@ -118,10 +113,10 @@ class ImageProcessingStats {
         logger.info("Tasks that would run with unlimited cache but no deduplication:")
         Multisets.sum(dedupeFailures, dedupeSuccesses).log()
         logger.info("")
-        logger.info("Retries of failed tasks: {}", retries.sum())
         logger.info("Tasks repeated due to cache misses:")
         val repeatedTasks = Multisets.copyHighestCountFirst(tasksByRunCount)
-        repeatedTasks.logIf {repeatedTasks.count(it) >= 2}
+        repeatedTasks.toSet().forEach {
+            if (repeatedTasks.count(it) >= 2) {logger.info("{}: {}", it, repeatedTasks.count(it))} }
         logger.info("")
         logger.info("Task efficiency / hit rate")
         var totalUnique = 0L
@@ -153,10 +148,6 @@ class ImageProcessingStats {
     fun onTaskCompleted(typename: String, name: String) {
         logger.info("Completed: {}", name)
         taskCompletions.add(typename)
-    }
-
-    fun recordRetries(howMany: Long) {
-        retries.add(howMany)
     }
 
 }

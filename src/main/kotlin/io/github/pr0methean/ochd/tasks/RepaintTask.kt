@@ -51,6 +51,7 @@ class RepaintTask(
 
     private suspend fun internalRenderOnto(context: GraphicsContext?, x: Double, y: Double): GraphicsContext {
         val baseImage = base.await()
+        base.removeDirectDependentTask(this)
         val ctx = context ?: Canvas(baseImage.width, baseImage.height).graphicsContext2D.also {
             logger.info("Allocating a canvas for {}", name)
         }

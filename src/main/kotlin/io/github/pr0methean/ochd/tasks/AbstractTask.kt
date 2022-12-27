@@ -15,7 +15,6 @@ import org.apache.logging.log4j.Logger
 import org.apache.logging.log4j.util.StringBuilderFormattable
 import java.util.Collections.newSetFromMap
 import java.util.WeakHashMap
-import java.util.concurrent.atomic.AtomicLong
 import javax.annotation.concurrent.GuardedBy
 import kotlin.coroutines.CoroutineContext
 
@@ -23,7 +22,7 @@ val AT_LOGGER: Logger = LogManager.getLogger("AbstractTask")
 private val SUPERVISOR_JOB = SupervisorJob()
 
 /**
- * Unit of work that wraps its coroutine to support reuse (including under heap-constrained conditions) and retrying.
+ * Unit of work that wraps its coroutine to support reuse (including under heap-constrained conditions).
  */
 abstract class AbstractTask<out T>(
     val name: String,
@@ -34,7 +33,6 @@ abstract class AbstractTask<out T>(
         CoroutineScope(ctx.plus(CoroutineName(name)).plus(SUPERVISOR_JOB))
     }
 
-    val timesFailed: AtomicLong = AtomicLong(0)
     protected val mutex: Mutex = Mutex()
 
     @GuardedBy("mutex")
@@ -108,7 +106,6 @@ abstract class AbstractTask<out T>(
                 return@async perform()
             } catch (t: Throwable) {
                 AT_LOGGER.error("{} failed due to {}: {}", name, t::class.simpleName, t.message)
-                timesFailed.getAndIncrement()
                 throw t
             }
         }
@@ -129,26 +126,12 @@ abstract class AbstractTask<out T>(
 
     fun isStartedOrAvailable(): Boolean = cache.getNowAsync()?.run { isActive || isCompleted } ?: false
 
-    fun timesFailed(): Long = timesFailed.get()
     fun cacheableSubtasks(): Int {
         var subtasks = if (cache.isEnabled()) 1 else 0
         for (task in directDependencies) {
             subtasks += task.cacheableSubtasks()
         }
         return subtasks
-    }
-
-    @Suppress("SwallowedException")
-    fun clearCache() {
-        AT_LOGGER.info("Clearing cache for {}", name)
-        cache.clear()
-        directDependencies.forEach {
-            try {
-                it.getNow()
-            } catch (t: Throwable) {
-                it.clearCache()
-            }
-        }
     }
 
     suspend inline fun await(): T = start().await()

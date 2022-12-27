@@ -22,15 +22,13 @@ import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox
 import java.nio.file.Paths
 import java.util.Comparator.comparingInt
-import java.util.Comparator.comparingLong
 import java.util.concurrent.atomic.AtomicLong
 import javax.imageio.ImageIO
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
 private const val CAPACITY_PADDING_FACTOR = 2
-private val taskOrderComparator = comparingLong(PngOutputTask::timesFailed)
-    .then(comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed())
+private val taskOrderComparator = comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed()
     .then(comparingInt(PngOutputTask::cacheableSubtasks))
 private val logger = LogManager.getRootLogger()
 private const val THREADS_PER_CPU = 1.0
@@ -42,7 +40,6 @@ private val MAX_HUGE_TILE_OUTPUT_TASKS = perCpu(MAX_HUGE_TILE_OUTPUT_TASKS_PER_C
 private const val MIN_TILE_SIZE_FOR_EXPLICIT_GC = 2048
 
 private fun perCpu(amount: Double) = (amount * Runtime.getRuntime().availableProcessors()).toInt()
-private const val GLOBAL_MAX_RETRIES = 100L
 
 @OptIn(DelicateCoroutinesApi::class)
 @Suppress("UnstableApiUsage", "DeferredResultUnused")
@@ -95,9 +92,9 @@ suspend fun main(args: Array<String>) {
         stats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupAndCopyMetadata.join()
         gcIfUsingLargeTiles(tileSize)
-        runAll(cbTasks, scope, stats, MAX_HUGE_TILE_OUTPUT_TASKS)
+        runAll(cbTasks, scope, MAX_HUGE_TILE_OUTPUT_TASKS)
         gcIfUsingLargeTiles(tileSize)
-        runAll(nonCbTasks, scope, stats, MAX_OUTPUT_TASKS)
+        runAll(nonCbTasks, scope, MAX_OUTPUT_TASKS)
     }
     stopMonitoring()
     Platform.exit()
@@ -114,18 +111,15 @@ private fun gcIfUsingLargeTiles(tileSize: Int) {
     }
 }
 
-data class TaskResult(val task: PngOutputTask, val succeeded: Boolean)
-
 private suspend fun runAll(
     tasks: Iterable<PngOutputTask>,
     scope: CoroutineScope,
-    stats: ImageProcessingStats,
     maxJobs: Int
 ) {
     val unstartedTasks = tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks)).toMutableSet()
     val unfinishedTasks = AtomicLong(unstartedTasks.size.toLong())
     val inProgressJobs = mutableMapOf<PngOutputTask,Job>()
-    val finishedJobsChannel = Channel<TaskResult>(capacity = CAPACITY_PADDING_FACTOR * THREADS)
+    val finishedJobsChannel = Channel<PngOutputTask>(capacity = CAPACITY_PADDING_FACTOR * THREADS)
     while (unfinishedTasks.get() > 0) {
         check(inProgressJobs.isNotEmpty() || unstartedTasks.isNotEmpty()) {
             "Have ${unfinishedTasks.get()} unfinished tasks, but none are in progress"
@@ -143,31 +137,21 @@ private suspend fun runAll(
             } else null
         }
         if (maybeReceive != null) {
-            if (!maybeReceive.succeeded) {
-                unstartedTasks.add(maybeReceive.task)
-            }
-            inProgressJobs.remove(maybeReceive.task)
+            inProgressJobs.remove(maybeReceive)
             continue
         }
         val task = unstartedTasks.minWithOrNull(taskOrderComparator)
         checkNotNull(task) { "Could not get an unstarted task" }
         check(unstartedTasks.remove(task)) { "Attempted to remove task more than once: $task" }
-        if(task.timesFailed.get() > GLOBAL_MAX_RETRIES) {
-            logger.fatal("Too many failures in $task!")
-            exitProcess(1)
-        }
         inProgressJobs[task] = scope.launch {
             logger.info("Joining {}", task)
             try {
                 task.await()
-                task.base.removeDirectDependentTask(task)
                 unfinishedTasks.getAndDecrement()
-                finishedJobsChannel.send(TaskResult(task, true))
+                finishedJobsChannel.send(task)
             } catch (t: Throwable) {
-                task.clearCache()
-                finishedJobsChannel.send(TaskResult(task, false))
                 logger.error("Joined {} with {}: {}", task, t::class.simpleName, t.message)
-                stats.recordRetries(1)
+                exitProcess(1)
             }
         }
     }

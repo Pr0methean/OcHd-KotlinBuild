@@ -8,9 +8,8 @@ import io.github.pr0methean.ochd.tasks.ImageStackingTask
 import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.tasks.RepaintTask
 import io.github.pr0methean.ochd.tasks.SvgToBitmapTask
-import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import io.github.pr0methean.ochd.tasks.caching.HardTaskCache
-import io.github.pr0methean.ochd.tasks.caching.ReferenceTaskCache
+import io.github.pr0methean.ochd.tasks.caching.SoftTaskCache
 import io.github.pr0methean.ochd.tasks.caching.noopDeferredTaskCache
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
@@ -46,16 +45,6 @@ class TaskPlanningContext(
     private val dedupedSvgTasks = ConcurrentHashMultiset.create<String>()
     val stats: ImageProcessingStats = ImageProcessingStats()
 
-    fun createTaskCache(name: String): DeferredTaskCache<Image> {
-        return ReferenceTaskCache(name)
-    }
-
-    private fun createSvgToBitmapTaskCache(shortName: String): DeferredTaskCache<Image> {
-        return if (isHugeTileTask(shortName)) {
-            createTaskCache(shortName)
-        } else HardTaskCache(shortName)
-    }
-
     init {
         val builder = mutableMapOf<String, SvgToBitmapTask>()
         svgDirectory.list()!!.forEach { svgFile ->
@@ -64,7 +53,7 @@ class TaskPlanningContext(
                 shortName,
                 tileSize,
                 svgDirectory.resolve("$shortName.svg"),
-                createSvgToBitmapTaskCache(shortName),
+                HardTaskCache(shortName),
                 ctx,
                 stats
             )
@@ -123,7 +112,7 @@ class TaskPlanningContext(
                 deduplicate(source),
                 paint,
                 alpha,
-                createTaskCache("$source@$paint@$alpha"),
+                SoftTaskCache("$source@$paint@$alpha"),
                 ctx,
                 stats
             )) as AbstractImageTask
@@ -176,7 +165,7 @@ class TaskPlanningContext(
     suspend inline fun stack(layers: LayerList): AbstractImageTask = deduplicate(
         ImageStackingTask(
             layers,
-            createTaskCache(layers.toString()),
+            SoftTaskCache(layers.toString()),
             ctx,
             stats
         )

@@ -35,6 +35,7 @@ class PngOutputTask(
         val firstFile = files[0]
         val firstFilePath = firstFile.absoluteFile.toPath()
         ImageIO.write(SwingFXUtils.fromFXImage(baseTask.await(), null), "PNG", firstFile)
+        base.removeDirectDependentTask(this)
         if (files.size > 1) {
             for (file in files.subList(1, files.size)) {
                 Files.copy(firstFilePath, file.absoluteFile.toPath())

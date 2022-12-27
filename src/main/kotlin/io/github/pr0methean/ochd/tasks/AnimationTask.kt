@@ -56,18 +56,20 @@ class AnimationTask(
     @Suppress("DeferredResultUnused")
     override suspend fun perform(): Image {
         stats.onTaskLaunched("AnimationTask", name)
-        val background = background.await()
+        val backgroundImage = background.await()
+        background.removeDirectDependentTask(this)
         logger.info("Allocating a canvas for {}", name)
         val canvasMutex = Mutex()
         val canvas = Canvas(width.toDouble(), totalHeight.toDouble())
         val canvasCtx = canvas.graphicsContext2D
         for (index in frames.indices) {
-            canvasCtx.drawImage(background, 0.0, (height * index).toDouble())
+            canvasCtx.drawImage(backgroundImage, 0.0, (height * index).toDouble())
         }
         val frameTasks = frames.withIndex().map { (index, frameTask) ->
             coroutineScope.launch {
                 canvasMutex.withLock {
                     frameTask.renderOnto(canvasCtx, 0.0, (height * index).toDouble())
+                    frameTask.removeDirectDependentTask(this@AnimationTask)
                 }
             }
         }

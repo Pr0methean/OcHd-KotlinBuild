@@ -8,9 +8,9 @@ import java.util.concurrent.atomic.AtomicReference
 private val nullReference = SoftReference<Nothing?>(null)
 
 /**
- * A TaskCache that's backed by a soft or weak reference.
+ * A TaskCache that's backed by a soft reference.
  */
-class ReferenceTaskCache<T>(
+class SoftTaskCache<T>(
     name: String
 ): DeferredTaskCache<T>(name) {
     val coroutineRef: AtomicReference<SoftReference<out Deferred<T>?>> = AtomicReference(nullReference)
