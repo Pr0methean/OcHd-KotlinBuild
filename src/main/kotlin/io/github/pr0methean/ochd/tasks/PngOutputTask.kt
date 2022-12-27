@@ -14,7 +14,7 @@ import javax.imageio.ImageIO
 import kotlin.coroutines.CoroutineContext
 
 private val mkdirsedPaths = ConcurrentHashMap.newKeySet<File>()
-private val threadLocalBimg: ThreadLocal<BufferedImage?> = ThreadLocal.withInitial(null)
+private val threadLocalBimg: ThreadLocal<BufferedImage?> = ThreadLocal.withInitial { null }
 
 /**
  * Task that saves an image to one or more PNG files.
