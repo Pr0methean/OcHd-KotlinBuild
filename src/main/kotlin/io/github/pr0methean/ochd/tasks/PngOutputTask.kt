@@ -38,7 +38,7 @@ class PngOutputTask(
         base.removeDirectDependentTask(this)
         if (files.size > 1) {
             for (file in files.subList(1, files.size)) {
-                Files.copy(firstFilePath, file.absoluteFile.toPath())
+                Files.createLink(file.absoluteFile.toPath(), firstFilePath)
             }
         }
         stats.onTaskCompleted("PngOutputTask", name)
