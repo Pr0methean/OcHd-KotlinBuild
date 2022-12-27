@@ -3,6 +3,7 @@ package io.github.pr0methean.ochd.materials.block.pickaxe
 import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.c
+import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.STONE
 import io.github.pr0methean.ochd.tasks.AbstractImageTask
 import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
@@ -11,7 +12,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.util.*
 
-private val OVERWORLD = EnumSet.of(OreBase.STONE, OreBase.DEEPSLATE)
+private val OVERWORLD = EnumSet.of(STONE, OreBase.DEEPSLATE)
 private val NETHER = EnumSet.of(OreBase.NETHERRACK)
 private val BOTH = EnumSet.allOf(OreBase::class.java)
 
@@ -77,6 +78,16 @@ enum class Ore(
     ) {
         override suspend fun LayerListBuilder.itemForOutput() {
             rawOre()
+        }
+
+        override suspend fun oreBlock(ctx: TaskPlanningContext, oreBase: OreBase): AbstractImageTask {
+            if (oreBase == STONE) {
+                return ctx.stack {
+                    copy(STONE)
+                    layer("redstone", shadow)
+                }
+            }
+            return super.oreBlock(ctx, oreBase)
         }
     },
     GOLD(
