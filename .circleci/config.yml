@@ -44,7 +44,7 @@ jobs:
       - attach_workspace:
           at: build/libs
       - run: >
-          java -Dprism.maxvram=2G -Dglass.platform=Monocle -Dmonocle.platform=Headless -Dquantum.multithreaded=true 
+          java -Dprism.maxvram=2560m -Dglass.platform=Monocle -Dmonocle.platform=Headless -Dquantum.multithreaded=true 
           -XX:+UseStringDeduplication -Xms7680m -Xmx7680m -XX:MaxMetaspaceSize=64m
           -XX:SoftRefLRUPolicyMSPerMB=3600000
           -XX:+UnlockExperimentalVMOptions -XX:+UseZGC
