@@ -14,9 +14,11 @@ import io.github.pr0methean.ochd.tasks.caching.noopDeferredTaskCache
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
+import kotlinx.coroutines.Deferred
 import org.apache.logging.log4j.LogManager
 import java.io.File
 import java.lang.ref.SoftReference
+import java.lang.ref.WeakReference
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.CoroutineContext
@@ -45,7 +47,16 @@ class TaskPlanningContext(
     val stats: ImageProcessingStats = ImageProcessingStats()
 
     fun createTaskCache(name: String): DeferredTaskCache<Image> {
-        return ReferenceTaskCache(::SoftReference, name)
+        return ReferenceTaskCache(name, ::SoftReference)
+    }
+
+    private fun createSvgToBitmapTaskCache(shortName: String): DeferredTaskCache<Image> {
+        return ReferenceTaskCache(shortName) {
+            object : WeakReference<Deferred<Image>>(it) {
+                @Suppress("unused")
+                private val hardReference = it
+            }
+        }
     }
 
     init {
@@ -56,7 +67,7 @@ class TaskPlanningContext(
                 shortName,
                 tileSize,
                 svgDirectory.resolve("$shortName.svg"),
-                createTaskCache(shortName),
+                createSvgToBitmapTaskCache(shortName),
                 ctx,
                 stats
             )

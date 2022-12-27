@@ -12,8 +12,8 @@ private val nullReference = WeakReference<Nothing?>(null)
  * A TaskCache that's backed by a soft or weak reference.
  */
 class ReferenceTaskCache<T>(
-    val referenceCreator: (Deferred<T>) -> Reference<Deferred<T>>,
-    name: String
+    name: String,
+    val referenceCreator: (Deferred<T>) -> Reference<Deferred<T>>
 ): DeferredTaskCache<T>(name) {
     val coroutineRef: AtomicReference<Reference<out Deferred<T>?>> = AtomicReference(nullReference)
     override fun getNowAsync(): Deferred<T>? = coroutineRef.get().get()
