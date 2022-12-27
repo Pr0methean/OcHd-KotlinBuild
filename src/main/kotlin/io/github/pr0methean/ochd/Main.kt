@@ -23,7 +23,6 @@ import org.apache.logging.log4j.util.Unbox
 import java.nio.file.Paths
 import java.util.Comparator.comparingInt
 import java.util.concurrent.atomic.AtomicLong
-import javax.imageio.ImageIO
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
@@ -44,7 +43,6 @@ private fun perCpu(amount: Double) = (amount * Runtime.getRuntime().availablePro
 @OptIn(DelicateCoroutinesApi::class)
 @Suppress("UnstableApiUsage", "DeferredResultUnused")
 suspend fun main(args: Array<String>) {
-    ImageIO.setUseCache(false) // Prevent intermediate disk writes when real destination is a ByteArrayOutputStream
     if (args.isEmpty()) {
         println("Usage: main <size>")
         return
