@@ -147,12 +147,12 @@ private suspend fun runAll(
             logger.info("Joining {}", task)
             try {
                 task.await()
-                unfinishedTasks.getAndDecrement()
-                finishedJobsChannel.send(task)
             } catch (t: Throwable) {
-                logger.error("Joined {} with {}: {}", task, t::class.simpleName, t.message)
+                logger.fatal("Joined {} with {}: {}", task, t::class.simpleName, t.message)
                 exitProcess(1)
             }
+            unfinishedTasks.getAndDecrement()
+            finishedJobsChannel.send(task)
         }
     }
     logger.debug("All jobs done; closing channel")
