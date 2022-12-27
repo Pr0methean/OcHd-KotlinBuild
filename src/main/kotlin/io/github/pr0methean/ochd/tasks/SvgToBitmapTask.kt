@@ -94,7 +94,7 @@ class SvgToBitmapTask(
      */
     override suspend fun mergeWithDuplicate(other: AbstractTask<*>): AbstractImageTask = this
 
-    override suspend fun perform(): Image {
+    override suspend fun render(): Image {
         stats.onTaskLaunched("SvgToBitmapTask", name)
         val image = withContext(batikTranscoder.asContextElement()) {
             val transcoder = batikTranscoder.get()

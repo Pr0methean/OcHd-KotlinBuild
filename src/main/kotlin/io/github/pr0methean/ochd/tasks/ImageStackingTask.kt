@@ -5,7 +5,6 @@ import io.github.pr0methean.ochd.LayerList
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import javafx.application.Platform
 import javafx.scene.SnapshotParameters
-import javafx.scene.canvas.Canvas
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
@@ -51,7 +50,7 @@ class ImageStackingTask(
     override fun hashCode(): Int = hashCode
 
     @Suppress("DeferredResultUnused")
-    override suspend fun perform(): Image {
+    override suspend fun render(): Image {
         stats.onTaskLaunched("ImageStackingTask", name)
         logger.debug("Fetching first layer of {} to check size", this)
         val firstLayer = layers.layers.first()
@@ -60,7 +59,7 @@ class ImageStackingTask(
         val width = firstLayerImage.width
         val height = firstLayerImage.height
         logger.info("Allocating a canvas for {}", name)
-        val canvas = Canvas(width, height)
+        val canvas = getCanvas(width, height)
         val canvasCtx = canvas.graphicsContext2D
         renderOntoInternal(canvasCtx, 0.0, 0.0) { canvasCtx.drawImage(firstLayerImage, 0.0, 0.0) }
         logger.debug("Taking snapshot of {}", name)

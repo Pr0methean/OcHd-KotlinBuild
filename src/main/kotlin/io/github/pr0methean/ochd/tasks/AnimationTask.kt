@@ -4,7 +4,6 @@ import io.github.pr0methean.ochd.DEFAULT_SNAPSHOT_PARAMS
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import javafx.application.Platform.requestNextPulse
-import javafx.scene.canvas.Canvas
 import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
 import kotlinx.coroutines.joinAll
@@ -54,13 +53,13 @@ class AnimationTask(
     }
 
     @Suppress("DeferredResultUnused")
-    override suspend fun perform(): Image {
+    override suspend fun render(): Image {
         stats.onTaskLaunched("AnimationTask", name)
         val backgroundImage = background.await()
         background.removeDirectDependentTask(this)
         logger.info("Allocating a canvas for {}", name)
         val canvasMutex = Mutex()
-        val canvas = Canvas(width.toDouble(), totalHeight.toDouble())
+        val canvas = getCanvas(width, totalHeight)
         val canvasCtx = canvas.graphicsContext2D
         for (index in frames.indices) {
             canvasCtx.drawImage(backgroundImage, 0.0, (height * index).toDouble())

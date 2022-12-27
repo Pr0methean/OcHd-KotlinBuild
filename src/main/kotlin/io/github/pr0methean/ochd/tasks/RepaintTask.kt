@@ -4,7 +4,6 @@ import io.github.pr0methean.ochd.DEFAULT_SNAPSHOT_PARAMS
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import javafx.application.Platform
-import javafx.scene.canvas.Canvas
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.effect.Blend
 import javafx.scene.effect.BlendMode.SRC_ATOP
@@ -57,7 +56,7 @@ class RepaintTask(
             base.removeDirectDependentTask(this)
             drawStep = { it.drawImage(baseImage, x, y) }
             logger.info("Allocating a canvas for {}", name)
-            ctx = Canvas(baseImage.width, baseImage.height).graphicsContext2D
+            ctx = getCanvas(baseImage.width, baseImage.height).graphicsContext2D
         } else {
             ctx = context
             drawStep = {
@@ -87,7 +86,7 @@ class RepaintTask(
         return super.mergeWithDuplicate(other)
     }
 
-    override suspend fun perform(): Image {
+    override suspend fun render(): Image {
         stats.onTaskLaunched("RepaintTask", name)
         val gfx = internalRenderOnto(null, 0.0, 0.0)
         val canvas = gfx.canvas
