@@ -105,7 +105,10 @@ class ImageStackingTask(
             super.renderOnto(context, x, y)
         } else {
             logger.info("Rendering {} onto an existing canvas", name)
-            renderOntoInternal(context, x, y) { layers.layers[0].renderOnto(context, x, y) }
+            renderOntoInternal(context, x, y) {
+                layers.layers[0].renderOnto(context, x, y)
+                layers.layers[0].removeDirectDependentTask(this)
+            }
         }
     }
 
