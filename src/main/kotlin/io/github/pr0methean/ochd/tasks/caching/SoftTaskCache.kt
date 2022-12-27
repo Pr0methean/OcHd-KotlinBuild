@@ -5,7 +5,7 @@ import kotlinx.coroutines.yield
 import java.lang.ref.SoftReference
 import java.util.concurrent.atomic.AtomicReference
 
-private val nullReference = SoftReference<Nothing?>(null)
+val nullReference = SoftReference<Nothing?>(null)
 
 /**
  * A TaskCache that's backed by a soft reference.
@@ -22,15 +22,21 @@ class SoftTaskCache<T>(
 
     @Suppress("DeferredIsResult", "OVERRIDE_BY_INLINE")
     override suspend inline fun computeIfAbsent(coroutineCreator: () -> Deferred<T>): Deferred<T> {
+        val newCoroutine = coroutineCreator()
+        if (!isEnabled()) {
+            return newCoroutine
+        }
+        var currentCoroutineRef: SoftReference<out Deferred<T>?> = nullReference
+        val newCoroutineRef = SoftReference(newCoroutine)
         while (true) {
-            val currentCoroutineRef = coroutineRef.get()
+            val oldRef = currentCoroutineRef
+            currentCoroutineRef = coroutineRef.compareAndExchange(oldRef, newCoroutineRef)
+            if (currentCoroutineRef === oldRef || !isEnabled()) {
+                return newCoroutine
+            }
             val currentCoroutine = currentCoroutineRef.get()
             if (currentCoroutine != null) {
                 return currentCoroutine
-            }
-            val newCoroutine = coroutineCreator()
-            if (!isEnabled() || coroutineRef.compareAndSet(currentCoroutineRef, SoftReference(newCoroutine))) {
-                return newCoroutine
             }
             yield() // Spin wait
         }
