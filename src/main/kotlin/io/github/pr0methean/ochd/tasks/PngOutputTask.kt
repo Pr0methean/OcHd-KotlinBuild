@@ -41,9 +41,20 @@ class PngOutputTask(
             }
             val firstFile = files[0]
             val firstFilePath = firstFile.absoluteFile.toPath()
-            val bImg = SwingFXUtils.fromFXImage(baseTask.await(), oldImage)
-            if (oldImage == null && !isCommandBlock) {
-                threadLocalBimg.set(bImg)
+            val fxImage = baseTask.await()
+            val bImg: BufferedImage
+            if (oldImage == null) {
+                bImg = SwingFXUtils.fromFXImage(fxImage, null)
+                if (!isCommandBlock && bImg.width == bImg.height) {
+                    threadLocalBimg.set(bImg)
+                }
+            } else {
+                bImg = SwingFXUtils.fromFXImage(
+                    fxImage,
+                    if (fxImage.height.toInt() == oldImage.height && fxImage.width.toInt() == oldImage.width) {
+                        oldImage
+                    } else null
+                )
             }
             ImageIO.write(bImg, "PNG", firstFile)
             base.removeDirectDependentTask(this@PngOutputTask)
