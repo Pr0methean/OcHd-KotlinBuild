@@ -17,7 +17,6 @@ import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import org.apache.logging.log4j.LogManager
 import java.io.File
-import java.lang.ref.SoftReference
 import java.util.Locale
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.CoroutineContext
@@ -48,7 +47,7 @@ class TaskPlanningContext(
     val stats: ImageProcessingStats = ImageProcessingStats()
 
     fun createTaskCache(name: String): DeferredTaskCache<Image> {
-        return ReferenceTaskCache(name, ::SoftReference)
+        return ReferenceTaskCache(name)
     }
 
     private fun createSvgToBitmapTaskCache(shortName: String): DeferredTaskCache<Image> {
