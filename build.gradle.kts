@@ -41,7 +41,6 @@ val batikVersion: String = "1.16"
 
 dependencies {
     testImplementation(kotlin("test"))
-    implementation("no.tornado:tornadofx:1.7.20")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinXCoroutinesVersion")
     runtimeOnly("org.jetbrains.kotlinx:kotlinx-coroutines-javafx:$kotlinXCoroutinesVersion")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-debug:$kotlinXCoroutinesVersion")
