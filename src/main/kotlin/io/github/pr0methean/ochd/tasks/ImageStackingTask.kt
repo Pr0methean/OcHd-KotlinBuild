@@ -30,9 +30,7 @@ class ImageStackingTask(
     private val hashCode by lazy { layers.hashCode() + 37 }
 
     init {
-        if (layers.layers.isEmpty()) {
-            throw IllegalArgumentException("Empty layer list")
-        }
+        require(layers.layers.isNotEmpty()) { "Empty layer list" }
     }
 
     override suspend fun mergeWithDuplicate(other: AbstractTask<*>): AbstractImageTask {
