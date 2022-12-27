@@ -114,7 +114,7 @@ abstract class AbstractTask<out T>(
 
     abstract suspend fun perform(): T
 
-    @Suppress("UNCHECKED_CAST", "ReturnCount", "DeferredResultUnused")
+    @Suppress("UNCHECKED_CAST", "DeferredResultUnused")
     open suspend fun mergeWithDuplicate(other: AbstractTask<*>): AbstractTask<T> {
         if (other !== this && getNow() == null) {
             val otherCoroutine = other.cache.getNowAsync()
