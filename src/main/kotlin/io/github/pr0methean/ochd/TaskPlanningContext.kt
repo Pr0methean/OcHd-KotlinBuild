@@ -52,7 +52,7 @@ class TaskPlanningContext(
 
     private fun createSvgToBitmapTaskCache(shortName: String): DeferredTaskCache<Image> {
         return ReferenceTaskCache(shortName) {
-            object : WeakReference<Deferred<Image>>(it) {
+            object : WeakReference<Deferred<Image>>(null) {
                 @Suppress("unused")
                 private val hardReference = it
             }
