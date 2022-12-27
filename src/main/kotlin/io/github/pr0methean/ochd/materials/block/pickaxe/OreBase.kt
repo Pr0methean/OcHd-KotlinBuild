@@ -51,7 +51,7 @@ enum class OreBase(
             background(color)
             layer("diagonalChecksTopLeftBottomRight", shadow)
             layer("diagonalChecksBottomLeftTopRight", highlight)
-            layer("diagonalChecksFillBottomLeftTopRight", color)
+            layer("diagonalChecksFillTopLeftBottomRight", color)
             layer("diagonalChecksFillBottomLeftTopRight", color)
         }
     };
