@@ -71,7 +71,6 @@ enum class SimpleSoftEarth(
             layer("checksSmall", highlight)
             layer("bigDotsTopLeftBottomRight", shadow)
             layer("soulFaces", highlight)
-            layer("soulBottomRightFace", highlight)
         }
     },
     SOUL_SOIL(c(0x3F2D23), c(0x352922), c(0x915431)) {

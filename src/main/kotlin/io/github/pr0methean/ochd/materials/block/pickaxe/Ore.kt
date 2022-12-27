@@ -3,6 +3,8 @@ package io.github.pr0methean.ochd.materials.block.pickaxe
 import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.c
+import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.DEEPSLATE
+import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.NETHERRACK
 import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.STONE
 import io.github.pr0methean.ochd.tasks.AbstractImageTask
 import io.github.pr0methean.ochd.tasks.PngOutputTask
@@ -12,8 +14,8 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import java.util.*
 
-private val OVERWORLD = EnumSet.of(STONE, OreBase.DEEPSLATE)
-private val NETHER = EnumSet.of(OreBase.NETHERRACK)
+private val OVERWORLD = EnumSet.of(STONE, DEEPSLATE)
+private val NETHER = EnumSet.of(NETHERRACK)
 private val BOTH = EnumSet.allOf(OreBase::class.java)
 
 @Suppress("unused")
@@ -37,9 +39,9 @@ enum class Ore(
             ctx: TaskPlanningContext,
             oreBase: OreBase
         ): AbstractImageTask {
-            if (oreBase == OreBase.DEEPSLATE) {
+            if (oreBase == DEEPSLATE) {
                 return ctx.stack {
-                    copy(OreBase.DEEPSLATE)
+                    copy(DEEPSLATE)
                     layer("coalBorder", refinedHighlight)
                     item()
                 }
@@ -81,13 +83,12 @@ enum class Ore(
         }
 
         override suspend fun oreBlock(ctx: TaskPlanningContext, oreBase: OreBase): AbstractImageTask {
-            if (oreBase == STONE) {
-                return ctx.stack {
+            return if (oreBase == STONE) {
+                ctx.stack {
                     copy(STONE)
                     layer("redstone", shadow)
                 }
-            }
-            return super.oreBlock(ctx, oreBase)
+            } else super.oreBlock(ctx, oreBase)
         }
     },
     GOLD(
@@ -106,7 +107,7 @@ enum class Ore(
         override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<PngOutputTask> = flow {
             emit(ctx.out({ ingot() }, "item/quartz"))
             emit(ctx.out(ctx.stack {
-                copy(OreBase.NETHERRACK)
+                copy(NETHERRACK)
                 copy { item() }
             }, "block/nether_quartz_ore"))
             emit(ctx.out({
