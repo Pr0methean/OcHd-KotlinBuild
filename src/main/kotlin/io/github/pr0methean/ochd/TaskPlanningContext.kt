@@ -53,7 +53,11 @@ class TaskPlanningContext(
                 shortName,
                 tileSize,
                 svgDirectory.resolve("$shortName.svg"),
-                HardTaskCache(shortName),
+                if (isHugeTileTask(shortName)) {
+                    SoftTaskCache(shortName)
+                } else {
+                    HardTaskCache(shortName)
+                },
                 ctx,
                 stats
             )
