@@ -70,7 +70,7 @@ enum class SimpleSoftEarth(
             layer("borderSolid", shadow)
             layer("checksSmall", highlight)
             layer("bigDotsTopLeftBottomRight", shadow)
-            layer("soulTopLeftFace", highlight)
+            layer("soulFaces", highlight)
             layer("soulBottomRightFace", highlight)
         }
     },
@@ -79,9 +79,8 @@ enum class SimpleSoftEarth(
             background(shadow)
             layer("borderSolid", color)
             layer("strokeBottomLeftTopRight4", highlight)
-            layer("bigDotsTopLeftBottomRight", color)
-            layer("soulTopLeftFace", highlight)
-            layer("soulBottomRightFace", shadow)
+            layer("bigDotsTopLeftBottomRight", highlight)
+            layer("soulFaces", shadow)
         }
     },
     PACKED_MUD(c(0x8c674f),c(0x5e4841),c(0xab8661)) {
