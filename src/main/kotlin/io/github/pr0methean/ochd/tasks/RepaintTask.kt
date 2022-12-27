@@ -50,13 +50,23 @@ class RepaintTask(
     }
 
     private suspend fun internalRenderOnto(context: GraphicsContext?, x: Double, y: Double): GraphicsContext {
-        val baseImage = base.await()
-        base.removeDirectDependentTask(this)
-        val ctx = context ?: Canvas(baseImage.width, baseImage.height).graphicsContext2D.also {
+        val drawStep: suspend (GraphicsContext) -> Unit
+        val ctx: GraphicsContext
+        if (context == null) {
+            val baseImage = base.await()
+            base.removeDirectDependentTask(this)
+            drawStep = { it.drawImage(baseImage, x, y) }
             logger.info("Allocating a canvas for {}", name)
+            ctx = Canvas(baseImage.width, baseImage.height).graphicsContext2D
+        } else {
+            ctx = context
+            drawStep = {
+                base.renderOnto(it, x, y)
+                base.removeDirectDependentTask(this)
+            }
         }
         if (paint != null) {
-            val colorLayer = ColorInput(0.0, 0.0, baseImage.width, baseImage.height, paint)
+            val colorLayer = ColorInput(0.0, 0.0, ctx.canvas.width, ctx.canvas.height, paint)
             val blend = Blend()
             blend.mode = SRC_ATOP
             blend.topInput = colorLayer
@@ -64,7 +74,7 @@ class RepaintTask(
             ctx.setEffect(blend)
         }
         ctx.isImageSmoothing = false
-        ctx.drawImage(baseImage, x, y)
+        drawStep(ctx)
         ctx.setEffect(null)
         ctx.canvas.opacity = alpha
         return ctx
