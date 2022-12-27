@@ -2,20 +2,18 @@ package io.github.pr0methean.ochd.tasks.caching
 
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.yield
-import java.lang.ref.Reference
-import java.lang.ref.WeakReference
+import java.lang.ref.SoftReference
 import java.util.concurrent.atomic.AtomicReference
 
-private val nullReference = WeakReference<Nothing?>(null)
+private val nullReference = SoftReference<Nothing?>(null)
 
 /**
  * A TaskCache that's backed by a soft or weak reference.
  */
 class ReferenceTaskCache<T>(
-    val referenceCreator: (Deferred<T>) -> Reference<Deferred<T>>,
     name: String
 ): DeferredTaskCache<T>(name) {
-    val coroutineRef: AtomicReference<Reference<out Deferred<T>?>> = AtomicReference(nullReference)
+    val coroutineRef: AtomicReference<SoftReference<out Deferred<T>?>> = AtomicReference(nullReference)
     override fun getNowAsync(): Deferred<T>? = coroutineRef.get().get()
 
     override fun clear() {
@@ -31,7 +29,7 @@ class ReferenceTaskCache<T>(
                 return currentCoroutine
             }
             val newCoroutine = coroutineCreator()
-            if (!isEnabled() || coroutineRef.compareAndSet(currentCoroutineRef, referenceCreator(newCoroutine))) {
+            if (!isEnabled() || coroutineRef.compareAndSet(currentCoroutineRef, SoftReference(newCoroutine))) {
                 return newCoroutine
             }
             yield() // Spin wait
