@@ -26,8 +26,6 @@ fun color(web: String, alpha: Double): Color = Color.web(web, alpha)
 
 private val logger = LogManager.getLogger("TaskPlanningContext")
 
-private fun isHugeTileTask(name: String): Boolean = name.contains("commandBlock") || name.contains("4x")
-
 /**
  * Holds info needed to build and deduplicate the task graph. Needs to become unreachable once the graph is built.
  */
@@ -53,7 +51,8 @@ class TaskPlanningContext(
                 shortName,
                 tileSize,
                 svgDirectory.resolve("$shortName.svg"),
-                if (isHugeTileTask(shortName)) {
+                if (shortName.contains("commandBlock") || shortName.contains("4x")) {
+                    // These tasks' outputs are too large to hard-cache
                     SoftTaskCache(shortName)
                 } else {
                     HardTaskCache(shortName)
