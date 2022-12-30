@@ -2,7 +2,7 @@ import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
     application
-    kotlin("jvm") version "1.7.22"
+    kotlin("jvm") version "1.8.0"
     id("org.openjfx.javafxplugin") version "0.0.13"
     id("io.gitlab.arturbosch.detekt").version("1.21.0")
 }
@@ -10,6 +10,7 @@ plugins {
 group = "org.example"
 version = "1.0-SNAPSHOT"
 
+val jdkVersion = "19"
 val myMainClassName: String = "io.github.pr0methean.ochd.MainKt"
 
 application {
@@ -27,7 +28,7 @@ tasks.jar {
 }
 
 javafx {
-    version = "19"
+    version = jdkVersion
     modules = listOf("javafx.graphics", "javafx.swing")
 }
 
@@ -80,8 +81,14 @@ tasks.test {
 }
 
 tasks.withType<KotlinCompile> {
-    kotlinOptions.jvmTarget = "18"
+    kotlinOptions.jvmTarget = jdkVersion
     kotlinOptions.useK2 = true
+}
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(jdkVersion.toInt()))
+    }
 }
 
 buildScan {
