@@ -19,7 +19,7 @@ private val threadLocalBimg: ThreadLocal<BufferedImage?> = ThreadLocal.withIniti
 /**
  * Task that saves an image to one or more PNG files.
  */
-@Suppress("BlockingMethodInNonBlockingContext")
+@Suppress("BlockingMethodInNonBlockingContext", "EqualsOrHashCode")
 class PngOutputTask(
     name: String,
     val base: AbstractTask<Image>,
@@ -39,9 +39,8 @@ class PngOutputTask(
         return other is PngOutputTask && base == other.base
     }
 
-    override fun hashCode(): Int {
-        return base.hashCode() - 127
-    }
+    @Suppress("MagicNumber")
+    override fun computeHashCode(): Int = base.hashCode() - 127
 
     override suspend fun perform() {
         withContext(threadLocalBimg.asContextElement()) {

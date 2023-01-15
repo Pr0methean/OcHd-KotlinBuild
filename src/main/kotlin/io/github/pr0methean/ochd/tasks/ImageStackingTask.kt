@@ -20,6 +20,7 @@ private val logger = LogManager.getLogger("ImageStackingTask")
 /**
  * Task that superimposes multiple images onto a background.
  */
+@Suppress("EqualsOrHashCode")
 class ImageStackingTask(
     val layers: LayerList,
     cache: DeferredTaskCache<Image>,
@@ -27,7 +28,7 @@ class ImageStackingTask(
     stats: ImageProcessingStats
 ) : AbstractImageTask(layers.toString(), cache, ctx, stats) {
     @Suppress("MagicNumber")
-    private val hashCode by lazy { layers.hashCode() + 37 }
+    override fun computeHashCode(): Int = layers.hashCode() + 37
 
     init {
         require(layers.layers.isNotEmpty()) { "Empty layer list" }
@@ -47,8 +48,6 @@ class ImageStackingTask(
         return (this === other) || (other is ImageStackingTask
                 && other.layers == layers)
     }
-
-    override fun hashCode(): Int = hashCode
 
     @Suppress("DeferredResultUnused")
     override suspend fun perform(): Image {

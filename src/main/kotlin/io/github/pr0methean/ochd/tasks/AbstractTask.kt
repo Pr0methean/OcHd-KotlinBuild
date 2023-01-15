@@ -25,6 +25,7 @@ private val SUPERVISOR_JOB = SupervisorJob()
 /**
  * Unit of work that wraps its coroutine to support reuse (including under heap-constrained conditions).
  */
+@Suppress("EqualsOrHashCode") // hashCode is cached in a lazy; equals isn't
 abstract class AbstractTask<out T>(
     val name: String,
     val cache: DeferredTaskCache<@UnsafeVariance T>,
@@ -66,6 +67,9 @@ abstract class AbstractTask<out T>(
         total
     }
     abstract val directDependencies: Iterable<AbstractTask<*>>
+    private val hashCode: Int by lazy(::computeHashCode)
+
+    protected abstract fun computeHashCode(): Int
 
     fun startedOrAvailableSubtasks(): Int {
         if (isStartedOrAvailable()) {
@@ -136,4 +140,5 @@ abstract class AbstractTask<out T>(
     }
 
     suspend inline fun await(): T = start().await()
+    override fun hashCode(): Int = hashCode
 }

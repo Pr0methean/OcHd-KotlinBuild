@@ -21,6 +21,7 @@ private val logger = LogManager.getLogger("AnimationTask")
  * Task that stacks the input images in a column. Minecraft can use this as an animated texture with the input images as
  * frames.
  */
+@Suppress("EqualsOrHashCode")
 class AnimationTask(
     val background: AbstractImageTask,
     val frames: List<AbstractImageTask>, val width: Int, val height: Int,
@@ -30,8 +31,9 @@ class AnimationTask(
     stats: ImageProcessingStats
 ): AbstractImageTask(name, cache, ctx, stats) {
     private val totalHeight = height * frames.size
-    private val hashCode: Int by lazy { Objects.hash(frames, width, height) }
     private val dependencies = frames + background
+
+    override fun computeHashCode(): Int = Objects.hash(frames, width, height)
 
     override fun equals(other: Any?): Boolean {
         return (this === other) || (
@@ -40,8 +42,6 @@ class AnimationTask(
                         && other.height == height
                         && other.frames == frames)
     }
-
-    override fun hashCode(): Int = hashCode
 
     override suspend fun mergeWithDuplicate(other: AbstractTask<*>): AbstractImageTask {
         val deduped = super.mergeWithDuplicate(other)

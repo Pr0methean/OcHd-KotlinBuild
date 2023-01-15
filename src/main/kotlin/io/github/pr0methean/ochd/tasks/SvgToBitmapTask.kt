@@ -67,6 +67,7 @@ private class ToImageTranscoder: SVGAbstractTranscoder() {
 /**
  * Task that loads an SVG file and converts it to a bitmap of a specified size. Doesn't depend on any other task.
  */
+@Suppress("EqualsOrHashCode")
 class SvgToBitmapTask(
     name: String,
     private val width: Int,
@@ -83,10 +84,9 @@ class SvgToBitmapTask(
         return (other === this) || other is SvgToBitmapTask && other.file == file
     }
 
-    private val hashCode by lazy { file.hashCode() }
-    private val input = TranscoderInput(file.toURI().toString())
+    override fun computeHashCode(): Int = file.hashCode()
 
-    override fun hashCode(): Int = hashCode
+    private val input = TranscoderInput(file.toURI().toString())
 
     /**
      * Deduplication of SVG tasks is done by the [io.github.pr0methean.ochd.TaskPlanningContext] based on duplicate
