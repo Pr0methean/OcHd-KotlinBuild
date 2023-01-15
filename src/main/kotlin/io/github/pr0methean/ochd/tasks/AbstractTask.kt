@@ -25,7 +25,7 @@ private val SUPERVISOR_JOB = SupervisorJob()
 /**
  * Unit of work that wraps its coroutine to support reuse (including under heap-constrained conditions).
  */
-@Suppress("EqualsOrHashCode") // hashCode is cached in a lazy; equals isn't
+@Suppress("EqualsWithHashCodeExist") // hashCode is cached in a lazy; equals isn't
 abstract class AbstractTask<out T>(
     val name: String,
     val cache: DeferredTaskCache<@UnsafeVariance T>,

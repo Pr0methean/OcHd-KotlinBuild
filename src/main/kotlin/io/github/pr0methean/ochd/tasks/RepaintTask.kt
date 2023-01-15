@@ -29,7 +29,7 @@ private val logger = LogManager.getLogger("RepaintTask")
  * @paint the image's new color
  * @alpha a multiplier applied to the image's opacity
  */
-@Suppress("EqualsOrHashCode")
+@Suppress("EqualsWithHashCodeExist")
 class RepaintTask(
     val base: AbstractImageTask,
     val paint: Paint?,

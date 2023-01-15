@@ -20,7 +20,7 @@ private val logger = LogManager.getLogger("ImageStackingTask")
 /**
  * Task that superimposes multiple images onto a background.
  */
-@Suppress("EqualsOrHashCode")
+@Suppress("EqualsWithHashCodeExist")
 class ImageStackingTask(
     val layers: LayerList,
     cache: DeferredTaskCache<Image>,

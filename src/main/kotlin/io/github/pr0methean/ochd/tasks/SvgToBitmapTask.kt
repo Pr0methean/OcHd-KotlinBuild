@@ -67,7 +67,7 @@ private class ToImageTranscoder: SVGAbstractTranscoder() {
 /**
  * Task that loads an SVG file and converts it to a bitmap of a specified size. Doesn't depend on any other task.
  */
-@Suppress("EqualsOrHashCode")
+@Suppress("EqualsWithHashCodeExist")
 class SvgToBitmapTask(
     name: String,
     private val width: Int,

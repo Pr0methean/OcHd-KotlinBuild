@@ -73,10 +73,10 @@ class TaskPlanningContext(
         -> deduplicate(task.layers.layers[0] as TTask)
         else -> ({
             val className = task::class.simpleName ?: "[unnamed class]"
-            taskDeduplicationMap.computeIfPresent(task) { _, it ->
+            taskDeduplicationMap.computeIfPresent(task) { _, oldValue ->
                 logger.info("Deduplicated: {}", task)
                 stats.dedupeSuccesses.add(className)
-                if (it === task) task else runBlocking { it.mergeWithDuplicate(task) }
+                if (oldValue === task) task else runBlocking { oldValue.mergeWithDuplicate(task) }
             } ?: {
                 taskDeduplicationMap[task] = task
                 logger.info("New task: {}", task)

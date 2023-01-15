@@ -19,7 +19,7 @@ private val threadLocalBimg: ThreadLocal<BufferedImage?> = ThreadLocal.withIniti
 /**
  * Task that saves an image to one or more PNG files.
  */
-@Suppress("BlockingMethodInNonBlockingContext", "EqualsOrHashCode")
+@Suppress("BlockingMethodInNonBlockingContext", "EqualsWithHashCodeExist")
 class PngOutputTask(
     name: String,
     val base: AbstractTask<Image>,

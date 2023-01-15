@@ -21,7 +21,7 @@ private val logger = LogManager.getLogger("AnimationTask")
  * Task that stacks the input images in a column. Minecraft can use this as an animated texture with the input images as
  * frames.
  */
-@Suppress("EqualsOrHashCode")
+@Suppress("EqualsWithHashCodeExist")
 class AnimationTask(
     val background: AbstractImageTask,
     val frames: List<AbstractImageTask>, val width: Int, val height: Int,
