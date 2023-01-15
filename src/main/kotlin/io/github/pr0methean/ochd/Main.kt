@@ -125,7 +125,7 @@ private suspend fun runAll(
                 logger.debug("{} tasks remain. Waiting for one of: {}",
                         Unbox.box(unfinishedTasks.get()), inProgressJobs)
                 finishedJobsChannel.receive()
-            } else if (currentInProgressJobs >= THREADS) {
+            } else if (currentInProgressJobs > 0) {
                 yield()
                 finishedJobsChannel.tryReceive().getOrNull()
             } else null
