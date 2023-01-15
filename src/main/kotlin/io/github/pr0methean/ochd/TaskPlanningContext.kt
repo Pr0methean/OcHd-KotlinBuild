@@ -13,6 +13,7 @@ import io.github.pr0methean.ochd.tasks.caching.noopDeferredTaskCache
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
+import kotlinx.coroutines.runBlocking
 import org.apache.logging.log4j.LogManager
 import java.io.File
 import java.util.Locale
@@ -70,19 +71,19 @@ class TaskPlanningContext(
                 && task.layers.layers.size == 1
                 && task.layers.background == Color.TRANSPARENT
         -> deduplicate(task.layers.layers[0] as TTask)
-        else -> {
+        else -> ({
             val className = task::class.simpleName ?: "[unnamed class]"
-            val deduped = taskDeduplicationMap.computeIfAbsent(task) {
-                logger.info("New task: {}", task)
-                stats.dedupeFailures.add(className)
-                task as TTask
-            }
-            if (deduped !== task) {
+            taskDeduplicationMap.computeIfPresent(task) { _, it ->
                 logger.info("Deduplicated: {}", task)
                 stats.dedupeSuccesses.add(className)
-                deduped.mergeWithDuplicate(task) as TTask
-            } else deduped as TTask
-        }
+                if (it === task) task else runBlocking { it.mergeWithDuplicate(task) }
+            } ?: {
+                taskDeduplicationMap[task] = task
+                logger.info("New task: {}", task)
+                stats.dedupeFailures.add(className)
+                task
+            }
+        }) as TTask
     }
 
     fun findSvgTask(name: String): SvgToBitmapTask {

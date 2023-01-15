@@ -28,6 +28,20 @@ class PngOutputTask(
     private val stats: ImageProcessingStats,
 ): AbstractTask<Unit>("Output $name", noopDeferredTaskCache(), ctx) {
     override val directDependencies: Iterable<AbstractTask<*>> = listOf(base)
+    override suspend fun mergeWithDuplicate(other: AbstractTask<*>): AbstractTask<Unit> {
+        if (other is PngOutputTask && other !== this && other.base == base) {
+            return PngOutputTask(name, base, files.union(other.files).toList(), ctx, stats)
+        }
+        return super.mergeWithDuplicate(other)
+    }
+
+    override fun equals(other: Any?): Boolean {
+        return other is PngOutputTask && base == other.base
+    }
+
+    override fun hashCode(): Int {
+        return base.hashCode() - 127
+    }
 
     override suspend fun perform() {
         withContext(threadLocalBimg.asContextElement()) {
