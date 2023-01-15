@@ -22,7 +22,6 @@ import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox
 import java.nio.file.Paths
 import java.util.Comparator.comparingInt
-import java.util.concurrent.atomic.AtomicLong
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
@@ -115,7 +114,6 @@ private suspend fun runAll(
     maxJobs: Int
 ) {
     val unstartedTasks = tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks)).toMutableSet()
-    val unfinishedTasks = AtomicLong(unstartedTasks.size.toLong())
     val inProgressJobs = mutableMapOf<PngOutputTask,Job>()
     val finishedJobsChannel = Channel<PngOutputTask>(capacity = CAPACITY_PADDING_FACTOR * THREADS)
     while (unstartedTasks.isNotEmpty()) {
@@ -123,7 +121,7 @@ private suspend fun runAll(
             val currentInProgressJobs = inProgressJobs.size
             if (currentInProgressJobs >= maxJobs) {
                 logger.debug("{} tasks remain. Waiting for one of: {}",
-                        Unbox.box(unfinishedTasks.get()), inProgressJobs)
+                        Unbox.box(currentInProgressJobs), inProgressJobs)
                 finishedJobsChannel.receive()
             } else if (currentInProgressJobs >= THREADS) {
                 yield()
@@ -132,16 +130,15 @@ private suspend fun runAll(
         }
         if (maybeReceive != null) {
             inProgressJobs.remove(maybeReceive)
-            continue
-        }
-        val task = unstartedTasks.minWithOrNull(taskOrderComparator)
-        checkNotNull(task) { "Could not get an unstarted task" }
-        check(unstartedTasks.remove(task)) { "Attempted to remove task more than once: $task" }
-        inProgressJobs[task] = scope.launch {
-            logger.info("Joining {}", task)
-            task.await()
-            unfinishedTasks.getAndDecrement()
-            finishedJobsChannel.send(task)
+        } else {
+            val task = unstartedTasks.minWithOrNull(taskOrderComparator)
+            checkNotNull(task) { "Could not get an unstarted task" }
+            check(unstartedTasks.remove(task)) { "Attempted to remove task more than once: $task" }
+            inProgressJobs[task] = scope.launch {
+                logger.info("Joining {}", task)
+                task.await()
+                finishedJobsChannel.send(task)
+            }
         }
     }
     logger.debug("All jobs started; waiting for {} running jobs to finish", Unbox.box(inProgressJobs.size))
