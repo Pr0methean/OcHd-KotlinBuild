@@ -118,14 +118,10 @@ private suspend fun runAll(
     val unfinishedTasks = AtomicLong(unstartedTasks.size.toLong())
     val inProgressJobs = mutableMapOf<PngOutputTask,Job>()
     val finishedJobsChannel = Channel<PngOutputTask>(capacity = CAPACITY_PADDING_FACTOR * THREADS)
-    while (unfinishedTasks.get() > 0) {
-        check(inProgressJobs.isNotEmpty() || unstartedTasks.isNotEmpty()) {
-            "Have ${unfinishedTasks.get()} unfinished tasks, but none are in progress"
-        }
+    while (unstartedTasks.isNotEmpty()) {
         val maybeReceive = finishedJobsChannel.tryReceive().getOrElse {
             val currentInProgressJobs = inProgressJobs.size
-            if (currentInProgressJobs >= maxJobs
-                    || (currentInProgressJobs > 0 && unstartedTasks.isEmpty())) {
+            if (currentInProgressJobs >= maxJobs) {
                 logger.debug("{} tasks remain. Waiting for one of: {}",
                         Unbox.box(unfinishedTasks.get()), inProgressJobs)
                 finishedJobsChannel.receive()
@@ -147,6 +143,10 @@ private suspend fun runAll(
             unfinishedTasks.getAndDecrement()
             finishedJobsChannel.send(task)
         }
+    }
+    logger.debug("All jobs started; waiting for {} running jobs to finish", Unbox.box(inProgressJobs.size))
+    while (inProgressJobs.isNotEmpty()) {
+        inProgressJobs.remove(finishedJobsChannel.receive())
     }
     logger.debug("All jobs done; closing channel")
     finishedJobsChannel.close()
