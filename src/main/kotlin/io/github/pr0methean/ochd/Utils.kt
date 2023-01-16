@@ -14,6 +14,11 @@ val DEFAULT_SNAPSHOT_PARAMS: SnapshotParameters = SnapshotParameters().also {
     it.fill = Color.TRANSPARENT
 }
 
+/**
+ * A list is a shallow copy of another if they are equal and also refer to the same copies of their contents. This means
+ * that having both on the heap won't cause their current contents to be on the heap more than once, which is useful
+ * when T is [io.github.pr0methean.ochd.tasks.AbstractImageTask] because it can keep uncompressed 32-bit images alive.
+ */
 fun <T> List<T>.isShallowCopyOf(other: List<T>): Boolean {
     return this === other || (size == other.size && indices.all { this[it] === other[it] })
 }
