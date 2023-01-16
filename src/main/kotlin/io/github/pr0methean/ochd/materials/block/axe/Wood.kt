@@ -26,30 +26,33 @@ sealed interface Wood: ShadowHighlightMaterial {
     fun LayerListBuilder.strippedLogSide()
     fun LayerListBuilder.logTop(strippedLogTop: AbstractImageTask)
     fun LayerListBuilder.strippedLogTop(strippedLogSide: AbstractImageTask)
-    fun LayerListBuilder.trapdoor()
-    fun LayerListBuilder.doorTop(doorBottom: AbstractImageTask, doorKnob: AbstractImageTask) {
+    fun LayerListBuilder.trapdoor(commonLayers: AbstractImageTask)
+    fun LayerListBuilder.doorTop(doorBottom: AbstractImageTask, doorKnob: AbstractImageTask,
+                                 commonLayers: AbstractImageTask) {
         copy(doorBottom)
         copy(doorKnob)
     }
-    fun LayerListBuilder.doorBottom()
+    fun LayerListBuilder.doorBottom(commonLayers: AbstractImageTask)
 
     fun LayerListBuilder.leaves()
     fun LayerListBuilder.sapling()
+    fun LayerListBuilder.doorCommonLayers()
 
     override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
         val doorKnob = ctx.stack {
             layer("doorKnob", STONE.highlight)
             layer("doorKnobShadow", STONE.shadow)
         }
-        val doorBottom = ctx.stack { doorBottom() }
+        val doorCommonLayers = ctx.stack { doorCommonLayers() }
+        val doorBottom = ctx.stack { doorBottom(doorCommonLayers) }
         val strippedLogSide = ctx.stack { strippedLogSide() }
         val strippedLogTop = ctx.stack { strippedLogTop(strippedLogSide) }
         yield(ctx.out(ctx.stack { bark() }, "block/${name}_${logSynonym}"))
         yield(ctx.out(strippedLogSide, "block/stripped_${name}_${logSynonym}"))
         yield(ctx.out(strippedLogTop, "block/stripped_${name}_${logSynonym}_top"))
         yield(ctx.out(ctx.stack { logTop(strippedLogTop) }, "block/${name}_${logSynonym}_top"))
-        yield(ctx.out(ctx.stack { trapdoor() }, "block/${name}_trapdoor"))
-        yield(ctx.out(ctx.stack { doorTop(doorBottom, doorKnob) }, "block/${name}_door_top"))
+        yield(ctx.out(ctx.stack { trapdoor(doorCommonLayers) }, "block/${name}_trapdoor"))
+        yield(ctx.out(ctx.stack { doorTop(doorBottom, doorKnob, doorCommonLayers) }, "block/${name}_door_top"))
         yield(ctx.out(doorBottom, "block/${name}_door_bottom"))
         yield(ctx.out(ctx.stack { leaves() }, "block/${name}_${leavesSynonym}"))
         yield(ctx.out(ctx.stack { sapling() }, "block/${name}_${saplingSynonym}"))
@@ -83,22 +86,20 @@ enum class OverworldWood(
         barkHighlight = c(0x898977),
         barkShadow = c(0x4a4a39),
     ) {
-        override fun LayerListBuilder.trapdoor() {
-            copy {
-                layer("borderSolidThick", color)
-                layer("borderSolid", highlight)
-                layer("bigDiamond", shadow)
-            }
+        override fun LayerListBuilder.doorCommonLayers() {
+            layer("borderSolidThick", color)
+            layer("borderSolid", highlight)
+            layer("bigDiamond", shadow)
+        }
+
+        override fun LayerListBuilder.trapdoor(commonLayers: AbstractImageTask) {
+            copy(commonLayers)
             layer("trapdoorHingesBig", STONE.shadow)
             layer("trapdoorHinges", STONE.highlight)
         }
 
-        override fun LayerListBuilder.doorBottom() {
-            copy {
-                layer("borderSolidThick", color)
-                layer("borderSolid", highlight)
-                layer("bigDiamond", shadow)
-            }
+        override fun LayerListBuilder.doorBottom(commonLayers: AbstractImageTask) {
+            copy(commonLayers)
             layer("strokeBottomLeftTopRight", color)
             layer("strokeTopLeftBottomRight", color)
             layer("doorHingesBig", STONE.shadow)
@@ -124,30 +125,27 @@ enum class OverworldWood(
         barkHighlight = Color.WHITE,
         barkShadow = c(0x5f5f4f)
     ) {
-        override fun LayerListBuilder.trapdoor() {
-            copy {
-                background(Color.WHITE)
-                layer("borderSolidExtraThick", color)
-                layer("craftingGridSquare", highlight)
-                layer("craftingGridSpaces", Color.WHITE)
-                layer("borderSolid", shadow)
-            }
+        override fun LayerListBuilder.doorCommonLayers() {
+            background(Color.WHITE)
+            layer("borderSolidExtraThick", color)
+            layer("craftingGridSquare", highlight)
+            layer("craftingGridSpaces", Color.WHITE)
+            layer("borderSolid", shadow)
+        }
+
+        override fun LayerListBuilder.trapdoor(commonLayers: AbstractImageTask) {
+            copy(commonLayers)
             layer("trapdoorHingesBig", STONE.shadow)
         }
 
-        override fun LayerListBuilder.doorTop(doorBottom: AbstractImageTask, doorKnob: AbstractImageTask) {
-            copy {
-                background(Color.WHITE)
-                layer("borderSolidExtraThick", color)
-                layer("craftingGridSquare", highlight)
-                layer("craftingGridSpaces", Color.WHITE)
-                layer("borderSolid", shadow)
-            }
+        override fun LayerListBuilder.doorTop(doorBottom: AbstractImageTask, doorKnob: AbstractImageTask,
+                                              commonLayers: AbstractImageTask) {
+            copy(commonLayers)
             layer("doorHingesBig", STONE.shadow)
             copy(doorKnob)
         }
 
-        override fun LayerListBuilder.doorBottom() {
+        override fun LayerListBuilder.doorBottom(commonLayers: AbstractImageTask) {
             background(highlight)
             layer("borderSolidExtraThick", color)
             layer("craftingGridSquare", shadow)
@@ -175,30 +173,21 @@ enum class OverworldWood(
         barkShadow = c(0x2b2000),
         barkHighlight = c(0x624033)
     ) {
-        override fun LayerListBuilder.trapdoor() {
-            copy {
-                background(color)
-                layer("borderSolid", highlight)
-                layer("cross", highlight)
-                layer("2x2TopLeft", shadow)
-                layer("borderShortDashes", color)
-            }
+        override fun LayerListBuilder.doorCommonLayers() {
+            background(color)
+            layer("borderSolid", highlight)
+            layer("cross", highlight)
+            layer("2x2TopLeft", shadow)
+            layer("borderShortDashes", color)
+        }
+
+        override fun LayerListBuilder.trapdoor(commonLayers: AbstractImageTask) {
+            copy(commonLayers)
             layer("trapdoorHingesBig", STONE.highlight)
         }
 
-        override fun LayerListBuilder.doorTop(doorBottom: AbstractImageTask, doorKnob: AbstractImageTask) {
-            copy(doorBottom)
-            copy(doorKnob)
-        }
-
-        override fun LayerListBuilder.doorBottom() {
-            copy {
-                background(color)
-                layer("borderSolid", highlight)
-                layer("cross", highlight)
-                layer("2x2TopLeft", shadow)
-                layer("borderShortDashes", color)
-            }
+        override fun LayerListBuilder.doorBottom(commonLayers: AbstractImageTask) {
+            copy(commonLayers)
             layer("doorHingesBig", STONE.highlight)
         }
 
@@ -221,7 +210,12 @@ enum class OverworldWood(
         barkShadow = c(0x2B2000),
         barkHighlight = c(0x8A593A)
     ) {
-        override fun LayerListBuilder.trapdoor() {
+        override fun LayerListBuilder.doorCommonLayers() {
+            layer("doorHingesBig", STONE.shadow)
+            layer("doorHinges", STONE.color)
+        }
+
+        override fun LayerListBuilder.trapdoor(commonLayers: AbstractImageTask) {
             layer("trapdoor2", color)
             layer("borderSolid", shadow)
             layer("borderShortDashes", highlight)
@@ -229,26 +223,21 @@ enum class OverworldWood(
             layer("trapdoorHinges", STONE.color)
         }
 
-        override fun LayerListBuilder.doorTop(doorBottom: AbstractImageTask, doorKnob: AbstractImageTask) {
+        override fun LayerListBuilder.doorTop(doorBottom: AbstractImageTask, doorKnob: AbstractImageTask,
+                                              commonLayers: AbstractImageTask) {
             layer("trapdoor2", color)
             layer("borderShortDashes", highlight)
-            copy {
-                layer("doorHingesBig", STONE.shadow)
-                layer("doorHinges", STONE.color)
-            }
+            copy(commonLayers)
             copy(doorKnob)
         }
 
-        override fun LayerListBuilder.doorBottom() {
+        override fun LayerListBuilder.doorBottom(commonLayers: AbstractImageTask) {
             background(color)
             layer("waves", highlight)
             layer("planksTopBorderVertical", shadow)
             layer("borderSolid", color)
             layer("borderShortDashes", highlight)
-            copy {
-                layer("doorHingesBig", STONE.shadow)
-                layer("doorHinges", STONE.color)
-            }
+            copy(commonLayers)
         }
 
         override fun LayerListBuilder.leaves() {
@@ -270,22 +259,22 @@ enum class OverworldWood(
         barkShadow = c(0x4a4a39)
     ) {
         override val saplingSynonym: String = "propagule"
-        override fun LayerListBuilder.trapdoor() {
+
+        override fun LayerListBuilder.doorCommonLayers() {
+            layer("rings2", shadow)
+            layer("borderDotted", highlight)
+        }
+
+        override fun LayerListBuilder.trapdoor(commonLayers: AbstractImageTask) {
             layer("ringsHole", color)
-            copy {
-                layer("rings2", shadow)
-                layer("borderDotted", highlight)
-            }
+            copy(commonLayers)
             layer("trapdoorHingesBig", STONE.highlight)
             layer("trapdoorHinges", STONE.shadow)
         }
 
-        override fun LayerListBuilder.doorBottom() {
+        override fun LayerListBuilder.doorBottom(commonLayers: AbstractImageTask) {
             background(color)
-            copy {
-                layer("rings2", shadow)
-                layer("borderDotted", highlight)
-            }
+            copy(commonLayers)
             layer("doorHingesBig", STONE.highlight)
             layer("doorHinges", STONE.shadow)
         }
@@ -309,7 +298,9 @@ enum class OverworldWood(
         barkHighlight = c(0x624033),
         barkShadow = c(0x2b2000)
     ) {
-        override fun LayerListBuilder.trapdoor() {
+        override fun LayerListBuilder.doorCommonLayers(): Unit = planks()
+
+        override fun LayerListBuilder.trapdoor(commonLayers: AbstractImageTask) {
             background(shadow)
             layer("planksTopVertical", color)
             layer("borderSolidThick", shadow)
@@ -318,8 +309,8 @@ enum class OverworldWood(
             layer("trapdoorHinges", STONE.shadow)
         }
 
-        override fun LayerListBuilder.doorBottom() {
-            copy {planks()}
+        override fun LayerListBuilder.doorBottom(commonLayers: AbstractImageTask) {
+            copy(commonLayers)
             layer("doorHingesBig", STONE.color)
             layer("doorHinges", STONE.shadow)
         }
@@ -342,26 +333,23 @@ enum class OverworldWood(
         barkHighlight = c(0x987849),
         barkShadow = c(0x4a4a39)
     ) {
-        override fun LayerListBuilder.trapdoor() {
-            copy {
-                layer("borderSolidThick", color)
-                layer("borderSolid", highlight)
-                layer("cross", highlight)
-                layer("2x2TopLeft", shadow)
-                layer("borderShortDashes", color, 0.5)
-            }
+        override fun LayerListBuilder.doorCommonLayers() {
+            layer("borderSolidThick", color)
+            layer("borderSolid", highlight)
+            layer("cross", highlight)
+            layer("2x2TopLeft", shadow)
+            layer("borderShortDashes", color, 0.5)
+        }
+
+        override fun LayerListBuilder.trapdoor(commonLayers: AbstractImageTask) {
+            copy(commonLayers)
             layer("trapdoorHingesBig", STONE.color)
             layer("trapdoorHinges", STONE.highlight)
         }
 
-        override fun LayerListBuilder.doorTop(doorBottom: AbstractImageTask, doorKnob: AbstractImageTask) {
-            copy {
-                layer("borderSolidThick", color)
-                layer("borderSolid", highlight)
-                layer("cross", highlight)
-                layer("2x2TopLeft", shadow)
-                layer("borderShortDashes", color, 0.5)
-            }
+        override fun LayerListBuilder.doorTop(doorBottom: AbstractImageTask, doorKnob: AbstractImageTask,
+                                              commonLayers: AbstractImageTask) {
+            copy(commonLayers)
             layer("craftingSide", shadow)
             layer("cross", shadow)
             copy(doorKnob)
@@ -371,16 +359,10 @@ enum class OverworldWood(
             }
         }
 
-        override fun LayerListBuilder.doorBottom() {
+        override fun LayerListBuilder.doorBottom(commonLayers: AbstractImageTask) {
             background(color)
             layer("waves", highlight)
-            copy {
-                layer("borderSolidThick", color)
-                layer("borderSolid", highlight)
-                layer("cross", highlight)
-                layer("2x2TopLeft", shadow)
-                layer("borderShortDashes", color, 0.5)
-            }
+            copy(commonLayers)
             copy {
                 layer("doorHingesBig", STONE.color)
                 layer("doorHinges", STONE.highlight)
@@ -461,7 +443,11 @@ enum class Fungus(
             leavesShadow = c(0x5a0000),
             leavesHighlight = c(0xac2020),
         ) {
-            override fun LayerListBuilder.trapdoor() {
+            override fun LayerListBuilder.doorCommonLayers() {
+                layer("zigzagSolid", shadow)
+            }
+
+            override fun LayerListBuilder.trapdoor(commonLayers: AbstractImageTask) {
                 layer("borderSolidThick", color)
                 layer("trapdoor1", shadow)
                 layer("borderShortDashes", highlight)
@@ -471,7 +457,7 @@ enum class Fungus(
                 layer("trapdoorHinges", STONE.shadow)
             }
 
-            override fun LayerListBuilder.doorBottom() {
+            override fun LayerListBuilder.doorBottom(commonLayers: AbstractImageTask) {
                 background(color)
                 layer("planksTopBorderVertical", shadow)
                 layer("borderShortDashes", highlight)
@@ -503,7 +489,11 @@ enum class Fungus(
             leavesHighlight = c(0x00b485),
             leavesShadow = c(0x006565),
         ) {
-        override fun LayerListBuilder.trapdoor() {
+        override fun LayerListBuilder.doorCommonLayers() {
+            layer("borderShortDashes", highlight)
+        }
+
+        override fun LayerListBuilder.trapdoor(commonLayers: AbstractImageTask) {
             layer("trapdoor1", highlight)
             layer("borderSolidThick", color)
             layer("borderSolid", highlight)
@@ -513,7 +503,7 @@ enum class Fungus(
             layer("trapdoorHinges", STONE.highlight)
         }
 
-        override fun LayerListBuilder.doorBottom() {
+        override fun LayerListBuilder.doorBottom(commonLayers: AbstractImageTask) {
             background(color)
             layer("planksTopBorderVertical", shadow)
             layer("borderShortDashes", highlight)
