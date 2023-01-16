@@ -50,33 +50,15 @@ class RepaintTask(
         }
     }
 
-    private fun baseOrSoonestAvailableRepaint() : AbstractImageTask {
-        if (base.getNow() != null) {
-            return base
-        }
-        base.opaqueRepaints().forEach {
-            if (it.getNow() != null) {
-                logger.info("Repainting $it for ${this@RepaintTask}")
-                return it
-            }
-        }
-        if (base.isStartedOrAvailable()) {
-            return base
-        }
-        base.opaqueRepaints().forEach {
-            if (it.isStartedOrAvailable()) {
-                logger.info("Repainting $it for ${this@RepaintTask}")
-                return it
-            }
-        }
-        return base
-    }
-
     private suspend fun internalRenderOnto(context: GraphicsContext?, x: Double, y: Double): GraphicsContext {
         val drawStep: suspend (GraphicsContext) -> Unit
         val ctx: GraphicsContext
         if (context == null) {
-            val baseImage = baseOrSoonestAvailableRepaint().await()
+            val baseImage = base.getNow()
+            ?: base.opaqueRepaints().firstNotNullOfOrNull { task ->
+                task.getNow()?.also { logger.info("Repainting $task for ${this@RepaintTask}") }
+            }
+            ?: base.await()
             base.removeDirectDependentTask(this)
             drawStep = { it.drawImage(baseImage, x, y) }
             logger.info("Allocating a canvas for {}", name)
@@ -84,7 +66,10 @@ class RepaintTask(
         } else {
             ctx = context
             drawStep = {
-                baseOrSoonestAvailableRepaint().renderOnto(it, x, y)
+                val baseTask = if (base.getNow() != null) base else base.opaqueRepaints().firstOrNull {
+                    task -> task.getNow()?.also { logger.info("Repainting $task for ${this@RepaintTask}") } != null
+                } ?: base
+                baseTask.renderOnto(it, x, y)
                 base.removeDirectDependentTask(this)
             }
         }
