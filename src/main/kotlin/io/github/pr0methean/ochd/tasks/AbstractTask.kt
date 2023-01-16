@@ -67,7 +67,10 @@ abstract class AbstractTask<out T>(
         total
     }
     abstract val directDependencies: Iterable<AbstractTask<*>>
-    private val hashCode: Int by lazy(::computeHashCode)
+    private val hashCode: Int by lazy {
+        AT_LOGGER.debug("Computing hash code for {}", name)
+        computeHashCode()
+    }
 
     protected abstract fun computeHashCode(): Int
 

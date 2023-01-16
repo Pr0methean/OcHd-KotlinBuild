@@ -11,7 +11,7 @@ interface SingleTextureMaterial: Material {
 
     fun LayerListBuilder.createTextureLayers()
 
-    suspend fun copyTo(dest: LayerListBuilder) {
+    fun copyTo(dest: LayerListBuilder) {
         dest.copy(LayerListBuilder(dest.ctx).apply {createTextureLayers()}.build())
     }
     override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequenceOf(

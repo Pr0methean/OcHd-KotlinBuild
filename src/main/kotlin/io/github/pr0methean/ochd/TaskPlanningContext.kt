@@ -116,8 +116,11 @@ class TaskPlanningContext(
         source: AbstractImageTask,
         paint: Paint? = null,
         alpha: Double = 1.0
-    ): RepaintTask = deduplicate(
-        RepaintTask(deduplicate(source), paint, alpha, SoftTaskCache("$source@$paint@$alpha"), ctx, stats))
+    ): AbstractImageTask {
+        logger.debug("layer({},{},{})", source, paint, alpha)
+        return deduplicate(
+            RepaintTask(deduplicate(source), paint, alpha, SoftTaskCache("$source@$paint@$alpha"), ctx, stats))
+    }
 
     inline fun stack(init: LayerListBuilder.() -> Unit): AbstractImageTask {
         val layerTasksBuilder = LayerListBuilder(this)
@@ -126,28 +129,30 @@ class TaskPlanningContext(
         return stack(layerTasks)
     }
 
-    fun animate(background: AbstractImageTask, frames: List<AbstractImageTask>): AnimationTask
-        = deduplicate(AnimationTask(
-                deduplicate(background), 
-                frames.map(::deduplicate),
-                tileSize,
-                tileSize,
-                frames.toString(),
-                noopDeferredTaskCache(),
-                ctx,
-                stats
-        )) as AnimationTask
+    fun animate(background: AbstractImageTask, frames: List<AbstractImageTask>): AbstractImageTask {
+        logger.debug("animate({}, {})", background, frames)
+        return deduplicate(AnimationTask(
+            deduplicate(background),
+            frames.map(::deduplicate),
+            tileSize,
+            tileSize,
+            frames.toString(),
+            noopDeferredTaskCache(),
+            ctx,
+            stats
+        ))
+    }
 
     fun out(source: AbstractImageTask, names: Array<String>): PngOutputTask {
-        logger.debug("Creating output task: {} for source: {}", names, source)
+        logger.debug("out({}, {})", source, names)
         val lowercaseNames = names.map { it.lowercase(Locale.ENGLISH) }
-        return PngOutputTask(
+        return deduplicate(PngOutputTask(
                 lowercaseNames[0],
                 deduplicate(source),
                 lowercaseNames.map { outTextureRoot.resolve("$it.png") },
                 ctx,
                 stats
-            ).also { logger.debug("Done creating output task: {}", it) }
+            )).also { logger.debug("Done creating output task: {}", it) } as PngOutputTask
     }
 
     fun out(source: AbstractImageTask, name: String): PngOutputTask = out(source, arrayOf(name))
@@ -155,6 +160,9 @@ class TaskPlanningContext(
     inline fun out(source: LayerListBuilder.() -> Unit, name: String): PngOutputTask
             = out(stack {source()}, arrayOf(name))
 
-    fun stack(layers: LayerList): ImageStackingTask = deduplicate(ImageStackingTask(
+    fun stack(layers: LayerList): AbstractImageTask {
+        logger.debug("stack({})", layers)
+        return deduplicate(ImageStackingTask(
             layers, SoftTaskCache(layers.toString()), ctx, stats))
+    }
 }

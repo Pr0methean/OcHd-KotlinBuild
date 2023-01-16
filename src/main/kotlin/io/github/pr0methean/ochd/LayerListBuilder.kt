@@ -25,7 +25,7 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
 
     fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): AbstractImageTask {
         val layer = ctx.layer(name, paint, alpha)
-        addAll(listOf(layer))
+        layers.add(layer)
         return layer
     }
 
@@ -35,31 +35,34 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
         alpha: Double = 1.0
     ): AbstractImageTask {
         val layer = ctx.layer(source, paint, alpha)
-        addAll(listOf(layer))
+        layers.add(layer)
         return layer
     }
 
     inline fun copy(sourceInit: LayerListBuilder.() -> Unit): Unit =
-        copy(LayerListBuilder(ctx).also {sourceInit()}.build())
+        copy(LayerListBuilder(ctx).apply(sourceInit).build())
+
     fun copy(source: LayerList) {
+        check(source.layers.isNotEmpty()) { "Copying from empty LayerList" }
         if (source.background != Color.TRANSPARENT) {
             check(background == Color.TRANSPARENT) { "Source's background would overwrite an existing background" }
             check(layers.isEmpty()) { "Source's background would overwrite an existing layer" }
             background = source.background
         }
         if (source.layers.size > 1) { // Don't flatten sub-stacks since we want to deduplicate them
-            copy(ctx.stack(source))
+            layers.add(ctx.stack(source))
         } else {
-            addAll(listOf(ctx.deduplicate(source.layers[0])))
+            copy(source.layers[0])
         }
     }
-    fun copy(source: SingleTextureMaterial): Unit = copy(LayerListBuilder(ctx).also {
-        source.run {createTextureLayers()}
-    }.build())
+    fun copy(source: SingleTextureMaterial): Unit = source.copyTo(this)
 
     fun copy(element: AbstractImageTask): Boolean {
         return layers.add(ctx.deduplicate(element))
     }
-    private fun addAll(elements: Collection<AbstractImageTask>): Boolean = layers.addAll(elements)
-    fun build(): LayerList = LayerList(layers, background)
+
+    fun build(): LayerList {
+        check(layers.isNotEmpty()) { "Trying to create an empty LayerList" }
+        return LayerList(layers, background)
+    }
 }
