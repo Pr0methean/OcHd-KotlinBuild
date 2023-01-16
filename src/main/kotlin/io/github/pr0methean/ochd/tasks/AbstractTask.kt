@@ -59,7 +59,7 @@ abstract class AbstractTask<out T>(
         }
     }
 
-    val totalSubtasks: Int by lazy {
+    private val totalSubtasks: Int by lazy {
         var total = 1
         for (task in directDependencies) {
             total += task.totalSubtasks
@@ -74,7 +74,7 @@ abstract class AbstractTask<out T>(
 
     protected abstract fun computeHashCode(): Int
 
-    open fun startedOrAvailableSubtasks(): Int {
+    fun startedOrAvailableSubtasks(): Int {
         if (isStartedOrAvailable()) {
             return totalSubtasks
         }

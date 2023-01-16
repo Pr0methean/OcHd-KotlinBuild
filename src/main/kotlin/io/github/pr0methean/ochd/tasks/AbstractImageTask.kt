@@ -16,17 +16,17 @@ abstract class AbstractImageTask(
 )
     : AbstractTask<Image>(name, cache, ctx) {
     override fun mergeWithDuplicate(other: AbstractTask<*>): AbstractImageTask {
-        if (other is AbstractImageTask) {
+        if (other is ImageTask) {
             other.opaqueRepaints().forEach(this::addOpaqueRepaint)
         }
         return super.mergeWithDuplicate(other) as AbstractImageTask
     }
 
-    private val opaqueRepaints = Collections.newSetFromMap(WeakHashMap<RepaintTask,Boolean>())
+    private val opaqueRepaints = Collections.newSetFromMap(WeakHashMap<ImageTask,Boolean>())
 
-    open fun opaqueRepaints(): Iterable<RepaintTask> = opaqueRepaints.toList()
+    open fun opaqueRepaints(): Iterable<ImageTask> = opaqueRepaints.toList()
 
-    open fun addOpaqueRepaint(repaint: RepaintTask) {
+    open fun addOpaqueRepaint(repaint: ImageTask) {
         opaqueRepaints.add(repaint)
     }
 
