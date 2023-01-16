@@ -2,6 +2,7 @@ package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.DEFAULT_SNAPSHOT_PARAMS
 import io.github.pr0methean.ochd.ImageProcessingStats
+import io.github.pr0methean.ochd.isShallowCopyOf
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import javafx.application.Platform.requestNextPulse
 import javafx.scene.canvas.Canvas
@@ -51,9 +52,10 @@ class AnimationTask(
         if (other is AnimationTask && (background !== other.background || frames !== other.frames)) {
             LOGGER.debug("Merging AnimationTask {} with duplicate {}", name, other.name)
             val mergedFrames = frames.zip(other.frames).map { (a, b) -> if (a === b) a else a.mergeWithDuplicate(b) }
-            if (mergedFrames.indices.any { mergedFrames[it] !== frames[it] }) {
+            val mergedBackground = background.mergeWithDuplicate(other.background)
+            if (mergedBackground !== background || !mergedFrames.isShallowCopyOf(frames)) {
                 return AnimationTask(
-                    background.mergeWithDuplicate(other.background), mergedFrames,
+                    mergedBackground, mergedFrames,
                     width, height, name, cache, ctx, stats
                 )
             }

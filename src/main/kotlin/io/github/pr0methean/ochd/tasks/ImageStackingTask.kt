@@ -2,6 +2,7 @@ package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.LayerList
+import io.github.pr0methean.ochd.isShallowCopyOf
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import javafx.application.Platform
 import javafx.scene.SnapshotParameters
@@ -43,8 +44,7 @@ class ImageStackingTask(
         if (this !== other && other is ImageStackingTask && other.layers !== layers) {
             LOGGER.debug("Merging ImageStackingTask {} with duplicate {}", name, other.name)
             val mergedLayers = layers.mergeWithDuplicate(other.layers)
-            if (mergedLayers.background !== layers.background
-                || mergedLayers.layers.indices.any { mergedLayers.layers[it] !== layers.layers[it] }) {
+            if (!mergedLayers.layers.isShallowCopyOf(layers.layers)) {
                 return ImageStackingTask(mergedLayers, cache, ctx, stats)
             }
         }

@@ -14,6 +14,10 @@ val DEFAULT_SNAPSHOT_PARAMS: SnapshotParameters = SnapshotParameters().also {
     it.fill = Color.TRANSPARENT
 }
 
+fun <T> List<T>.isShallowCopyOf(other: List<T>): Boolean {
+    return size == other.size && indices.all { this[it] === other[it] }
+}
+
 fun StringBuilder.appendList(list: List<StringBuilderFormattable>, delim: String = ", "): StringBuilder {
     for (item in list) {
         item.formatTo(this)
