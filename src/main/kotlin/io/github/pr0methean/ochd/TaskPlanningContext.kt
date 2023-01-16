@@ -79,11 +79,11 @@ class TaskPlanningContext(
                 val className = task::class.simpleName ?: "[unnamed class]"
                 return taskDeduplicationLock.withLock {
                     taskDeduplicationMap.compute(task) { _, oldValue ->
-                        if (oldValue === task) {
-                            logger.debug("{} already points to itself in the deduplication map", task)
-                            return@compute task
-                        }
-                        oldValue?.mergeWithDuplicate(task)?.also {
+                        oldValue?.run {
+                            if (this === task) {
+                                this
+                            } else mergeWithDuplicate(task)
+                        }.also {
                             logger.info("Deduplicated: {}", task)
                             stats.dedupeSuccesses.add(className)
                         } ?: task.also {
