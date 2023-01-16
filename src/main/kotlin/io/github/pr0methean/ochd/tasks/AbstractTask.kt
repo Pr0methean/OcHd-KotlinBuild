@@ -47,6 +47,10 @@ abstract class AbstractTask<out T>(
         }
     }
 
+    /**
+     * Called once a dependent task has retrieved the output, so that we can disable caching and free up heap space once
+     * all dependents have done so.
+     */
     suspend fun removeDirectDependentTask(task: AbstractTask<*>) {
         if (mutex.withLock {
                 directDependentTasks.remove(task)
