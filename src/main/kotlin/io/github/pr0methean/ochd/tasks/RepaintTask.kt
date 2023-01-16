@@ -80,7 +80,7 @@ class RepaintTask(
 
     override fun mergeWithDuplicate(other: AbstractTask<*>): AbstractImageTask {
         if (other is RepaintTask && other !== this && other.base !== base) {
-            LOGGER.debug("Merging RepaintTask {} with duplicate {}", name, other.name)
+            logger.debug("Merging RepaintTask {} with duplicate {}", name, other.name)
             val newBase = base.mergeWithDuplicate(other.base)
             if (newBase !== base) {
                 return RepaintTask(newBase, paint, alpha, cache, ctx, stats)

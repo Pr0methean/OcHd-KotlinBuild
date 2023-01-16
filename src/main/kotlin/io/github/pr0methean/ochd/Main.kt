@@ -2,7 +2,6 @@ package io.github.pr0methean.ochd
 
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
 import io.github.pr0methean.ochd.tasks.PngOutputTask
-import io.github.pr0methean.ochd.tasks.doJfx
 import javafx.application.Platform
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -15,6 +14,7 @@ import kotlinx.coroutines.channels.getOrElse
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.plus
+import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox
@@ -74,7 +74,7 @@ suspend fun main(args: Array<String>) {
         ctx = coroutineContext
     )
     scope.launch {
-        doJfx("Increase rendering thread priority") {
+        withContext(Dispatchers.Main) {
             Thread.currentThread().priority = Thread.MAX_PRIORITY
         }
     }

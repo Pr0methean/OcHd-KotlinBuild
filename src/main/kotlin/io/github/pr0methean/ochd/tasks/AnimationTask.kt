@@ -47,7 +47,7 @@ class AnimationTask(
             return this
         }
         if (other is AnimationTask && (background !== other.background || frames !== other.frames)) {
-            LOGGER.debug("Merging AnimationTask {} with duplicate {}", name, other.name)
+            logger.debug("Merging AnimationTask {} with duplicate {}", name, other.name)
             val mergedFrames = frames.zip(other.frames).map { (a, b) -> if (a === b) a else a.mergeWithDuplicate(b) }
             val mergedBackground = background.mergeWithDuplicate(other.background)
             if (mergedBackground !== background || !mergedFrames.isShallowCopyOf(frames)) {

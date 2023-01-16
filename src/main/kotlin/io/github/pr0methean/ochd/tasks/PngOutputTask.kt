@@ -6,6 +6,7 @@ import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
 import kotlinx.coroutines.asContextElement
 import kotlinx.coroutines.withContext
+import org.apache.logging.log4j.LogManager
 import java.awt.image.BufferedImage
 import java.io.File
 import java.nio.file.Files
@@ -13,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap
 import javax.imageio.ImageIO
 import kotlin.coroutines.CoroutineContext
 
+private val logger = LogManager.getLogger("PngOutputTask")
 private val mkdirsedPaths = ConcurrentHashMap.newKeySet<File>()
 private val threadLocalBimg: ThreadLocal<BufferedImage?> = ThreadLocal.withInitial { null }
 
@@ -30,7 +32,7 @@ class PngOutputTask(
     override val directDependencies: Iterable<AbstractTask<*>> = listOf(base)
     override fun mergeWithDuplicate(other: AbstractTask<*>): AbstractTask<Unit> {
         if (other is PngOutputTask && other !== this && other.base !== base) {
-            LOGGER.debug("Merging PngOutputTask {} with duplicate {}", name, other.name)
+            logger.debug("Merging PngOutputTask {} with duplicate {}", name, other.name)
             val mergedBase = base.mergeWithDuplicate(other.base)
             if (mergedBase !== base || files.toSet() != other.files.toSet()) {
                 return PngOutputTask(

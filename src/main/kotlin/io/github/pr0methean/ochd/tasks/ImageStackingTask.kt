@@ -40,7 +40,7 @@ class ImageStackingTask(
 
     override fun mergeWithDuplicate(other: AbstractTask<*>): AbstractImageTask {
         if (this !== other && other is ImageStackingTask && other.layers !== layers) {
-            LOGGER.debug("Merging ImageStackingTask {} with duplicate {}", name, other.name)
+            logger.debug("Merging ImageStackingTask {} with duplicate {}", name, other.name)
             val mergedLayers = layers.mergeWithDuplicate(other.layers)
             if (!mergedLayers.layers.isShallowCopyOf(layers.layers)) {
                 return ImageStackingTask(mergedLayers, cache, ctx, stats)

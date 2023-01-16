@@ -19,8 +19,8 @@ import javax.annotation.concurrent.GuardedBy
 import kotlin.coroutines.CoroutineContext
 import kotlin.system.exitProcess
 
-val AT_LOGGER: Logger = LogManager.getLogger("AbstractTask")
-private val SUPERVISOR_JOB = SupervisorJob()
+val abstractTaskLogger: Logger = LogManager.getLogger("AbstractTask")
+private val supervisorJob = SupervisorJob()
 
 /**
  * Unit of work that wraps its coroutine to support reuse (including under heap-constrained conditions).
@@ -32,7 +32,7 @@ abstract class AbstractTask<out T>(
     val ctx: CoroutineContext
 ) : StringBuilderFormattable {
     val coroutineScope: CoroutineScope by lazy {
-        CoroutineScope(ctx.plus(CoroutineName(name)).plus(SUPERVISOR_JOB))
+        CoroutineScope(ctx.plus(CoroutineName(name)).plus(supervisorJob))
     }
 
     protected val mutex: Mutex = Mutex()
@@ -43,7 +43,7 @@ abstract class AbstractTask<out T>(
         if (mutex.withLock {
                 directDependentTasks.add(task) && directDependentTasks.size >= 2 && cache.enable()
             }) {
-            AT_LOGGER.info("Enabling caching for {}", name)
+            abstractTaskLogger.info("Enabling caching for {}", name)
         }
     }
 
@@ -54,7 +54,7 @@ abstract class AbstractTask<out T>(
             }) {
             directDependencies.forEach { it.removeDirectDependentTask(this) }
             if (cache.disable()) {
-                AT_LOGGER.info("Disabled caching for {}", name)
+                abstractTaskLogger.info("Disabled caching for {}", name)
             }
         }
     }
@@ -68,7 +68,7 @@ abstract class AbstractTask<out T>(
     }
     abstract val directDependencies: Iterable<AbstractTask<*>>
     private val hashCode: Int by lazy {
-        AT_LOGGER.debug("Computing hash code for {}", name)
+        abstractTaskLogger.debug("Computing hash code for {}", name)
         computeHashCode()
     }
 
@@ -108,12 +108,12 @@ abstract class AbstractTask<out T>(
 
     @Suppress("DeferredIsResult")
     suspend inline fun start(): Deferred<T> = cache.computeIfAbsent {
-        AT_LOGGER.debug("Creating a new coroutine for {}", name)
+        abstractTaskLogger.debug("Creating a new coroutine for {}", name)
         coroutineScope.async(start = LAZY) {
             try {
                 return@async perform()
             } catch (t: Throwable) {
-                AT_LOGGER.fatal("{} failed due to {}: {}", name, t::class.simpleName, t.message)
+                abstractTaskLogger.fatal("{} failed due to {}: {}", name, t::class.simpleName, t.message)
                 exitProcess(1)
             }
         }
@@ -123,14 +123,14 @@ abstract class AbstractTask<out T>(
 
     @Suppress("UNCHECKED_CAST", "DeferredResultUnused")
     open fun mergeWithDuplicate(other: AbstractTask<*>): AbstractTask<T> {
-        AT_LOGGER.debug("Merging {} with duplicate {}", name, other.name)
+        abstractTaskLogger.debug("Merging {} with duplicate {}", name, other.name)
         if (other !== this && getNow() == null) {
             val otherCoroutine = other.cache.getNowAsync()
             if (otherCoroutine != null) {
                 cache.computeIfAbsent { otherCoroutine as Deferred<T> }
             }
         }
-        AT_LOGGER.debug("Done merging {} with duplicate {}", name, other.name)
+        abstractTaskLogger.debug("Done merging {} with duplicate {}", name, other.name)
         return this
     }
 
