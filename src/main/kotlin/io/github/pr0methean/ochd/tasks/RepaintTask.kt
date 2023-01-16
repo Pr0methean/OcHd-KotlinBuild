@@ -93,7 +93,7 @@ class RepaintTask(
     override fun startedOrAvailableSubtasks(): Int =
         if (isStartedOrAvailable()) {
             totalSubtasks
-        } else if (base.isStartedOrAvailable() || base.opaqueRepaints().any(ImageTask::isStartedOrAvailable)) {
+        } else if (base.isStartedOrAvailable() || base.opaqueRepaints().any(RepaintTask::isStartedOrAvailable)) {
             base.totalSubtasks
         } else {
             base.startedOrAvailableSubtasks()
@@ -110,7 +110,7 @@ class RepaintTask(
         return super.mergeWithDuplicate(other)
     }
 
-    override fun addOpaqueRepaint(repaint: ImageTask) {
+    override fun addOpaqueRepaint(repaint: RepaintTask) {
         if (alpha == 1.0) {
             base.addOpaqueRepaint(repaint)
         }
