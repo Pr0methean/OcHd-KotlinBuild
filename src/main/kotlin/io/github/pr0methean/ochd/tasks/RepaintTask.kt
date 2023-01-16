@@ -52,6 +52,7 @@ class RepaintTask(
 
     @Suppress("ReturnCount")
     private fun baseOrSoonestAvailableRepaint() : AbstractImageTask {
+        val myHash = System.identityHashCode(this)
         if (base.getNow() != null) {
             return base
         }
@@ -65,7 +66,7 @@ class RepaintTask(
             return base
         }
         base.opaqueRepaints().forEach {
-            if (it.isStartedOrAvailable()) {
+            if (System.identityHashCode(it) < myHash && it.isStartedOrAvailable()) {
                 logger.info("Repainting $it for ${this@RepaintTask}")
                 return it
             }
