@@ -15,7 +15,7 @@ val DEFAULT_SNAPSHOT_PARAMS: SnapshotParameters = SnapshotParameters().also {
 }
 
 fun <T> List<T>.isShallowCopyOf(other: List<T>): Boolean {
-    return size == other.size && indices.all { this[it] === other[it] }
+    return this === other || (size == other.size && indices.all { this[it] === other[it] })
 }
 
 fun StringBuilder.appendList(list: List<StringBuilderFormattable>, delim: String = ", "): StringBuilder {
