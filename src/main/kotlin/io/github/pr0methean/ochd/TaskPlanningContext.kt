@@ -91,6 +91,14 @@ class TaskPlanningContext(
         }
     }
 
+    fun addAllOpaqueRepaints() {
+        taskDeduplicationMap.values.filterIsInstance<RepaintTask>().forEach {
+            if (it.alpha == 1.0) {
+                it.base.addOpaqueRepaint(it)
+            }
+        }
+    }
+
     fun findSvgTask(name: String): SvgToBitmapTask {
         logger.debug("Looking up SvgToBitmapTask for {}", name)
         val task = svgTasks[name]

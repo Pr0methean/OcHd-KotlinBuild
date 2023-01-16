@@ -38,11 +38,6 @@ class RepaintTask(
     ctx: CoroutineContext,
     stats: ImageProcessingStats
 ): AbstractImageTask("{$base}@$paint@$alpha", cache, ctx, stats) {
-    init {
-        if (alpha == 1.0) {
-            base.addOpaqueRepaint(this)
-        }
-    }
 
     override suspend fun renderOnto(context: GraphicsContext, x: Double, y: Double) {
         if (alpha != 1.0 || isStartedOrAvailable() || mutex.withLock { directDependentTasks.size } > 1) {
