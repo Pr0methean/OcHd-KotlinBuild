@@ -24,12 +24,12 @@ sealed interface Wood: ShadowHighlightMaterial {
     val name: String
     fun LayerListBuilder.bark()
     fun LayerListBuilder.strippedLogSide()
-    fun LayerListBuilder.logTop()
-    fun LayerListBuilder.strippedLogTop()
+    fun LayerListBuilder.logTop(strippedLogTop: AbstractImageTask)
+    fun LayerListBuilder.strippedLogTop(strippedLogSide: AbstractImageTask)
     fun LayerListBuilder.trapdoor()
     fun LayerListBuilder.doorTop(doorBottom: AbstractImageTask, doorKnob: AbstractImageTask) {
-        copy { doorBottom() }
-        layer(doorKnob)
+        copy(doorBottom)
+        copy(doorKnob)
     }
     fun LayerListBuilder.doorBottom()
 
@@ -42,10 +42,12 @@ sealed interface Wood: ShadowHighlightMaterial {
             layer("doorKnobShadow", STONE.shadow)
         }
         val doorBottom = ctx.stack { doorBottom() }
+        val strippedLogSide = ctx.stack { strippedLogSide() }
+        val strippedLogTop = ctx.stack { strippedLogTop(strippedLogSide) }
         yield(ctx.out(ctx.stack { bark() }, "block/${name}_${logSynonym}"))
-        yield(ctx.out(ctx.stack { strippedLogSide() }, "block/stripped_${name}_${logSynonym}"))
-        yield(ctx.out(ctx.stack { strippedLogTop() }, "block/stripped_${name}_${logSynonym}_top"))
-        yield(ctx.out(ctx.stack { logTop() }, "block/${name}_${logSynonym}_top"))
+        yield(ctx.out(strippedLogSide, "block/stripped_${name}_${logSynonym}"))
+        yield(ctx.out(strippedLogTop, "block/stripped_${name}_${logSynonym}_top"))
+        yield(ctx.out(ctx.stack { logTop(strippedLogTop) }, "block/${name}_${logSynonym}_top"))
         yield(ctx.out(ctx.stack { trapdoor() }, "block/${name}_trapdoor"))
         yield(ctx.out(ctx.stack { doorTop(doorBottom, doorKnob) }, "block/${name}_door_top"))
         yield(ctx.out(doorBottom, "block/${name}_door_bottom"))
@@ -89,11 +91,6 @@ enum class OverworldWood(
             }
             layer("trapdoorHingesBig", STONE.shadow)
             layer("trapdoorHinges", STONE.highlight)
-        }
-
-        override fun LayerListBuilder.doorTop(doorBottom: AbstractImageTask, doorKnob: AbstractImageTask) {
-            copy { doorBottom() }
-            copy(doorKnob)
         }
 
         override fun LayerListBuilder.doorBottom() {
@@ -283,11 +280,6 @@ enum class OverworldWood(
             layer("trapdoorHinges", STONE.shadow)
         }
 
-        override fun LayerListBuilder.doorTop(doorBottom: AbstractImageTask, doorKnob: AbstractImageTask) {
-            copy {doorBottom()}
-            copy(doorKnob)
-        }
-
         override fun LayerListBuilder.doorBottom() {
             background(color)
             copy {
@@ -324,11 +316,6 @@ enum class OverworldWood(
             layer("borderLongDashes", highlight)
             layer("trapdoorHingesBig", STONE.color)
             layer("trapdoorHinges", STONE.shadow)
-        }
-
-        override fun LayerListBuilder.doorTop(doorBottom: AbstractImageTask, doorKnob: AbstractImageTask) {
-            copy {doorBottom()}
-            copy(doorKnob)
         }
 
         override fun LayerListBuilder.doorBottom() {
@@ -428,14 +415,14 @@ enum class OverworldWood(
         layer("borderShortDashes", highlight)
     }
 
-    override fun LayerListBuilder.logTop() {
-        copy {strippedLogTop()}
+    override fun LayerListBuilder.logTop(strippedLogTop: AbstractImageTask) {
+        copy(strippedLogTop)
         layer("borderSolid", barkColor)
         layer("borderDotted", barkShadow)
     }
 
-    override fun LayerListBuilder.strippedLogTop() {
-        copy { strippedLogSide() }
+    override fun LayerListBuilder.strippedLogTop(strippedLogSide: AbstractImageTask) {
+        copy(strippedLogSide)
         layer("ringsCentralBullseye", highlight)
         layer("rings", shadow)
     }
@@ -486,11 +473,6 @@ enum class Fungus(
                 layer("trapdoorHinges", STONE.shadow)
             }
 
-            override fun LayerListBuilder.doorTop(doorBottom: AbstractImageTask, doorKnob: AbstractImageTask) {
-                copy {doorBottom()}
-                copy(doorKnob)
-            }
-
             override fun LayerListBuilder.doorBottom() {
                 background(color)
                 layer("planksTopBorderVertical", shadow)
@@ -535,11 +517,6 @@ enum class Fungus(
             layer("trapdoorHinges", STONE.highlight)
         }
 
-        override fun LayerListBuilder.doorTop(doorBottom: AbstractImageTask, doorKnob: AbstractImageTask) {
-            copy {doorBottom()}
-            copy(doorKnob)
-        }
-
         override fun LayerListBuilder.doorBottom() {
             background(color)
             layer("planksTopBorderVertical", shadow)
@@ -577,14 +554,13 @@ enum class Fungus(
         layer("borderDotted", highlight)
     }
 
-    override fun LayerListBuilder.logTop() {
-        copy {strippedLogTop()}
+    override fun LayerListBuilder.logTop(strippedLogTop: AbstractImageTask) {
         layer("borderSolid", barkColor)
         layer("borderDotted", barkShadow)
     }
 
-    override fun LayerListBuilder.strippedLogTop() {
-        copy {strippedLogSide()}
+    override fun LayerListBuilder.strippedLogTop(strippedLogSide: AbstractImageTask) {
+        copy(strippedLogSide)
         layer("ringsCentralBullseye", shadow)
         layer("rings2", highlight)
     }
