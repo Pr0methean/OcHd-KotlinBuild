@@ -50,6 +50,7 @@ class RepaintTask(
         }
     }
 
+    @Suppress("ReturnCount")
     private fun baseOrSoonestAvailableRepaint() : AbstractImageTask {
         if (base.getNow() != null) {
             return base
