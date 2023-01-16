@@ -5,6 +5,8 @@ import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 
+private const val MAX_SUBLAYERS_TO_FLATTEN = 2
+
 @OcHdDslMarker
 class LayerListBuilder(val ctx: TaskPlanningContext) {
     private val layers: MutableList<AbstractImageTask> = mutableListOf()
@@ -47,14 +49,12 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
         if (source.background != Color.TRANSPARENT) {
             check(background == Color.TRANSPARENT) { "Source's background would overwrite an existing background" }
             check(layers.isEmpty()) { "Source's background would overwrite an existing layer" }
-            if (source.layers.size == 1) {
-                background = source.background
-            }
         }
-        if (source.layers.size > 1) { // Don't flatten sub-stacks since we want to deduplicate them
+        if (source.layers.size > MAX_SUBLAYERS_TO_FLATTEN) { // Lets us deduplicate larger subtasks
             layers.add(ctx.stack(source))
         } else {
-            copy(source.layers[0])
+            background = source.background
+            source.layers.forEach(::copy)
         }
     }
     fun copy(source: SingleTextureMaterial): Unit = source.copyTo(this)
