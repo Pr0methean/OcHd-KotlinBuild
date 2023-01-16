@@ -1,7 +1,6 @@
 package io.github.pr0methean.ochd.tasks
 
 import com.sun.prism.impl.Disposer
-import javafx.application.Platform
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -26,7 +25,7 @@ val SYSERR_SWITCHED: AtomicBoolean = AtomicBoolean(false)
  * logged to System.err while running.
  */
 @Suppress("BlockingMethodInNonBlockingContext")
-suspend inline fun <T> doJfx(name: String, crossinline jfxCode: CoroutineScope.() -> T): T = runCatching {
+suspend inline fun <T> doJfx(name: String, crossinline jfxCode: CoroutineScope.() -> T): T {
     if (SYSERR_SWITCHED.compareAndSet(false, true)) {
         System.setErr(ERR_CATCHER_STREAM)
     }
@@ -44,7 +43,7 @@ suspend inline fun <T> doJfx(name: String, crossinline jfxCode: CoroutineScope.(
             }
         }
     }
-    val interceptedStderr = caughtStderr.getAndSet(null)
+    val interceptedStderr = caughtStderr.get()
     if (interceptedStderr != null) {
         try {
             check(!interceptedStderr.contains("Exception:") && !interceptedStderr.contains("Error:")) {
@@ -55,13 +54,5 @@ suspend inline fun <T> doJfx(name: String, crossinline jfxCode: CoroutineScope.(
         }
     }
     LOGGER.info("Finished JFX task: {}", name)
-    result
-}.onFailure{ t ->
-    LOGGER.error("Error from JFX task", t)
-    // Start a new JFX thread if the old one crashed
-    try {
-        Platform.startup {}
-    } catch (e: IllegalStateException) {
-        LOGGER.debug("Error trying to restart JFX thread", e)
-    }
-}.getOrThrow()
+    return result
+}
