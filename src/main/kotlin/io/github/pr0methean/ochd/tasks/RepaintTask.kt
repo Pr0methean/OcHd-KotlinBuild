@@ -66,7 +66,10 @@ class RepaintTask(
         } else {
             ctx = context
             drawStep = {
-                base.renderOnto(it, x, y)
+                val baseTask = if (base.getNow() != null) base else base.opaqueRepaints().firstOrNull {
+                    task -> task.getNow()?.also { logger.info("Repainting $task for ${this@RepaintTask}") } != null
+                } ?: base
+                baseTask.renderOnto(it, x, y)
                 base.removeDirectDependentTask(this)
             }
         }
