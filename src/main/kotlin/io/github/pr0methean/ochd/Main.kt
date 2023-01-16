@@ -83,7 +83,6 @@ suspend fun main(args: Array<String>) {
     val time = measureNanoTime {
         stats.onTaskLaunched("Build task graph", "Build task graph")
         val tasks = ALL_MATERIALS.outputTasks(ctx).toSet()
-        ctx.addAllOpaqueRepaints()
         logger.debug("Got deduplicated output tasks")
         val depsBuildTask = scope.launch { tasks.forEach { it.registerRecursiveDependencies() }}
         logger.debug("Launched deps build task")
