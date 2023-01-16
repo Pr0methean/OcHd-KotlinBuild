@@ -4,12 +4,10 @@ import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.LayerList
 import io.github.pr0methean.ochd.isShallowCopyOf
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
-import javafx.application.Platform
 import javafx.scene.SnapshotParameters
 import javafx.scene.canvas.Canvas
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.image.Image
-import javafx.scene.image.WritableImage
 import javafx.scene.paint.Color
 import kotlinx.coroutines.sync.withLock
 import org.apache.logging.log4j.LogManager
@@ -69,15 +67,7 @@ class ImageStackingTask(
         logger.debug("Taking snapshot of {}", name)
         val params = SnapshotParameters()
         params.fill = background
-        val output = WritableImage(width.toInt(), height.toInt())
-        val snapshot = doJfx("Snapshot of $name") {
-            Platform.requestNextPulse()
-            canvas.snapshot(params, output)
-        }
-        logger.info("Canvas is now unreachable for {}", name)
-        if (snapshot.isError) {
-            throw snapshot.exception
-        }
+        val snapshot = snapshotCanvas(canvas, params)
         stats.onTaskCompleted("ImageStackingTask", name)
         return snapshot
     }

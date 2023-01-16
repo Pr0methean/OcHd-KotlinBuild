@@ -1,13 +1,10 @@
 package io.github.pr0methean.ochd.tasks
 
-import io.github.pr0methean.ochd.DEFAULT_SNAPSHOT_PARAMS
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.isShallowCopyOf
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
-import javafx.application.Platform.requestNextPulse
 import javafx.scene.canvas.Canvas
 import javafx.scene.image.Image
-import javafx.scene.image.WritableImage
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -84,15 +81,7 @@ class AnimationTask(
             }
         }
         frameTasks.joinAll()
-        val output = WritableImage(width, totalHeight)
-        doJfx("Snapshot of $name") {
-            requestNextPulse()
-            canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
-        }
-        logger.info("Canvas is now unreachable for {}", name)
-        if (output.isError) {
-            throw output.exception
-        }
+        val output = snapshotCanvas(canvas)
         stats.onTaskCompleted("AnimationTask", name)
         return output
     }

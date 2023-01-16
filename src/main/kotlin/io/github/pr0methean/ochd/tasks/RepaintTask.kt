@@ -1,16 +1,13 @@
 package io.github.pr0methean.ochd.tasks
 
-import io.github.pr0methean.ochd.DEFAULT_SNAPSHOT_PARAMS
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
-import javafx.application.Platform
 import javafx.scene.canvas.Canvas
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.effect.Blend
 import javafx.scene.effect.BlendMode.SRC_ATOP
 import javafx.scene.effect.ColorInput
 import javafx.scene.image.Image
-import javafx.scene.image.WritableImage
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.sync.withLock
 import org.apache.logging.log4j.LogManager
@@ -96,15 +93,7 @@ class RepaintTask(
         stats.onTaskLaunched("RepaintTask", name)
         val gfx = renderOntoInternal(null, 0.0, 0.0)
         val canvas = gfx.canvas
-        val output = WritableImage(canvas.width.toInt(), canvas.height.toInt())
-        val snapshot = doJfx(name) {
-            Platform.requestNextPulse()
-            canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
-        }
-        logger.info("Canvas is now unreachable for {}", name)
-        if (snapshot.isError) {
-            throw output.exception
-        }
+        val snapshot = snapshotCanvas(canvas)
         stats.onTaskCompleted("RepaintTask", name)
         return snapshot
     }
