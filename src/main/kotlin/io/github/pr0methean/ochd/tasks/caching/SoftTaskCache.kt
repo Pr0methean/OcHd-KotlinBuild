@@ -20,22 +20,22 @@ class SoftTaskCache<T>(
     }
 
     @Suppress("DeferredIsResult", "OVERRIDE_BY_INLINE")
-    override inline fun computeIfAbsent(coroutineCreator: () -> Deferred<T>): Deferred<T> {
-        val newCoroutine = coroutineCreator()
-        if (!isEnabled()) {
-            return newCoroutine
-        }
-        var currentCoroutineRef: SoftReference<out Deferred<T>?> = nullReference
-        val newCoroutineRef = SoftReference(newCoroutine)
+    override inline fun computeIfAbsent(crossinline coroutineCreator: () -> Deferred<T>): Deferred<T> {
+        var currentCoroutineRef: SoftReference<out Deferred<T>?> = coroutineRef.get()
+        val newCoroutine by lazy { coroutineCreator() }
+        val newCoroutineRef by lazy { SoftReference(newCoroutine) }
         while (true) {
-            val oldRef = currentCoroutineRef
-            currentCoroutineRef = coroutineRef.compareAndExchange(oldRef, newCoroutineRef)
-            if (currentCoroutineRef === oldRef || !isEnabled()) {
-                return newCoroutine
-            }
             val currentCoroutine = currentCoroutineRef.get()
             if (currentCoroutine != null) {
                 return currentCoroutine
+            }
+            if (!isEnabled()) {
+                return newCoroutine
+            }
+            val oldRef = currentCoroutineRef
+            currentCoroutineRef = coroutineRef.compareAndExchange(oldRef, newCoroutineRef)
+            if (currentCoroutineRef === oldRef) {
+                return newCoroutine
             }
             Thread.onSpinWait()
         }
