@@ -51,8 +51,12 @@ class AnimationTask(
         if (other is AnimationTask && (background !== other.background || frames !== other.frames)) {
             LOGGER.debug("Merging AnimationTask {} with duplicate {}", name, other.name)
             val mergedFrames = frames.zip(other.frames).map { (a, b) -> if (a === b) a else a.mergeWithDuplicate(b) }
-            return AnimationTask(background.mergeWithDuplicate(other.background), mergedFrames,
-                    width, height, name, cache, ctx, stats)
+            if (mergedFrames.indices.any { mergedFrames[it] !== frames[it] }) {
+                return AnimationTask(
+                    background.mergeWithDuplicate(other.background), mergedFrames,
+                    width, height, name, cache, ctx, stats
+                )
+            }
         }
         return super.mergeWithDuplicate(other)
     }

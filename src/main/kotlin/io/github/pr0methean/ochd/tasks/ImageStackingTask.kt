@@ -43,7 +43,10 @@ class ImageStackingTask(
         if (this !== other && other is ImageStackingTask && other.layers !== layers) {
             LOGGER.debug("Merging ImageStackingTask {} with duplicate {}", name, other.name)
             val mergedLayers = layers.mergeWithDuplicate(other.layers)
-            return ImageStackingTask(mergedLayers, cache, ctx, stats)
+            if (mergedLayers.background !== layers.background
+                || mergedLayers.layers.indices.any { mergedLayers.layers[it] !== layers.layers[it] }) {
+                return ImageStackingTask(mergedLayers, cache, ctx, stats)
+            }
         }
         return super.mergeWithDuplicate(other)
     }
