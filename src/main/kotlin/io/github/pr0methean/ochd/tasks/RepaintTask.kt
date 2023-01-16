@@ -45,12 +45,12 @@ class RepaintTask(
         } else {
             logger.info("Rendering {} onto an existing canvas", name)
             stats.onTaskLaunched("RepaintTask", name)
-            internalRenderOnto(context, x, y)
+            renderOntoInternal(context, x, y)
             stats.onTaskCompleted("RepaintTask", name)
         }
     }
 
-    private suspend fun internalRenderOnto(context: GraphicsContext?, x: Double, y: Double): GraphicsContext {
+    private suspend fun renderOntoInternal(context: GraphicsContext?, x: Double, y: Double): GraphicsContext {
         val drawStep: suspend (GraphicsContext) -> Unit
         val ctx: GraphicsContext
         if (context == null) {
@@ -94,7 +94,7 @@ class RepaintTask(
 
     override suspend fun perform(): Image {
         stats.onTaskLaunched("RepaintTask", name)
-        val gfx = internalRenderOnto(null, 0.0, 0.0)
+        val gfx = renderOntoInternal(null, 0.0, 0.0)
         val canvas = gfx.canvas
         val output = WritableImage(canvas.width.toInt(), canvas.height.toInt())
         val snapshot = doJfx(name) {

@@ -36,8 +36,8 @@ suspend inline fun <T> doJfx(name: String, crossinline jfxCode: CoroutineScope.(
         try {
             jfxCode()
         } finally {
-            ERR_CATCHER_STREAM.flush()
             Disposer.cleanUp()
+            ERR_CATCHER_STREAM.flush()
             if (ERR_CATCHER.size() > 0) {
                 caughtStderr.set(ERR_CATCHER.toString(DEFAULT_CHARSET))
                 ERR_CATCHER.reset()
