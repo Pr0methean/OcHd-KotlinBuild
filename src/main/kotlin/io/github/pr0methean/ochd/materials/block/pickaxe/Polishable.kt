@@ -8,8 +8,6 @@ import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 
 @Suppress("unused")
 enum class Polishable(
@@ -18,21 +16,21 @@ enum class Polishable(
     override val highlight: Paint
 ): ShadowHighlightMaterial {
     ANDESITE(c(0x8b8b8b),c(0x737373),c(0xaaaaaa)) {
-        override suspend fun LayerListBuilder.createTextureLayersBase() {
+        override fun LayerListBuilder.createTextureLayersBase() {
             background(color)
             layer("bigRingsBottomLeftTopRight", highlight)
             layer("bigRingsTopLeftBottomRight", shadow)
         }
     },
     DIORITE(c(0xbfbfbf),c(0x888888), Color.WHITE) {
-        override suspend fun LayerListBuilder.createTextureLayersBase() {
+        override fun LayerListBuilder.createTextureLayersBase() {
             background(color)
             layer("bigRingsBottomLeftTopRight", shadow)
             layer("bigRingsTopLeftBottomRight", highlight)
         }
     },
     GRANITE(c(0x9f6b58),c(0x624033),c(0xFFCDB2)) {
-        override suspend fun LayerListBuilder.createTextureLayersBase() {
+        override fun LayerListBuilder.createTextureLayersBase() {
             background(color)
             layer("bigDotsBottomLeftTopRight", highlight)
             layer("bigDotsTopLeftBottomRight", shadow)
@@ -41,21 +39,21 @@ enum class Polishable(
         }
     },
     BLACKSTONE(c(0x2e2e36), Color.BLACK,c(0x515151)) {
-        override suspend fun LayerListBuilder.createTextureLayersBase() {
+        override fun LayerListBuilder.createTextureLayersBase() {
             background(shadow)
             layer("bigDotsBottomLeftTopRight", highlight)
             layer("bigDotsTopLeftBottomRight", color)
         }
-        override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<PngOutputTask> = flow {
+        override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
 
-            emit(ctx.out(ctx.stack { createTextureLayersBase() }, "block/blackstone"))
+            yield(ctx.out(ctx.stack { createTextureLayersBase() }, "block/blackstone"))
             val polishedTextureTask = ctx.stack { createPolishedTexture() }
-            emit(ctx.out(polishedTextureTask, "block/polished_blackstone"))
-            emit(ctx.out(ctx.stack {
+            yield(ctx.out(polishedTextureTask, "block/polished_blackstone"))
+            yield(ctx.out(ctx.stack {
                 copy(polishedTextureTask)
                 layer("bigRingsBottomLeftTopRight", GOLD.color)
             }, "block/gilded_blackstone"))
-            emit(ctx.out(ctx.stack {
+            yield(ctx.out(ctx.stack {
                 background(shadow)
                 layer("bigRingsBottomLeftTopRight", color)
                 layer("bigRingsTopLeftBottomRight", highlight)
@@ -63,18 +61,18 @@ enum class Polishable(
         }
     };
 
-    abstract suspend fun LayerListBuilder.createTextureLayersBase()
-    private suspend fun LayerListBuilder.createBorderPolished() {
+    abstract fun LayerListBuilder.createTextureLayersBase()
+    private fun LayerListBuilder.createBorderPolished() {
         layer("borderSolid", shadow)
         layer("borderSolidTopLeft", highlight)
     }
 
-    override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<PngOutputTask> = flow {
-        emit(ctx.out(ctx.stack {createTextureLayersBase()}, "block/$name"))
-        emit(ctx.out(ctx.stack {createPolishedTexture()}, "block/polished_$name"))
+    override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
+        yield(ctx.out(ctx.stack {createTextureLayersBase()}, "block/$name"))
+        yield(ctx.out(ctx.stack {createPolishedTexture()}, "block/polished_$name"))
     }
 
-    internal suspend fun LayerListBuilder.createPolishedTexture() {
+    internal fun LayerListBuilder.createPolishedTexture() {
         createTextureLayersBase()
         createBorderPolished()
     }

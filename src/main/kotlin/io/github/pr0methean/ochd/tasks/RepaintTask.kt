@@ -29,7 +29,7 @@ private val logger = LogManager.getLogger("RepaintTask")
  * @paint the image's new color
  * @alpha a multiplier applied to the image's opacity
  */
-@Suppress("EqualsWithHashCodeExist")
+@Suppress("EqualsWithHashCodeExist", "EqualsOrHashCode")
 class RepaintTask(
     val base: AbstractImageTask,
     val paint: Paint?,
@@ -81,9 +81,13 @@ class RepaintTask(
         return ctx
     }
 
-    override suspend fun mergeWithDuplicate(other: AbstractTask<*>): AbstractImageTask {
-        if (other is RepaintTask) {
-            base.mergeWithDuplicate(other.base)
+    override fun mergeWithDuplicate(other: AbstractTask<*>): AbstractImageTask {
+        if (other is RepaintTask && other !== this && other.base !== base) {
+            LOGGER.debug("Merging RepaintTask {} with duplicate {}", name, other.name)
+            val newBase = base.mergeWithDuplicate(other.base)
+            if (newBase !== base) {
+                return RepaintTask(newBase, paint, alpha, cache, ctx, stats)
+            }
         }
         return super.mergeWithDuplicate(other)
     }
@@ -107,12 +111,12 @@ class RepaintTask(
 
     override val directDependencies: List<AbstractImageTask> = listOf(base)
 
+    override fun computeHashCode(): Int = Objects.hash(base, paint, alpha)
+
     override fun equals(other: Any?): Boolean {
         return (this === other) || (other is RepaintTask
                 && other.base == base
                 && other.paint == paint
                 && other.alpha == alpha)
     }
-
-    override fun computeHashCode(): Int = Objects.hash(base, paint, alpha)
 }

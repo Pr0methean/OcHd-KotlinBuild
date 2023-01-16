@@ -9,7 +9,7 @@ import javafx.scene.paint.Color
 @Suppress("unused")
 enum class SimpleShearBlock: SingleTextureMaterial, Block {
     COBWEB {
-        override suspend fun LayerListBuilder.createTextureLayers() {
+        override fun LayerListBuilder.createTextureLayers() {
             layer("ringsCentralBullseye", Color.WHITE, 0.75)
             layer("strokeBottomLeftTopRight", Color.WHITE, 0.85)
             layer("strokeTopLeftBottomRight", Color.WHITE, 0.85)
@@ -17,7 +17,7 @@ enum class SimpleShearBlock: SingleTextureMaterial, Block {
         }
     },
     VINE {
-        override suspend fun LayerListBuilder.createTextureLayers() {
+        override fun LayerListBuilder.createTextureLayers() {
             layer("wavyVines", DirtGroundCover.GRASS_BLOCK.highlight)
             layer("waves", DirtGroundCover.GRASS_BLOCK.shadow)
         }

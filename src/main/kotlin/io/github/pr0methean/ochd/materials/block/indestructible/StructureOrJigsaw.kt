@@ -18,7 +18,7 @@ enum class StructureOrJigsaw(private val foregroundLayer: String?)
     STRUCTURE_BLOCK_CORNER("cornerCrosshairs"),
     STRUCTURE_BLOCK_DATA("data"),
     STRUCTURE_BLOCK_LOAD("folderLoad") {
-        override suspend fun LayerListBuilder.createTextureLayers() {
+        override fun LayerListBuilder.createTextureLayers() {
             copy {
                 backgroundAndBorder()
                 layer("folder", color)
@@ -27,7 +27,7 @@ enum class StructureOrJigsaw(private val foregroundLayer: String?)
         }
     },
     STRUCTURE_BLOCK_SAVE("folderSave") {
-        override suspend fun LayerListBuilder.createTextureLayers() {
+        override fun LayerListBuilder.createTextureLayers() {
             copy {
                 backgroundAndBorder()
                 layer("folder", color)
@@ -39,12 +39,12 @@ enum class StructureOrJigsaw(private val foregroundLayer: String?)
     override val color: Color = c(0xb493b4)
     override val shadow: Color = c(0x26002a)
     override val highlight: Color = c(0xd7c2d7)
-    override suspend fun LayerListBuilder.createTextureLayers() {
+    override fun LayerListBuilder.createTextureLayers() {
         backgroundAndBorder()
         foregroundLayer?.let { layer(it, highlight) }
     }
 
-    protected suspend fun LayerListBuilder.backgroundAndBorder() {
+    protected fun LayerListBuilder.backgroundAndBorder() {
         copy {
             background(shadow)
             layer("borderDotted", color)

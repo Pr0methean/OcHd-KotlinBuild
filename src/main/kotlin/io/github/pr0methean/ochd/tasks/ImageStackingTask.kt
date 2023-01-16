@@ -20,7 +20,7 @@ private val logger = LogManager.getLogger("ImageStackingTask")
 /**
  * Task that superimposes multiple images onto a background.
  */
-@Suppress("EqualsWithHashCodeExist")
+@Suppress("EqualsWithHashCodeExist", "EqualsOrHashCode")
 class ImageStackingTask(
     val layers: LayerList,
     cache: DeferredTaskCache<Image>,
@@ -30,24 +30,25 @@ class ImageStackingTask(
     @Suppress("MagicNumber")
     override fun computeHashCode(): Int = layers.hashCode() + 37
 
-    init {
-        require(layers.layers.isNotEmpty()) { "Empty layer list" }
-    }
-
-    override suspend fun mergeWithDuplicate(other: AbstractTask<*>): AbstractImageTask {
-        val deduped = super.mergeWithDuplicate(other)
-        if (deduped !== other && deduped is ImageStackingTask && other is ImageStackingTask) {
-            deduped.layers.mergeWithDuplicate(other.layers)
-        }
-        return deduped
-    }
-
-    override val directDependencies: List<AbstractImageTask> = layers.layers
-
     override fun equals(other: Any?): Boolean {
         return (this === other) || (other is ImageStackingTask
                 && other.layers == layers)
     }
+
+    init {
+        require(layers.layers.isNotEmpty()) { "Empty layer list" }
+    }
+
+    override fun mergeWithDuplicate(other: AbstractTask<*>): AbstractImageTask {
+        if (this !== other && other is ImageStackingTask && other.layers !== layers) {
+            LOGGER.debug("Merging ImageStackingTask {} with duplicate {}", name, other.name)
+            val mergedLayers = layers.mergeWithDuplicate(other.layers)
+            return ImageStackingTask(mergedLayers, cache, ctx, stats)
+        }
+        return super.mergeWithDuplicate(other)
+    }
+
+    override val directDependencies: List<AbstractImageTask> = layers.layers
 
     @Suppress("DeferredResultUnused")
     override suspend fun perform(): Image {

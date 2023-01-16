@@ -7,8 +7,6 @@ import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.texturebase.Block
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Color
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 
 enum class OreBase(
     override val color: Color,
@@ -17,29 +15,29 @@ enum class OreBase(
     val orePrefix: String
 ) : Block, ShadowHighlightMaterial {
     STONE(c(0x888888), c(0x737373), c(0xaaaaaa), "") {
-        override suspend fun LayerListBuilder.createTextureLayers() {
+        override fun LayerListBuilder.createTextureLayers() {
             background(STONE.shadow)
             layer("checksLarge", STONE.highlight)
             layer("borderDotted", STONE.color)
         }
     },
     DEEPSLATE(c(0x515151), c(0x2f2f3f), c(0x737373), "deepslate_") {
-        override suspend fun LayerListBuilder.createTextureLayers() {
+        override fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("diagonalChecksBottomLeftTopRight", DEEPSLATE.highlight)
             layer("diagonalChecksTopLeftBottomRight", DEEPSLATE.shadow)
         }
 
-        override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<PngOutputTask> = flow {
+        override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
             val baseTexture = ctx.stack {createTextureLayers()}
-            emit(ctx.out(baseTexture, "block/deepslate"))
-            emit(ctx.out(ctx.stack {
+            yield(ctx.out(baseTexture, "block/deepslate"))
+            yield(ctx.out(ctx.stack {
                 copy(baseTexture)
                 layer("bricksSmall", shadow)
                 layer("borderDotted", highlight)
                 layer("borderDottedBottomRight", shadow)
             }, "block/deepslate_bricks"))
-            emit(ctx.out(ctx.stack {
+            yield(ctx.out(ctx.stack {
                 copy(baseTexture)
                 layer("cross", shadow)
                 layer("borderSolid", highlight)
@@ -47,7 +45,7 @@ enum class OreBase(
         }
     },
     NETHERRACK(c(0x723232), c(0x411616), c(0x854242), "nether_") {
-        override suspend fun LayerListBuilder.createTextureLayers() {
+        override fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("diagonalChecksTopLeftBottomRight", shadow)
             layer("diagonalChecksBottomLeftTopRight", highlight)

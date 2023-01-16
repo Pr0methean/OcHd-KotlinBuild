@@ -10,8 +10,6 @@ import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 
 sealed interface Wood: ShadowHighlightMaterial {
     val barkColor: Paint
@@ -24,38 +22,39 @@ sealed interface Wood: ShadowHighlightMaterial {
     val leavesSynonym: String
     val saplingSynonym: String
     val name: String
-    suspend fun LayerListBuilder.bark()
-    suspend fun LayerListBuilder.strippedLogSide()
-    suspend fun LayerListBuilder.logTop()
-    suspend fun LayerListBuilder.strippedLogTop()
-    suspend fun LayerListBuilder.trapdoor()
-    suspend fun LayerListBuilder.doorTop(doorKnob: AbstractImageTask) {
+    fun LayerListBuilder.bark()
+    fun LayerListBuilder.strippedLogSide()
+    fun LayerListBuilder.logTop()
+    fun LayerListBuilder.strippedLogTop()
+    fun LayerListBuilder.trapdoor()
+    fun LayerListBuilder.doorTop(doorBottom: AbstractImageTask, doorKnob: AbstractImageTask) {
         copy { doorBottom() }
         layer(doorKnob)
     }
-    suspend fun LayerListBuilder.doorBottom()
+    fun LayerListBuilder.doorBottom()
 
-    suspend fun LayerListBuilder.leaves()
-    suspend fun LayerListBuilder.sapling()
+    fun LayerListBuilder.leaves()
+    fun LayerListBuilder.sapling()
 
-    override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<PngOutputTask> = flow {
+    override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
         val doorKnob = ctx.stack {
             layer("doorKnob", STONE.highlight)
             layer("doorKnobShadow", STONE.shadow)
         }
-        emit(ctx.out(ctx.stack { bark() }, "block/${name}_${logSynonym}"))
-        emit(ctx.out(ctx.stack { strippedLogSide() }, "block/stripped_${name}_${logSynonym}"))
-        emit(ctx.out(ctx.stack { strippedLogTop() }, "block/stripped_${name}_${logSynonym}_top"))
-        emit(ctx.out(ctx.stack { logTop() }, "block/${name}_${logSynonym}_top"))
-        emit(ctx.out(ctx.stack { trapdoor() }, "block/${name}_trapdoor"))
-        emit(ctx.out(ctx.stack { doorTop(doorKnob) }, "block/${name}_door_top"))
-        emit(ctx.out(ctx.stack { doorBottom() }, "block/${name}_door_bottom"))
-        emit(ctx.out(ctx.stack { leaves() }, "block/${name}_${leavesSynonym}"))
-        emit(ctx.out(ctx.stack { sapling() }, "block/${name}_${saplingSynonym}"))
-        emit(ctx.out(ctx.stack { planks() }, "block/${name}_planks"))
+        val doorBottom = ctx.stack { doorBottom() }
+        yield(ctx.out(ctx.stack { bark() }, "block/${name}_${logSynonym}"))
+        yield(ctx.out(ctx.stack { strippedLogSide() }, "block/stripped_${name}_${logSynonym}"))
+        yield(ctx.out(ctx.stack { strippedLogTop() }, "block/stripped_${name}_${logSynonym}_top"))
+        yield(ctx.out(ctx.stack { logTop() }, "block/${name}_${logSynonym}_top"))
+        yield(ctx.out(ctx.stack { trapdoor() }, "block/${name}_trapdoor"))
+        yield(ctx.out(ctx.stack { doorTop(doorBottom, doorKnob) }, "block/${name}_door_top"))
+        yield(ctx.out(doorBottom, "block/${name}_door_bottom"))
+        yield(ctx.out(ctx.stack { leaves() }, "block/${name}_${leavesSynonym}"))
+        yield(ctx.out(ctx.stack { sapling() }, "block/${name}_${saplingSynonym}"))
+        yield(ctx.out(ctx.stack { planks() }, "block/${name}_planks"))
     }
 
-    suspend fun LayerListBuilder.planks() {
+    fun LayerListBuilder.planks() {
         background(color)
         layer("waves", shadow)
         layer("waves2", highlight)
@@ -82,7 +81,7 @@ enum class OverworldWood(
         barkHighlight = c(0x898977),
         barkShadow = c(0x4a4a39),
     ) {
-        override suspend fun LayerListBuilder.trapdoor() {
+        override fun LayerListBuilder.trapdoor() {
             copy {
                 layer("borderSolidThick", color)
                 layer("borderSolid", highlight)
@@ -92,12 +91,12 @@ enum class OverworldWood(
             layer("trapdoorHinges", STONE.highlight)
         }
 
-        override suspend fun LayerListBuilder.doorTop(doorKnob: AbstractImageTask) {
+        override fun LayerListBuilder.doorTop(doorBottom: AbstractImageTask, doorKnob: AbstractImageTask) {
             copy { doorBottom() }
             copy(doorKnob)
         }
 
-        override suspend fun LayerListBuilder.doorBottom() {
+        override fun LayerListBuilder.doorBottom() {
             copy {
                 layer("borderSolidThick", color)
                 layer("borderSolid", highlight)
@@ -109,12 +108,12 @@ enum class OverworldWood(
             layer("doorHinges", STONE.highlight)
         }
 
-        override suspend fun LayerListBuilder.leaves() {
+        override fun LayerListBuilder.leaves() {
             layer("leaves1", leavesShadow)
             layer("leaves1a", leavesHighlight)
         }
 
-        override suspend fun LayerListBuilder.sapling() {
+        override fun LayerListBuilder.sapling() {
             layer("saplingStem", barkColor)
             layer("acaciaSapling", c(0x6c9e38))
             layer("acaciaSapling2", c(0xc9d7a5))
@@ -128,7 +127,7 @@ enum class OverworldWood(
         barkHighlight = Color.WHITE,
         barkShadow = c(0x5f5f4f)
     ) {
-        override suspend fun LayerListBuilder.trapdoor() {
+        override fun LayerListBuilder.trapdoor() {
             copy {
                 background(Color.WHITE)
                 layer("borderSolidExtraThick", color)
@@ -139,7 +138,7 @@ enum class OverworldWood(
             layer("trapdoorHingesBig", STONE.shadow)
         }
 
-        override suspend fun LayerListBuilder.doorTop(doorKnob: AbstractImageTask) {
+        override fun LayerListBuilder.doorTop(doorBottom: AbstractImageTask, doorKnob: AbstractImageTask) {
             copy {
                 background(Color.WHITE)
                 layer("borderSolidExtraThick", color)
@@ -151,7 +150,7 @@ enum class OverworldWood(
             copy(doorKnob)
         }
 
-        override suspend fun LayerListBuilder.doorBottom() {
+        override fun LayerListBuilder.doorBottom() {
             background(highlight)
             layer("borderSolidExtraThick", color)
             layer("craftingGridSquare", shadow)
@@ -160,12 +159,12 @@ enum class OverworldWood(
             layer("doorHingesBig", STONE.shadow)
         }
 
-        override suspend fun LayerListBuilder.leaves() {
+        override fun LayerListBuilder.leaves() {
             layer("leaves2", leavesHighlight)
             layer("leaves2a", leavesShadow)
         }
 
-        override suspend fun LayerListBuilder.sapling() {
+        override fun LayerListBuilder.sapling() {
             layer("saplingStem", barkColor)
             layer("flowerStemBottomBorder", barkShadow)
             layer("saplingLeaves", c(0x6c9e38))
@@ -179,7 +178,7 @@ enum class OverworldWood(
         barkShadow = c(0x2b2000),
         barkHighlight = c(0x624033)
     ) {
-        override suspend fun LayerListBuilder.trapdoor() {
+        override fun LayerListBuilder.trapdoor() {
             copy {
                 background(color)
                 layer("borderSolid", highlight)
@@ -190,12 +189,12 @@ enum class OverworldWood(
             layer("trapdoorHingesBig", STONE.highlight)
         }
 
-        override suspend fun LayerListBuilder.doorTop(doorKnob: AbstractImageTask) {
-            copy {doorBottom()}
+        override fun LayerListBuilder.doorTop(doorBottom: AbstractImageTask, doorKnob: AbstractImageTask) {
+            copy(doorBottom)
             copy(doorKnob)
         }
 
-        override suspend fun LayerListBuilder.doorBottom() {
+        override fun LayerListBuilder.doorBottom() {
             copy {
                 background(color)
                 layer("borderSolid", highlight)
@@ -206,12 +205,12 @@ enum class OverworldWood(
             layer("doorHingesBig", STONE.highlight)
         }
 
-        override suspend fun LayerListBuilder.leaves() {
+        override fun LayerListBuilder.leaves() {
             layer("leaves3", leavesShadow)
             layer("leaves3a", leavesHighlight)
         }
 
-        override suspend fun LayerListBuilder.sapling() {
+        override fun LayerListBuilder.sapling() {
             layer("saplingStem", barkColor)
             layer("bigCircle", c(0x005c00))
             layer("bigCircleTwoQuarters", c(0x57ad3f))
@@ -225,7 +224,7 @@ enum class OverworldWood(
         barkShadow = c(0x2B2000),
         barkHighlight = c(0x8A593A)
     ) {
-        override suspend fun LayerListBuilder.trapdoor() {
+        override fun LayerListBuilder.trapdoor() {
             layer("trapdoor2", color)
             layer("borderSolid", shadow)
             layer("borderShortDashes", highlight)
@@ -233,7 +232,7 @@ enum class OverworldWood(
             layer("trapdoorHinges", STONE.color)
         }
 
-        override suspend fun LayerListBuilder.doorTop(doorKnob: AbstractImageTask) {
+        override fun LayerListBuilder.doorTop(doorBottom: AbstractImageTask, doorKnob: AbstractImageTask) {
             layer("trapdoor2", color)
             layer("borderShortDashes", highlight)
             copy {
@@ -243,7 +242,7 @@ enum class OverworldWood(
             copy(doorKnob)
         }
 
-        override suspend fun LayerListBuilder.doorBottom() {
+        override fun LayerListBuilder.doorBottom() {
             background(color)
             layer("waves", highlight)
             layer("planksTopBorderVertical", shadow)
@@ -255,12 +254,12 @@ enum class OverworldWood(
             }
         }
 
-        override suspend fun LayerListBuilder.leaves() {
+        override fun LayerListBuilder.leaves() {
             layer("leaves6", leavesHighlight)
             layer("leaves6a", leavesShadow)
         }
 
-        override suspend fun LayerListBuilder.sapling() {
+        override fun LayerListBuilder.sapling() {
             layer("saplingStem", barkColor)
             layer("acaciaSapling", c(0x378020))
         }
@@ -274,7 +273,7 @@ enum class OverworldWood(
         barkShadow = c(0x4a4a39)
     ) {
         override val saplingSynonym: String = "propagule"
-        override suspend fun LayerListBuilder.trapdoor() {
+        override fun LayerListBuilder.trapdoor() {
             layer("ringsHole", color)
             copy {
                 layer("rings2", shadow)
@@ -284,12 +283,12 @@ enum class OverworldWood(
             layer("trapdoorHinges", STONE.shadow)
         }
 
-        override suspend fun LayerListBuilder.doorTop(doorKnob: AbstractImageTask) {
+        override fun LayerListBuilder.doorTop(doorBottom: AbstractImageTask, doorKnob: AbstractImageTask) {
             copy {doorBottom()}
             copy(doorKnob)
         }
 
-        override suspend fun LayerListBuilder.doorBottom() {
+        override fun LayerListBuilder.doorBottom() {
             background(color)
             copy {
                 layer("rings2", shadow)
@@ -299,13 +298,13 @@ enum class OverworldWood(
             layer("doorHinges", STONE.shadow)
         }
 
-        override suspend fun LayerListBuilder.leaves() {
+        override fun LayerListBuilder.leaves() {
             layer("leaves5", leavesHighlight)
             layer("leaves5a", leavesColor)
             layer("leaves5b", leavesShadow)
         }
 
-        override suspend fun LayerListBuilder.sapling() {
+        override fun LayerListBuilder.sapling() {
             layer("mangrovePropagule", c(0x4aa54a))
             layer("flowerStemBottomBorder", c(0x748241))
         }
@@ -318,7 +317,7 @@ enum class OverworldWood(
         barkHighlight = c(0x624033),
         barkShadow = c(0x2b2000)
     ) {
-        override suspend fun LayerListBuilder.trapdoor() {
+        override fun LayerListBuilder.trapdoor() {
             background(shadow)
             layer("planksTopVertical", color)
             layer("borderSolidThick", shadow)
@@ -327,23 +326,23 @@ enum class OverworldWood(
             layer("trapdoorHinges", STONE.shadow)
         }
 
-        override suspend fun LayerListBuilder.doorTop(doorKnob: AbstractImageTask) {
+        override fun LayerListBuilder.doorTop(doorBottom: AbstractImageTask, doorKnob: AbstractImageTask) {
             copy {doorBottom()}
             copy(doorKnob)
         }
 
-        override suspend fun LayerListBuilder.doorBottom() {
+        override fun LayerListBuilder.doorBottom() {
             copy {planks()}
             layer("doorHingesBig", STONE.color)
             layer("doorHinges", STONE.shadow)
         }
 
-        override suspend fun LayerListBuilder.leaves() {
+        override fun LayerListBuilder.leaves() {
             layer("leaves3", leavesHighlight)
             layer("leaves3b", leavesShadow)
         }
 
-        override suspend fun LayerListBuilder.sapling() {
+        override fun LayerListBuilder.sapling() {
             layer("saplingStem", barkHighlight)
             layer("spruceSapling", c(0x2e492e))
         }
@@ -356,7 +355,7 @@ enum class OverworldWood(
         barkHighlight = c(0x987849),
         barkShadow = c(0x4a4a39)
     ) {
-        override suspend fun LayerListBuilder.trapdoor() {
+        override fun LayerListBuilder.trapdoor() {
             copy {
                 layer("borderSolidThick", color)
                 layer("borderSolid", highlight)
@@ -368,7 +367,7 @@ enum class OverworldWood(
             layer("trapdoorHinges", STONE.highlight)
         }
 
-        override suspend fun LayerListBuilder.doorTop(doorKnob: AbstractImageTask) {
+        override fun LayerListBuilder.doorTop(doorBottom: AbstractImageTask, doorKnob: AbstractImageTask) {
             copy {
                 layer("borderSolidThick", color)
                 layer("borderSolid", highlight)
@@ -385,7 +384,7 @@ enum class OverworldWood(
             }
         }
 
-        override suspend fun LayerListBuilder.doorBottom() {
+        override fun LayerListBuilder.doorBottom() {
             background(color)
             layer("waves", highlight)
             copy {
@@ -401,12 +400,12 @@ enum class OverworldWood(
             }
         }
 
-        override suspend fun LayerListBuilder.leaves() {
+        override fun LayerListBuilder.leaves() {
             layer("leaves4", leavesShadow)
             layer("leaves4a", leavesHighlight)
         }
 
-        override suspend fun LayerListBuilder.sapling() {
+        override fun LayerListBuilder.sapling() {
             layer("coalBorder", c(0x005c00))
             layer("saplingStem", barkColor)
             layer("coal", c(0x57ad3f))
@@ -415,7 +414,7 @@ enum class OverworldWood(
     };
 
 
-    override suspend fun LayerListBuilder.bark() {
+    override fun LayerListBuilder.bark() {
         background(barkColor)
         layer("borderSolid", barkShadow)
         layer("borderDotted", barkHighlight)
@@ -423,19 +422,19 @@ enum class OverworldWood(
         layer("zigzagSolid2", barkHighlight)
     }
 
-    override suspend fun LayerListBuilder.strippedLogSide() {
+    override fun LayerListBuilder.strippedLogSide() {
         background(color)
         layer("borderSolid", shadow)
         layer("borderShortDashes", highlight)
     }
 
-    override suspend fun LayerListBuilder.logTop() {
+    override fun LayerListBuilder.logTop() {
         copy {strippedLogTop()}
         layer("borderSolid", barkColor)
         layer("borderDotted", barkShadow)
     }
 
-    override suspend fun LayerListBuilder.strippedLogTop() {
+    override fun LayerListBuilder.strippedLogTop() {
         copy { strippedLogSide() }
         layer("ringsCentralBullseye", highlight)
         layer("rings", shadow)
@@ -475,7 +474,7 @@ enum class Fungus(
             leavesShadow = c(0x5a0000),
             leavesHighlight = c(0xac2020),
         ) {
-            override suspend fun LayerListBuilder.trapdoor() {
+            override fun LayerListBuilder.trapdoor() {
                 layer("borderSolidThick", color)
                 layer("trapdoor1", shadow)
                 layer("borderShortDashes", highlight)
@@ -487,12 +486,12 @@ enum class Fungus(
                 layer("trapdoorHinges", STONE.shadow)
             }
 
-            override suspend fun LayerListBuilder.doorTop(doorKnob: AbstractImageTask) {
+            override fun LayerListBuilder.doorTop(doorBottom: AbstractImageTask, doorKnob: AbstractImageTask) {
                 copy {doorBottom()}
                 copy(doorKnob)
             }
 
-            override suspend fun LayerListBuilder.doorBottom() {
+            override fun LayerListBuilder.doorBottom() {
                 background(color)
                 layer("planksTopBorderVertical", shadow)
                 layer("borderShortDashes", highlight)
@@ -504,13 +503,13 @@ enum class Fungus(
                 layer("doorHinges", STONE.shadow)
             }
 
-            override suspend fun LayerListBuilder.leaves() {
+            override fun LayerListBuilder.leaves() {
                 background(leavesColor)
                 layer("leaves6", leavesShadow)
                 layer("leaves6a", leavesHighlight)
                 layer("borderRoundDots", leavesHighlight)
             }
-            override suspend fun LayerListBuilder.sapling() {
+            override fun LayerListBuilder.sapling() {
                 layer("mushroomStem", barkShadow)
                 layer("mushroomCapRed", leavesColor)
                 layer("crimsonFungusSpots", fungusSpotColor)
@@ -526,7 +525,7 @@ enum class Fungus(
             leavesHighlight = c(0x00b485),
             leavesShadow = c(0x006565),
         ) {
-        override suspend fun LayerListBuilder.trapdoor() {
+        override fun LayerListBuilder.trapdoor() {
             layer("trapdoor1", highlight)
             layer("borderSolidThick", color)
             layer("borderSolid", highlight)
@@ -536,12 +535,12 @@ enum class Fungus(
             layer("trapdoorHinges", STONE.highlight)
         }
 
-        override suspend fun LayerListBuilder.doorTop(doorKnob: AbstractImageTask) {
+        override fun LayerListBuilder.doorTop(doorBottom: AbstractImageTask, doorKnob: AbstractImageTask) {
             copy {doorBottom()}
             copy(doorKnob)
         }
 
-        override suspend fun LayerListBuilder.doorBottom() {
+        override fun LayerListBuilder.doorBottom() {
             background(color)
             layer("planksTopBorderVertical", shadow)
             layer("borderShortDashes", highlight)
@@ -550,7 +549,7 @@ enum class Fungus(
             layer("doorHinges", STONE.highlight)
         }
 
-        override suspend fun LayerListBuilder.leaves() {
+        override fun LayerListBuilder.leaves() {
             background(leavesColor)
             layer("leaves3", leavesShadow)
             layer("leaves3a", leavesHighlight)
@@ -559,32 +558,32 @@ enum class Fungus(
             layer("borderShortDashes", leavesHighlight)
         }
 
-        override suspend fun LayerListBuilder.sapling() {
+        override fun LayerListBuilder.sapling() {
             layer("mushroomStem", barkShadow)
             layer("warpedFungusCap", leavesColor)
             layer("warpedFungusSpots", fungusSpotColor)
         }
     };
 
-    override suspend fun LayerListBuilder.bark() {
+    override fun LayerListBuilder.bark() {
         background(barkColor)
         layer("borderSolid", barkShadow)
         layer("waves", barkHighlight)
     }
 
-    override suspend fun LayerListBuilder.strippedLogSide() {
+    override fun LayerListBuilder.strippedLogSide() {
         background(color)
         layer("borderSolid", shadow)
         layer("borderDotted", highlight)
     }
 
-    override suspend fun LayerListBuilder.logTop() {
+    override fun LayerListBuilder.logTop() {
         copy {strippedLogTop()}
         layer("borderSolid", barkColor)
         layer("borderDotted", barkShadow)
     }
 
-    override suspend fun LayerListBuilder.strippedLogTop() {
+    override fun LayerListBuilder.strippedLogTop() {
         copy {strippedLogSide()}
         layer("ringsCentralBullseye", shadow)
         layer("rings2", highlight)

@@ -7,8 +7,6 @@ import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.texturebase.GroundCoverBlock
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Paint
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 
 @Suppress("unused")
 enum class Nylium(
@@ -17,12 +15,12 @@ enum class Nylium(
     override val highlight: Paint
 ): ShadowHighlightMaterial, GroundCoverBlock {
     CRIMSON_NYLIUM(c(0x854242), c(0x7b0000), c(0xbd3030)) {
-        override suspend fun LayerListBuilder.createCoverSideLayers() {
+        override fun LayerListBuilder.createCoverSideLayers() {
             layer("topPart", color)
             layer("strokeTopLeftBottomRight2TopPart", shadow)
             layer("strokeBottomLeftTopRight2TopPart", highlight)
         }
-        override suspend fun LayerListBuilder.createTopLayers() {
+        override fun LayerListBuilder.createTopLayers() {
             background(color)
             layer("strokeTopLeftBottomRight2", shadow)
             layer("strokeBottomLeftTopRight2", highlight)
@@ -31,13 +29,13 @@ enum class Nylium(
     },
     WARPED_NYLIUM(c(0x568353), c(0x456b52), c(0xac2020)) {
         // SVGs allow the strokes to poke slightly outside the topPart rectangle
-        override suspend fun LayerListBuilder.createCoverSideLayers() {
+        override fun LayerListBuilder.createCoverSideLayers() {
             layer("topPart", color)
             layer("strokeTopLeftBottomRight2TopPart", highlight)
             layer("strokeBottomLeftTopRight2TopPart", shadow)
         }
 
-        override suspend fun LayerListBuilder.createTopLayers() {
+        override fun LayerListBuilder.createTopLayers() {
             background(color)
             layer("strokeTopLeftBottomRight2", highlight)
             layer("strokeBottomLeftTopRight2", shadow)
@@ -45,9 +43,9 @@ enum class Nylium(
         }
     };
     override val base: OreBase = OreBase.NETHERRACK
-    override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<PngOutputTask> = flow {
-        emit(ctx.out(ctx.stack { createTopLayers() }, "block/${name}")) // no "_top" at end
-        emit(ctx.out(ctx.stack {
+    override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
+        yield(ctx.out(ctx.stack { createTopLayers() }, "block/${name}")) // no "_top" at end
+        yield(ctx.out(ctx.stack {
             copy(base)
             createCoverSideLayers()
         }, "block/${name}_side"))

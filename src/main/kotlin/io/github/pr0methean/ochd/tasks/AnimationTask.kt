@@ -21,7 +21,7 @@ private val logger = LogManager.getLogger("AnimationTask")
  * Task that stacks the input images in a column. Minecraft can use this as an animated texture with the input images as
  * frames.
  */
-@Suppress("EqualsWithHashCodeExist")
+@Suppress("EqualsWithHashCodeExist", "EqualsOrHashCode")
 class AnimationTask(
     val background: AbstractImageTask,
     val frames: List<AbstractImageTask>, val width: Int, val height: Int,
@@ -33,24 +33,28 @@ class AnimationTask(
     private val totalHeight = height * frames.size
     private val dependencies = frames + background
 
-    override fun computeHashCode(): Int = Objects.hash(frames, width, height)
+    override fun computeHashCode(): Int = Objects.hash(background, frames, width, height)
 
     override fun equals(other: Any?): Boolean {
         return (this === other) || (
                 other is AnimationTask
                         && other.width == width
                         && other.height == height
+                        && other.background == background
                         && other.frames == frames)
     }
 
-    override suspend fun mergeWithDuplicate(other: AbstractTask<*>): AbstractImageTask {
-        val deduped = super.mergeWithDuplicate(other)
-        if (deduped !== other && deduped is AnimationTask && other is AnimationTask) {
-            for ((index, frame) in deduped.frames.withIndex()) {
-                frame.mergeWithDuplicate(deduped.frames[index])
-            }
+    override fun mergeWithDuplicate(other: AbstractTask<*>): AbstractImageTask {
+        if (this === other) {
+            return this
         }
-        return deduped
+        if (other is AnimationTask && (background !== other.background || frames !== other.frames)) {
+            LOGGER.debug("Merging AnimationTask {} with duplicate {}", name, other.name)
+            val mergedFrames = frames.zip(other.frames).map { (a, b) -> if (a === b) a else a.mergeWithDuplicate(b) }
+            return AnimationTask(background.mergeWithDuplicate(other.background), mergedFrames,
+                    width, height, name, cache, ctx, stats)
+        }
+        return super.mergeWithDuplicate(other)
     }
 
     @Suppress("DeferredResultUnused")

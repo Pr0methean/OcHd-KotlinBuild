@@ -25,7 +25,7 @@ private val SUPERVISOR_JOB = SupervisorJob()
 /**
  * Unit of work that wraps its coroutine to support reuse (including under heap-constrained conditions).
  */
-@Suppress("EqualsWithHashCodeExist") // hashCode is cached in a lazy; equals isn't
+@Suppress("EqualsWithHashCodeExist", "EqualsOrHashCode") // hashCode is cached in a lazy; equals isn't
 abstract class AbstractTask<out T>(
     val name: String,
     val cache: DeferredTaskCache<@UnsafeVariance T>,
@@ -119,13 +119,15 @@ abstract class AbstractTask<out T>(
     abstract suspend fun perform(): T
 
     @Suppress("UNCHECKED_CAST", "DeferredResultUnused")
-    open suspend fun mergeWithDuplicate(other: AbstractTask<*>): AbstractTask<T> {
+    open fun mergeWithDuplicate(other: AbstractTask<*>): AbstractTask<T> {
+        AT_LOGGER.debug("Merging {} with duplicate {}", name, other.name)
         if (other !== this && getNow() == null) {
             val otherCoroutine = other.cache.getNowAsync()
             if (otherCoroutine != null) {
                 cache.computeIfAbsent { otherCoroutine as Deferred<T> }
             }
         }
+        AT_LOGGER.debug("Done merging {} with duplicate {}", name, other.name)
         return this
     }
 

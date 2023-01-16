@@ -31,5 +31,5 @@ abstract class DeferredTaskCache<T>(val name: String) {
     fun isEnabled(): Boolean = enabled.get()
 
     @Suppress("DeferredIsResult")
-    abstract suspend fun computeIfAbsent(coroutineCreator: () -> Deferred<T>): Deferred<T>
+    abstract fun computeIfAbsent(coroutineCreator: () -> Deferred<T>): Deferred<T>
 }

@@ -28,13 +28,13 @@ enum class MusicDisc(private val labelDyeName: String): SingleTextureMaterial, I
     MUSIC_DISC_OTHERSIDE("orange"),
     MUSIC_DISC_CHIRP("gray"),
     MUSIC_DISC_11("") {
-        override suspend fun LayerListBuilder.createTextureLayers() {
+        override fun LayerListBuilder.createTextureLayers() {
             layer("musicDiscBroken", musicDiscShadow)
             layer("musicDiscGrooveBroken", musicDiscHighlight)
         }
     };
 
-    override suspend fun LayerListBuilder.createTextureLayers() {
+    override fun LayerListBuilder.createTextureLayers() {
         copy {
             layer("musicDisc", musicDiscColor)
             layer("musicDiscGroove", musicDiscShadow)

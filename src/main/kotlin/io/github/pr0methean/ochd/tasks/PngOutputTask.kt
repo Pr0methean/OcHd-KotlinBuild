@@ -19,7 +19,7 @@ private val threadLocalBimg: ThreadLocal<BufferedImage?> = ThreadLocal.withIniti
 /**
  * Task that saves an image to one or more PNG files.
  */
-@Suppress("BlockingMethodInNonBlockingContext", "EqualsWithHashCodeExist")
+@Suppress("BlockingMethodInNonBlockingContext", "EqualsWithHashCodeExist", "EqualsOrHashCode")
 class PngOutputTask(
     name: String,
     val base: AbstractTask<Image>,
@@ -28,19 +28,29 @@ class PngOutputTask(
     private val stats: ImageProcessingStats,
 ): AbstractTask<Unit>("Output $name", noopDeferredTaskCache(), ctx) {
     override val directDependencies: Iterable<AbstractTask<*>> = listOf(base)
-    override suspend fun mergeWithDuplicate(other: AbstractTask<*>): AbstractTask<Unit> {
-        if (other is PngOutputTask && other !== this && other.base == base) {
-            return PngOutputTask(name, base, files.union(other.files).toList(), ctx, stats)
+    override fun mergeWithDuplicate(other: AbstractTask<*>): AbstractTask<Unit> {
+        if (other is PngOutputTask && other !== this && other.base !== base) {
+            LOGGER.debug("Merging PngOutputTask {} with duplicate {}", name, other.name)
+            val mergedBase = base.mergeWithDuplicate(other.base)
+            if (mergedBase !== base || files.toSet() != other.files.toSet()) {
+                return PngOutputTask(
+                    name,
+                    mergedBase,
+                    files.union(other.files).toList(),
+                    ctx,
+                    stats
+                )
+            }
         }
         return super.mergeWithDuplicate(other)
     }
 
-    override fun equals(other: Any?): Boolean {
-        return other is PngOutputTask && base == other.base
-    }
-
     @Suppress("MagicNumber")
     override fun computeHashCode(): Int = base.hashCode() - 127
+
+    override fun equals(other: Any?): Boolean {
+        return (this === other) || other is PngOutputTask && base == other.base
+    }
 
     override suspend fun perform() {
         withContext(threadLocalBimg.asContextElement()) {

@@ -1,11 +1,10 @@
 package io.github.pr0methean.ochd.tasks.caching
 
 import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.yield
 import java.lang.ref.SoftReference
 import java.util.concurrent.atomic.AtomicReference
 
-val nullReference = SoftReference<Nothing?>(null)
+val nullReference: SoftReference<Nothing?> = SoftReference<Nothing?>(null)
 
 /**
  * A TaskCache that's backed by a soft reference.
@@ -21,7 +20,7 @@ class SoftTaskCache<T>(
     }
 
     @Suppress("DeferredIsResult", "OVERRIDE_BY_INLINE")
-    override suspend inline fun computeIfAbsent(coroutineCreator: () -> Deferred<T>): Deferred<T> {
+    override inline fun computeIfAbsent(coroutineCreator: () -> Deferred<T>): Deferred<T> {
         val newCoroutine = coroutineCreator()
         if (!isEnabled()) {
             return newCoroutine
@@ -38,7 +37,7 @@ class SoftTaskCache<T>(
             if (currentCoroutine != null) {
                 return currentCoroutine
             }
-            yield() // Spin wait
+            Thread.onSpinWait()
         }
     }
 }

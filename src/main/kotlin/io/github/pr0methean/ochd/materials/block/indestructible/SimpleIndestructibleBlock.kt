@@ -17,7 +17,7 @@ enum class SimpleIndestructibleBlock(
     override val highlight: Paint
 ): SingleTextureMaterial, ShadowHighlightMaterial, Block {
     BEDROCK(c(0x515151), c(0x222222), c(0xaaaaaa)) {
-        override suspend fun LayerListBuilder.createTextureLayers() {
+        override fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("borderSolid", shadow)
             layer("strokeTopLeftBottomRight2", shadow)
@@ -25,13 +25,13 @@ enum class SimpleIndestructibleBlock(
         }
     },
     END_PORTAL_FRAME_SIDE(StructureOrJigsaw.JIGSAW_BOTTOM.shadow, BLACK, WHITE) {
-        override suspend fun LayerListBuilder.createTextureLayers() {
+        override fun LayerListBuilder.createTextureLayers() {
             copy(SimplePickaxeBlock.END_STONE)
             layer("endPortalFrameSide", color)
         }
     },
     END_PORTAL_FRAME_TOP(StructureOrJigsaw.JIGSAW_BOTTOM.shadow, BLACK, WHITE) {
-        override suspend fun LayerListBuilder.createTextureLayers() {
+        override fun LayerListBuilder.createTextureLayers() {
             copy(SimplePickaxeBlock.END_STONE)
             layer("endPortalFrameTop", color)
             layer("railDetector", shadow)

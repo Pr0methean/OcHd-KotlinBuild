@@ -4,22 +4,20 @@ import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.texturebase.Material
 import javafx.scene.paint.Color
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 
 object Furnace: Material {
-    override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<PngOutputTask> = flow {
+    override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
         val furnaceSide = ctx.stack {
             background(OreBase.STONE.color)
             layer("bottomHalf", OreBase.STONE.highlight)
             layer("borderSolid", OreBase.stoneExtremeShadow)
         }
-        emit(ctx.out(furnaceSide, "block/furnace_side"))
-        emit(ctx.out({
+        yield(ctx.out(furnaceSide, "block/furnace_side"))
+        yield(ctx.out({
             copy(furnaceSide)
             layer("furnaceFront", Color.BLACK)
         }, "block/furnace_front"))
-        emit(ctx.out({
+        yield(ctx.out({
             copy(furnaceSide)
             layer("furnaceFrontLit")
         }, "block/furnace_front_on"))
@@ -27,22 +25,22 @@ object Furnace: Material {
             background(OreBase.STONE.shadow)
             layer("cornerCrosshairs", OreBase.stoneExtremeHighlight)
         }
-        emit(ctx.out(blastFurnaceTop, "block/blast_furnace_top"))
+        yield(ctx.out(blastFurnaceTop, "block/blast_furnace_top"))
         val blastFurnaceSide = ctx.stack {
             background(OreBase.STONE.shadow)
             layer("bottomHalf", OreBase.STONE.color)
             layer("cornerCrosshairs", OreBase.stoneExtremeHighlight)
         }
-        emit(ctx.out(blastFurnaceSide, "block/blast_furnace"))
+        yield(ctx.out(blastFurnaceSide, "block/blast_furnace"))
         val blastFurnaceFrontBase = ctx.stack {
             copy(blastFurnaceSide)
             layer("craftingGridSquare", OreBase.stoneExtremeHighlight)
         }
-        emit(ctx.out({
+        yield(ctx.out({
             copy(blastFurnaceFrontBase)
             layer("blastFurnaceHoles")
         }, "block/blast_furnace_front"))
-        emit(ctx.out(ctx.animate(blastFurnaceFrontBase, listOf(
+        yield(ctx.out(ctx.animate(blastFurnaceFrontBase, listOf(
             ctx.layer("blastFurnaceHolesLit"),
             ctx.layer("blastFurnaceHolesLit1")
         )), "block/blast_furnace_front_on"))

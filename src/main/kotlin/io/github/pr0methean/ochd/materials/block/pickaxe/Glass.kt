@@ -6,18 +6,16 @@ import io.github.pr0methean.ochd.materials.DYES
 import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.texturebase.Material
 import javafx.scene.paint.Color
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 
 object Glass: Material {
-    override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<PngOutputTask> = flow {
-        emit(ctx.out(ctx.layer("paneTop", c(0xa8d5d5)), "block/glass_pane_top"))
-        emit(ctx.out(ctx.stack {
+    override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
+        yield(ctx.out(ctx.layer("paneTop", c(0xa8d5d5)), "block/glass_pane_top"))
+        yield(ctx.out(ctx.stack {
             layer("borderSolid", DYES["gray"])
             layer("borderSolidTopLeft", Color.WHITE)
             layer("streaks", Color.WHITE)
         }, "block/glass"))
-        emit(ctx.out(ctx.stack {
+        yield(ctx.out(ctx.stack {
             background(Color.BLACK,0.25)
             layer("borderSolid", Color.WHITE, 0.25)
             layer("streaks", Color.WHITE, 0.25)

@@ -13,7 +13,7 @@ abstract class AbstractImageTask(
     open val stats: ImageProcessingStats
 )
     : AbstractTask<Image>(name, cache, ctx) {
-    override suspend fun mergeWithDuplicate(other: AbstractTask<*>): AbstractImageTask {
+    override fun mergeWithDuplicate(other: AbstractTask<*>): AbstractImageTask {
         return super.mergeWithDuplicate(other) as AbstractImageTask
     }
 

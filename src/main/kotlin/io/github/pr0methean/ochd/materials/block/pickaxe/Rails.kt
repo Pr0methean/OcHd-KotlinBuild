@@ -5,16 +5,14 @@ import io.github.pr0methean.ochd.materials.block.axe.OverworldWood
 import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.texturebase.Material
 import io.github.pr0methean.ochd.texturebase.redstoneOffAndOn
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 
 object Rails: Material {
-    override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<PngOutputTask> = flow {
-        emit(ctx.out({
+    override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
+        yield(ctx.out({
             layer("railTies", OverworldWood.OAK.color)
             layer("rail", Ore.IRON.refinedShadow)
         }, "block/rail"))
-        emit(ctx.out({
+        yield(ctx.out({
             layer("railTieCorner", OverworldWood.OAK.color)
             layer("railCorner", Ore.IRON.refinedShadow)
         }, "block/rail_corner"))

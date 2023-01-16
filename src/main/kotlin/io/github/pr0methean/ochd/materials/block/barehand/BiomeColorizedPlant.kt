@@ -12,24 +12,24 @@ import javafx.scene.paint.Paint
 @Suppress("unused")
 enum class BiomeColorizedPlant: Block, ShadowHighlightMaterial {
     LILY_PAD {
-        override suspend fun LayerListBuilder.createTextureLayers() {
+        override fun LayerListBuilder.createTextureLayers() {
             layer("lilyPad", shadow)
             layer("lilyPadInterior", highlight)
         }
     },
     TALL_GRASS {
-        override suspend fun LayerListBuilder.createTextureLayers() {
+        override fun LayerListBuilder.createTextureLayers() {
             layer("bottomHalf", shadow)
             layer("grassTall", color)
         }
     },
     TALL_GRASS_TOP {
-        override suspend fun LayerListBuilder.createTextureLayers() {
+        override fun LayerListBuilder.createTextureLayers() {
             layer("grassVeryShort", color)
         }
     },
     GRASS {
-        override suspend fun LayerListBuilder.createTextureLayers() {
+        override fun LayerListBuilder.createTextureLayers() {
             layer("grassShort", color)
         }
     };

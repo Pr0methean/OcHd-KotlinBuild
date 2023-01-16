@@ -10,8 +10,6 @@ import io.github.pr0methean.ochd.tasks.AbstractImageTask
 import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Color
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 import java.util.*
 
 private val OVERWORLD = EnumSet.of(STONE, DEEPSLATE)
@@ -35,7 +33,7 @@ enum class Ore(
         shadow = Color.BLACK,
         highlight = c(0x515151)
     ) {
-        override suspend fun oreBlock(
+        override fun oreBlock(
             ctx: TaskPlanningContext,
             oreBase: OreBase
         ): AbstractImageTask {
@@ -49,7 +47,7 @@ enum class Ore(
             return super.oreBlock(ctx, oreBase)
         }
 
-        override suspend fun LayerListBuilder.block() {
+        override fun LayerListBuilder.block() {
             background(color)
             layer("streaks", refinedHighlight)
             layer("coalBorder", refinedHighlight)
@@ -78,11 +76,11 @@ enum class Ore(
         shadow = c(0xca0000),
         highlight = c(0xff5e5e)
     ) {
-        override suspend fun LayerListBuilder.itemForOutput() {
+        override fun LayerListBuilder.itemForOutput() {
             rawOre()
         }
 
-        override suspend fun oreBlock(ctx: TaskPlanningContext, oreBase: OreBase): AbstractImageTask {
+        override fun oreBlock(ctx: TaskPlanningContext, oreBase: OreBase): AbstractImageTask {
             return if (oreBase == STONE) {
                 ctx.stack {
                     copy(STONE)
@@ -104,20 +102,20 @@ enum class Ore(
         highlight = Color.WHITE,
         substrates = NETHER
     ) {
-        override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<PngOutputTask> = flow {
-            emit(ctx.out({ ingot() }, "item/quartz"))
-            emit(ctx.out(ctx.stack {
+        override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
+            yield(ctx.out({ ingot() }, "item/quartz"))
+            yield(ctx.out(ctx.stack {
                 copy(NETHERRACK)
                 copy { item() }
             }, "block/nether_quartz_ore"))
-            emit(ctx.out({
+            yield(ctx.out({
                 background(color)
                 layer("streaks", highlight)
                 layer("borderSolid", shadow)
                 layer("borderSolidTopLeft", highlight)
             }, "block/quartz_block_top"))
-            emit(ctx.out({ rawBlock() }, "block/quartz_block_bottom"))
-            emit(ctx.out({ block() }, "block/quartz_block_side"))
+            yield(ctx.out({ rawBlock() }, "block/quartz_block_bottom"))
+            yield(ctx.out({ block() }, "block/quartz_block_side"))
         }
 
     },
@@ -127,13 +125,13 @@ enum class Ore(
         highlight = c(0x6995ff),
         itemNameOverride = "lapis_lazuli"
     ) {
-        override suspend fun LayerListBuilder.item() {
+        override fun LayerListBuilder.item() {
             layer("lapis", color)
             layer("lapisHighlight", highlight)
             layer("lapisShadow", shadow)
         }
 
-        override suspend fun LayerListBuilder.block() {
+        override fun LayerListBuilder.block() {
             background(highlight)
             layer("checksLarge", shadow)
             layer("checksSmall", color)
@@ -147,12 +145,12 @@ enum class Ore(
         highlight = c(0x77e7d1)
     ) {
         private val extremeHighlight = c(0xd5ffff)
-        override suspend fun LayerListBuilder.item() {
+        override fun LayerListBuilder.item() {
             layer("diamond1", extremeHighlight)
             layer("diamond2", shadow)
         }
 
-        override suspend fun LayerListBuilder.block() {
+        override fun LayerListBuilder.block() {
             background(color)
             layer("streaks", highlight)
             copy { item() }
@@ -166,12 +164,12 @@ enum class Ore(
         highlight = c(0x00dd62)
     ) {
         private val extremeHighlight = c(0xd9ffeb)
-        override suspend fun LayerListBuilder.item() {
+        override fun LayerListBuilder.item() {
             layer("emeraldTopLeft", highlight)
             layer("emeraldBottomRight", shadow)
         }
 
-        override suspend fun LayerListBuilder.block() {
+        override fun LayerListBuilder.block() {
             background(highlight)
             layer("emeraldTopLeft", extremeHighlight)
             layer("emeraldBottomRight", shadow)
@@ -181,11 +179,11 @@ enum class Ore(
     };
 
     private val svgName = name.lowercase(Locale.ENGLISH)
-    open suspend fun LayerListBuilder.item() {
+    open fun LayerListBuilder.item() {
         layer(svgName, color)
     }
 
-    open suspend fun LayerListBuilder.block() {
+    open fun LayerListBuilder.block() {
         background(color)
         layer("streaks", refinedHighlight)
         layer(svgName, refinedShadow)
@@ -193,43 +191,43 @@ enum class Ore(
         layer("borderSolidTopLeft", refinedHighlight)
     }
 
-    open suspend fun LayerListBuilder.ingot() {
+    open fun LayerListBuilder.ingot() {
         layer("ingotMask", refinedColor)
         layer("ingotBorder", refinedShadow)
         layer("ingotBorderTopLeft", refinedHighlight)
         layer(svgName, shadow)
     }
 
-    open suspend fun LayerListBuilder.rawOre() {
+    open fun LayerListBuilder.rawOre() {
         layer("bigCircle", shadow)
         layer(svgName, highlight)
     }
 
-    open suspend fun LayerListBuilder.rawBlock() {
+    open fun LayerListBuilder.rawBlock() {
         background(color)
         layer("checksSmall", highlight)
         layer(svgName, shadow)
     }
 
-    open suspend fun LayerListBuilder.itemForOutput() {
+    open fun LayerListBuilder.itemForOutput() {
         item()
     }
 
-    override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<PngOutputTask> = flow {
+    override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
         substrates.forEach { oreBase ->
-            emit(ctx.out(oreBlock(ctx, oreBase), "block/${oreBase.orePrefix}${name}_ore"))
+            yield(ctx.out(oreBlock(ctx, oreBase), "block/${oreBase.orePrefix}${name}_ore"))
         }
-        emit(ctx.out(ctx.stack { block() }, "block/${name}_block"))
+        yield(ctx.out(ctx.stack { block() }, "block/${name}_block"))
         if (needsRefining) {
-            emit(ctx.out(ctx.stack { rawBlock() }, "block/raw_${name}_block"))
-            emit(ctx.out(ctx.stack { rawOre() }, "item/raw_${name}"))
-            emit(ctx.out(ctx.stack { ingot() }, "item/${name}_ingot"))
+            yield(ctx.out(ctx.stack { rawBlock() }, "block/raw_${name}_block"))
+            yield(ctx.out(ctx.stack { rawOre() }, "item/raw_${name}"))
+            yield(ctx.out(ctx.stack { ingot() }, "item/${name}_ingot"))
         } else {
-            emit(ctx.out(ctx.stack { itemForOutput() }, "item/${itemNameOverride ?: name}"))
+            yield(ctx.out(ctx.stack { itemForOutput() }, "item/${itemNameOverride ?: name}"))
         }
     }
 
-    protected open suspend fun oreBlock(
+    protected open fun oreBlock(
         ctx: TaskPlanningContext,
         oreBase: OreBase
     ): AbstractImageTask = ctx.stack {

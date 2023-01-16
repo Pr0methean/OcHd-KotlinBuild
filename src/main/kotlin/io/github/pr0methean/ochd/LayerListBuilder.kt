@@ -1,18 +1,13 @@
 package io.github.pr0methean.ochd
 
 import io.github.pr0methean.ochd.tasks.AbstractImageTask
-import io.github.pr0methean.ochd.tasks.AbstractTask
 import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
-import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
-import kotlinx.coroutines.flow.asFlow
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.toList
 
 @OcHdDslMarker
 class LayerListBuilder(val ctx: TaskPlanningContext) {
-    val layers: MutableList<AbstractImageTask> = mutableListOf()
+    private val layers: MutableList<AbstractImageTask> = mutableListOf()
     var background: Paint = Color.TRANSPARENT
     fun background(paint: Paint, opacity: Double = 1.0) {
         background = if (opacity == 1.0 || paint !is Color) {
@@ -28,25 +23,25 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
         background = c(color)
     }
 
-    suspend inline fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): AbstractImageTask {
+    fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): AbstractImageTask {
         val layer = ctx.layer(name, paint, alpha)
-        copy(layer)
+        addAll(listOf(layer))
         return layer
     }
 
-    suspend inline fun layer(
-        source: AbstractTask<Image>,
+    fun layer(
+        source: AbstractImageTask,
         paint: Paint? = null,
         alpha: Double = 1.0
     ): AbstractImageTask {
         val layer = ctx.layer(source, paint, alpha)
-        copy(layer)
+        addAll(listOf(layer))
         return layer
     }
 
-    suspend inline fun copy(sourceInit: LayerListBuilder.() -> Unit): Unit =
+    inline fun copy(sourceInit: LayerListBuilder.() -> Unit): Unit =
         copy(LayerListBuilder(ctx).also {sourceInit()}.build())
-    suspend inline fun copy(source: LayerList) {
+    fun copy(source: LayerList) {
         if (source.background != Color.TRANSPARENT) {
             check(background == Color.TRANSPARENT) { "Source's background would overwrite an existing background" }
             check(layers.isEmpty()) { "Source's background would overwrite an existing layer" }
@@ -55,20 +50,16 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
         if (source.layers.size > 1) { // Don't flatten sub-stacks since we want to deduplicate them
             copy(ctx.stack(source))
         } else {
-            addAll(source.layers)
+            addAll(listOf(ctx.deduplicate(source.layers[0])))
         }
     }
-    suspend fun copy(source: SingleTextureMaterial): Unit = copy(LayerListBuilder(ctx).also {
+    fun copy(source: SingleTextureMaterial): Unit = copy(LayerListBuilder(ctx).also {
         source.run {createTextureLayers()}
     }.build())
 
-    suspend fun copy(element: AbstractImageTask): Boolean {
-        val deduped = ctx.deduplicate(element) as AbstractImageTask
-        return layers.add(deduped)
+    fun copy(element: AbstractImageTask): Boolean {
+        return layers.add(ctx.deduplicate(element))
     }
-    fun addAll(elements: Collection<AbstractImageTask>): Boolean = layers.addAll(elements)
-    suspend fun build(): LayerList = LayerList(
-            layers.asFlow().map { ctx.deduplicate(it) as AbstractImageTask }.toList(),
-            background
-    )
+    private fun addAll(elements: Collection<AbstractImageTask>): Boolean = layers.addAll(elements)
+    fun build(): LayerList = LayerList(layers, background)
 }

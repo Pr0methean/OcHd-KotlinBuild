@@ -10,14 +10,13 @@ import io.github.pr0methean.ochd.tasks.RepaintTask
 import io.github.pr0methean.ochd.tasks.SvgToBitmapTask
 import io.github.pr0methean.ochd.tasks.caching.SoftTaskCache
 import io.github.pr0methean.ochd.tasks.caching.noopDeferredTaskCache
-import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
-import kotlinx.coroutines.runBlocking
 import org.apache.logging.log4j.LogManager
 import java.io.File
 import java.util.Locale
-import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.locks.ReentrantLock
+import kotlin.concurrent.withLock
 import kotlin.coroutines.CoroutineContext
 
 fun color(web: String): Color = Color.web(web)
@@ -39,7 +38,8 @@ class TaskPlanningContext(
 
     override fun toString(): String = name
     private val svgTasks: Map<String, SvgToBitmapTask>
-    private val taskDeduplicationMap = ConcurrentHashMap<AbstractTask<*>, AbstractTask<*>>()
+    private val taskDeduplicationMap = mutableMapOf<AbstractTask<*>, AbstractTask<*>>()
+    private val taskDeduplicationLock = ReentrantLock()
     private val dedupedSvgTasks = ConcurrentHashMultiset.create<String>()
     val stats: ImageProcessingStats = ImageProcessingStats()
 
@@ -60,33 +60,44 @@ class TaskPlanningContext(
     }
 
     @Suppress("UNCHECKED_CAST")
-    tailrec suspend fun <T, TTask : AbstractTask<T>> deduplicate(task: AbstractTask<T>): TTask = when {
-        task is SvgToBitmapTask
-        -> findSvgTask(task.name) as TTask
-        task is RepaintTask
-                && (task.paint == null || task.paint == Color.BLACK)
-                && task.alpha == 1.0
-        -> deduplicate(task.base)
-        task is ImageStackingTask
-                && task.layers.layers.size == 1
-                && task.layers.background == Color.TRANSPARENT
-        -> deduplicate(task.layers.layers[0] as TTask)
-        else -> ({
-            val className = task::class.simpleName ?: "[unnamed class]"
-            taskDeduplicationMap.computeIfPresent(task) { _, oldValue ->
-                logger.info("Deduplicated: {}", task)
-                stats.dedupeSuccesses.add(className)
-                if (oldValue === task) task else runBlocking { oldValue.mergeWithDuplicate(task) }
-            } ?: {
-                taskDeduplicationMap[task] = task
-                logger.info("New task: {}", task)
-                stats.dedupeFailures.add(className)
-                task
+    tailrec fun <T, TTask : AbstractTask<T>> deduplicate(task: AbstractTask<T>): TTask {
+        logger.debug("Deduplicating: {}", task)
+        
+        return when {
+            task is SvgToBitmapTask
+            -> findSvgTask(task.name) as TTask
+            task is RepaintTask
+                    && (task.paint == null || task.paint == Color.BLACK)
+                    && task.alpha == 1.0
+            -> deduplicate(task.base)
+            task is ImageStackingTask
+                    && task.layers.layers.size == 1
+                    && task.layers.background == Color.TRANSPARENT
+            -> deduplicate(task.layers.layers[0] as TTask)
+            else -> {
+                logger.debug("Main deduplication branch for {}", task)
+                val className = task::class.simpleName ?: "[unnamed class]"
+                return taskDeduplicationLock.withLock {
+                    taskDeduplicationMap.compute(task) { _, oldValue ->
+                        if (oldValue === task) {
+                            logger.debug("{} already points to itself in the deduplication map", task)
+                            return@compute task
+                        }
+                        oldValue?.mergeWithDuplicate(task)?.also {
+                            logger.info("Deduplicated: {}", task)
+                            stats.dedupeSuccesses.add(className)
+                        } ?: task.also {
+                            logger.info("New task: {}", task)
+                            stats.dedupeFailures.add(className)
+                        }
+                    }
+                } as TTask
             }
-        }) as TTask
+        }
     }
 
     fun findSvgTask(name: String): SvgToBitmapTask {
+        logger.debug("Looking up SvgToBitmapTask for {}", name)
         val task = svgTasks[name]
         requireNotNull(task) { "Missing SvgToBitmapTask for $name" }
         if (dedupedSvgTasks.add(name, 1) > 0) {
@@ -94,78 +105,56 @@ class TaskPlanningContext(
         } else {
             stats.dedupeFailures.add("SvgToBitmapTask")
         }
+        logger.debug("Found SvgToBitmapTask for {}", name)
         return task
     }
 
-    suspend inline fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): AbstractImageTask
+    fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): AbstractImageTask
             = layer(findSvgTask(name), paint, alpha)
 
-    suspend inline fun layer(
-        source: AbstractTask<Image>,
+    fun layer(
+        source: AbstractImageTask,
         paint: Paint? = null,
         alpha: Double = 1.0
-    ): AbstractImageTask {
-        return deduplicate(
-            RepaintTask(
-                deduplicate(source),
-                paint,
-                alpha,
-                SoftTaskCache("$source@$paint@$alpha"),
-                ctx,
-                stats
-            )) as AbstractImageTask
-    }
+    ): RepaintTask = deduplicate(
+        RepaintTask(deduplicate(source), paint, alpha, SoftTaskCache("$source@$paint@$alpha"), ctx, stats))
 
-    suspend inline fun stack(init: LayerListBuilder.() -> Unit): AbstractImageTask {
+    inline fun stack(init: LayerListBuilder.() -> Unit): AbstractImageTask {
         val layerTasksBuilder = LayerListBuilder(this)
         layerTasksBuilder.init()
         val layerTasks = layerTasksBuilder.build()
         return stack(layerTasks)
     }
 
-    suspend inline fun animate(background: AbstractImageTask, frames: List<AbstractImageTask>): AbstractImageTask {
-        return deduplicate(
-            AnimationTask(
-                deduplicate(background) as AbstractImageTask,
-                frames.map { deduplicate(it) as AbstractImageTask },
+    fun animate(background: AbstractImageTask, frames: List<AbstractImageTask>): AnimationTask
+        = deduplicate(AnimationTask(
+                deduplicate(background), 
+                frames.map(::deduplicate),
                 tileSize,
                 tileSize,
                 frames.toString(),
                 noopDeferredTaskCache(),
                 ctx,
                 stats
-            )) as AbstractImageTask
-    }
+        )) as AnimationTask
 
-    suspend inline fun out(source: AbstractImageTask, names: Array<String>): PngOutputTask {
-        val lowercaseName = names.map { it.lowercase(Locale.ENGLISH) }
-        val dedupedSource = deduplicate(source) as AbstractImageTask
-        val orig =
-            PngOutputTask(
-                lowercaseName[0],
-                dedupedSource,
-                lowercaseName.map { outTextureRoot.resolve("$it.png") },
+    fun out(source: AbstractImageTask, names: Array<String>): PngOutputTask {
+        logger.debug("Creating output task: {} for source: {}", names, source)
+        val lowercaseNames = names.map { it.lowercase(Locale.ENGLISH) }
+        return PngOutputTask(
+                lowercaseNames[0],
+                deduplicate(source),
+                lowercaseNames.map { outTextureRoot.resolve("$it.png") },
                 ctx,
                 stats
-            )
-        val deduped = deduplicate(orig) as PngOutputTask
-        if (deduped === orig) {
-            dedupedSource.addDirectDependentTask(deduped)
-        }
-        return deduped
+            ).also { logger.debug("Done creating output task: {}", it) }
     }
 
-    suspend inline fun out(source: AbstractImageTask, name: String): PngOutputTask = out(source, arrayOf(name))
+    fun out(source: AbstractImageTask, name: String): PngOutputTask = out(source, arrayOf(name))
 
-    suspend inline fun out(source: LayerListBuilder.() -> Unit, name: String): PngOutputTask
+    inline fun out(source: LayerListBuilder.() -> Unit, name: String): PngOutputTask
             = out(stack {source()}, arrayOf(name))
 
-    suspend inline fun stack(layers: LayerList): AbstractImageTask = deduplicate(
-        ImageStackingTask(
-            layers,
-            SoftTaskCache(layers.toString()),
-            ctx,
-            stats
-        )
-    ) as AbstractImageTask
+    fun stack(layers: LayerList): ImageStackingTask = deduplicate(ImageStackingTask(
+            layers, SoftTaskCache(layers.toString()), ctx, stats))
 }

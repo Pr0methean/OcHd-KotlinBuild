@@ -9,7 +9,7 @@ import javafx.scene.paint.Color
 
 object DyedTerracotta : DyedBlock("terracotta") {
 
-    override suspend fun LayerListBuilder.createTextureLayers(
+    override fun LayerListBuilder.createTextureLayers(
         color: Color,
         sharedLayers: AbstractImageTask
     ) {
@@ -17,7 +17,7 @@ object DyedTerracotta : DyedBlock("terracotta") {
         copy(sharedLayers)
     }
 
-    override suspend fun createSharedLayersTask(ctx: TaskPlanningContext): AbstractImageTask = ctx.stack {
+    override fun createSharedLayersTask(ctx: TaskPlanningContext): AbstractImageTask = ctx.stack {
         layer("bigDotsTopLeftBottomRight", TERRACOTTA.shadow, 0.5)
         layer("bigRingsTopLeftBottomRight", TERRACOTTA.highlight)
         layer("bigDotsBottomLeftTopRight", TERRACOTTA.highlight, 0.5)

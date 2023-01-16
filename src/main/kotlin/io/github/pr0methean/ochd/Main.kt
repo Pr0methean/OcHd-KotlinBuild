@@ -12,8 +12,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.getOrElse
-import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.toSet
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.plus
@@ -75,15 +73,19 @@ suspend fun main(args: Array<String>) {
         outTextureRoot = outTextureRoot,
         ctx = coroutineContext
     )
-    doJfx("Increase rendering thread priority") {
-        Thread.currentThread().priority = Thread.MAX_PRIORITY
+    scope.launch {
+        doJfx("Increase rendering thread priority") {
+            Thread.currentThread().priority = Thread.MAX_PRIORITY
+        }
     }
     val stats = ctx.stats
     startMonitoring(stats, scope)
     val time = measureNanoTime {
         stats.onTaskLaunched("Build task graph", "Build task graph")
-        val tasks = ALL_MATERIALS.outputTasks(ctx).map { ctx.deduplicate(it) as PngOutputTask }.toSet()
+        val tasks = ALL_MATERIALS.outputTasks(ctx).toSet()
+        logger.debug("Got deduplicated output tasks")
         val depsBuildTask = scope.launch { tasks.forEach { it.registerRecursiveDependencies() }}
+        logger.debug("Launched deps build task")
         val (cbTasks, nonCbTasks) = tasks.partition(PngOutputTask::isCommandBlock)
         depsBuildTask.join()
         stats.onTaskCompleted("Build task graph", "Build task graph")

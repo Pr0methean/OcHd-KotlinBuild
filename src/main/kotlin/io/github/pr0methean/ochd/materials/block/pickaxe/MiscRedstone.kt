@@ -6,11 +6,9 @@ import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.texturebase.Material
 import io.github.pr0methean.ochd.texturebase.redstoneOffAndOn
 import javafx.scene.paint.Color
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
 
 object MiscRedstone: Material {
-    override suspend fun outputTasks(ctx: TaskPlanningContext): Flow<PngOutputTask> = flow {
+    override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
         val repeaterComparatorCommonBase = ctx.stack {
             copy(SimplePickaxeBlock.SMOOTH_STONE)
             layer("repeaterSideInputs", OreBase.STONE.shadow)
@@ -23,13 +21,13 @@ object MiscRedstone: Material {
             copy(repeaterComparatorCommonBase)
             layer("comparator", stateColor)
         }
-        emit(ctx.out({
+        yield(ctx.out({
             background(Ore.REDSTONE.shadow)
             layer("lamp", Ore.REDSTONE.highlight)
             layer("borderSolid", Color.BLACK)
             layer("borderSolidTopLeft", Ore.REDSTONE.highlight)
         }, "block/redstone_lamp"))
-        emit(ctx.out({
+        yield(ctx.out({
             val color = c(0xe6994a)
             val shadow = c(0x946931)
             val highlight = c(0xFFCDB2)
