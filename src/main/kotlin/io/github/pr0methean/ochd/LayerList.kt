@@ -17,7 +17,7 @@ data class LayerList(val layers: List<AbstractImageTask>, val background: Paint)
     }
 
     fun mergeWithDuplicate(other: LayerList): LayerList {
-        if (layers !== other.layers) {
+        if (!layers.isShallowCopyOf(other.layers)) {
             val mergedLayers = layers.zip(other.layers).map { (a, b) -> if (a === b) a else a.mergeWithDuplicate(b) }
             return copy(layers = mergedLayers)
         }
