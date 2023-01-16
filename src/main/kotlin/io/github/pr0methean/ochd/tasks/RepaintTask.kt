@@ -38,6 +38,11 @@ class RepaintTask(
     ctx: CoroutineContext,
     stats: ImageProcessingStats
 ): AbstractImageTask("{$base}@$paint@$alpha", cache, ctx, stats) {
+    init {
+        if (alpha == 1.0) {
+            base.addOpaqueRepaint(this)
+        }
+    }
 
     override suspend fun renderOnto(context: GraphicsContext, x: Double, y: Double) {
         if (alpha != 1.0 || isStartedOrAvailable() || mutex.withLock { directDependentTasks.size } > 1) {
@@ -54,7 +59,11 @@ class RepaintTask(
         val drawStep: suspend (GraphicsContext) -> Unit
         val ctx: GraphicsContext
         if (context == null) {
-            val baseImage = base.await()
+            val baseImage = base.getNow()
+            ?: base.opaqueRepaints().firstNotNullOfOrNull { task ->
+                task.getNow()?.also { logger.info("Repainting $task for ${this@RepaintTask}") }
+            }
+            ?: base.await()
             base.removeDirectDependentTask(this)
             drawStep = { it.drawImage(baseImage, x, y) }
             logger.info("Allocating a canvas for {}", name)
@@ -81,6 +90,15 @@ class RepaintTask(
         return ctx
     }
 
+    override fun startedOrAvailableSubtasks(): Int =
+        if (isStartedOrAvailable()) {
+            totalSubtasks
+        } else if (base.isStartedOrAvailable() || base.opaqueRepaints().any(ImageTask::isStartedOrAvailable)) {
+            base.totalSubtasks
+        } else {
+            base.startedOrAvailableSubtasks()
+        }
+
     override fun mergeWithDuplicate(other: AbstractTask<*>): AbstractImageTask {
         if (other is RepaintTask && other !== this && other.base !== base) {
             LOGGER.debug("Merging RepaintTask {} with duplicate {}", name, other.name)
@@ -90,6 +108,13 @@ class RepaintTask(
             }
         }
         return super.mergeWithDuplicate(other)
+    }
+
+    override fun addOpaqueRepaint(repaint: ImageTask) {
+        if (alpha == 1.0) {
+            base.addOpaqueRepaint(repaint)
+        }
+        super.addOpaqueRepaint(repaint)
     }
 
     override suspend fun perform(): Image {
