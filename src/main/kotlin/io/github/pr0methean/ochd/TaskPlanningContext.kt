@@ -84,7 +84,7 @@ class TaskPlanningContext(
                         stats.dedupeSuccesses.add(className)
                     } ?: task.also {
                         logger.info("New task: {}", task)
-                        stats.dedupeFailures.add(className)
+                        stats.onDedupeFailed(className, task.name)
                     }
                 } as TTask
             }
@@ -98,7 +98,7 @@ class TaskPlanningContext(
         if (dedupedSvgTasks.add(name, 1) > 0) {
             stats.dedupeSuccesses.add("SvgToBitmapTask")
         } else {
-            stats.dedupeFailures.add("SvgToBitmapTask")
+            stats.onDedupeFailed("SvgToBitmapTask", name)
         }
         logger.debug("Found SvgToBitmapTask for {}", name)
         return task

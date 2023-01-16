@@ -1,6 +1,7 @@
 package io.github.pr0methean.ochd
 
 import com.google.common.collect.ConcurrentHashMultiset
+import com.google.common.collect.HashMultiset
 import com.google.common.collect.Multiset
 import com.google.common.collect.Multisets
 import kotlinx.coroutines.CoroutineName
@@ -87,8 +88,9 @@ fun stopMonitoring() {
 class ImageProcessingStats {
     private val taskLaunches: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val taskCompletions: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
-    val dedupeSuccesses: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
-    val dedupeFailures: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
+    val dedupeSuccesses: HashMultiset<String> = HashMultiset.create()
+    private val dedupeFailures: HashMultiset<String> = HashMultiset.create()
+    private val dedupeFailuresByName = HashMultiset.create<Pair<String, String>>()
     private val tasksByRunCount = ConcurrentHashMultiset.create<Pair<String, String>>()
 
     init {
@@ -133,6 +135,11 @@ class ImageProcessingStats {
             totalActual += actual
             totalWorstCase += worstCase
         }
+        dedupeFailuresByName.toSet().forEach { (typeName, name) ->
+            if (!tasksByRunCount.contains(typeName to name)) {
+                logger.warn("Task in graph not launched: {}: {}", typeName, name)
+            }
+        }
         val totalEfficiency = (totalUnique.toDouble() / totalActual)
         val totalHitRate = 1.0 - (totalActual - totalUnique).toDouble()/(totalWorstCase - totalUnique)
         logger.printf(Level.INFO, "Total               : %3.2f%% / %3.2f%%",
@@ -150,4 +157,8 @@ class ImageProcessingStats {
         taskCompletions.add(typename)
     }
 
+    fun onDedupeFailed(typename: String, name: String) {
+        dedupeFailures.add(typename)
+        dedupeFailuresByName.add(typename to name)
+    }
 }

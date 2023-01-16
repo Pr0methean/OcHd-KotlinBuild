@@ -465,10 +465,8 @@ enum class Fungus(
                 layer("borderSolidThick", color)
                 layer("trapdoor1", shadow)
                 layer("borderShortDashes", highlight)
-                copy {
-                    layer("zigzagSolid2", highlight)
-                    layer("zigzagSolid", shadow)
-                }
+                layer("zigzagSolid2", highlight)
+                layer("zigzagSolid", shadow)
                 layer("trapdoorHingesBig", STONE.highlight)
                 layer("trapdoorHinges", STONE.shadow)
             }
@@ -477,10 +475,8 @@ enum class Fungus(
                 background(color)
                 layer("planksTopBorderVertical", shadow)
                 layer("borderShortDashes", highlight)
-                copy {
-                    layer("zigzagSolid2", barkHighlight)
-                    layer("zigzagSolid", shadow)
-                }
+                layer("zigzagSolid2", barkHighlight)
+                layer("zigzagSolid", shadow)
                 layer("doorHingesBig", STONE.highlight)
                 layer("doorHinges", STONE.shadow)
             }
