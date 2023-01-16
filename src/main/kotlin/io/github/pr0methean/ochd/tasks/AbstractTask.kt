@@ -39,7 +39,7 @@ abstract class AbstractTask<out T>(
 
     @GuardedBy("mutex")
     val directDependentTasks: MutableSet<AbstractTask<*>> = newSetFromMap(WeakHashMap())
-    suspend fun addDirectDependentTask(task: AbstractTask<*>) {
+    private suspend fun addDirectDependentTask(task: AbstractTask<*>) {
         if (mutex.withLock {
                 directDependentTasks.add(task) && directDependentTasks.size >= 2 && cache.enable()
             }) {
