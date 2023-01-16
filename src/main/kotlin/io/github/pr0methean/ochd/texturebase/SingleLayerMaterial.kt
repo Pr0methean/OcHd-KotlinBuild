@@ -16,6 +16,10 @@ abstract class SingleLayerMaterial(
         layer(sourceFileName, color, alpha)
     }
 
+    override fun copyTo(dest: LayerListBuilder) {
+        dest.layer(sourceFileName, color, alpha)
+    }
+
     override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequenceOf(ctx.out(
             ctx.layer(sourceFileName, color, alpha), "$directory/$name"))
 }

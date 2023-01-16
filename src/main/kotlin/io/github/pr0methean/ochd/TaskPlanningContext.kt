@@ -15,8 +15,6 @@ import javafx.scene.paint.Paint
 import org.apache.logging.log4j.LogManager
 import java.io.File
 import java.util.Locale
-import java.util.concurrent.locks.ReentrantLock
-import kotlin.concurrent.withLock
 import kotlin.coroutines.CoroutineContext
 
 fun color(web: String): Color = Color.web(web)
@@ -39,7 +37,6 @@ class TaskPlanningContext(
     override fun toString(): String = name
     private val svgTasks: Map<String, SvgToBitmapTask>
     private val taskDeduplicationMap = mutableMapOf<AbstractTask<*>, AbstractTask<*>>()
-    private val taskDeduplicationLock = ReentrantLock()
     private val dedupedSvgTasks = ConcurrentHashMultiset.create<String>()
     val stats: ImageProcessingStats = ImageProcessingStats()
 
@@ -77,19 +74,17 @@ class TaskPlanningContext(
             else -> {
                 logger.debug("Main deduplication branch for {}", task)
                 val className = task::class.simpleName ?: "[unnamed class]"
-                return taskDeduplicationLock.withLock {
-                    taskDeduplicationMap.compute(task) { _, oldValue ->
-                        oldValue?.run {
-                            if (this === task) {
-                                this
-                            } else mergeWithDuplicate(task)
-                        }.also {
-                            logger.info("Deduplicated: {}", task)
-                            stats.dedupeSuccesses.add(className)
-                        } ?: task.also {
-                            logger.info("New task: {}", task)
-                            stats.dedupeFailures.add(className)
-                        }
+                return taskDeduplicationMap.compute(task) { _, oldValue ->
+                    oldValue?.run {
+                        if (this === task) {
+                            this
+                        } else mergeWithDuplicate(task)
+                    }.also {
+                        logger.info("Deduplicated: {}", task)
+                        stats.dedupeSuccesses.add(className)
+                    } ?: task.also {
+                        logger.info("New task: {}", task)
+                        stats.dedupeFailures.add(className)
                     }
                 } as TTask
             }

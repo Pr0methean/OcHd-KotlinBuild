@@ -162,4 +162,5 @@ private suspend fun runAll(
     }
     logger.debug("All jobs done; closing channel")
     finishedJobsChannel.close()
+    errorsChannel.close()
 }
