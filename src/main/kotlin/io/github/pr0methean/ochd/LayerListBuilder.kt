@@ -1,6 +1,7 @@
 package io.github.pr0methean.ochd
 
 import io.github.pr0methean.ochd.tasks.AbstractImageTask
+import io.github.pr0methean.ochd.tasks.RepaintTask
 import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
@@ -23,9 +24,24 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
         background = c(color)
     }
 
+    private fun addDeduplicatedLayer(layer: AbstractImageTask) {
+        val currentTop = layers.lastOrNull()
+        if (layer is RepaintTask && currentTop is RepaintTask
+                && layer.paint == currentTop.paint
+                && layer.alpha == currentTop.alpha) {
+            layers.removeLast()
+            val combinedRepaint = ctx.layer(ctx.stack(
+                    LayerList(listOf(currentTop.base, layer.base), Color.TRANSPARENT)),
+                    layer.paint, layer.alpha)
+            layers.add(combinedRepaint)
+        } else {
+            layers.add(layer)
+        }
+    }
+
     fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): AbstractImageTask {
         val layer = ctx.layer(name, paint, alpha)
-        layers.add(layer)
+        addDeduplicatedLayer(layer)
         return layer
     }
 
@@ -35,8 +51,12 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
         alpha: Double = 1.0
     ): AbstractImageTask {
         val layer = ctx.layer(source, paint, alpha)
-        layers.add(layer)
+        addDeduplicatedLayer(layer)
         return layer
+    }
+
+    fun stack(sourceInit: LayerListBuilder.() -> Unit): AbstractImageTask = ctx.stack(sourceInit).also {
+        addDeduplicatedLayer(it)
     }
 
     inline fun copy(sourceInit: LayerListBuilder.() -> Unit): Unit =
