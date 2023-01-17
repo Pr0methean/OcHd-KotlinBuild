@@ -3,7 +3,6 @@ package io.github.pr0methean.ochd.tasks
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.isShallowCopyOf
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
-import javafx.scene.canvas.Canvas
 import javafx.scene.image.Image
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
@@ -68,7 +67,7 @@ class AnimationTask(
         background.removeDirectDependentTask(this)
         logger.info("Allocating a canvas for {}", name)
         val canvasMutex = Mutex()
-        val canvas = Canvas(width.toDouble(), height.toDouble())
+        val canvas = createCanvas()
         val canvasCtx = canvas.graphicsContext2D
         for (index in frames.indices) {
             canvasCtx.drawImage(backgroundImage, 0.0, (frameHeight * index).toDouble())

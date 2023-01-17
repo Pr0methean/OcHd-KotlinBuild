@@ -2,7 +2,6 @@ package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
-import javafx.scene.canvas.Canvas
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.effect.Blend
 import javafx.scene.effect.BlendMode.SRC_ATOP
@@ -40,14 +39,13 @@ class RepaintTask(
         if (alpha != 1.0 || isStartedOrAvailable() || mutex.withLock { directDependentTasks.size } > 1) {
             super.renderOnto(contextSupplier, x, y)
         } else {
-            logger.info("Rendering {} onto an existing canvas", name)
             stats.onTaskLaunched("RepaintTask", name)
             renderOntoInternal(contextSupplier, x, y)
             stats.onTaskCompleted("RepaintTask", name)
         }
     }
 
-    private suspend fun renderOntoInternal(context: () -> GraphicsContext, x: Double, y: Double): GraphicsContext {
+    private suspend fun renderOntoInternal(context: () -> GraphicsContext, x: Double, y: Double) {
         val ctx = context()
         if (paint != null) {
             val colorLayer = ColorInput(0.0, 0.0, ctx.canvas.width, ctx.canvas.height, paint)
@@ -58,13 +56,10 @@ class RepaintTask(
             ctx.setEffect(blend)
         }
         ctx.isImageSmoothing = false
-        base.renderOnto({
-            ctx
-        }, x, y)
+        base.renderOnto({ ctx }, x, y)
         base.removeDirectDependentTask(this)
         ctx.setEffect(null)
         ctx.canvas.opacity = alpha
-        return ctx
     }
 
     override fun mergeWithDuplicate(other: AbstractTask<*>): AbstractImageTask {
@@ -80,8 +75,8 @@ class RepaintTask(
 
     override suspend fun perform(): Image {
         stats.onTaskLaunched("RepaintTask", name)
-        val gfx = renderOntoInternal({ Canvas(width.toDouble(), height.toDouble()).graphicsContext2D }, 0.0, 0.0)
-        val canvas = gfx.canvas
+        val canvas by lazy(::createCanvas)
+        renderOntoInternal({ canvas.graphicsContext2D }, 0.0, 0.0)
         val snapshot = snapshotCanvas(canvas)
         stats.onTaskCompleted("RepaintTask", name)
         return snapshot

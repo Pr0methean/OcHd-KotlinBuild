@@ -5,7 +5,6 @@ import io.github.pr0methean.ochd.LayerList
 import io.github.pr0methean.ochd.isShallowCopyOf
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import javafx.scene.SnapshotParameters
-import javafx.scene.canvas.Canvas
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
@@ -54,9 +53,8 @@ class ImageStackingTask(
     @Suppress("DeferredResultUnused")
     override suspend fun perform(): Image {
         stats.onTaskLaunched("ImageStackingTask", name)
-        val canvas by lazy { Canvas(width.toDouble(), height.toDouble()) }
-        val canvasCtx = canvas.graphicsContext2D
-        renderOntoInternal({ canvasCtx }, 0.0, 0.0, layers.layers)
+        val canvas by lazy(::createCanvas)
+        renderOntoInternal({ canvas.graphicsContext2D }, 0.0, 0.0, layers.layers)
         logger.debug("Taking snapshot of {}", name)
         val params = SnapshotParameters()
         params.fill = background
@@ -71,13 +69,13 @@ class ImageStackingTask(
         y: Double,
         layers: List<AbstractImageTask>
     ) {
+        val canvasCtx by lazy(canvasCtxSupplier)
         if (this.layers.background != Color.TRANSPARENT) {
-            val canvasCtx = canvasCtxSupplier()
-            canvasCtxSupplier().fill = this.layers.background
+            canvasCtx.fill = this.layers.background
             canvasCtx.fillRect(0.0, 0.0, canvasCtx.canvas.width, canvasCtx.canvas.height)
         }
         layers.forEach {
-            it.renderOnto(canvasCtxSupplier, x, y)
+            it.renderOnto({ canvasCtx }, x, y)
             it.removeDirectDependentTask(this@ImageStackingTask)
         }
     }
@@ -86,7 +84,6 @@ class ImageStackingTask(
         if (isStartedOrAvailable() || mutex.withLock { directDependentTasks.size } > 1) {
             super.renderOnto(contextSupplier, x, y)
         } else {
-            logger.info("Rendering {} onto an existing canvas", name)
             renderOntoInternal(contextSupplier, x, y, layers.layers)
         }
     }

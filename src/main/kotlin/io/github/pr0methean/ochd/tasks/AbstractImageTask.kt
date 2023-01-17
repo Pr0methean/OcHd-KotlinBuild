@@ -46,6 +46,11 @@ abstract class AbstractImageTask(
         contextSupplier().drawImage(image, x, y)
     }
 
+    protected fun createCanvas(): Canvas {
+        logger.info("Allocating a canvas for {}", name)
+        return Canvas(width.toDouble(), height.toDouble())
+    }
+
     protected suspend fun snapshotCanvas(canvas: Canvas, params: SnapshotParameters = DEFAULT_SNAPSHOT_PARAMS): Image {
         val output = WritableImage(canvas.width.toInt(), canvas.height.toInt())
         if (systemErrSwitched.compareAndSet(false, true)) {
@@ -79,7 +84,6 @@ abstract class AbstractImageTask(
         if (snapshot.isError) {
             throw output.exception
         }
-        logger.info("Canvas is now unreachable for {}", name)
         return snapshot
     }
 }
