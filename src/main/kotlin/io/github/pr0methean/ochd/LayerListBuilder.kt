@@ -69,7 +69,7 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
         ) {
             layers.removeLast()
             val combinedRepaint = ctx.layer(
-                ctx.stack(
+                ctx.stackNoDedup(
                     LayerList(listOf(currentTop.base, element.base), Color.TRANSPARENT)
                 ),
                 element.paint, element.alpha
