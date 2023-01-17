@@ -24,6 +24,7 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
         background = c(color)
     }
 
+    @Suppress("ComplexCondition")
     private fun addDeduplicatedLayer(layer: AbstractImageTask) {
         val currentTop = layers.lastOrNull()
         if (layer is RepaintTask && currentTop is RepaintTask
