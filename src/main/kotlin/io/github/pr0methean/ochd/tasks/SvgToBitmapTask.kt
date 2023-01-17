@@ -21,6 +21,11 @@ import kotlin.math.roundToInt
 
 private val batikTranscoder: ThreadLocal<ToImageTranscoder> = ThreadLocal.withInitial { ToImageTranscoder() }
 private const val FRAMES_PER_COMMAND_BLOCK_TEXTURE = 4
+
+private fun getHeight(name: String, width: Int): Int = if (name.contains("command_block") || name.contains("4x")) {
+    FRAMES_PER_COMMAND_BLOCK_TEXTURE * width
+} else width
+
 /** SVG decoder that stores the last image it decoded, rather than passing it to an encoder. */
 private class ToImageTranscoder: SVGAbstractTranscoder() {
     private var lastImage: BufferedImage? = null
@@ -110,7 +115,3 @@ class SvgToBitmapTask(
         return image
     }
 }
-
-fun getHeight(name: String, width: Int): Int = if (name.contains("command_block") || name.contains("4x")) {
-    FRAMES_PER_COMMAND_BLOCK_TEXTURE * width
-} else width
