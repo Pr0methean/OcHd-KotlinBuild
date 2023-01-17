@@ -72,8 +72,8 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
     }
     fun copy(source: SingleTextureMaterial): Unit = source.copyTo(this)
 
-    fun copy(element: AbstractImageTask): Boolean {
-        return layers.add(ctx.deduplicate(element))
+    fun copy(element: AbstractImageTask) {
+        addDeduplicatedLayer(ctx.deduplicate(element))
     }
 
     fun build(): LayerList {
