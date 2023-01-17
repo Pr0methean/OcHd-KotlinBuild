@@ -7,7 +7,6 @@ import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import javafx.scene.SnapshotParameters
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.image.Image
-import javafx.scene.paint.Color
 import kotlinx.coroutines.sync.withLock
 import org.apache.logging.log4j.LogManager
 import java.util.*
@@ -70,10 +69,6 @@ class ImageStackingTask(
         layers: List<AbstractImageTask>
     ) {
         val canvasCtx by lazy(canvasCtxSupplier)
-        if (this.layers.background != Color.TRANSPARENT) {
-            canvasCtx.fill = this.layers.background
-            canvasCtx.fillRect(0.0, 0.0, canvasCtx.canvas.width, canvasCtx.canvas.height)
-        }
         layers.forEach {
             it.renderOnto({ canvasCtx }, x, y)
             it.removeDirectDependentTask(this@ImageStackingTask)
