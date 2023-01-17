@@ -39,27 +39,19 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
         }
     }
 
-    fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): AbstractImageTask {
+    fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0) {
         val layer = ctx.layer(name, paint, alpha)
         addDeduplicatedLayer(layer)
-        return layer
     }
 
     fun layer(
-        source: AbstractImageTask,
-        paint: Paint? = null,
-        alpha: Double = 1.0
-    ): AbstractImageTask {
+        source: AbstractImageTask, paint: Paint? = null, alpha: Double = 1.0
+    ) {
         val layer = ctx.layer(source, paint, alpha)
         addDeduplicatedLayer(layer)
-        return layer
     }
 
-    fun stack(sourceInit: LayerListBuilder.() -> Unit): AbstractImageTask = ctx.stack(sourceInit).also {
-        addDeduplicatedLayer(it)
-    }
-
-    inline fun copy(sourceInit: LayerListBuilder.() -> Unit): Unit =
+    inline fun copy(sourceInit: LayerListBuilder.() -> Unit) =
         copy(LayerListBuilder(ctx).apply(sourceInit).build())
 
     fun copy(source: LayerList) {
