@@ -55,7 +55,6 @@ class RepaintTask(
             blend.bottomInput = null
             ctx.setEffect(blend)
         }
-        ctx.isImageSmoothing = false
         base.renderOnto({ ctx }, x, y)
         base.removeDirectDependentTask(this)
         ctx.setEffect(null)

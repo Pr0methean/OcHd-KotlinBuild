@@ -52,6 +52,7 @@ abstract class AbstractImageTask(
     }
 
     protected suspend fun snapshotCanvas(canvas: Canvas, params: SnapshotParameters = DEFAULT_SNAPSHOT_PARAMS): Image {
+        canvas.graphicsContext2D.isImageSmoothing = false
         val output = WritableImage(canvas.width.toInt(), canvas.height.toInt())
         if (systemErrSwitched.compareAndSet(false, true)) {
             System.setErr(errCatcherStream)
