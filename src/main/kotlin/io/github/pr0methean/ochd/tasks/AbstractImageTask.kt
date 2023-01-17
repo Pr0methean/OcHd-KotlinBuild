@@ -52,12 +52,12 @@ abstract class AbstractImageTask(
     }
 
     protected suspend fun snapshotCanvas(canvas: Canvas, params: SnapshotParameters = DEFAULT_SNAPSHOT_PARAMS): Image {
-        val output = WritableImage(canvas.width.toInt(), canvas.height.toInt())
+        logger.info("Snapshotting canvas for {}", name)
         if (systemErrSwitched.compareAndSet(false, true)) {
             System.setErr(errCatcherStream)
         }
-        logger.info("Snapshotting canvas for {}", name)
         val caughtStderr = AtomicReference<String?>(null)
+        val output = WritableImage(canvas.width.toInt(), canvas.height.toInt())
         val snapshot = withContext(Dispatchers.Main.plus(CoroutineName("Snapshot of $name"))) {
             try {
                 canvas.snapshot(params, output)
