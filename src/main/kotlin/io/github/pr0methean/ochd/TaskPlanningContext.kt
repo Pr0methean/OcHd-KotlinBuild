@@ -105,7 +105,7 @@ class TaskPlanningContext(
     }
 
     fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): AbstractImageTask
-            = layer(findSvgTask(name), paint, alpha)
+            = deduplicate(layerNoDedup(findSvgTask(name), paint, alpha))
 
     fun layer(
         source: AbstractImageTask,
@@ -114,8 +114,15 @@ class TaskPlanningContext(
     ): AbstractImageTask {
         logger.debug("layer({},{},{})", source, paint, alpha)
         return deduplicate(
-            RepaintTask(deduplicate(source), paint, alpha, SoftTaskCache("$source@$paint@$alpha"), ctx, stats))
+            layerNoDedup(deduplicate(source), paint, alpha)
+        )
     }
+
+    fun layerNoDedup(
+        source: AbstractImageTask,
+        paint: Paint?,
+        alpha: Double
+    ) = RepaintTask(source, paint, alpha, SoftTaskCache("$source@$paint@$alpha"), ctx, stats)
 
     inline fun stack(init: LayerListBuilder.() -> Unit): AbstractImageTask {
         val layerTasksBuilder = LayerListBuilder(this)
@@ -157,7 +164,10 @@ class TaskPlanningContext(
 
     fun stack(layers: LayerList): AbstractImageTask {
         logger.debug("stack({})", layers)
-        return deduplicate(ImageStackingTask(
-            layers, SoftTaskCache(layers.toString()), ctx, stats))
+        return deduplicate(stackNoDedup(layers))
     }
+
+    fun stackNoDedup(layers: LayerList) = ImageStackingTask(
+        layers, SoftTaskCache(layers.toString()), ctx, stats
+    )
 }

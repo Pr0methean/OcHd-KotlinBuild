@@ -12,7 +12,7 @@ interface SingleTextureMaterial: Material {
     fun LayerListBuilder.createTextureLayers()
 
     fun copyTo(dest: LayerListBuilder) {
-        dest.copy(LayerListBuilder(dest.ctx).apply {createTextureLayers()}.build())
+        dest.apply {createTextureLayers()}
     }
     override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequenceOf(
         ctx.out(ctx.stack { createTextureLayers() }, "$directory/$name")

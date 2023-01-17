@@ -25,7 +25,7 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
     }
 
     @Suppress("ComplexCondition")
-    private fun addDeduplicatedLayer(layer: AbstractImageTask) {
+    private fun addLayerInternal(layer: AbstractImageTask) {
         val currentTop = layers.lastOrNull()
         if (layer is RepaintTask && currentTop is RepaintTask
                 && layer.paint == currentTop.paint
@@ -41,15 +41,15 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
     }
 
     fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0) {
-        val layer = ctx.layer(name, paint, alpha)
-        addDeduplicatedLayer(layer)
+        val layer = ctx.layerNoDedup(ctx.findSvgTask(name), paint, alpha)
+        addLayerInternal(layer)
     }
 
     fun layer(
         source: AbstractImageTask, paint: Paint? = null, alpha: Double = 1.0
     ) {
-        val layer = ctx.layer(source, paint, alpha)
-        addDeduplicatedLayer(layer)
+        val layer = ctx.layerNoDedup(source, paint, alpha)
+        addLayerInternal(layer)
     }
 
     inline fun copy(sourceInit: LayerListBuilder.() -> Unit) =
@@ -65,7 +65,7 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
             }
         }
         if (source.layers.size > 1) { // Don't flatten sub-stacks since we want to deduplicate them
-            addDeduplicatedLayer(ctx.stack(source))
+            addLayerInternal(ctx.stackNoDedup(source))
         } else {
             copy(source.layers[0])
         }
@@ -73,11 +73,11 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
     fun copy(source: SingleTextureMaterial): Unit = source.copyTo(this)
 
     fun copy(element: AbstractImageTask) {
-        addDeduplicatedLayer(ctx.deduplicate(element))
+        addLayerInternal(ctx.deduplicate(element))
     }
 
     fun build(): LayerList {
         check(layers.isNotEmpty()) { "Trying to create an empty LayerList" }
-        return LayerList(layers, background)
+        return LayerList(layers.map(ctx::deduplicate), background)
     }
 }
