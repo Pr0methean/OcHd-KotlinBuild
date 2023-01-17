@@ -25,7 +25,7 @@ class ImageStackingTask(
     cache: DeferredTaskCache<Image>,
     ctx: CoroutineContext,
     stats: ImageProcessingStats
-) : AbstractImageTask(layers.toString(), cache, ctx, stats) {
+) : AbstractImageTask(layers.toString(), cache, ctx, stats, layers.width, layers.height) {
     @Suppress("MagicNumber")
     override fun computeHashCode(): Int = layers.hashCode() + 37
 
@@ -54,16 +54,9 @@ class ImageStackingTask(
     @Suppress("DeferredResultUnused")
     override suspend fun perform(): Image {
         stats.onTaskLaunched("ImageStackingTask", name)
-        logger.debug("Fetching first layer of {} to check size", this)
-        val firstLayer = layers.layers.first()
-        val firstLayerImage = firstLayer.await()
-        firstLayer.removeDirectDependentTask(this)
-        val width = firstLayerImage.width
-        val height = firstLayerImage.height
-        logger.info("Allocating a canvas for {}", name)
-        val canvas = Canvas(width, height)
+        val canvas by lazy { Canvas(width.toDouble(), height.toDouble()) }
         val canvasCtx = canvas.graphicsContext2D
-        renderOntoInternal(canvasCtx, 0.0, 0.0) { canvasCtx.drawImage(firstLayerImage, 0.0, 0.0) }
+        renderOntoInternal({ canvasCtx }, 0.0, 0.0, layers.layers)
         logger.debug("Taking snapshot of {}", name)
         val params = SnapshotParameters()
         params.fill = background
@@ -72,35 +65,29 @@ class ImageStackingTask(
         return snapshot
     }
 
-    private suspend inline fun renderOntoInternal(
-        canvasCtx: GraphicsContext,
+    private suspend fun renderOntoInternal(
+        canvasCtxSupplier: () -> GraphicsContext,
         x: Double,
         y: Double,
-        drawFirstLayer: () -> Unit
+        layers: List<AbstractImageTask>
     ) {
-        if (layers.background != Color.TRANSPARENT) {
-            canvasCtx.fill = layers.background
+        if (this.layers.background != Color.TRANSPARENT) {
+            val canvasCtx = canvasCtxSupplier()
+            canvasCtxSupplier().fill = this.layers.background
             canvasCtx.fillRect(0.0, 0.0, canvasCtx.canvas.width, canvasCtx.canvas.height)
         }
-        drawFirstLayer()
-        if (layers.layers.size > 1) {
-            layers.layers.drop(1).forEach {
-                it.renderOnto(canvasCtx, x, y)
-                it.removeDirectDependentTask(this@ImageStackingTask)
-            }
+        layers.forEach {
+            it.renderOnto(canvasCtxSupplier, x, y)
+            it.removeDirectDependentTask(this@ImageStackingTask)
         }
     }
 
-    override suspend fun renderOnto(context: GraphicsContext, x: Double, y: Double) {
+    override suspend fun renderOnto(contextSupplier: () -> GraphicsContext, x: Double, y: Double) {
         if (isStartedOrAvailable() || mutex.withLock { directDependentTasks.size } > 1) {
-            super.renderOnto(context, x, y)
+            super.renderOnto(contextSupplier, x, y)
         } else {
             logger.info("Rendering {} onto an existing canvas", name)
-            val firstLayer = layers.layers[0]
-            renderOntoInternal(context, x, y) {
-                firstLayer.renderOnto(context, x, y)
-                firstLayer.removeDirectDependentTask(this)
-            }
+            renderOntoInternal(contextSupplier, x, y, layers.layers)
         }
     }
 

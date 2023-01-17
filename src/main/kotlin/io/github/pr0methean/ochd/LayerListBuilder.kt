@@ -70,7 +70,7 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
             layers.removeLast()
             val combinedRepaint = ctx.layerNoDedup(
                 ctx.stack(
-                    LayerList(listOf(currentTop.base, element.base), Color.TRANSPARENT)
+                    LayerList(listOf(currentTop.base, element.base), Color.TRANSPARENT, ctx.tileSize, ctx.tileSize)
                 ),
                 element.paint, element.alpha
             )
@@ -82,6 +82,6 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
 
     fun build(): LayerList {
         check(layers.isNotEmpty()) { "Trying to create an empty LayerList" }
-        return LayerList(layers.map(ctx::deduplicate), background)
+        return LayerList(layers.map(ctx::deduplicate), background, ctx.tileSize, ctx.tileSize)
     }
 }

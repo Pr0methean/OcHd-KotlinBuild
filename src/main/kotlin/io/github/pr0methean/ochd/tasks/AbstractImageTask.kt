@@ -32,15 +32,18 @@ private val systemErrSwitched: AtomicBoolean = AtomicBoolean(false)
 abstract class AbstractImageTask(
     name: String, cache: DeferredTaskCache<Image>,
     ctx: CoroutineContext,
-    open val stats: ImageProcessingStats
+    open val stats: ImageProcessingStats,
+    val width: Int,
+    val height: Int
 )
     : AbstractTask<Image>(name, cache, ctx) {
     override fun mergeWithDuplicate(other: AbstractTask<*>): AbstractImageTask {
         return super.mergeWithDuplicate(other) as AbstractImageTask
     }
 
-    open suspend fun renderOnto(context: GraphicsContext, x: Double, y: Double) {
-        context.drawImage(await(), x, y)
+    open suspend fun renderOnto(contextSupplier: () -> GraphicsContext, x: Double, y: Double) {
+        val image = await()
+        contextSupplier().drawImage(image, x, y)
     }
 
     protected suspend fun snapshotCanvas(canvas: Canvas, params: SnapshotParameters = DEFAULT_SNAPSHOT_PARAMS): Image {

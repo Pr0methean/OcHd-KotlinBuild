@@ -70,12 +70,12 @@ private class ToImageTranscoder: SVGAbstractTranscoder() {
 @Suppress("EqualsWithHashCodeExist", "EqualsOrHashCode")
 class SvgToBitmapTask(
     name: String,
-    private val width: Int,
+    width: Int,
     private val file: File,
     cache: DeferredTaskCache<Image>,
     ctx: CoroutineContext,
     stats: ImageProcessingStats
-): AbstractImageTask(name, cache, ctx, stats) {
+): AbstractImageTask(name, cache, ctx, stats, width, getHeight(name, width)) {
 
     /** SVG import doesn't depend on any other tasks, so this returns an empty list. */
     override val directDependencies: List<AbstractTask<Nothing>> = listOf()
@@ -109,3 +109,7 @@ class SvgToBitmapTask(
         return image
     }
 }
+
+fun getHeight(name: String, width: Int): Int = if (name.contains("command_block") || name.contains("4x")) {
+    4 * width
+} else width

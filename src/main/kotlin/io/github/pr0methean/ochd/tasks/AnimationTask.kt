@@ -22,13 +22,14 @@ private val logger = LogManager.getLogger("AnimationTask")
 @Suppress("EqualsWithHashCodeExist", "EqualsOrHashCode")
 class AnimationTask(
     val background: AbstractImageTask,
-    val frames: List<AbstractImageTask>, val width: Int, val height: Int,
+    val frames: List<AbstractImageTask>,
+    width: Int,
+    private val frameHeight: Int,
     name: String,
     cache: DeferredTaskCache<Image>,
     ctx: CoroutineContext,
     stats: ImageProcessingStats
-): AbstractImageTask(name, cache, ctx, stats) {
-    private val totalHeight = height * frames.size
+): AbstractImageTask(name, cache, ctx, stats, width, frameHeight * frames.size) {
     private val dependencies = frames + background
 
     override fun computeHashCode(): Int = Objects.hash(background, frames, width, height)
@@ -67,15 +68,15 @@ class AnimationTask(
         background.removeDirectDependentTask(this)
         logger.info("Allocating a canvas for {}", name)
         val canvasMutex = Mutex()
-        val canvas = Canvas(width.toDouble(), totalHeight.toDouble())
+        val canvas = Canvas(width.toDouble(), height.toDouble())
         val canvasCtx = canvas.graphicsContext2D
         for (index in frames.indices) {
-            canvasCtx.drawImage(backgroundImage, 0.0, (height * index).toDouble())
+            canvasCtx.drawImage(backgroundImage, 0.0, (frameHeight * index).toDouble())
         }
         val frameTasks = frames.withIndex().map { (index, frameTask) ->
             coroutineScope.launch {
                 canvasMutex.withLock {
-                    frameTask.renderOnto(canvasCtx, 0.0, (height * index).toDouble())
+                    frameTask.renderOnto({ canvasCtx }, 0.0, (frameHeight * index).toDouble())
                 }
                 frameTask.removeDirectDependentTask(this@AnimationTask)
             }
