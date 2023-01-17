@@ -4,7 +4,6 @@ import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.LayerList
 import io.github.pr0methean.ochd.isShallowCopyOf
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
-import javafx.scene.SnapshotParameters
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
@@ -55,10 +54,7 @@ class ImageStackingTask(
         stats.onTaskLaunched("ImageStackingTask", name)
         val canvas by lazy(::createCanvas)
         renderOntoInternal({ canvas.graphicsContext2D }, 0.0, 0.0, layers.layers)
-        logger.debug("Taking snapshot of {}", name)
-        val params = SnapshotParameters()
-        params.fill = background
-        val snapshot = snapshotCanvas(canvas, params)
+        val snapshot = snapshotCanvas(canvas)
         stats.onTaskCompleted("ImageStackingTask", name)
         return snapshot
     }
@@ -87,7 +83,4 @@ class ImageStackingTask(
             renderOntoInternal(contextSupplier, x, y, layers.layers)
         }
     }
-
-    private val background = layers.background
-
 }
