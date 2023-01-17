@@ -4,6 +4,7 @@ import com.sun.prism.impl.Disposer
 import io.github.pr0methean.ochd.DEFAULT_SNAPSHOT_PARAMS
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
+import javafx.scene.SnapshotParameters
 import javafx.scene.canvas.Canvas
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.image.Image
@@ -50,7 +51,7 @@ abstract class AbstractImageTask(
         return Canvas(width.toDouble(), height.toDouble())
     }
 
-    protected suspend fun snapshotCanvas(canvas: Canvas): Image {
+    protected suspend fun snapshotCanvas(canvas: Canvas, params: SnapshotParameters = DEFAULT_SNAPSHOT_PARAMS): Image {
         logger.info("Snapshotting canvas for {}", name)
         if (systemErrSwitched.compareAndSet(false, true)) {
             System.setErr(errCatcherStream)
@@ -59,7 +60,7 @@ abstract class AbstractImageTask(
         val output = WritableImage(canvas.width.toInt(), canvas.height.toInt())
         val snapshot = withContext(Dispatchers.Main.plus(CoroutineName("Snapshot of $name"))) {
             try {
-                canvas.snapshot(DEFAULT_SNAPSHOT_PARAMS, output)
+                canvas.snapshot(params, output)
             } finally {
                 Disposer.cleanUp()
                 errCatcherStream.flush()
