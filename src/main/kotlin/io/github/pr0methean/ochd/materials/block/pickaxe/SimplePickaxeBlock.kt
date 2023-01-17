@@ -277,8 +277,10 @@ enum class SimplePickaxeBlock(
                 layer("bigDotsTopLeftBottomRight", shadow)
                 layer("bigDotsBottomLeftTopRight", highlight)
             }
-            layer("bigRingsTopLeftBottomRight", highlight)
-            layer("bigRingsBottomLeftTopRight", shadow)
+            copy {
+                layer("bigRingsTopLeftBottomRight", highlight)
+                layer("bigRingsBottomLeftTopRight", shadow)
+            }
             layer("borderRoundDots", highlight)
         }
     },

@@ -22,8 +22,10 @@ object DyedTerracotta : DyedBlock("terracotta") {
             layer("bigDotsBottomLeftTopRight", TERRACOTTA.highlight)
             layer("bigDotsTopLeftBottomRight", TERRACOTTA.shadow)
         }, alpha = 0.5)
-        layer("bigRingsTopLeftBottomRight", TERRACOTTA.highlight)
-        layer("bigRingsBottomLeftTopRight", TERRACOTTA.shadow)
+        copy {
+            layer("bigRingsTopLeftBottomRight", TERRACOTTA.highlight)
+            layer("bigRingsBottomLeftTopRight", TERRACOTTA.shadow)
+        }
         layer("borderRoundDots", TERRACOTTA.color)
     }
 }
