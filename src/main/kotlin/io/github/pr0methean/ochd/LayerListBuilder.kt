@@ -17,39 +17,26 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
             Color(paint.red, paint.green, paint.blue, opacity * paint.opacity)
         }
     }
+
     fun background(red: Int, green: Int, blue: Int) {
         background = Color.rgb(red, green, blue)
     }
+
     fun background(color: Int) {
         background = c(color)
     }
 
-    @Suppress("ComplexCondition")
-    private fun addLayerInternal(layer: AbstractImageTask) {
-        val currentTop = layers.lastOrNull()
-        if (layer is RepaintTask && currentTop is RepaintTask
-                && layer.paint == currentTop.paint
-                && layer.alpha == currentTop.alpha) {
-            layers.removeLast()
-            val combinedRepaint = ctx.layer(ctx.stack(
-                    LayerList(listOf(currentTop.base, layer.base), Color.TRANSPARENT)),
-                    layer.paint, layer.alpha)
-            layers.add(combinedRepaint)
-        } else {
-            layers.add(layer)
-        }
-    }
 
     fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0) {
         val layer = ctx.layerNoDedup(ctx.findSvgTask(name), paint, alpha)
-        addLayerInternal(layer)
+        copy(layer)
     }
 
     fun layer(
         source: AbstractImageTask, paint: Paint? = null, alpha: Double = 1.0
     ) {
         val layer = ctx.layerNoDedup(source, paint, alpha)
-        addLayerInternal(layer)
+        copy(layer)
     }
 
     inline fun copy(sourceInit: LayerListBuilder.() -> Unit) =
@@ -65,15 +52,32 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
             }
         }
         if (source.layers.size > 1) { // Don't flatten sub-stacks since we want to deduplicate them
-            addLayerInternal(ctx.stackNoDedup(source))
+            copy(ctx.stackNoDedup(source))
         } else {
             copy(source.layers[0])
         }
     }
+
     fun copy(source: SingleTextureMaterial): Unit = source.copyTo(this)
 
+    @Suppress("ComplexCondition")
     fun copy(element: AbstractImageTask) {
-        addLayerInternal(ctx.deduplicate(element))
+        val currentTop = layers.lastOrNull()
+        if (element is RepaintTask && currentTop is RepaintTask
+            && element.paint == currentTop.paint
+            && element.alpha == currentTop.alpha
+        ) {
+            layers.removeLast()
+            val combinedRepaint = ctx.layer(
+                ctx.stack(
+                    LayerList(listOf(currentTop.base, element.base), Color.TRANSPARENT)
+                ),
+                element.paint, element.alpha
+            )
+            layers.add(combinedRepaint)
+        } else {
+            layers.add(element)
+        }
     }
 
     fun build(): LayerList {
