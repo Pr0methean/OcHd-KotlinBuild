@@ -1,6 +1,6 @@
 package io.github.pr0methean.ochd
 
-import com.google.common.collect.ConcurrentHashMultiset
+import com.google.common.collect.HashMultiset
 import io.github.pr0methean.ochd.tasks.AbstractImageTask
 import io.github.pr0methean.ochd.tasks.AbstractTask
 import io.github.pr0methean.ochd.tasks.AnimationTask
@@ -37,7 +37,7 @@ class TaskPlanningContext(
     override fun toString(): String = name
     private val svgTasks: Map<String, SvgToBitmapTask>
     private val taskDeduplicationMap = mutableMapOf<AbstractTask<*>, AbstractTask<*>>()
-    private val dedupedSvgTasks = ConcurrentHashMultiset.create<String>()
+    private val dedupedSvgTasks = HashMultiset.create<String>()
     val stats: ImageProcessingStats = ImageProcessingStats()
 
     init {
@@ -62,7 +62,7 @@ class TaskPlanningContext(
         
         return when {
             task is SvgToBitmapTask
-            -> findSvgTask(task.name) as TTask
+            -> task as TTask
             task is RepaintTask
                     && (task.paint == null || task.paint == Color.BLACK)
                     && task.alpha == 1.0
