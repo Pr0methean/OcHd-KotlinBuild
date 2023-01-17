@@ -20,6 +20,7 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.math.roundToInt
 
 private val batikTranscoder: ThreadLocal<ToImageTranscoder> = ThreadLocal.withInitial { ToImageTranscoder() }
+private const val FRAMES_PER_COMMAND_BLOCK_TEXTURE = 4
 /** SVG decoder that stores the last image it decoded, rather than passing it to an encoder. */
 private class ToImageTranscoder: SVGAbstractTranscoder() {
     private var lastImage: BufferedImage? = null
@@ -111,5 +112,5 @@ class SvgToBitmapTask(
 }
 
 fun getHeight(name: String, width: Int): Int = if (name.contains("command_block") || name.contains("4x")) {
-    4 * width
+    FRAMES_PER_COMMAND_BLOCK_TEXTURE * width
 } else width
