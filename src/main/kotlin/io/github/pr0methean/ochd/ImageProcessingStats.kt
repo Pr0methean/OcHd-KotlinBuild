@@ -117,8 +117,9 @@ class ImageProcessingStats {
         logger.info("")
         logger.info("Tasks repeated due to cache misses:")
         val repeatedTasks = Multisets.copyHighestCountFirst(tasksByRunCount)
-        repeatedTasks.toSet().forEach { (typeName, name) ->
-            val count = repeatedTasks.count(typeName to name)
+        repeatedTasks.toSet().forEach {
+            val (typeName, name) = it
+            val count = repeatedTasks.count(it)
             if (count >= 2) {
                 logger.info("{}: {}: {}", typeName, name, count)
             }
