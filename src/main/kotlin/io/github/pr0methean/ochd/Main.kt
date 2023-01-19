@@ -116,7 +116,7 @@ private suspend fun runAll(
     maxJobs: Int
 ) {
     val unstartedTasks = tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks)).toMutableSet()
-    val inProgressJobs = mutableMapOf<PngOutputTask,Job>()
+    val inProgressJobs = HashMap<PngOutputTask,Job>()
     val finishedJobsChannel = Channel<PngOutputTask>(capacity = CAPACITY_PADDING_FACTOR * THREADS)
     val errorsChannel = Channel<Throwable>()
     while (unstartedTasks.isNotEmpty()) {
