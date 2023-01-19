@@ -9,6 +9,7 @@ val nullReference: SoftReference<Nothing?> = SoftReference<Nothing?>(null)
 /**
  * A TaskCache that's backed by a soft reference.
  */
+@Suppress("unused")
 class SoftTaskCache<T>(
     name: String
 ): DeferredTaskCache<T>(name) {

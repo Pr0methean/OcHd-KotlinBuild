@@ -8,7 +8,7 @@ import io.github.pr0methean.ochd.tasks.ImageStackingTask
 import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.tasks.RepaintTask
 import io.github.pr0methean.ochd.tasks.SvgToBitmapTask
-import io.github.pr0methean.ochd.tasks.caching.SoftTaskCache
+import io.github.pr0methean.ochd.tasks.caching.HardTaskCache
 import io.github.pr0methean.ochd.tasks.caching.noopDeferredTaskCache
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
@@ -48,7 +48,7 @@ class TaskPlanningContext(
                 shortName,
                 tileSize,
                 svgDirectory.resolve("$shortName.svg"),
-                SoftTaskCache(shortName),
+                HardTaskCache(shortName),
                 ctx,
                 stats
             )
@@ -122,7 +122,7 @@ class TaskPlanningContext(
         source: AbstractImageTask,
         paint: Paint?,
         alpha: Double
-    ) = RepaintTask(source, paint, alpha, SoftTaskCache("$source@$paint@$alpha"), ctx, stats)
+    ) = RepaintTask(source, paint, alpha, HardTaskCache("$source@$paint@$alpha"), ctx, stats)
 
     inline fun stack(init: LayerListBuilder.() -> Unit): AbstractImageTask {
         val layerTasksBuilder = LayerListBuilder(this)
@@ -168,6 +168,6 @@ class TaskPlanningContext(
     }
 
     fun stackNoDedup(layers: LayerList) = ImageStackingTask(
-        layers, SoftTaskCache(layers.toString()), ctx, stats
+        layers, HardTaskCache(layers.toString()), ctx, stats
     )
 }
