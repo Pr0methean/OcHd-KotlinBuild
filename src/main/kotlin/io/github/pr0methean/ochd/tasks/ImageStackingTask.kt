@@ -55,9 +55,8 @@ class ImageStackingTask(
         renderOntoInternal({ canvas.graphicsContext2D }, 0.0, 0.0, layers.layers)
         logger.debug("Taking snapshot of {}", name)
         val params = SnapshotParameters()
-        params.fill = background
-        val snapshot = snapshotCanvas(canvas, params)
-        return snapshot
+        params.fill = layers.background
+        return snapshotCanvas(canvas, params)
     }
 
     private suspend fun renderOntoInternal(
@@ -82,6 +81,4 @@ class ImageStackingTask(
             renderOntoInternal(contextSupplier, x, y, layers.layers)
         }
     }
-
-    private val background = layers.background
 }
