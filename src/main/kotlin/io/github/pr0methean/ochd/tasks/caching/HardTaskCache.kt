@@ -15,8 +15,8 @@ class HardTaskCache<T>(
         coroutineRef.set(null)
     }
 
-    override fun computeIfAbsent(coroutineCreator: () -> Deferred<T>): Deferred<T> {
+    @Suppress("OVERRIDE_BY_INLINE")
+    override inline fun computeIfAbsent(coroutineCreator: () -> Deferred<T>): Deferred<T> {
         return coroutineRef.compareAndExchange(null, coroutineCreator())!!
     }
-
 }
