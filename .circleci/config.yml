@@ -46,7 +46,7 @@ jobs:
       - run: >
           java -Dprism.maxvram=2G -Dglass.platform=Monocle -Dmonocle.platform=Headless -Dquantum.multithreaded=true 
           -XX:+UseStringDeduplication -Xms7872m -Xmx7872m -XX:MaxMetaspaceSize=64m
-          -XX:+UnlockExperimentalVMOptions -XX:+UseZGC -XX:ZAllocationSpikeTolerance=2 -XX:ZFragmentationLimit=10
+          -XX:+UnlockExperimentalVMOptions -XX:+UseZGC -XX:ZAllocationSpikeTolerance=3 -XX:ZFragmentationLimit=5
           '-Xlog:gc*=debug,gc+stats=trace,gc+heap=trace,gc+heap+exit=trace,gc+metaspace=trace,gc+nmethod=info,safepoint+stats=info' 
           -XX:+UseNUMA -XX:ConcGCThreads=3 -XX:+AlwaysPreTouch -XX:+UseTransparentHugePages
           -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=HeapDump-${CIRCLE_BUILD_NUM}.hprof
