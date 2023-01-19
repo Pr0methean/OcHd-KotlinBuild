@@ -39,9 +39,7 @@ class RepaintTask(
         if (alpha != 1.0 || isStartedOrAvailable() || mutex.withLock { directDependentTasks.size } > 1) {
             super.renderOnto(contextSupplier, x, y)
         } else {
-            stats.onTaskLaunched("RepaintTask", name)
             renderOntoInternal(contextSupplier, x, y)
-            stats.onTaskCompleted("RepaintTask", name)
         }
     }
 
