@@ -51,14 +51,12 @@ class ImageStackingTask(
 
     @Suppress("DeferredResultUnused")
     override suspend fun perform(): Image {
-        stats.onTaskLaunched("ImageStackingTask", name)
         val canvas by lazy(::createCanvas)
         renderOntoInternal({ canvas.graphicsContext2D }, 0.0, 0.0, layers.layers)
         logger.debug("Taking snapshot of {}", name)
         val params = SnapshotParameters()
         params.fill = background
         val snapshot = snapshotCanvas(canvas, params)
-        stats.onTaskCompleted("ImageStackingTask", name)
         return snapshot
     }
 
@@ -68,11 +66,13 @@ class ImageStackingTask(
         y: Double,
         layers: List<AbstractImageTask>
     ) {
+        stats.onTaskLaunched("ImageStackingTask", name)
         val canvasCtx by lazy(canvasCtxSupplier)
         layers.forEach {
             it.renderOnto({ canvasCtx }, x, y)
             it.removeDirectDependentTask(this@ImageStackingTask)
         }
+        stats.onTaskCompleted("ImageStackingTask", name)
     }
 
     override suspend fun renderOnto(contextSupplier: () -> GraphicsContext, x: Double, y: Double) {

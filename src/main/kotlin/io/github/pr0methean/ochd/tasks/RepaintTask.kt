@@ -46,6 +46,7 @@ class RepaintTask(
     }
 
     private suspend fun renderOntoInternal(context: () -> GraphicsContext, x: Double, y: Double) {
+        stats.onTaskLaunched("RepaintTask", name)
         val ctx = context()
         if (paint != null) {
             val colorLayer = ColorInput(0.0, 0.0, ctx.canvas.width, ctx.canvas.height, paint)
@@ -59,6 +60,7 @@ class RepaintTask(
         base.removeDirectDependentTask(this)
         ctx.setEffect(null)
         ctx.canvas.opacity = alpha
+        stats.onTaskCompleted("RepaintTask", name)
     }
 
     override fun mergeWithDuplicate(other: AbstractTask<*>): AbstractImageTask {
@@ -73,11 +75,9 @@ class RepaintTask(
     }
 
     override suspend fun perform(): Image {
-        stats.onTaskLaunched("RepaintTask", name)
         val canvas by lazy(::createCanvas)
         renderOntoInternal({ canvas.graphicsContext2D }, 0.0, 0.0)
         val snapshot = snapshotCanvas(canvas)
-        stats.onTaskCompleted("RepaintTask", name)
         return snapshot
     }
 
