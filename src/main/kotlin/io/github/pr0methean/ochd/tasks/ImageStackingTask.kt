@@ -84,5 +84,4 @@ class ImageStackingTask(
     }
 
     private val background = layers.background
-
 }

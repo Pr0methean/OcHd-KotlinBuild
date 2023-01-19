@@ -75,6 +75,9 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
                 element.paint, element.alpha
             )
             layers.add(combinedRepaint)
+        } else if (currentTop != null) {
+            layers.removeLast()
+            layers.add(ctx.stack(LayerList(listOf(currentTop, element), Color.TRANSPARENT, ctx.tileSize, ctx.tileSize)))
         } else {
             layers.add(element)
         }
