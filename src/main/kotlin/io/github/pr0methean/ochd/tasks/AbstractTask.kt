@@ -117,7 +117,7 @@ abstract class AbstractTask<out T>(
             try {
                 return@async perform()
             } catch (t: Throwable) {
-                abstractTaskLogger.fatal("{} failed due to {}: {}", name, t::class.simpleName, t.message)
+                abstractTaskLogger.fatal("{} failed", name, t)
                 exitProcess(1)
             }
         }
