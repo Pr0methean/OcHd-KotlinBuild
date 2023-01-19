@@ -117,8 +117,12 @@ class ImageProcessingStats {
         logger.info("")
         logger.info("Tasks repeated due to cache misses:")
         val repeatedTasks = Multisets.copyHighestCountFirst(tasksByRunCount)
-        repeatedTasks.toSet().forEach {
-            if (repeatedTasks.count(it) >= 2) {logger.info("{}: {}", it, repeatedTasks.count(it))} }
+        repeatedTasks.toSet().forEach { (typeName, name) ->
+            val count = repeatedTasks.count(typeName to name)
+            if (count >= 2) {
+                logger.info("{}: {}: {}", typeName, name, count)
+            }
+        }
         logger.info("")
         logger.info("Task efficiency / hit rate")
         var totalUnique = 0L
@@ -146,15 +150,15 @@ class ImageProcessingStats {
             100.0 * totalEfficiency, 100.0 * totalHitRate)
     }
 
-    fun onTaskLaunched(typename: String, name: String) {
-        logger.info("Launched: {}", name)
-        tasksByRunCount.add(typename to name)
-        taskLaunches.add(typename)
+    fun onTaskLaunched(typeName: String, name: String) {
+        logger.info("Launched: {}: {}", typeName, name)
+        tasksByRunCount.add(typeName to name)
+        taskLaunches.add(typeName)
     }
 
-    fun onTaskCompleted(typename: String, name: String) {
-        logger.info("Completed: {}", name)
-        taskCompletions.add(typename)
+    fun onTaskCompleted(typeName: String, name: String) {
+        logger.info("Completed: {}: {}", typeName, name)
+        taskCompletions.add(typeName)
     }
 
     fun onDedupeFailed(typename: String, name: String) {
