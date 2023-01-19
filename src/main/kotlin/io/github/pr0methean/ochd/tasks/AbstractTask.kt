@@ -43,7 +43,7 @@ abstract class AbstractTask<out T>(
         if (mutex.withLock {
                 directDependentTasks.add(task) && directDependentTasks.size >= 2 && cache.enable()
             }) {
-            abstractTaskLogger.info("Enabling caching for {}", name)
+            abstractTaskLogger.info("Enabling caching for {}: {}", this.javaClass.simpleName, name)
         }
     }
 
@@ -58,7 +58,7 @@ abstract class AbstractTask<out T>(
             }) {
             directDependencies.forEach { it.removeDirectDependentTask(this) }
             if (cache.disable()) {
-                abstractTaskLogger.info("Disabled caching for {}", name)
+                abstractTaskLogger.info("Disabled caching for {}: {}", this.javaClass.simpleName, name)
             }
         }
     }
