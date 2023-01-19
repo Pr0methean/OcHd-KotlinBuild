@@ -118,9 +118,9 @@ class ImageProcessingStats {
         logger.info("Tasks repeated due to cache misses:")
         val repeatedTasks = Multisets.copyHighestCountFirst(tasksByRunCount)
         repeatedTasks.toSet().forEach {
-            val (typeName, name) = it
             val count = repeatedTasks.count(it)
             if (count >= 2) {
+                val (typeName, name) = it
                 logger.info("{}: {}: {}", typeName, name, count)
             }
         }
@@ -140,8 +140,9 @@ class ImageProcessingStats {
             totalActual += actual
             totalWorstCase += worstCase
         }
-        dedupeFailuresByName.toSet().forEach { (typeName, name) ->
-            if (!tasksByRunCount.contains(typeName to name)) {
+        dedupeFailuresByName.toSet().forEach {
+            if (!tasksByRunCount.contains(it)) {
+                val (typeName, name) = it
                 logger.warn("Task in graph not launched: {}: {}", typeName, name)
             }
         }
