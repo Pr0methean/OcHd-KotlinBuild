@@ -88,6 +88,7 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
             val mergedTopTwo = ctx.stack(LayerList(listOf(secondFromTop, top),
                 Color.TRANSPARENT, ctx.tileSize, ctx.tileSize))
             layers.removeLast()
+            layers.removeLast()
             layers.add(mergedTopTwo)
         }
         return LayerList(layers.map(ctx::deduplicate), background, ctx.tileSize, ctx.tileSize)
