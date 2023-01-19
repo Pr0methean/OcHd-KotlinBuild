@@ -27,13 +27,27 @@ private val logger = LogManager.getLogger("RepaintTask")
  */
 @Suppress("EqualsWithHashCodeExist", "EqualsOrHashCode")
 class RepaintTask(
-    val base: AbstractImageTask,
+    base: AbstractImageTask,
     val paint: Paint?,
-    val alpha: Double = 1.0,
+    alpha: Double = 1.0,
     cache: DeferredTaskCache<Image>,
     ctx: CoroutineContext,
     stats: ImageProcessingStats
 ): AbstractImageTask("{$base}@$paint@$alpha", cache, ctx, stats, base.width, base.height) {
+
+    val base: AbstractImageTask
+    val alpha: Double
+
+    init {
+        var realBase = base
+        var realAlpha = 1.0
+        while (realBase is RepaintTask) {
+            realAlpha *= realBase.alpha
+            realBase = realBase.base
+        }
+        this.base = realBase
+        this.alpha = realAlpha
+    }
 
     override suspend fun renderOnto(contextSupplier: () -> GraphicsContext, x: Double, y: Double) {
         if (alpha != 1.0 || isStartedOrAvailable() || mutex.withLock { directDependentTasks.size } > 1) {
