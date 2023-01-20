@@ -89,8 +89,10 @@ enum class OverworldWood(
 
         override fun LayerListBuilder.trapdoor(commonLayers: AbstractImageTask) {
             copy(commonLayers)
-            layer("trapdoorHingesBig", STONE.shadow)
-            layer("trapdoorHinges", STONE.highlight)
+            copy {
+                layer("trapdoorHingesBig", STONE.shadow)
+                layer("trapdoorHinges", STONE.highlight)
+            }
         }
 
         override fun LayerListBuilder.doorBottom(commonLayers: AbstractImageTask) {
@@ -491,8 +493,10 @@ enum class Fungus(
             layer("borderSolid", highlight)
             layer("borderShortDashes", shadow)
             layer("waves", color)
-            layer("trapdoorHingesBig", STONE.shadow)
-            layer("trapdoorHinges", STONE.highlight)
+            copy {
+                layer("trapdoorHingesBig", STONE.shadow)
+                layer("trapdoorHinges", STONE.highlight)
+            }
         }
 
         override fun LayerListBuilder.doorBottom(commonLayers: AbstractImageTask) {
