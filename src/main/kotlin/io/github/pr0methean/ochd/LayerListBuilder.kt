@@ -75,6 +75,9 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
                 element.paint, element.alpha
             )
             layers.add(combinedRepaint)
+        } else if (currentTop != null) {
+            layers.removeLast()
+            layers.add(ctx.stack(LayerList(listOf(currentTop, element), Color.TRANSPARENT, ctx.tileSize, ctx.tileSize)))
         } else {
             layers.add(element)
         }
@@ -82,14 +85,6 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
 
     fun build(): LayerList {
         check(layers.isNotEmpty()) { "Trying to create an empty LayerList" }
-        while(layers.size > 2) {
-            val secondFromTop = layers[layers.lastIndex - 1]
-            val top = layers.last()
-            val mergedTopTwo = ctx.stack(LayerList(listOf(secondFromTop, top),
-                Color.TRANSPARENT, ctx.tileSize, ctx.tileSize))
-            layers.removeLast()
-            layers.add(mergedTopTwo)
-        }
         return LayerList(layers.map(ctx::deduplicate), background, ctx.tileSize, ctx.tileSize)
     }
 }
