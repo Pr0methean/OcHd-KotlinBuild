@@ -15,7 +15,7 @@ import kotlin.coroutines.CoroutineContext
 private val logger = LogManager.getLogger("ImageStackingTask")
 
 /**
- * Task that superimposes multiple images onto a background.
+ * Task that superimposes multiple images onto a background in order.
  */
 @Suppress("EqualsWithHashCodeExist", "EqualsOrHashCode")
 class ImageStackingTask(
