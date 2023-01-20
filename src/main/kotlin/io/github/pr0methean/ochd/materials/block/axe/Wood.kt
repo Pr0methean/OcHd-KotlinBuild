@@ -27,10 +27,9 @@ sealed interface Wood: ShadowHighlightMaterial {
     fun LayerListBuilder.logTop(strippedLogTop: AbstractImageTask)
     fun LayerListBuilder.strippedLogTop(strippedLogSide: AbstractImageTask)
     fun LayerListBuilder.trapdoor(commonLayers: AbstractImageTask)
-    fun LayerListBuilder.doorTop(doorBottom: AbstractImageTask, doorKnob: AbstractImageTask,
-                                 commonLayers: AbstractImageTask) {
+    fun LayerListBuilder.doorTop(doorBottom: AbstractImageTask, commonLayers: AbstractImageTask) {
         copy(doorBottom)
-        copy(doorKnob)
+        layer("doorKnob")
     }
     fun LayerListBuilder.doorBottom(commonLayers: AbstractImageTask)
 
@@ -39,10 +38,6 @@ sealed interface Wood: ShadowHighlightMaterial {
     fun LayerListBuilder.doorCommonLayers()
 
     override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
-        val doorKnob = ctx.stack {
-            layer("doorKnob", STONE.highlight)
-            layer("doorKnobShadow", STONE.shadow)
-        }
         val doorCommonLayers = ctx.stack { doorCommonLayers() }
         val doorBottom = ctx.stack { doorBottom(doorCommonLayers) }
         val strippedLogSide = ctx.stack { strippedLogSide() }
@@ -52,7 +47,7 @@ sealed interface Wood: ShadowHighlightMaterial {
         yield(ctx.out(strippedLogTop, "block/stripped_${name}_${logSynonym}_top"))
         yield(ctx.out(ctx.stack { logTop(strippedLogTop) }, "block/${name}_${logSynonym}_top"))
         yield(ctx.out(ctx.stack { trapdoor(doorCommonLayers) }, "block/${name}_trapdoor"))
-        yield(ctx.out(ctx.stack { doorTop(doorBottom, doorKnob, doorCommonLayers) }, "block/${name}_door_top"))
+        yield(ctx.out(ctx.stack { doorTop(doorBottom, doorCommonLayers) }, "block/${name}_door_top"))
         yield(ctx.out(doorBottom, "block/${name}_door_bottom"))
         yield(ctx.out(ctx.stack { leaves() }, "block/${name}_${leavesSynonym}"))
         yield(ctx.out(ctx.stack { sapling() }, "block/${name}_${saplingSynonym}"))
@@ -138,11 +133,10 @@ enum class OverworldWood(
             layer("trapdoorHingesBig", STONE.shadow)
         }
 
-        override fun LayerListBuilder.doorTop(doorBottom: AbstractImageTask, doorKnob: AbstractImageTask,
-                                              commonLayers: AbstractImageTask) {
+        override fun LayerListBuilder.doorTop(doorBottom: AbstractImageTask, commonLayers: AbstractImageTask) {
             copy(commonLayers)
             layer("doorHingesBig", STONE.shadow)
-            copy(doorKnob)
+            layer("doorKnob")
         }
 
         override fun LayerListBuilder.doorBottom(commonLayers: AbstractImageTask) {
@@ -223,12 +217,11 @@ enum class OverworldWood(
             layer("trapdoorHinges", STONE.color)
         }
 
-        override fun LayerListBuilder.doorTop(doorBottom: AbstractImageTask, doorKnob: AbstractImageTask,
-                                              commonLayers: AbstractImageTask) {
+        override fun LayerListBuilder.doorTop(doorBottom: AbstractImageTask, commonLayers: AbstractImageTask) {
             layer("trapdoor2", color)
             layer("borderShortDashes", highlight)
             copy(commonLayers)
-            copy(doorKnob)
+            layer("doorKnob")
         }
 
         override fun LayerListBuilder.doorBottom(commonLayers: AbstractImageTask) {
@@ -347,12 +340,11 @@ enum class OverworldWood(
             layer("trapdoorHinges", STONE.highlight)
         }
 
-        override fun LayerListBuilder.doorTop(doorBottom: AbstractImageTask, doorKnob: AbstractImageTask,
-                                              commonLayers: AbstractImageTask) {
+        override fun LayerListBuilder.doorTop(doorBottom: AbstractImageTask, commonLayers: AbstractImageTask) {
             copy(commonLayers)
             layer("craftingSide", shadow)
             layer("cross", shadow)
-            copy(doorKnob)
+            layer("doorKnob")
             copy {
                 layer("doorHingesBig", STONE.color)
                 layer("doorHinges", STONE.highlight)
