@@ -186,6 +186,8 @@ object ImageProcessingStats {
         logger.info("Disabled caching for: {}: {}", task::class.simpleName, task.name)
         cacheableTasks.remove(task)
         logger.info("Currently cacheable tasks: {}", box(cacheableTasks.size))
-        logger.info("Currently cached tasks: about {}", box(cacheableTasks.count { it.getNow() != null }))
+        val cachedTasks = cacheableTasks.filter { it.getNow() != null }
+        val cachedTaskNames = StringBuilder().run {appendList(cachedTasks)}.toString()
+        logger.info("Currently cached tasks: {}: {}", box(cachedTasks.size), cachedTaskNames)
     }
 }
