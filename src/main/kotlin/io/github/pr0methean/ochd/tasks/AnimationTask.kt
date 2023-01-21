@@ -26,9 +26,8 @@ class AnimationTask(
     private val frameHeight: Int,
     name: String,
     cache: DeferredTaskCache<Image>,
-    ctx: CoroutineContext,
-    stats: ImageProcessingStats
-): AbstractImageTask(name, cache, ctx, stats, width, frameHeight * frames.size) {
+    ctx: CoroutineContext
+): AbstractImageTask(name, cache, ctx, width, frameHeight * frames.size) {
     private val dependencies = frames + background
 
     override fun computeHashCode(): Int = Objects.hash(background, frames, width, height)
@@ -53,7 +52,7 @@ class AnimationTask(
             if (mergedBackground !== background || !mergedFrames.isShallowCopyOf(frames)) {
                 return AnimationTask(
                     mergedBackground, mergedFrames,
-                    width, height, name, cache, ctx, stats
+                    width, height, name, cache, ctx
                 )
             }
         }
@@ -62,7 +61,7 @@ class AnimationTask(
 
     @Suppress("DeferredResultUnused")
     override suspend fun perform(): Image {
-        stats.onTaskLaunched("AnimationTask", name)
+        ImageProcessingStats.onTaskLaunched("AnimationTask", name)
         val backgroundImage = background.await()
         background.removeDirectDependentTask(this)
         logger.info("Allocating a canvas for {}", name)
@@ -82,7 +81,7 @@ class AnimationTask(
         }
         frameTasks.joinAll()
         val output = snapshotCanvas(canvas)
-        stats.onTaskCompleted("AnimationTask", name)
+        ImageProcessingStats.onTaskCompleted("AnimationTask", name)
         return output
     }
 

@@ -4,6 +4,7 @@ import com.google.common.collect.ConcurrentHashMultiset
 import com.google.common.collect.HashMultiset
 import com.google.common.collect.Multiset
 import com.google.common.collect.Multisets
+import io.github.pr0methean.ochd.tasks.InvalidTask
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -25,9 +26,11 @@ import kotlin.time.Duration.Companion.minutes
 private fun Multiset<*>.log() {
     var total = 0L
     toSet().forEach {
-        val count = count(it)
-        total += count
-        logger.info("{}: {}", it, box(count))
+        if (it.toString() != InvalidTask::class.simpleName) {
+            val count = count(it)
+            total += count
+            logger.info("{}: {}", it, box(count))
+        }
     }
     logger.info("Total: {}", box(total))
 }
@@ -41,7 +44,7 @@ val threadMxBean: ThreadMXBean = ManagementFactory.getThreadMXBean()
 var monitoringJob: Job? = null
 @OptIn(ExperimentalCoroutinesApi::class)
 @Suppress("DeferredResultUnused")
-fun startMonitoring(stats: ImageProcessingStats, scope: CoroutineScope) {
+fun startMonitoring(scope: CoroutineScope) {
     if (NEED_COROUTINE_DEBUG) {
         DebugProbes.install()
     }
@@ -50,7 +53,7 @@ fun startMonitoring(stats: ImageProcessingStats, scope: CoroutineScope) {
         while (true) {
             delay(REPORTING_INTERVAL)
             logger.info("Completed tasks:")
-            stats.taskCompletions.log()
+            ImageProcessingStats.taskCompletions.log()
             if (NEED_THREAD_MONITORING) {
                 val deadlocks = threadMxBean.findDeadlockedThreads()
                 if (deadlocks == null) {
@@ -85,7 +88,7 @@ fun stopMonitoring() {
     monitoringJob?.cancel("Monitoring stopped")
 }
 
-class ImageProcessingStats {
+object ImageProcessingStats {
     private val taskLaunches: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val taskCompletions: ConcurrentHashMultiset<String> = ConcurrentHashMultiset.create()
     val dedupeSuccesses: HashMultiset<String> = HashMultiset.create()
@@ -118,9 +121,9 @@ class ImageProcessingStats {
         logger.info("Tasks repeated due to cache misses:")
         val repeatedTasks = Multisets.copyHighestCountFirst(tasksByRunCount)
         repeatedTasks.toSet().forEach {
-            val (typeName, name) = it
             val count = repeatedTasks.count(it)
             if (count >= 2) {
+                val (typeName, name) = it
                 logger.info("{}: {}: {}", typeName, name, count)
             }
         }
@@ -140,9 +143,12 @@ class ImageProcessingStats {
             totalActual += actual
             totalWorstCase += worstCase
         }
-        dedupeFailuresByName.toSet().forEach { (typeName, name) ->
-            if (!tasksByRunCount.contains(typeName to name)) {
-                logger.warn("Task in graph not launched: {}: {}", typeName, name)
+        dedupeFailuresByName.toSet().forEach {
+            if (!tasksByRunCount.contains(it)) {
+                val (typeName, name) = it
+                if (typeName != InvalidTask::class.simpleName) {
+                    logger.warn("Task in graph not launched: {}: {}", typeName, name)
+                }
             }
         }
         val totalEfficiency = (totalUnique.toDouble() / totalActual)

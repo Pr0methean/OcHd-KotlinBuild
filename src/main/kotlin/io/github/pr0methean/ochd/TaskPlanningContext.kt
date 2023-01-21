@@ -38,7 +38,6 @@ class TaskPlanningContext(
     private val svgTasks: Map<String, SvgToBitmapTask>
     private val taskDeduplicationMap = mutableMapOf<AbstractTask<*>, AbstractTask<*>>()
     private val dedupedSvgTasks = HashMultiset.create<String>()
-    val stats: ImageProcessingStats = ImageProcessingStats()
 
     init {
         val builder = mutableMapOf<String, SvgToBitmapTask>()
@@ -49,8 +48,7 @@ class TaskPlanningContext(
                 tileSize,
                 svgDirectory.resolve("$shortName.svg"),
                 HardTaskCache(shortName),
-                ctx,
-                stats
+                ctx
             )
         }
         svgTasks = builder.toMap()
@@ -81,10 +79,10 @@ class TaskPlanningContext(
                         } else mergeWithDuplicate(task)
                     }.also {
                         logger.info("Deduplicated: {}", task)
-                        stats.dedupeSuccesses.add(className)
+                        ImageProcessingStats.dedupeSuccesses.add(className)
                     } ?: task.also {
                         logger.info("New task: {}", task)
-                        stats.onDedupeFailed(className, task.name)
+                        ImageProcessingStats.onDedupeFailed(className, task.name)
                     }
                 } as TTask
             }
@@ -96,9 +94,9 @@ class TaskPlanningContext(
         val task = svgTasks[name]
         requireNotNull(task) { "Missing SvgToBitmapTask for $name" }
         if (dedupedSvgTasks.add(name, 1) > 0) {
-            stats.dedupeSuccesses.add("SvgToBitmapTask")
+            ImageProcessingStats.dedupeSuccesses.add("SvgToBitmapTask")
         } else {
-            stats.onDedupeFailed("SvgToBitmapTask", name)
+            ImageProcessingStats.onDedupeFailed("SvgToBitmapTask", name)
         }
         logger.debug("Found SvgToBitmapTask for {}", name)
         return task
@@ -122,7 +120,7 @@ class TaskPlanningContext(
         source: AbstractImageTask,
         paint: Paint?,
         alpha: Double
-    ) = RepaintTask(source, paint, alpha, HardTaskCache("$source@$paint@$alpha"), ctx, stats)
+    ) = RepaintTask(source, paint, alpha, HardTaskCache("$source@$paint@$alpha"), ctx)
 
     inline fun stack(init: LayerListBuilder.() -> Unit): AbstractImageTask {
         val layerTasksBuilder = LayerListBuilder(this)
@@ -140,8 +138,7 @@ class TaskPlanningContext(
             tileSize,
             frames.toString(),
             noopDeferredTaskCache(),
-            ctx,
-            stats
+            ctx
         ))
     }
 
@@ -152,9 +149,8 @@ class TaskPlanningContext(
                 lowercaseNames[0],
                 deduplicate(source),
                 lowercaseNames.map { outTextureRoot.resolve("$it.png") },
-                ctx,
-                stats
-            )).also { logger.debug("Done creating output task: {}", it) } as PngOutputTask
+                ctx
+        )).also { logger.debug("Done creating output task: {}", it) } as PngOutputTask
     }
 
     fun out(source: AbstractImageTask, name: String): PngOutputTask = out(source, arrayOf(name))
@@ -168,6 +164,6 @@ class TaskPlanningContext(
     }
 
     fun stackNoDedup(layers: LayerList) = ImageStackingTask(
-        layers, HardTaskCache(layers.toString()), ctx, stats
+        layers, HardTaskCache(layers.toString()), ctx
     )
 }

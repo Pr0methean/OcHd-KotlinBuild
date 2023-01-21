@@ -15,15 +15,14 @@ import kotlin.coroutines.CoroutineContext
 private val logger = LogManager.getLogger("ImageStackingTask")
 
 /**
- * Task that superimposes multiple images onto a background.
+ * Task that superimposes multiple images onto a background in order.
  */
 @Suppress("EqualsWithHashCodeExist", "EqualsOrHashCode")
 class ImageStackingTask(
     val layers: LayerList,
     cache: DeferredTaskCache<Image>,
-    ctx: CoroutineContext,
-    stats: ImageProcessingStats
-) : AbstractImageTask(layers.toString(), cache, ctx, stats, layers.width, layers.height) {
+    ctx: CoroutineContext
+) : AbstractImageTask(layers.toString(), cache, ctx, layers.width, layers.height) {
     @Suppress("MagicNumber")
     override fun computeHashCode(): Int = layers.hashCode() + 37
 
@@ -41,7 +40,7 @@ class ImageStackingTask(
             logger.debug("Merging ImageStackingTask {} with duplicate {}", name, other.name)
             val mergedLayers = layers.mergeWithDuplicate(other.layers)
             if (!mergedLayers.layers.isShallowCopyOf(layers.layers)) {
-                return ImageStackingTask(mergedLayers, cache, ctx, stats)
+                return ImageStackingTask(mergedLayers, cache, ctx)
             }
         }
         return super.mergeWithDuplicate(other)
@@ -55,9 +54,8 @@ class ImageStackingTask(
         renderOntoInternal({ canvas.graphicsContext2D }, 0.0, 0.0, layers.layers)
         logger.debug("Taking snapshot of {}", name)
         val params = SnapshotParameters()
-        params.fill = background
-        val snapshot = snapshotCanvas(canvas, params)
-        return snapshot
+        params.fill = layers.background
+        return snapshotCanvas(canvas, params)
     }
 
     private suspend fun renderOntoInternal(
@@ -66,13 +64,13 @@ class ImageStackingTask(
         y: Double,
         layers: List<AbstractImageTask>
     ) {
-        stats.onTaskLaunched("ImageStackingTask", name)
+        ImageProcessingStats.onTaskLaunched("ImageStackingTask", name)
         val canvasCtx by lazy(canvasCtxSupplier)
         layers.forEach {
             it.renderOnto({ canvasCtx }, x, y)
             it.removeDirectDependentTask(this@ImageStackingTask)
         }
-        stats.onTaskCompleted("ImageStackingTask", name)
+        ImageProcessingStats.onTaskCompleted("ImageStackingTask", name)
     }
 
     override suspend fun renderOnto(contextSupplier: () -> GraphicsContext, x: Double, y: Double) {
@@ -82,7 +80,4 @@ class ImageStackingTask(
             renderOntoInternal(contextSupplier, x, y, layers.layers)
         }
     }
-
-    private val background = layers.background
-
 }

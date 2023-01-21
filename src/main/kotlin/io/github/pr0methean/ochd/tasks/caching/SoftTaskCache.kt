@@ -7,7 +7,7 @@ import java.util.concurrent.atomic.AtomicReference
 val nullReference: SoftReference<Nothing?> = SoftReference<Nothing?>(null)
 
 /**
- * A TaskCache that's backed by a soft reference.
+ * A [DeferredTaskCache] that's backed by a soft reference.
  */
 @Suppress("unused")
 class SoftTaskCache<T>(

@@ -27,7 +27,6 @@ class PngOutputTask(
     val base: AbstractTask<Image>,
     private val files: List<File>,
     ctx: CoroutineContext,
-    private val stats: ImageProcessingStats,
 ): AbstractTask<Unit>("Output $name", noopDeferredTaskCache(), ctx) {
     override val directDependencies: Iterable<AbstractTask<*>> = listOf(base)
     override fun mergeWithDuplicate(other: AbstractTask<*>): AbstractTask<Unit> {
@@ -39,8 +38,7 @@ class PngOutputTask(
                     name,
                     mergedBase,
                     files.union(other.files).toList(),
-                    ctx,
-                    stats
+                    ctx
                 )
             }
         }
@@ -58,7 +56,7 @@ class PngOutputTask(
         withContext(threadLocalBimg.asContextElement()) {
             val oldImage = threadLocalBimg.get()
             val baseTask = base.start()
-            stats.onTaskLaunched("PngOutputTask", name)
+            ImageProcessingStats.onTaskLaunched("PngOutputTask", name)
             files.mapNotNull(File::getParentFile).distinct().forEach { parent ->
                 if (mkdirsedPaths.add(parent)) {
                     parent.mkdirs()
@@ -89,7 +87,7 @@ class PngOutputTask(
                 }
             }
         }
-        stats.onTaskCompleted("PngOutputTask", name)
+        ImageProcessingStats.onTaskCompleted("PngOutputTask", name)
     }
 
     val isCommandBlock: Boolean = name.contains("command_block")

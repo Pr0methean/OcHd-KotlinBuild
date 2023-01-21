@@ -79,9 +79,8 @@ class SvgToBitmapTask(
     width: Int,
     private val file: File,
     cache: DeferredTaskCache<Image>,
-    ctx: CoroutineContext,
-    stats: ImageProcessingStats
-): AbstractImageTask(name, cache, ctx, stats, width, getHeight(name, width)) {
+    ctx: CoroutineContext
+): AbstractImageTask(name, cache, ctx, width, getHeight(name, width)) {
 
     /** SVG import doesn't depend on any other tasks, so this returns an empty list. */
     override val directDependencies: List<AbstractTask<Nothing>> = listOf()
@@ -101,7 +100,7 @@ class SvgToBitmapTask(
     override fun mergeWithDuplicate(other: AbstractTask<*>): AbstractImageTask = this
 
     override suspend fun perform(): Image {
-        stats.onTaskLaunched("SvgToBitmapTask", name)
+        ImageProcessingStats.onTaskLaunched("SvgToBitmapTask", name)
         val image = withContext(batikTranscoder.asContextElement()) {
             val transcoder = batikTranscoder.get()
             transcoder.setTranscodingHints(mapOf(SVGAbstractTranscoder.KEY_WIDTH to width.toFloat()))
@@ -111,7 +110,7 @@ class SvgToBitmapTask(
             awtImage.flush()
             image
         }
-        stats.onTaskCompleted("SvgToBitmapTask", name)
+        ImageProcessingStats.onTaskCompleted("SvgToBitmapTask", name)
         return image
     }
 }

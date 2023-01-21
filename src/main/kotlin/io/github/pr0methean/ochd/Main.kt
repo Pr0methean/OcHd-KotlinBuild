@@ -1,5 +1,6 @@
 package io.github.pr0methean.ochd
 
+import com.sun.prism.impl.Disposer
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
 import io.github.pr0methean.ochd.tasks.PngOutputTask
 import javafx.application.Platform
@@ -78,17 +79,16 @@ suspend fun main(args: Array<String>) {
             Thread.currentThread().priority = Thread.MAX_PRIORITY
         }
     }
-    val stats = ctx.stats
-    startMonitoring(stats, scope)
+    startMonitoring(scope)
     val time = measureNanoTime {
-        stats.onTaskLaunched("Build task graph", "Build task graph")
+        ImageProcessingStats.onTaskLaunched("Build task graph", "Build task graph")
         val tasks = ALL_MATERIALS.outputTasks(ctx).toSet()
         logger.debug("Got deduplicated output tasks")
-        val depsBuildTask = scope.launch { tasks.forEach { it.registerRecursiveDependencies() }}
+        val depsBuildTask = scope.launch { tasks.forEach { it.registerRecursiveDependencies() } }
         logger.debug("Launched deps build task")
         val (cbTasks, nonCbTasks) = tasks.partition(PngOutputTask::isCommandBlock)
         depsBuildTask.join()
-        stats.onTaskCompleted("Build task graph", "Build task graph")
+        ImageProcessingStats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupAndCopyMetadata.join()
         gcIfUsingLargeTiles(tileSize)
         runAll(cbTasks, scope, MAX_HUGE_TILE_OUTPUT_TASKS)
@@ -97,15 +97,18 @@ suspend fun main(args: Array<String>) {
     }
     stopMonitoring()
     Platform.exit()
-    stats.log()
+    ImageProcessingStats.log()
     logger.info("")
     logger.info("All tasks finished after {} ns", Unbox.box(time))
     exitProcess(0)
 }
 
 @Suppress("ExplicitGarbageCollectionCall")
-private fun gcIfUsingLargeTiles(tileSize: Int) {
+private suspend fun gcIfUsingLargeTiles(tileSize: Int) {
     if (tileSize >= MIN_TILE_SIZE_FOR_EXPLICIT_GC) {
+        withContext(Dispatchers.Main) {
+            Disposer.cleanUp()
+        }
         System.gc()
     }
 }
@@ -145,10 +148,10 @@ private suspend fun runAll(
                 logger.info("Joining {}", task)
                 try {
                     task.await()
-                    finishedJobsChannel.send(task)
                 } catch (t: Throwable) {
                     errorsChannel.send(t)
                 }
+                finishedJobsChannel.send(task)
             }
         }
     }

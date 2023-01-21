@@ -3,6 +3,9 @@ package io.github.pr0methean.ochd.tasks.caching
 import kotlinx.coroutines.Deferred
 import java.util.concurrent.atomic.AtomicReference
 
+/**
+ * A [DeferredTaskCache] that's backed by a strong reference.
+ */
 @Suppress("unused")
 class HardTaskCache<T>(
     name: String
