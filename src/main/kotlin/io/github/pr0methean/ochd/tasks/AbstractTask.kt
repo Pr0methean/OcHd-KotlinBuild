@@ -20,7 +20,6 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.system.exitProcess
 
 val abstractTaskLogger: Logger = LogManager.getLogger("AbstractTask")
-private val supervisorJob = SupervisorJob()
 
 /**
  * Unit of work that wraps its coroutine to support reuse (including under heap-constrained conditions).
@@ -32,7 +31,7 @@ abstract class AbstractTask<out T>(
     val ctx: CoroutineContext
 ) : StringBuilderFormattable {
     val coroutineScope: CoroutineScope by lazy {
-        CoroutineScope(ctx.plus(CoroutineName(name)).plus(supervisorJob))
+        CoroutineScope(ctx.plus(CoroutineName(name)).plus(SupervisorJob()))
     }
 
     protected val mutex: Mutex = Mutex()
