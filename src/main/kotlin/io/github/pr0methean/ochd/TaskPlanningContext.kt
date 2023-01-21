@@ -66,7 +66,8 @@ class TaskPlanningContext(
             -> InvalidTask as TTask
             task is RepaintTask
                     && (task.paint == null || task.paint == Color.BLACK
-                        || (task.base is RepaintTask && task.paint == task.base.paint))
+                        || (task.base is RepaintTask && task.paint == task.base.paint
+                            && task.base.paint.isOpaque))
                     && task.alpha == 1.0
             -> deduplicate(task.base)
             task is ImageStackingTask
