@@ -26,9 +26,11 @@ import kotlin.time.Duration.Companion.minutes
 private fun Multiset<*>.log() {
     var total = 0L
     toSet().forEach {
-        val count = count(it)
-        total += count
-        logger.info("{}: {}", it, box(count))
+        if (it.toString() != InvalidTask::class.simpleName) {
+            val count = count(it)
+            total += count
+            logger.info("{}: {}", it, box(count))
+        }
     }
     logger.info("Total: {}", box(total))
 }
