@@ -140,14 +140,6 @@ abstract class AbstractTask<out T>(
         return subtasks
     }
 
-    fun missingSubtasks(): Int {
-        var subtasks = if (isStartedOrAvailable() || !cache.isEnabled()) 0 else 1
-        for (task in directDependencies) {
-            subtasks += task.missingSubtasks()
-        }
-        return subtasks
-    }
-
     suspend inline fun await(): T = start().await()
     override fun hashCode(): Int = hashCode
 }
