@@ -547,15 +547,21 @@ enum class Fungus(
     }
 
     override fun LayerListBuilder.logTop(strippedLogTop: AbstractImageTask) {
-        copy(strippedLogTop)
+        background(color)
+        copy {
+            layer("ringsCentralBullseye", shadow)
+            layer("rings2", highlight)
+        }
         layer("borderSolid", barkColor)
-        layer("borderDotted", barkShadow)
+        layer("borderShortDashes", barkShadow)
     }
 
     override fun LayerListBuilder.strippedLogTop(strippedLogSide: AbstractImageTask) {
         copy(strippedLogSide)
-        layer("ringsCentralBullseye", shadow)
-        layer("rings2", highlight)
+        copy {
+            layer("ringsCentralBullseye", shadow)
+            layer("rings2", highlight)
+        }
     }
 
     override val logSynonym: String = "stem"
