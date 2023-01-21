@@ -1,5 +1,6 @@
 package io.github.pr0methean.ochd.tasks
 
+import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -40,7 +41,7 @@ abstract class AbstractTask<out T>(
         if (mutex.withLock {
                 directDependentTasks.add(task) && directDependentTasks.size >= 2 && cache.enable()
             }) {
-            abstractTaskLogger.info("Enabling caching for {}: {}", this.javaClass.simpleName, name)
+            ImageProcessingStats.onCachingEnabled(this)
         }
     }
 
@@ -55,7 +56,7 @@ abstract class AbstractTask<out T>(
             }) {
             directDependencies.forEach { it.removeDirectDependentTask(this) }
             if (cache.disable()) {
-                abstractTaskLogger.info("Disabled caching for {}: {}", this.javaClass.simpleName, name)
+                ImageProcessingStats.onCachingDisabled(this)
             }
         }
     }

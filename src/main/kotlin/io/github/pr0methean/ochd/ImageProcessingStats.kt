@@ -4,6 +4,7 @@ import com.google.common.collect.ConcurrentHashMultiset
 import com.google.common.collect.HashMultiset
 import com.google.common.collect.Multiset
 import com.google.common.collect.Multisets
+import io.github.pr0methean.ochd.tasks.AbstractTask
 import io.github.pr0methean.ochd.tasks.InvalidTask
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -20,6 +21,7 @@ import org.apache.logging.log4j.util.Unbox.box
 import java.lang.management.ManagementFactory
 import java.lang.management.ThreadInfo
 import java.lang.management.ThreadMXBean
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
@@ -95,6 +97,7 @@ object ImageProcessingStats {
     private val dedupeFailures: HashMultiset<String> = HashMultiset.create()
     private val dedupeFailuresByName = HashMultiset.create<Pair<String, String>>()
     private val tasksByRunCount = ConcurrentHashMultiset.create<Pair<String, String>>()
+    private val cacheableTasks = ConcurrentHashMap.newKeySet<AbstractTask<*>>()
 
     init {
         dedupeFailures.add("Build task graph")
@@ -171,5 +174,18 @@ object ImageProcessingStats {
     fun onDedupeFailed(typename: String, name: String) {
         dedupeFailures.add(typename)
         dedupeFailuresByName.add(typename to name)
+    }
+
+    fun onCachingEnabled(task: AbstractTask<*>) {
+        logger.info("Enabled caching for: {}: {}", task::class.simpleName, task.name)
+        cacheableTasks.add(task)
+        logger.info("Currently cacheable tasks: {}", box(cacheableTasks.size))
+    }
+
+    fun onCachingDisabled(task: AbstractTask<*>) {
+        logger.info("Disabled caching for: {}: {}", task::class.simpleName, task.name)
+        cacheableTasks.remove(task)
+        logger.info("Currently cacheable tasks: {}", box(cacheableTasks.size))
+        logger.info("Currently cached tasks: about {}", box(cacheableTasks.count { it.getNow() != null }))
     }
 }
