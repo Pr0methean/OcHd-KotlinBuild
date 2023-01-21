@@ -4,7 +4,6 @@ import com.google.common.collect.ConcurrentHashMultiset
 import com.google.common.collect.HashMultiset
 import com.google.common.collect.Multiset
 import com.google.common.collect.Multisets
-import com.sun.management.HotSpotDiagnosticMXBean
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -40,7 +39,6 @@ private val NEED_COROUTINE_DEBUG = logger.isDebugEnabled
 private val REPORTING_INTERVAL: Duration = 1.minutes
 val threadMxBean: ThreadMXBean = ManagementFactory.getThreadMXBean()
 var monitoringJob: Job? = null
-val diagnosticMXBean = ManagementFactory.getPlatformMXBean(HotSpotDiagnosticMXBean::class.java)
 @OptIn(ExperimentalCoroutinesApi::class)
 @Suppress("DeferredResultUnused")
 fun startMonitoring(stats: ImageProcessingStats, scope: CoroutineScope) {
@@ -49,7 +47,6 @@ fun startMonitoring(stats: ImageProcessingStats, scope: CoroutineScope) {
     }
     val loggerStream = IoBuilder.forLogger(logger).setLevel(Level.DEBUG).buildPrintStream()
     monitoringJob = scope.launch(CoroutineName("Stats monitoring job")) {
-        var reportNumber = 0
         while (true) {
             delay(REPORTING_INTERVAL)
             logger.info("Completed tasks:")
@@ -74,8 +71,6 @@ fun startMonitoring(stats: ImageProcessingStats, scope: CoroutineScope) {
             if (NEED_COROUTINE_DEBUG) {
                 DebugProbes.dumpCoroutines(loggerStream)
             }
-            diagnosticMXBean.dumpHeap("heapDump$reportNumber.hprof", false)
-            reportNumber++
         }
     }
 }

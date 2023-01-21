@@ -50,7 +50,7 @@ jobs:
           -XX:+UnlockExperimentalVMOptions -XX:+UseZGC
           '-Xlog:gc*=debug,gc+stats=trace,gc+heap=trace,gc+heap+exit=trace,gc+metaspace=trace,gc+nmethod=info,safepoint+stats=info' 
           -XX:+UseNUMA -XX:ConcGCThreads=4 -XX:+AlwaysPreTouch -XX:+UseTransparentHugePages
-          -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=HeapDump-OOME-${CIRCLE_BUILD_NUM}.hprof
+          -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=HeapDump-${CIRCLE_BUILD_NUM}.hprof
           -XX:+PrintFlagsFinal -XX:StringDeduplicationAgeThreshold=1
           -Dlog4j2.contextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector --enable-preview
           -jar build/libs/OcHd-KotlinBuild-1.0-SNAPSHOT.jar << parameters.size >>
@@ -58,7 +58,7 @@ jobs:
       - store_artifacts:
           path: 'pngout/OcHD-<< parameters.size >>x<< parameters.size >>.zip'
       - run:
-          zip -9 HeapDump.zip *.hprof || true
+          zip -9 HeapDump.zip HeapDump-${CIRCLE_BUILD_NUM}.hprof || true
       - store_artifacts:
           path: 'HeapDump.zip'
 # Invoke jobs via workflows
