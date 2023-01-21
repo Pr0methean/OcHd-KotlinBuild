@@ -6,6 +6,7 @@ import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.STONE
 import io.github.pr0methean.ochd.materials.block.shovel.DirtGroundCover
 import io.github.pr0methean.ochd.tasks.AbstractImageTask
+import io.github.pr0methean.ochd.tasks.InvalidTask
 import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Color
@@ -293,7 +294,7 @@ enum class OverworldWood(
         barkHighlight = c(0x624033),
         barkShadow = c(0x2b2000)
     ) {
-        override fun LayerListBuilder.doorCommonLayers(): Unit = planks()
+        override fun LayerListBuilder.doorCommonLayers(): Unit = copy(InvalidTask)
 
         override fun LayerListBuilder.trapdoor(commonLayers: AbstractImageTask) {
             background(shadow)
@@ -305,7 +306,9 @@ enum class OverworldWood(
         }
 
         override fun LayerListBuilder.doorBottom(commonLayers: AbstractImageTask) {
-            copy(commonLayers)
+            copy {
+                planks()
+            }
             layer("doorHingesBig", STONE.color)
             layer("doorHinges", STONE.shadow)
         }
@@ -437,9 +440,7 @@ enum class Fungus(
             leavesShadow = c(0x5a0000),
             leavesHighlight = c(0xac2020),
         ) {
-            override fun LayerListBuilder.doorCommonLayers() {
-                layer("zigzagSolid", shadow)
-            }
+            override fun LayerListBuilder.doorCommonLayers() = copy(InvalidTask)
 
             override fun LayerListBuilder.trapdoor(commonLayers: AbstractImageTask) {
                 layer("borderSolidThick", color)
@@ -483,9 +484,7 @@ enum class Fungus(
             leavesHighlight = c(0x00b485),
             leavesShadow = c(0x006565),
         ) {
-        override fun LayerListBuilder.doorCommonLayers() {
-            layer("borderShortDashes", highlight)
-        }
+        override fun LayerListBuilder.doorCommonLayers() = copy(InvalidTask)
 
         override fun LayerListBuilder.trapdoor(commonLayers: AbstractImageTask) {
             layer("trapdoor1", highlight)

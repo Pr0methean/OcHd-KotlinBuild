@@ -2,7 +2,6 @@ package io.github.pr0methean.ochd.tasks
 
 import com.sun.prism.impl.Disposer
 import io.github.pr0methean.ochd.DEFAULT_SNAPSHOT_PARAMS
-import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import javafx.scene.SnapshotParameters
 import javafx.scene.canvas.Canvas
@@ -32,7 +31,6 @@ private val systemErrSwitched: AtomicBoolean = AtomicBoolean(false)
 abstract class AbstractImageTask(
     name: String, cache: DeferredTaskCache<Image>,
     ctx: CoroutineContext,
-    open val stats: ImageProcessingStats,
     val width: Int,
     val height: Int
 )

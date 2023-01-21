@@ -79,17 +79,16 @@ suspend fun main(args: Array<String>) {
             Thread.currentThread().priority = Thread.MAX_PRIORITY
         }
     }
-    val stats = ctx.stats
-    startMonitoring(stats, scope)
+    startMonitoring(scope)
     val time = measureNanoTime {
-        stats.onTaskLaunched("Build task graph", "Build task graph")
+        ImageProcessingStats.onTaskLaunched("Build task graph", "Build task graph")
         val tasks = ALL_MATERIALS.outputTasks(ctx).toSet()
         logger.debug("Got deduplicated output tasks")
-        val depsBuildTask = scope.launch { tasks.forEach { it.registerRecursiveDependencies() }}
+        val depsBuildTask = scope.launch { tasks.forEach { it.registerRecursiveDependencies() } }
         logger.debug("Launched deps build task")
         val (cbTasks, nonCbTasks) = tasks.partition(PngOutputTask::isCommandBlock)
         depsBuildTask.join()
-        stats.onTaskCompleted("Build task graph", "Build task graph")
+        ImageProcessingStats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupAndCopyMetadata.join()
         gcIfUsingLargeTiles(tileSize)
         runAll(cbTasks, scope, MAX_HUGE_TILE_OUTPUT_TASKS)
@@ -98,7 +97,7 @@ suspend fun main(args: Array<String>) {
     }
     stopMonitoring()
     Platform.exit()
-    stats.log()
+    ImageProcessingStats.log()
     logger.info("")
     logger.info("All tasks finished after {} ns", Unbox.box(time))
     exitProcess(0)

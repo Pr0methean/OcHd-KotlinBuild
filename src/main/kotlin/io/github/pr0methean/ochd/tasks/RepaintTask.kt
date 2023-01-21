@@ -31,9 +31,8 @@ class RepaintTask(
     val paint: Paint?,
     alpha: Double = 1.0,
     cache: DeferredTaskCache<Image>,
-    ctx: CoroutineContext,
-    stats: ImageProcessingStats
-): AbstractImageTask("{$base}@$paint@$alpha", cache, ctx, stats, base.width, base.height) {
+    ctx: CoroutineContext
+): AbstractImageTask("{$base}@$paint@$alpha", cache, ctx, base.width, base.height) {
 
     val base: AbstractImageTask
     val alpha: Double
@@ -58,7 +57,7 @@ class RepaintTask(
     }
 
     private suspend fun renderOntoInternal(context: () -> GraphicsContext, x: Double, y: Double) {
-        stats.onTaskLaunched("RepaintTask", name)
+        ImageProcessingStats.onTaskLaunched("RepaintTask", name)
         val ctx = context()
         if (paint != null) {
             val colorLayer = ColorInput(0.0, 0.0, ctx.canvas.width, ctx.canvas.height, paint)
@@ -72,7 +71,7 @@ class RepaintTask(
         base.removeDirectDependentTask(this)
         ctx.setEffect(null)
         ctx.canvas.opacity = alpha
-        stats.onTaskCompleted("RepaintTask", name)
+        ImageProcessingStats.onTaskCompleted("RepaintTask", name)
     }
 
     override fun mergeWithDuplicate(other: AbstractTask<*>): AbstractImageTask {
@@ -80,7 +79,7 @@ class RepaintTask(
             logger.debug("Merging RepaintTask {} with duplicate {}", name, other.name)
             val newBase = base.mergeWithDuplicate(other.base)
             if (newBase !== base) {
-                return RepaintTask(newBase, paint, alpha, cache, ctx, stats)
+                return RepaintTask(newBase, paint, alpha, cache, ctx)
             }
         }
         return super.mergeWithDuplicate(other)
