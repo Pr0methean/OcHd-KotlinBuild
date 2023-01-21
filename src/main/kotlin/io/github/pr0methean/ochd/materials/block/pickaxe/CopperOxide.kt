@@ -3,6 +3,7 @@ package io.github.pr0methean.ochd.materials.block.pickaxe
 import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.c
+import io.github.pr0methean.ochd.tasks.AbstractImageTask
 import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Color
@@ -29,21 +30,22 @@ enum class CopperOxide(
     );
     private fun LayerListBuilder.commonLayers() {
         background(color)
-        layer("streaks", highlight)
         layer("borderSolid", shadow)
+        layer("streaks", highlight)
         layer("borderSolidTopLeft", highlight)
     }
-    private fun LayerListBuilder.uncut() {
-        copy {commonLayers()}
+    private fun LayerListBuilder.uncut(commonLayers: AbstractImageTask) {
+        copy(commonLayers)
         layer("copper2oxide", shadow)
     }
-    private fun LayerListBuilder.cut() {
-        copy {commonLayers()}
+    private fun LayerListBuilder.cut(commonLayers: AbstractImageTask) {
+        copy(commonLayers)
         layer("cutInQuarters1", shadow)
         layer("cutInQuarters2", highlight)
     }
     override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
-        yield(ctx.out({ uncut() }, "block/${name}_copper"))
-        yield(ctx.out({ cut() }, "block/cut_${name}_copper"))
+        val commonLayers = ctx.stack { commonLayers() }
+        yield(ctx.out({ uncut(commonLayers) }, "block/${name}_copper"))
+        yield(ctx.out({ cut(commonLayers) }, "block/cut_${name}_copper"))
     }
 }

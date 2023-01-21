@@ -56,10 +56,12 @@ sealed interface Wood: ShadowHighlightMaterial {
     }
 
     fun LayerListBuilder.planks() {
-        background(color)
-        layer("waves", shadow)
-        layer("waves2", highlight)
-        layer("planksTopBorder", shadow)
+        copy {
+            background(color)
+            layer("waves", shadow)
+            layer("waves2", highlight)
+            layer("planksTopBorder", shadow)
+        }
         layer("borderShortDashes", highlight)
     }
 }

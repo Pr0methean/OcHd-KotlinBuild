@@ -19,8 +19,8 @@ object DyedTerracotta : DyedBlock("terracotta") {
 
     override fun createSharedLayersTask(ctx: TaskPlanningContext): AbstractImageTask = ctx.stack {
         layer(ctx.stack {
-            layer("bigDotsBottomLeftTopRight", TERRACOTTA.highlight)
-            layer("bigDotsTopLeftBottomRight", TERRACOTTA.shadow)
+            layer("bigDotsBottomLeftTopRight", TERRACOTTA.shadow)
+            layer("bigDotsTopLeftBottomRight", TERRACOTTA.highlight)
         }, alpha = 0.5)
         copy {
             layer("bigRingsTopLeftBottomRight", TERRACOTTA.highlight)

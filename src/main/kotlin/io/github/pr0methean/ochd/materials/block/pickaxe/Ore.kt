@@ -106,7 +106,7 @@ enum class Ore(
             yield(ctx.out({ ingot() }, "item/quartz"))
             yield(ctx.out(ctx.stack {
                 copy(NETHERRACK)
-                copy { item() }
+                item() // don't need to copy since it's not used as the item form
             }, "block/nether_quartz_ore"))
             yield(ctx.out({
                 background(color)

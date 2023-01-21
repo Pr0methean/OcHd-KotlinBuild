@@ -13,7 +13,12 @@ import javafx.scene.paint.Paint
 enum class SimpleAxeBlock: SingleTextureMaterial, ShadowHighlightMaterial, Block {
     CRAFTING_TABLE_SIDE {
         override fun LayerListBuilder.createTextureLayers() {
-            copy {OverworldWood.OAK.run {planks()}}
+            copy {
+                background(color)
+                layer("waves", shadow)
+                layer("waves2", highlight)
+                layer("planksTopBorder", shadow)
+            }
             layer("borderSolid", highlight)
             layer("craftingSide", OverworldWood.DARK_OAK.color)
         }
