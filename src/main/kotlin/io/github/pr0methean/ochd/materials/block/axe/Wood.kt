@@ -332,11 +332,15 @@ enum class OverworldWood(
         barkShadow = c(0x4a4a39)
     ) {
         override fun LayerListBuilder.doorCommonLayers() {
-            layer("borderSolidThick", color)
-            layer("borderSolid", highlight)
+            copy {
+                layer("borderSolidThick", color)
+                layer("borderSolid", highlight)
+            }
             layer("cross", highlight)
-            layer("2x2TopLeft", shadow)
-            layer("borderShortDashes", color, 0.5)
+            copy {
+                layer("2x2TopLeft", shadow)
+                layer("borderShortDashes", color, 0.5)
+            }
         }
 
         override fun LayerListBuilder.trapdoor(commonLayers: AbstractImageTask) {
@@ -346,7 +350,14 @@ enum class OverworldWood(
         }
 
         override fun LayerListBuilder.doorTop(doorBottom: AbstractImageTask, commonLayers: AbstractImageTask) {
-            copy(commonLayers)
+            copy {
+                layer("borderSolidThick", color)
+                layer("borderSolid", highlight)
+            }
+            copy {
+                layer("2x2TopLeft", shadow)
+                layer("borderShortDashes", color, 0.5)
+            }
             layer("craftingSide", shadow)
             layer("cross", shadow)
             layer("doorKnob")
