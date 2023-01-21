@@ -135,7 +135,6 @@ private suspend fun runAll(
         } else {
             val task = unstartedTasks.minWithOrNull(taskOrderComparator)
             checkNotNull(task) { "Could not get an unstarted task" }
-            check(unstartedTasks.remove(task)) { "Attempted to remove task more than once: $task" }
             inProgressJobs[task] = scope.launch {
                 logger.info("Joining {}", task)
                 try {
@@ -146,6 +145,7 @@ private suspend fun runAll(
                 }
                 finishedJobsChannel.send(task)
             }
+            check(unstartedTasks.remove(task)) { "Attempted to remove task more than once: $task" }
         }
     }
     logger.debug("All jobs started; waiting for {} running jobs to finish", Unbox.box(inProgressJobs.size))
