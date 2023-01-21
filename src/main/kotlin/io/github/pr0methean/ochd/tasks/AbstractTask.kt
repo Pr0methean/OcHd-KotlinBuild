@@ -23,7 +23,7 @@ val abstractTaskLogger: Logger = LogManager.getLogger("AbstractTask")
 /**
  * Unit of work that wraps its coroutine to support reuse (including under heap-constrained conditions).
  */
-@Suppress("EqualsWithHashCodeExist", "EqualsOrHashCode") // hashCode is cached in a lazy; equals isn't
+@Suppress("TooManyFunctions", "EqualsWithHashCodeExist", "EqualsOrHashCode") // hashCode is cached in a lazy; equals isn't
 abstract class AbstractTask<out T>(
     val name: String,
     val cache: DeferredTaskCache<@UnsafeVariance T>,
