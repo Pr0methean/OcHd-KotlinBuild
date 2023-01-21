@@ -16,7 +16,6 @@ import java.util.Collections.newSetFromMap
 import java.util.WeakHashMap
 import javax.annotation.concurrent.GuardedBy
 import kotlin.coroutines.CoroutineContext
-import kotlin.system.exitProcess
 
 val abstractTaskLogger: Logger = LogManager.getLogger("AbstractTask")
 
@@ -111,14 +110,7 @@ abstract class AbstractTask<out T>(
     @Suppress("DeferredIsResult")
     fun start(): Deferred<T> = cache.computeIfAbsent {
         abstractTaskLogger.debug("Creating a new coroutine for {}", name)
-        coroutineScope.async(start = LAZY) {
-            try {
-                return@async perform()
-            } catch (t: Throwable) {
-                abstractTaskLogger.fatal("{} failed due to {}: {}", name, t::class.simpleName, t.message)
-                exitProcess(1)
-            }
-        }
+        coroutineScope.async(start = LAZY) { perform() }
     }.apply(Deferred<T>::start)
 
     abstract suspend fun perform(): T

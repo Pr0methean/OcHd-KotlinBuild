@@ -118,12 +118,7 @@ private suspend fun runAll(
     val unstartedTasks = tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks)).toMutableSet()
     val inProgressJobs = HashMap<PngOutputTask,Job>()
     val finishedJobsChannel = Channel<PngOutputTask>(capacity = CAPACITY_PADDING_FACTOR * THREADS)
-    val errorsChannel = Channel<Throwable>()
     while (unstartedTasks.isNotEmpty()) {
-        val maybeError = errorsChannel.tryReceive().getOrNull()
-        if (maybeError != null) {
-            throw maybeError
-        }
         val maybeReceive = finishedJobsChannel.tryReceive().getOrElse {
             val currentInProgressJobs = inProgressJobs.size
             if (currentInProgressJobs >= maxJobs) {
@@ -148,7 +143,8 @@ private suspend fun runAll(
                 try {
                     coroutine.await()
                 } catch (t: Throwable) {
-                    errorsChannel.send(t)
+                    logger.fatal("{} failed", task, t)
+                    exitProcess(1)
                 }
                 finishedJobsChannel.send(task)
             }
@@ -157,12 +153,7 @@ private suspend fun runAll(
     logger.debug("All jobs started; waiting for {} running jobs to finish", Unbox.box(inProgressJobs.size))
     while (inProgressJobs.isNotEmpty()) {
         inProgressJobs.remove(finishedJobsChannel.receive())
-        val maybeError = errorsChannel.tryReceive().getOrNull()
-        if (maybeError != null) {
-            throw maybeError
-        }
     }
     logger.debug("All jobs done; closing channel")
     finishedJobsChannel.close()
-    errorsChannel.close()
 }
