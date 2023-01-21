@@ -59,6 +59,7 @@ jobs:
           path: 'pngout/OcHD-<< parameters.size >>x<< parameters.size >>.zip'
       - run:
           zip -9 HeapDump.zip *.hprof || true
+          - when: always
       - store_artifacts:
           path: 'HeapDump.zip'
 # Invoke jobs via workflows
