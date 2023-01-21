@@ -52,6 +52,7 @@ abstract class AbstractTask<out T>(
      * all dependents have done so.
      */
     suspend fun removeDirectDependentTask(task: AbstractTask<*>) {
+        abstractTaskLogger.info("Removing dependency of {} on {}", task.name, name)
         if (mutex.withLock {
                 directDependentTasks.remove(task)
                 directDependentTasks.isEmpty()
