@@ -1,5 +1,6 @@
 package io.github.pr0methean.ochd
 
+import com.sun.prism.impl.Disposer
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
 import io.github.pr0methean.ochd.tasks.PngOutputTask
 import javafx.application.Platform
@@ -104,8 +105,11 @@ suspend fun main(args: Array<String>) {
 }
 
 @Suppress("ExplicitGarbageCollectionCall")
-private fun gcIfUsingLargeTiles(tileSize: Int) {
+private suspend fun gcIfUsingLargeTiles(tileSize: Int) {
     if (tileSize >= MIN_TILE_SIZE_FOR_EXPLICIT_GC) {
+        withContext(Dispatchers.Main) {
+            Disposer.cleanUp()
+        }
         System.gc()
     }
 }
