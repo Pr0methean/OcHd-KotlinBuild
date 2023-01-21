@@ -23,8 +23,8 @@ import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
 private const val CAPACITY_PADDING_FACTOR = 2
-private val taskOrderComparator = comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed()
-    .then(comparingInt(PngOutputTask::totalSubtasks))
+private val taskOrderComparator = comparingInt<PngOutputTask> { it.totalSubtasks - it.startedOrAvailableSubtasks() }
+    .then(comparingInt { it.cacheableSubtasks() - it.startedOrAvailableSubtasks() })
 private val logger = LogManager.getRootLogger()
 private const val THREADS_PER_CPU = 1.0
 private val THREADS = perCpu(THREADS_PER_CPU)
