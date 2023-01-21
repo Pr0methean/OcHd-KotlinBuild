@@ -9,6 +9,7 @@ import io.github.pr0methean.ochd.tasks.InvalidTask
 import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.tasks.RepaintTask
 import io.github.pr0methean.ochd.tasks.SvgToBitmapTask
+import io.github.pr0methean.ochd.tasks.caching.HardTaskCache
 import io.github.pr0methean.ochd.tasks.caching.SoftTaskCache
 import io.github.pr0methean.ochd.tasks.caching.noopDeferredTaskCache
 import javafx.scene.paint.Color
@@ -48,7 +49,7 @@ class TaskPlanningContext(
                 shortName,
                 tileSize,
                 svgDirectory.resolve("$shortName.svg"),
-                SoftTaskCache(shortName),
+                HardTaskCache(shortName),
                 ctx
             )
         }
