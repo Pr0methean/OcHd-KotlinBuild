@@ -145,10 +145,10 @@ private suspend fun runAll(
                 logger.info("Joining {}", task)
                 try {
                     task.await()
-                    finishedJobsChannel.send(task)
                 } catch (t: Throwable) {
                     errorsChannel.send(t)
                 }
+                finishedJobsChannel.send(task)
             }
         }
     }
