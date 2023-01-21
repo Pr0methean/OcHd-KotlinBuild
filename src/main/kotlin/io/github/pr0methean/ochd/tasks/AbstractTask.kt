@@ -6,7 +6,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart.LAZY
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -31,7 +30,7 @@ abstract class AbstractTask<out T>(
     val ctx: CoroutineContext
 ) : StringBuilderFormattable {
     val coroutineScope: CoroutineScope by lazy {
-        CoroutineScope(ctx.plus(CoroutineName(name)).plus(SupervisorJob()))
+        CoroutineScope(ctx.plus(CoroutineName(name)))
     }
 
     protected val mutex: Mutex = Mutex()
