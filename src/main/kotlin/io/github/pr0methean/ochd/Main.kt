@@ -24,7 +24,7 @@ import kotlin.system.measureNanoTime
 
 private const val CAPACITY_PADDING_FACTOR = 2
 private val taskOrderComparator = comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed()
-    .then(comparingInt(PngOutputTask::cacheableSubtasks).reversed())
+    .then(comparingInt(PngOutputTask::cacheableSubtasks))
     .then(comparingInt(PngOutputTask::totalSubtasks))
 private val logger = LogManager.getRootLogger()
 private const val THREADS_PER_CPU = 1.0
@@ -116,7 +116,7 @@ private suspend fun runAll(
     scope: CoroutineScope,
     maxJobs: Int
 ) {
-    val unstartedTasks = tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks).reversed()).toMutableSet()
+    val unstartedTasks = tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks)).toMutableSet()
     val inProgressJobs = HashMap<PngOutputTask,Job>()
     val finishedJobsChannel = Channel<PngOutputTask>(capacity = CAPACITY_PADDING_FACTOR * THREADS)
     while (unstartedTasks.isNotEmpty()) {
