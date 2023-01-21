@@ -71,7 +71,7 @@ class TaskPlanningContext(
             task is RepaintTask
                     && (task.base is RepaintTask && task.paint == task.base.paint)
             -> deduplicate(RepaintTask(task.base, task.paint, task.alpha * task.base.alpha,
-                    SoftTaskCache(task.name), task.base.ctx))
+                    HardTaskCache(task.name), task.base.ctx))
             task is ImageStackingTask
                     && task.layers.layers.size == 1
                     && task.layers.background == Color.TRANSPARENT
