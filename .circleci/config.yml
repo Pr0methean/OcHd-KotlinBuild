@@ -58,7 +58,7 @@ jobs:
       - store_artifacts:
           path: 'pngout/OcHD-<< parameters.size >>x<< parameters.size >>.zip'
       - run:
-          zip -9 HeapDump.zip HeapDump-${CIRCLE_BUILD_NUM}.hprof || true
+          zip -9 HeapDump.zip *.hprof || true
       - store_artifacts:
           path: 'HeapDump.zip'
 # Invoke jobs via workflows
