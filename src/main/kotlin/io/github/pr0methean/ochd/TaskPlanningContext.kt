@@ -5,6 +5,7 @@ import io.github.pr0methean.ochd.tasks.AbstractImageTask
 import io.github.pr0methean.ochd.tasks.AbstractTask
 import io.github.pr0methean.ochd.tasks.AnimationTask
 import io.github.pr0methean.ochd.tasks.ImageStackingTask
+import io.github.pr0methean.ochd.tasks.InvalidTask
 import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.tasks.RepaintTask
 import io.github.pr0methean.ochd.tasks.SvgToBitmapTask
@@ -61,8 +62,11 @@ class TaskPlanningContext(
         return when {
             task is SvgToBitmapTask
             -> task as TTask
+            task is InvalidTask
+            -> InvalidTask as TTask
             task is RepaintTask
-                    && (task.paint == null || task.paint == Color.BLACK)
+                    && (task.paint == null || task.paint == Color.BLACK
+                        || (task.base is RepaintTask && task.paint == task.base.paint))
                     && task.alpha == 1.0
             -> deduplicate(task.base)
             task is ImageStackingTask
