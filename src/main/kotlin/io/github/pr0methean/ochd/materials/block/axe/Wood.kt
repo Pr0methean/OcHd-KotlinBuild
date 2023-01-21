@@ -547,6 +547,7 @@ enum class Fungus(
     }
 
     override fun LayerListBuilder.logTop(strippedLogTop: AbstractImageTask) {
+        copy(strippedLogTop)
         layer("borderSolid", barkColor)
         layer("borderDotted", barkShadow)
     }
