@@ -15,8 +15,8 @@ enum class SimpleAxeBlock: SingleTextureMaterial, ShadowHighlightMaterial, Block
         override fun LayerListBuilder.createTextureLayers() {
             copy {
                 background(color)
-                layer("waves", shadow)
                 layer("waves2", highlight)
+                layer("waves", shadow)
                 layer("planksTopBorder", shadow)
             }
             layer("borderSolid", highlight)

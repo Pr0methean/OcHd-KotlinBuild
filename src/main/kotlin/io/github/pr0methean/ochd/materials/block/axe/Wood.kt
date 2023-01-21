@@ -58,8 +58,8 @@ sealed interface Wood: ShadowHighlightMaterial {
     fun LayerListBuilder.planks() {
         copy {
             background(color)
-            layer("waves", shadow)
             layer("waves2", highlight)
+            layer("waves", shadow)
             layer("planksTopBorder", shadow)
         }
         layer("borderShortDashes", highlight)
@@ -148,8 +148,8 @@ enum class OverworldWood(
             background(highlight)
             layer("borderSolidExtraThick", color)
             layer("craftingGridSquare", shadow)
-            layer("craftingGridSpaces", highlight)
             layer("borderSolid", shadow)
+            layer("craftingGridSpaces", highlight)
             layer("doorHingesBig", STONE.shadow)
         }
 
@@ -523,9 +523,9 @@ enum class Fungus(
         override fun LayerListBuilder.leaves() {
             background(leavesColor)
             layer("leaves3", leavesShadow)
+            layer("borderSolid", leavesShadow)
             layer("leaves3a", leavesHighlight)
             layer("leaves3b", leavesHighlight)
-            layer("borderSolid", leavesShadow)
             layer("borderShortDashes", leavesHighlight)
         }
 
