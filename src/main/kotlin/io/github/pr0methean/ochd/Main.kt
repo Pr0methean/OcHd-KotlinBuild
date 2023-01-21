@@ -135,13 +135,11 @@ private suspend fun runAll(
         } else {
             val task = unstartedTasks.minWithOrNull(taskOrderComparator)
             checkNotNull(task) { "Could not get an unstarted task" }
-            logger.info("Starting {}", task)
-            val coroutine = task.start()
             check(unstartedTasks.remove(task)) { "Attempted to remove task more than once: $task" }
             inProgressJobs[task] = scope.launch {
                 logger.info("Joining {}", task)
                 try {
-                    coroutine.await()
+                    task.perform()
                 } catch (t: Throwable) {
                     logger.fatal("{} failed", task, t)
                     exitProcess(1)
