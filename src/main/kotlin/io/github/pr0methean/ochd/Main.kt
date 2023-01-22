@@ -4,16 +4,13 @@ import com.sun.prism.impl.Disposer
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
 import io.github.pr0methean.ochd.tasks.PngOutputTask
 import javafx.application.Platform
-import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.channels.getOrElse
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
@@ -37,9 +34,7 @@ private val MAX_OUTPUT_TASKS = perCpu(MAX_OUTPUT_TASKS_PER_CPU)
 private const val MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU = 3.0
 private val MAX_HUGE_TILE_OUTPUT_TASKS = perCpu(MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU)
 private const val MIN_TILE_SIZE_FOR_EXPLICIT_GC = 2048
-@OptIn(DelicateCoroutinesApi::class)
-val coroutineContext: CoroutineDispatcher = newFixedThreadPoolContext(THREADS, "Main coroutine context")
-val scope: CoroutineScope = CoroutineScope(coroutineContext)
+val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 
 private fun perCpu(amount: Double) = (amount * Runtime.getRuntime().availableProcessors()).toInt()
 
@@ -73,7 +68,7 @@ suspend fun main(args: Array<String>) {
         tileSize = tileSize,
         svgDirectory = svgDirectory,
         outTextureRoot = outTextureRoot,
-        ctx = coroutineContext
+        ctx = Dispatchers.Default
     )
     scope.plus(Dispatchers.Main).launch {
         Thread.currentThread().priority = Thread.MAX_PRIORITY
@@ -90,7 +85,7 @@ suspend fun main(args: Array<String>) {
         ImageProcessingStats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupAndCopyMetadata.join()
         gcIfUsingLargeTiles(tileSize)
-        withContext(coroutineContext) {
+        withContext(Dispatchers.Default) {
             runAll(cbTasks, scope, MAX_HUGE_TILE_OUTPUT_TASKS)
             gcIfUsingLargeTiles(tileSize)
             runAll(nonCbTasks, scope, MAX_OUTPUT_TASKS)
