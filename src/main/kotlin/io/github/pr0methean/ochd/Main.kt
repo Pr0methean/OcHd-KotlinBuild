@@ -8,16 +8,14 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.yield
 import org.apache.logging.log4j.LogManager
-import org.apache.logging.log4j.util.Unbox
+import org.apache.logging.log4j.util.Unbox.box
 import java.nio.file.Paths
 import java.util.Comparator.comparingInt
 import kotlin.system.exitProcess
@@ -98,7 +96,7 @@ suspend fun main(args: Array<String>) {
     Platform.exit()
     ImageProcessingStats.log()
     logger.info("")
-    logger.info("All tasks finished after {} ns", Unbox.box(time))
+    logger.info("All tasks finished after {} ns", box(time))
     exitProcess(0)
 }
 
@@ -112,7 +110,6 @@ private suspend fun gcIfUsingLargeTiles(tileSize: Int) {
     }
 }
 
-@OptIn(ExperimentalCoroutinesApi::class)
 private suspend fun runAll(
     tasks: Iterable<PngOutputTask>,
     scope: CoroutineScope,
@@ -129,8 +126,8 @@ private suspend fun runAll(
         if (currentInProgressJobs < maxJobs) {
             val task = unstartedTasks.minWithOrNull(taskOrderComparator)
             checkNotNull(task) { "Could not get an unstarted task" }
+            logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
             inProgressJobs[task] = scope.launch {
-                logger.info("Joining {}", task)
                 try {
                     task.perform()
                 } catch (t: Throwable) {
@@ -141,16 +138,14 @@ private suspend fun runAll(
             }
             check(unstartedTasks.remove(task)) { "Attempted to remove task more than once: $task" }
         } else {
+            logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
             inProgressJobs.remove(finishedJobsChannel.receive())
-            if (finishedJobsChannel.isEmpty) {
-                yield()
-            }
         }
     }
-    logger.debug("All jobs started; waiting for {} running jobs to finish", Unbox.box(inProgressJobs.size))
+    logger.info("All jobs started; waiting for {} running jobs to finish", box(inProgressJobs.size))
     while (inProgressJobs.isNotEmpty()) {
         inProgressJobs.remove(finishedJobsChannel.receive())
     }
-    logger.debug("All jobs done; closing channel")
+    logger.info("All jobs done; closing channel")
     finishedJobsChannel.close()
 }
