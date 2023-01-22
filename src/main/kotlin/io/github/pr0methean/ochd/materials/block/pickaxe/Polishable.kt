@@ -45,9 +45,12 @@ enum class Polishable(
             layer("bigDotsTopLeftBottomRight", color)
         }
         override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
-
-            yield(ctx.out(ctx.stack { createTextureLayersBase() }, "block/blackstone"))
-            val polishedTextureTask = ctx.stack { createPolishedTexture() }
+            val base = ctx.stack { createTextureLayersBase() }
+            yield(ctx.out(base, "block/blackstone"))
+            val polishedTextureTask = ctx.stack {
+                copy(base)
+                createBorderPolished()
+            }
             yield(ctx.out(polishedTextureTask, "block/polished_blackstone"))
             yield(ctx.out(ctx.stack {
                 copy(polishedTextureTask)
@@ -62,18 +65,17 @@ enum class Polishable(
     };
 
     abstract fun LayerListBuilder.createTextureLayersBase()
-    private fun LayerListBuilder.createBorderPolished() {
+    protected fun LayerListBuilder.createBorderPolished() {
         layer("borderSolid", shadow)
         layer("borderSolidTopLeft", highlight)
     }
 
     override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
-        yield(ctx.out(ctx.stack {createTextureLayersBase()}, "block/$name"))
-        yield(ctx.out(ctx.stack {createPolishedTexture()}, "block/polished_$name"))
-    }
-
-    internal fun LayerListBuilder.createPolishedTexture() {
-        createTextureLayersBase()
-        createBorderPolished()
+        val base = ctx.stack { createTextureLayersBase() }
+        yield(ctx.out(base, "block/$name"))
+        yield(ctx.out(ctx.stack {
+            copy(base)
+            createBorderPolished()
+        }, "block/polished_$name"))
     }
 }

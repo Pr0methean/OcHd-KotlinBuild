@@ -1,6 +1,5 @@
 package io.github.pr0methean.ochd.tasks
 
-import com.sun.prism.impl.Disposer
 import io.github.pr0methean.ochd.DEFAULT_SNAPSHOT_PARAMS
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import javafx.scene.SnapshotParameters
@@ -12,12 +11,14 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.apache.logging.log4j.LogManager
+import org.apache.logging.log4j.util.Unbox.box
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import java.nio.charset.Charset
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.CoroutineContext
+import kotlin.system.measureNanoTime
 
 private val logger = LogManager.getLogger("AbstractImageTask")
 
@@ -54,14 +55,21 @@ abstract class AbstractImageTask(
         if (systemErrSwitched.compareAndSet(false, true)) {
             System.setErr(errCatcherStream)
         }
-        logger.info("Snapshotting canvas for {}", name)
         val caughtStderr = AtomicReference<String?>(null)
         val output = WritableImage(canvas.width.toInt(), canvas.height.toInt())
+        logger.info("Waiting to snapshot canvas for {}", name)
+        val startWaitingTime = System.nanoTime()
         val snapshot = withContext(Dispatchers.Main.plus(CoroutineName("Snapshot of $name"))) {
+            logger.info("Snapshotting canvas for {} after waiting {} ns", name,
+                    box(System.nanoTime() - startWaitingTime))
             try {
-                canvas.snapshot(params, output)
+                val snapshot: Image
+                val ns = measureNanoTime {
+                    snapshot = canvas.snapshot(params, output)
+                }
+                logger.info("Finished snapshotting canvas for {} after {} ns", name, box(ns))
+                return@withContext snapshot
             } finally {
-                Disposer.cleanUp()
                 errCatcherStream.flush()
                 if (errCatcher.size() > 0) {
                     caughtStderr.set(errCatcher.toString(defaultErrCharset))
@@ -79,7 +87,7 @@ abstract class AbstractImageTask(
                 defaultErr.print(interceptedStderr)
             }
         }
-        logger.info("Finished snapshotting canvas for {}", name)
+        logger.info("Collected snapshot for {}", name)
         if (snapshot.isError) {
             throw output.exception
         }

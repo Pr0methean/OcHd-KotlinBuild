@@ -6,14 +6,15 @@ import io.github.pr0methean.ochd.tasks.PngOutputTask
 import javafx.application.Platform
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.getOrElse
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.newFixedThreadPoolContext
+import kotlinx.coroutines.plus
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox.box
 import java.nio.file.Paths
@@ -30,13 +31,13 @@ private const val THREADS_PER_CPU = 1.0
 private val THREADS = perCpu(THREADS_PER_CPU)
 private const val MAX_OUTPUT_TASKS_PER_CPU = 3.0
 private val MAX_OUTPUT_TASKS = perCpu(MAX_OUTPUT_TASKS_PER_CPU)
-private const val MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU = 2.0
+private const val MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU = 3.0
 private val MAX_HUGE_TILE_OUTPUT_TASKS = perCpu(MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU)
 private const val MIN_TILE_SIZE_FOR_EXPLICIT_GC = 2048
+val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 
 private fun perCpu(amount: Double) = (amount * Runtime.getRuntime().availableProcessors()).toInt()
 
-@OptIn(DelicateCoroutinesApi::class)
 @Suppress("UnstableApiUsage", "DeferredResultUnused")
 suspend fun main(args: Array<String>) {
     if (args.isEmpty()) {
@@ -59,8 +60,6 @@ suspend fun main(args: Array<String>) {
             }
         }
     }
-    val coroutineContext = newFixedThreadPoolContext(THREADS, "Main coroutine context")
-    val scope = CoroutineScope(coroutineContext)
     val svgDirectory = Paths.get("svg").toAbsolutePath().toFile()
     val outTextureRoot = out.resolve("assets").resolve("minecraft").resolve("textures")
 
@@ -69,12 +68,10 @@ suspend fun main(args: Array<String>) {
         tileSize = tileSize,
         svgDirectory = svgDirectory,
         outTextureRoot = outTextureRoot,
-        ctx = coroutineContext
+        ctx = Dispatchers.Default
     )
-    scope.launch {
-        withContext(Dispatchers.Main) {
-            Thread.currentThread().priority = Thread.MAX_PRIORITY
-        }
+    scope.plus(Dispatchers.Main).launch {
+        Thread.currentThread().priority = Thread.MAX_PRIORITY
     }
     startMonitoring(scope)
     val time = measureNanoTime {
@@ -88,9 +85,11 @@ suspend fun main(args: Array<String>) {
         ImageProcessingStats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupAndCopyMetadata.join()
         gcIfUsingLargeTiles(tileSize)
-        runAll(cbTasks, scope, MAX_HUGE_TILE_OUTPUT_TASKS)
-        gcIfUsingLargeTiles(tileSize)
-        runAll(nonCbTasks, scope, MAX_OUTPUT_TASKS)
+        withContext(Dispatchers.Default) {
+            runAll(cbTasks, scope, MAX_HUGE_TILE_OUTPUT_TASKS)
+            gcIfUsingLargeTiles(tileSize)
+            runAll(nonCbTasks, scope, MAX_OUTPUT_TASKS)
+        }
     }
     stopMonitoring()
     Platform.exit()
@@ -101,12 +100,12 @@ suspend fun main(args: Array<String>) {
 }
 
 @Suppress("ExplicitGarbageCollectionCall")
-private suspend fun gcIfUsingLargeTiles(tileSize: Int) {
+private fun gcIfUsingLargeTiles(tileSize: Int) {
     if (tileSize >= MIN_TILE_SIZE_FOR_EXPLICIT_GC) {
-        withContext(Dispatchers.Main) {
+        System.gc()
+        scope.plus(Dispatchers.Main).launch {
             Disposer.cleanUp()
         }
-        System.gc()
     }
 }
 
@@ -120,22 +119,24 @@ private suspend fun runAll(
     val finishedJobsChannel = Channel<PngOutputTask>(capacity = CAPACITY_PADDING_FACTOR * THREADS)
     while (unstartedTasks.isNotEmpty()) {
         do {
-            val maybeReceive = finishedJobsChannel.tryReceive().getOrNull()?.also(inProgressJobs::remove)
+            val maybeReceive = finishedJobsChannel.tryReceive().getOrElse {
+                if (inProgressJobs.isNotEmpty()) {
+                    yield()
+                    finishedJobsChannel.tryReceive().getOrNull()
+                } else null
+            }?.also(inProgressJobs::remove)
         } while (maybeReceive != null)
         val currentInProgressJobs = inProgressJobs.size
-        if (currentInProgressJobs < maxJobs) {
+        if (currentInProgressJobs + unstartedTasks.size <= maxJobs) {
+            logger.info("{} tasks in progress; starting all {} remaining tasks",
+                box(currentInProgressJobs), box(unstartedTasks.size))
+            unstartedTasks.forEach { inProgressJobs[it] = startTask(scope, it, finishedJobsChannel) }
+            unstartedTasks.clear()
+        } else if (currentInProgressJobs < maxJobs) {
             val task = unstartedTasks.minWithOrNull(taskOrderComparator)
             checkNotNull(task) { "Could not get an unstarted task" }
             logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
-            inProgressJobs[task] = scope.launch {
-                try {
-                    task.perform()
-                } catch (t: Throwable) {
-                    logger.fatal("{} failed", task, t)
-                    exitProcess(1)
-                }
-                finishedJobsChannel.send(task)
-            }
+            inProgressJobs[task] = startTask(scope, task, finishedJobsChannel)
             check(unstartedTasks.remove(task)) { "Attempted to remove task more than once: $task" }
         } else {
             logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
@@ -148,4 +149,18 @@ private suspend fun runAll(
     }
     logger.info("All jobs done; closing channel")
     finishedJobsChannel.close()
+}
+
+private fun startTask(
+    scope: CoroutineScope,
+    task: PngOutputTask,
+    finishedJobsChannel: Channel<PngOutputTask>
+) = scope.launch {
+    try {
+        task.perform()
+    } catch (t: Throwable) {
+        logger.fatal("{} failed", task, t)
+        exitProcess(1)
+    }
+    finishedJobsChannel.send(task)
 }
