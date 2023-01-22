@@ -70,14 +70,11 @@ abstract class AbstractImageTask(
                 logger.info("Finished snapshotting canvas for {} after {} ns", name, box(ns))
                 return@withContext snapshot
             } finally {
-                val disposalTime = measureNanoTime {
-                    errCatcherStream.flush()
-                    if (errCatcher.size() > 0) {
-                        caughtStderr.set(errCatcher.toString(defaultErrCharset))
-                        errCatcher.reset()
-                    }
+                errCatcherStream.flush()
+                if (errCatcher.size() > 0) {
+                    caughtStderr.set(errCatcher.toString(defaultErrCharset))
+                    errCatcher.reset()
                 }
-                logger.info("Cleaning up after {} took {} ns", name, box(disposalTime))
             }
         }
         val interceptedStderr = caughtStderr.get()
