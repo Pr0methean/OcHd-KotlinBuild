@@ -12,12 +12,14 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.apache.logging.log4j.LogManager
+import org.apache.logging.log4j.util.Unbox.box
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import java.nio.charset.Charset
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.CoroutineContext
+import kotlin.system.measureNanoTime
 
 private val logger = LogManager.getLogger("AbstractImageTask")
 
@@ -60,9 +62,13 @@ abstract class AbstractImageTask(
         val snapshot = withContext(Dispatchers.Main.plus(CoroutineName("Snapshot of $name"))) {
             logger.info("Snapshotting canvas for {}", name)
             try {
-                canvas.snapshot(params, output)
+                val snapshot: Image
+                val ns = measureNanoTime {
+                    snapshot = canvas.snapshot(params, output)
+                }
+                logger.info("Finished snapshotting canvas for {} after {} ns", name, box(ns))
+                return@withContext snapshot
             } finally {
-                logger.info("Finished snapshotting canvas for {}", name)
                 Disposer.cleanUp()
                 errCatcherStream.flush()
                 if (errCatcher.size() > 0) {
