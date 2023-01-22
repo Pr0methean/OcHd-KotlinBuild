@@ -126,9 +126,9 @@ private suspend fun runAll(
             val maybeReceive = finishedJobsChannel.tryReceive().getOrNull()?.also(inProgressJobs::remove)
         } while (maybeReceive != null)
         val currentInProgressJobs = inProgressJobs.size
+        val task = unstartedTasks.minWithOrNull(taskOrderComparator)
+        checkNotNull(task) { "Could not get an unstarted task" }
         if (currentInProgressJobs < maxJobs) {
-            val task = unstartedTasks.minWithOrNull(taskOrderComparator)
-            checkNotNull(task) { "Could not get an unstarted task" }
             inProgressJobs[task] = scope.launch {
                 logger.info("Joining {}", task)
                 try {
