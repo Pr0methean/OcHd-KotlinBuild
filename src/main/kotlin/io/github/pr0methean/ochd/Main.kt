@@ -122,30 +122,28 @@ private suspend fun runAll(
     val inProgressJobs = HashMap<PngOutputTask,Job>()
     val finishedJobsChannel = Channel<PngOutputTask>(capacity = CAPACITY_PADDING_FACTOR * THREADS)
     while (unstartedTasks.isNotEmpty()) {
-        val maybeReceive = finishedJobsChannel.tryReceive().getOrNull()
-        if (maybeReceive != null) {
-            inProgressJobs.remove(maybeReceive)
+        do {
+            val maybeReceive = finishedJobsChannel.tryReceive().getOrNull()?.also(inProgressJobs::remove)
+        } while (maybeReceive != null)
+        val currentInProgressJobs = inProgressJobs.size
+        val task = unstartedTasks.minWithOrNull(taskOrderComparator)
+        checkNotNull(task) { "Could not get an unstarted task" }
+        if (currentInProgressJobs < maxJobs || task.netAddedToCache() < 0) {
+            inProgressJobs[task] = scope.launch {
+                logger.info("Joining {}", task)
+                try {
+                    task.perform()
+                } catch (t: Throwable) {
+                    logger.fatal("{} failed", task, t)
+                    exitProcess(1)
+                }
+                finishedJobsChannel.send(task)
+            }
+            check(unstartedTasks.remove(task)) { "Attempted to remove task more than once: $task" }
         } else {
-            val currentInProgressJobs = inProgressJobs.size
-            val task = unstartedTasks.minWithOrNull(taskOrderComparator)
-            checkNotNull(task) { "Could not get an unstarted task" }
-            if (currentInProgressJobs < maxJobs || task.netAddedToCache() < 0) {
-                inProgressJobs[task] = scope.launch {
-                    logger.info("Joining {}", task)
-                    try {
-                        task.perform()
-                    } catch (t: Throwable) {
-                        logger.fatal("{} failed", task, t)
-                        exitProcess(1)
-                    }
-                    finishedJobsChannel.send(task)
-                }
-                check(unstartedTasks.remove(task)) { "Attempted to remove task more than once: $task" }
-            } else {
-                inProgressJobs.remove(finishedJobsChannel.receive())
-                if (finishedJobsChannel.isEmpty) {
-                    yield()
-                }
+            inProgressJobs.remove(finishedJobsChannel.receive())
+            if (finishedJobsChannel.isEmpty) {
+                yield()
             }
         }
     }
