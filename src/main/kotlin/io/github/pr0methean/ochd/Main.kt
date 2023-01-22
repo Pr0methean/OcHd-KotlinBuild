@@ -14,7 +14,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.yield
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox
 import java.nio.file.Paths
@@ -131,21 +130,17 @@ private suspend fun runAll(
         } else {
             val task = unstartedTasks.minWithOrNull(taskOrderComparator)
             checkNotNull(task) { "Could not get an unstarted task" }
-            if (currentInProgressJobs >= THREADS && task.netAddedToCache() >= 0) {
-                yield()
-            } else {
-                inProgressJobs[task] = scope.launch {
-                    logger.info("Joining {}", task)
-                    try {
-                        task.perform()
-                    } catch (t: Throwable) {
-                        logger.fatal("{} failed", task, t)
-                        exitProcess(1)
-                    }
-                    finishedJobsChannel.send(task)
+            inProgressJobs[task] = scope.launch {
+                logger.info("Joining {}", task)
+                try {
+                    task.perform()
+                } catch (t: Throwable) {
+                    logger.fatal("{} failed", task, t)
+                    exitProcess(1)
                 }
-                check(unstartedTasks.remove(task)) { "Attempted to remove task more than once: $task" }
+                finishedJobsChannel.send(task)
             }
+            check(unstartedTasks.remove(task)) { "Attempted to remove task more than once: $task" }
         }
     }
     logger.debug("All jobs started; waiting for {} running jobs to finish", Unbox.box(inProgressJobs.size))
