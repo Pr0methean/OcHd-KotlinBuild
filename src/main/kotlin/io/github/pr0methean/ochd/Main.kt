@@ -8,9 +8,9 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.getOrElse
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.runBlocking
@@ -112,6 +112,7 @@ private suspend fun gcIfUsingLargeTiles(tileSize: Int) {
     }
 }
 
+@OptIn(ExperimentalCoroutinesApi::class)
 private suspend fun runAll(
     tasks: Iterable<PngOutputTask>,
     scope: CoroutineScope,
@@ -121,22 +122,13 @@ private suspend fun runAll(
     val inProgressJobs = HashMap<PngOutputTask,Job>()
     val finishedJobsChannel = Channel<PngOutputTask>(capacity = CAPACITY_PADDING_FACTOR * THREADS)
     while (unstartedTasks.isNotEmpty()) {
-        val maybeReceive = finishedJobsChannel.tryReceive().getOrElse {
-            val currentInProgressJobs = inProgressJobs.size
-            if (currentInProgressJobs >= maxJobs) {
-                logger.debug("{} tasks remain. Waiting for one of: {}",
-                        Unbox.box(currentInProgressJobs), inProgressJobs)
-                finishedJobsChannel.receive()
-            } else if (currentInProgressJobs >= THREADS) {
-                yield()
-                finishedJobsChannel.tryReceive().getOrNull()
-            } else null
-        }
-        if (maybeReceive != null) {
-            inProgressJobs.remove(maybeReceive)
-        } else {
-            val task = unstartedTasks.minWithOrNull(taskOrderComparator)
-            checkNotNull(task) { "Could not get an unstarted task" }
+        do {
+            val maybeReceive = finishedJobsChannel.tryReceive().getOrNull()?.also(inProgressJobs::remove)
+        } while (maybeReceive != null)
+        val currentInProgressJobs = inProgressJobs.size
+        val task = unstartedTasks.minWithOrNull(taskOrderComparator)
+        checkNotNull(task) { "Could not get an unstarted task" }
+        if (currentInProgressJobs < maxJobs || task.netAddedToCache() < 0) {
             inProgressJobs[task] = scope.launch {
                 logger.info("Joining {}", task)
                 try {
@@ -148,6 +140,11 @@ private suspend fun runAll(
                 finishedJobsChannel.send(task)
             }
             check(unstartedTasks.remove(task)) { "Attempted to remove task more than once: $task" }
+        } else {
+            inProgressJobs.remove(finishedJobsChannel.receive())
+            if (finishedJobsChannel.isEmpty) {
+                yield()
+            }
         }
     }
     logger.debug("All jobs started; waiting for {} running jobs to finish", Unbox.box(inProgressJobs.size))
