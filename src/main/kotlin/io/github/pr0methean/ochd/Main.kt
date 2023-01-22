@@ -119,28 +119,28 @@ private suspend fun runAll(
     val inProgressJobs = HashMap<PngOutputTask,Job>()
     val finishedJobsChannel = Channel<PngOutputTask>(capacity = CAPACITY_PADDING_FACTOR * THREADS)
     while (unstartedTasks.isNotEmpty()) {
-        val currentInProgressJobs = inProgressJobs.size
-        val maybeReceive = if (currentInProgressJobs >= maxJobs) {
-            finishedJobsChannel.receive()
-        } else {
-            finishedJobsChannel.tryReceive().getOrNull()
-        }
+        val maybeReceive = finishedJobsChannel.tryReceive().getOrNull()
         if (maybeReceive != null) {
             inProgressJobs.remove(maybeReceive)
         } else {
+            val currentInProgressJobs = inProgressJobs.size
             val task = unstartedTasks.minWithOrNull(taskOrderComparator)
             checkNotNull(task) { "Could not get an unstarted task" }
-            inProgressJobs[task] = scope.launch {
-                logger.info("Joining {}", task)
-                try {
-                    task.perform()
-                } catch (t: Throwable) {
-                    logger.fatal("{} failed", task, t)
-                    exitProcess(1)
+            if (currentInProgressJobs < maxJobs || task.netAddedToCache() < 0) {
+                inProgressJobs[task] = scope.launch {
+                    logger.info("Joining {}", task)
+                    try {
+                        task.perform()
+                    } catch (t: Throwable) {
+                        logger.fatal("{} failed", task, t)
+                        exitProcess(1)
+                    }
+                    finishedJobsChannel.send(task)
                 }
-                finishedJobsChannel.send(task)
+                check(unstartedTasks.remove(task)) { "Attempted to remove task more than once: $task" }
+            } else {
+                inProgressJobs.remove(finishedJobsChannel.receive())
             }
-            check(unstartedTasks.remove(task)) { "Attempted to remove task more than once: $task" }
         }
     }
     logger.debug("All jobs started; waiting for {} running jobs to finish", Unbox.box(inProgressJobs.size))
