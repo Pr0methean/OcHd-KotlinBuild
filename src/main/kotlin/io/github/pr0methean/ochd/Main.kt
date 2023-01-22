@@ -15,6 +15,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox
 import java.nio.file.Paths
@@ -126,6 +127,9 @@ private suspend fun runAll(
                 logger.debug("{} tasks remain. Waiting for one of: {}",
                         Unbox.box(currentInProgressJobs), inProgressJobs)
                 finishedJobsChannel.receive()
+            } else if (currentInProgressJobs >= THREADS) {
+                yield()
+                finishedJobsChannel.tryReceive().getOrNull()
             } else null
         }
         if (maybeReceive != null) {
