@@ -10,7 +10,6 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.getOrElse
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.runBlocking
@@ -122,12 +121,10 @@ private suspend fun runAll(
     val finishedJobsChannel = Channel<PngOutputTask>(capacity = CAPACITY_PADDING_FACTOR * THREADS)
     while (unstartedTasks.isNotEmpty()) {
         val currentInProgressJobs = inProgressJobs.size
-        val maybeReceive = finishedJobsChannel.tryReceive().getOrElse {
-            if (currentInProgressJobs >= maxJobs) {
-                logger.debug("{} tasks remain. Waiting for one of: {}",
-                        Unbox.box(currentInProgressJobs), inProgressJobs)
-                finishedJobsChannel.receive()
-            } else null
+        val maybeReceive = if (currentInProgressJobs >= maxJobs) {
+            finishedJobsChannel.receive()
+        } else {
+            finishedJobsChannel.tryReceive().getOrNull()
         }
         if (maybeReceive != null) {
             inProgressJobs.remove(maybeReceive)
