@@ -1,6 +1,5 @@
 package io.github.pr0methean.ochd.tasks
 
-import com.sun.prism.impl.Disposer
 import io.github.pr0methean.ochd.DEFAULT_SNAPSHOT_PARAMS
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import javafx.scene.SnapshotParameters
@@ -72,14 +71,13 @@ abstract class AbstractImageTask(
                 return@withContext snapshot
             } finally {
                 val disposalTime = measureNanoTime {
-                    Disposer.cleanUp()
                     errCatcherStream.flush()
                     if (errCatcher.size() > 0) {
                         caughtStderr.set(errCatcher.toString(defaultErrCharset))
                         errCatcher.reset()
                     }
                 }
-                logger.info("Clean up after {} took {} ns", name, box(disposalTime))
+                logger.info("Cleaning up after {} took {} ns", name, box(disposalTime))
             }
         }
         val interceptedStderr = caughtStderr.get()
