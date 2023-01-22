@@ -1,12 +1,12 @@
 package io.github.pr0methean.ochd.tasks
 
+import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.CoroutineStart.LAZY
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -17,21 +17,21 @@ import java.util.Collections.newSetFromMap
 import java.util.WeakHashMap
 import javax.annotation.concurrent.GuardedBy
 import kotlin.coroutines.CoroutineContext
-import kotlin.system.exitProcess
 
 val abstractTaskLogger: Logger = LogManager.getLogger("AbstractTask")
 
 /**
  * Unit of work that wraps its coroutine to support reuse (including under heap-constrained conditions).
  */
-@Suppress("EqualsWithHashCodeExist", "EqualsOrHashCode") // hashCode is cached in a lazy; equals isn't
+@Suppress("TooManyFunctions", "EqualsWithHashCodeExist", "EqualsOrHashCode")
+// hashCode is cached in a lazy; equals isn't
 abstract class AbstractTask<out T>(
     val name: String,
     val cache: DeferredTaskCache<@UnsafeVariance T>,
     val ctx: CoroutineContext
 ) : StringBuilderFormattable {
     val coroutineScope: CoroutineScope by lazy {
-        CoroutineScope(ctx.plus(CoroutineName(name)).plus(SupervisorJob()))
+        CoroutineScope(ctx.plus(CoroutineName(name)))
     }
 
     protected val mutex: Mutex = Mutex()
@@ -42,7 +42,7 @@ abstract class AbstractTask<out T>(
         if (mutex.withLock {
                 directDependentTasks.add(task) && directDependentTasks.size >= 2 && cache.enable()
             }) {
-            abstractTaskLogger.info("Enabling caching for {}: {}", this.javaClass.simpleName, name)
+            ImageProcessingStats.onCachingEnabled(this)
         }
     }
 
@@ -58,12 +58,12 @@ abstract class AbstractTask<out T>(
             }) {
             directDependencies.forEach { it.removeDirectDependentTask(this) }
             if (cache.disable()) {
-                abstractTaskLogger.info("Disabled caching for {}: {}", this.javaClass.simpleName, name)
+                ImageProcessingStats.onCachingDisabled(this)
             }
         }
     }
 
-    private val totalSubtasks: Int by lazy {
+    val totalSubtasks: Int by lazy {
         var total = 1
         for (task in directDependencies) {
             total += task.totalSubtasks
@@ -87,6 +87,20 @@ abstract class AbstractTask<out T>(
             subtasks += task.startedOrAvailableSubtasks()
         }
         return subtasks
+    }
+
+    suspend fun netAddedToCache(): Int {
+        var netAdded = if (!cache.isEnabled()) {
+            0
+        } else if (isStartedOrAvailable()) {
+            if (mutex.withLock { directDependentTasks.size == 1 }) -1 else 0
+        } else if (mutex.withLock { directDependentTasks.size >= 2 }) {
+            1
+        } else 0
+        for (task in directDependencies) {
+            netAdded += task.netAddedToCache()
+        }
+        return netAdded
     }
 
     suspend fun registerRecursiveDependencies(): Unit = mutex.withLock {
@@ -121,6 +135,7 @@ abstract class AbstractTask<out T>(
                 exitProcess(1)
             }
         }
+        coroutineScope.async(start = LAZY) { perform() }
     }.apply(Deferred<T>::start)
 
     abstract suspend fun perform(): T

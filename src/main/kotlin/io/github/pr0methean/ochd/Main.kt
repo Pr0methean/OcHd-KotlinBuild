@@ -8,13 +8,12 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.getOrElse
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.newFixedThreadPoolContext
-import kotlinx.coroutines.plus
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import org.apache.logging.log4j.LogManager
@@ -25,8 +24,9 @@ import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
 private const val CAPACITY_PADDING_FACTOR = 2
-private val taskOrderComparator = comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed()
-    .then(comparingInt(PngOutputTask::cacheableSubtasks))
+private val taskOrderComparator = comparingInt<PngOutputTask> { runBlocking { it.netAddedToCache() } }
+    .then(comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed())
+    .then(comparingInt(PngOutputTask::totalSubtasks))
 private val logger = LogManager.getRootLogger()
 private const val THREADS_PER_CPU = 1.0
 private val THREADS = perCpu(THREADS_PER_CPU)
@@ -47,8 +47,7 @@ suspend fun main(args: Array<String>) {
     }
     val tileSize = args[0].toInt()
     require(tileSize > 0) { "tileSize shouldn't be zero or negative but was ${args[0]}" }
-    val supervisorJob = SupervisorJob()
-    val ioScope = CoroutineScope(Dispatchers.IO).plus(supervisorJob)
+    val ioScope = CoroutineScope(Dispatchers.IO)
     val out = Paths.get("pngout").toAbsolutePath().toFile()
     val metadataDirectory = Paths.get("metadata").toAbsolutePath().toFile()
     val cleanupAndCopyMetadata = ioScope.launch(CoroutineName("Delete old outputs & copy metadata files")) {
@@ -63,7 +62,7 @@ suspend fun main(args: Array<String>) {
         }
     }
     val coroutineContext = newFixedThreadPoolContext(THREADS, "Main coroutine context")
-    val scope = CoroutineScope(coroutineContext).plus(supervisorJob)
+    val scope = CoroutineScope(coroutineContext)
     val svgDirectory = Paths.get("svg").toAbsolutePath().toFile()
     val outTextureRoot = out.resolve("assets").resolve("minecraft").resolve("textures")
 
@@ -113,6 +112,7 @@ private suspend fun gcIfUsingLargeTiles(tileSize: Int) {
     }
 }
 
+@OptIn(ExperimentalCoroutinesApi::class)
 private suspend fun runAll(
     tasks: Iterable<PngOutputTask>,
     scope: CoroutineScope,
@@ -121,49 +121,36 @@ private suspend fun runAll(
     val unstartedTasks = tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks)).toMutableSet()
     val inProgressJobs = HashMap<PngOutputTask,Job>()
     val finishedJobsChannel = Channel<PngOutputTask>(capacity = CAPACITY_PADDING_FACTOR * THREADS)
-    val errorsChannel = Channel<Throwable>()
     while (unstartedTasks.isNotEmpty()) {
-        val maybeError = errorsChannel.tryReceive().getOrNull()
-        if (maybeError != null) {
-            throw maybeError
-        }
-        val maybeReceive = finishedJobsChannel.tryReceive().getOrElse {
-            val currentInProgressJobs = inProgressJobs.size
-            if (currentInProgressJobs >= maxJobs) {
-                logger.debug("{} tasks remain. Waiting for one of: {}",
-                        Unbox.box(currentInProgressJobs), inProgressJobs)
-                finishedJobsChannel.receive()
-            } else if (currentInProgressJobs >= THREADS) {
-                yield()
-                finishedJobsChannel.tryReceive().getOrNull()
-            } else null
-        }
-        if (maybeReceive != null) {
-            inProgressJobs.remove(maybeReceive)
-        } else {
+        do {
+            val maybeReceive = finishedJobsChannel.tryReceive().getOrNull()?.also(inProgressJobs::remove)
+        } while (maybeReceive != null)
+        val currentInProgressJobs = inProgressJobs.size
+        if (currentInProgressJobs < maxJobs) {
             val task = unstartedTasks.minWithOrNull(taskOrderComparator)
             checkNotNull(task) { "Could not get an unstarted task" }
-            check(unstartedTasks.remove(task)) { "Attempted to remove task more than once: $task" }
             inProgressJobs[task] = scope.launch {
                 logger.info("Joining {}", task)
                 try {
-                    task.await()
+                    task.perform()
                 } catch (t: Throwable) {
-                    errorsChannel.send(t)
+                    logger.fatal("{} failed", task, t)
+                    exitProcess(1)
                 }
                 finishedJobsChannel.send(task)
+            }
+            check(unstartedTasks.remove(task)) { "Attempted to remove task more than once: $task" }
+        } else {
+            inProgressJobs.remove(finishedJobsChannel.receive())
+            if (finishedJobsChannel.isEmpty) {
+                yield()
             }
         }
     }
     logger.debug("All jobs started; waiting for {} running jobs to finish", Unbox.box(inProgressJobs.size))
     while (inProgressJobs.isNotEmpty()) {
         inProgressJobs.remove(finishedJobsChannel.receive())
-        val maybeError = errorsChannel.tryReceive().getOrNull()
-        if (maybeError != null) {
-            throw maybeError
-        }
     }
     logger.debug("All jobs done; closing channel")
     finishedJobsChannel.close()
-    errorsChannel.close()
 }

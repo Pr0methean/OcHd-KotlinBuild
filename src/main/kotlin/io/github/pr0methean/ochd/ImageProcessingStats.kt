@@ -4,6 +4,7 @@ import com.google.common.collect.ConcurrentHashMultiset
 import com.google.common.collect.HashMultiset
 import com.google.common.collect.Multiset
 import com.google.common.collect.Multisets
+import io.github.pr0methean.ochd.tasks.AbstractTask
 import io.github.pr0methean.ochd.tasks.InvalidTask
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -20,6 +21,8 @@ import org.apache.logging.log4j.util.Unbox.box
 import java.lang.management.ManagementFactory
 import java.lang.management.ThreadInfo
 import java.lang.management.ThreadMXBean
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.locks.ReentrantLock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
@@ -42,6 +45,8 @@ private val NEED_COROUTINE_DEBUG = logger.isDebugEnabled
 private val REPORTING_INTERVAL: Duration = 1.minutes
 val threadMxBean: ThreadMXBean = ManagementFactory.getThreadMXBean()
 var monitoringJob: Job? = null
+private val cacheLock = ReentrantLock()
+private val cacheStringBuilder = StringBuilder()
 @OptIn(ExperimentalCoroutinesApi::class)
 @Suppress("DeferredResultUnused")
 fun startMonitoring(scope: CoroutineScope) {
@@ -95,6 +100,7 @@ object ImageProcessingStats {
     private val dedupeFailures: HashMultiset<String> = HashMultiset.create()
     private val dedupeFailuresByName = HashMultiset.create<Pair<String, String>>()
     private val tasksByRunCount = ConcurrentHashMultiset.create<Pair<String, String>>()
+    private val cacheableTasks = ConcurrentHashMap.newKeySet<AbstractTask<*>>()
 
     init {
         dedupeFailures.add("Build task graph")
@@ -171,5 +177,27 @@ object ImageProcessingStats {
     fun onDedupeFailed(typename: String, name: String) {
         dedupeFailures.add(typename)
         dedupeFailuresByName.add(typename to name)
+    }
+
+    fun onCachingEnabled(task: AbstractTask<*>) {
+        logger.info("Enabled caching for: {}: {}", task::class.simpleName, task.name)
+        cacheableTasks.add(task)
+        logger.info("Currently cacheable tasks: {}", box(cacheableTasks.size))
+    }
+
+    fun onCachingDisabled(task: AbstractTask<*>) {
+        logger.info("Disabled caching for: {}: {}", task::class.simpleName, task.name)
+        cacheableTasks.remove(task)
+        logger.info("Currently cacheable tasks: {}", box(cacheableTasks.size))
+        if (cacheLock.tryLock()) {
+            try {
+                cacheStringBuilder.clear()
+                val cachedTasks = cacheableTasks.filter { it.getNow() != null }
+                cacheStringBuilder.run { appendList(cachedTasks, "; ") }
+                logger.info("Currently cached tasks: {}: {}", box(cachedTasks.size), cacheStringBuilder)
+            } finally {
+                cacheLock.unlock()
+            }
+        }
     }
 }

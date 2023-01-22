@@ -4,7 +4,10 @@ import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.tasks.caching.noopDeferredTaskCache
 import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asContextElement
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.plus
 import kotlinx.coroutines.withContext
 import org.apache.logging.log4j.LogManager
 import java.awt.image.BufferedImage
@@ -53,32 +56,35 @@ class PngOutputTask(
     }
 
     override suspend fun perform() {
-        withContext(threadLocalBimg.asContextElement()) {
-            val oldImage = threadLocalBimg.get()
-            val baseTask = base.start()
-            ImageProcessingStats.onTaskLaunched("PngOutputTask", name)
+        val oldImage = threadLocalBimg.get()
+        val baseTask = base.start()
+        ImageProcessingStats.onTaskLaunched("PngOutputTask", name)
+        val mkdirs = coroutineScope.plus(Dispatchers.IO).launch {
             files.mapNotNull(File::getParentFile).distinct().forEach { parent ->
                 if (mkdirsedPaths.add(parent)) {
                     parent.mkdirs()
                 }
             }
+        }
+        val fxImage = baseTask.await()
+        val bImg: BufferedImage
+        if (oldImage == null) {
+            bImg = SwingFXUtils.fromFXImage(fxImage, null)
+            if (!isCommandBlock && bImg.width == bImg.height) {
+                threadLocalBimg.set(bImg)
+            }
+        } else {
+            bImg = SwingFXUtils.fromFXImage(
+                fxImage,
+                if (fxImage.height.toInt() == oldImage.height && fxImage.width.toInt() == oldImage.width) {
+                    oldImage
+                } else null
+            )
+        }
+        withContext(Dispatchers.IO.plus(threadLocalBimg.asContextElement())) {
+            mkdirs.join()
             val firstFile = files[0]
             val firstFilePath = firstFile.absoluteFile.toPath()
-            val fxImage = baseTask.await()
-            val bImg: BufferedImage
-            if (oldImage == null) {
-                bImg = SwingFXUtils.fromFXImage(fxImage, null)
-                if (!isCommandBlock && bImg.width == bImg.height) {
-                    threadLocalBimg.set(bImg)
-                }
-            } else {
-                bImg = SwingFXUtils.fromFXImage(
-                    fxImage,
-                    if (fxImage.height.toInt() == oldImage.height && fxImage.width.toInt() == oldImage.width) {
-                        oldImage
-                    } else null
-                )
-            }
             ImageIO.write(bImg, "PNG", firstFile)
             base.removeDirectDependentTask(this@PngOutputTask)
             if (files.size > 1) {

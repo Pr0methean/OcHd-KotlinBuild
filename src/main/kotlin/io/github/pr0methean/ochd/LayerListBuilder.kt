@@ -51,7 +51,7 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
                 background = source.background
             }
         }
-        if (source.layers.size > 1) { // Don't flatten sub-stacks since we want to deduplicate them
+        if (source.layers.size > 1) { // Don't flatten sub-stacks since we want to deduplicate them at build time
             copy(ctx.stackNoDedup(source))
         } else {
             copy(source.layers[0])

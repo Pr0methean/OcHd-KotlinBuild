@@ -56,10 +56,12 @@ sealed interface Wood: ShadowHighlightMaterial {
     }
 
     fun LayerListBuilder.planks() {
-        background(color)
-        layer("waves", shadow)
-        layer("waves2", highlight)
-        layer("planksTopBorder", shadow)
+        copy {
+            background(color)
+            layer("waves2", highlight)
+            layer("waves", shadow)
+            layer("planksTopBorder", shadow)
+        }
         layer("borderShortDashes", highlight)
     }
 }
@@ -146,8 +148,8 @@ enum class OverworldWood(
             background(highlight)
             layer("borderSolidExtraThick", color)
             layer("craftingGridSquare", shadow)
-            layer("craftingGridSpaces", highlight)
             layer("borderSolid", shadow)
+            layer("craftingGridSpaces", highlight)
             layer("doorHingesBig", STONE.shadow)
         }
 
@@ -521,9 +523,9 @@ enum class Fungus(
         override fun LayerListBuilder.leaves() {
             background(leavesColor)
             layer("leaves3", leavesShadow)
+            layer("borderSolid", leavesShadow)
             layer("leaves3a", leavesHighlight)
             layer("leaves3b", leavesHighlight)
-            layer("borderSolid", leavesShadow)
             layer("borderShortDashes", leavesHighlight)
         }
 
@@ -547,14 +549,21 @@ enum class Fungus(
     }
 
     override fun LayerListBuilder.logTop(strippedLogTop: AbstractImageTask) {
+        background(color)
+        copy {
+            layer("ringsCentralBullseye", shadow)
+            layer("rings2", highlight)
+        }
         layer("borderSolid", barkColor)
-        layer("borderDotted", barkShadow)
+        layer("borderShortDashes", barkShadow)
     }
 
     override fun LayerListBuilder.strippedLogTop(strippedLogSide: AbstractImageTask) {
         copy(strippedLogSide)
-        layer("ringsCentralBullseye", shadow)
-        layer("rings2", highlight)
+        copy {
+            layer("ringsCentralBullseye", shadow)
+            layer("rings2", highlight)
+        }
     }
 
     override val logSynonym: String = "stem"

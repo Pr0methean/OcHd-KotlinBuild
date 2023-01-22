@@ -24,11 +24,13 @@ fun <T> List<T>.isShallowCopyOf(other: List<T>): Boolean {
 }
 
 fun StringBuilder.appendList(list: List<StringBuilderFormattable>, delim: String = ", "): StringBuilder {
-    for (item in list) {
-        item.formatTo(this)
-        append(delim)
+    if (list.isNotEmpty()) {
+        for (item in list) {
+            item.formatTo(this)
+            append(delim)
+        }
+        delete(length - delim.length, length)
     }
-    delete(length - delim.length, length)
     return this
 }
 
