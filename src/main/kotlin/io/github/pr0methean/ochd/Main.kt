@@ -121,8 +121,8 @@ private suspend fun runAll(
     val inProgressJobs = HashMap<PngOutputTask,Job>()
     val finishedJobsChannel = Channel<PngOutputTask>(capacity = CAPACITY_PADDING_FACTOR * THREADS)
     while (unstartedTasks.isNotEmpty()) {
+        val currentInProgressJobs = inProgressJobs.size
         val maybeReceive = finishedJobsChannel.tryReceive().getOrElse {
-            val currentInProgressJobs = inProgressJobs.size
             if (currentInProgressJobs >= maxJobs) {
                 logger.debug("{} tasks remain. Waiting for one of: {}",
                         Unbox.box(currentInProgressJobs), inProgressJobs)
@@ -137,17 +137,21 @@ private suspend fun runAll(
         } else {
             val task = unstartedTasks.minWithOrNull(taskOrderComparator)
             checkNotNull(task) { "Could not get an unstarted task" }
-            inProgressJobs[task] = scope.launch {
-                logger.info("Joining {}", task)
-                try {
-                    task.perform()
-                } catch (t: Throwable) {
-                    logger.fatal("{} failed", task, t)
-                    exitProcess(1)
+            if (currentInProgressJobs >= THREADS && task.netAddedToCache() >= 0) {
+                yield()
+            } else {
+                inProgressJobs[task] = scope.launch {
+                    logger.info("Joining {}", task)
+                    try {
+                        task.perform()
+                    } catch (t: Throwable) {
+                        logger.fatal("{} failed", task, t)
+                        exitProcess(1)
+                    }
+                    finishedJobsChannel.send(task)
                 }
-                finishedJobsChannel.send(task)
+                check(unstartedTasks.remove(task)) { "Attempted to remove task more than once: $task" }
             }
-            check(unstartedTasks.remove(task)) { "Attempted to remove task more than once: $task" }
         }
     }
     logger.debug("All jobs started; waiting for {} running jobs to finish", Unbox.box(inProgressJobs.size))
