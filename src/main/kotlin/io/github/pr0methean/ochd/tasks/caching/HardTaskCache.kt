@@ -20,9 +20,9 @@ class HardTaskCache<T>(
 
     @Suppress("OVERRIDE_BY_INLINE")
     override inline fun computeIfAbsent(coroutineCreator: () -> Deferred<T>): Deferred<T> {
+        val newCoroutine = coroutineCreator()
         return if (isEnabled()) {
-            val newCoroutine = coroutineCreator()
             coroutineRef.compareAndExchange(null, newCoroutine) ?: newCoroutine
-        } else coroutineCreator()
+        } else newCoroutine
     }
 }
