@@ -6,6 +6,8 @@ import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.asContextElement
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.plus
 import kotlinx.coroutines.withContext
 import org.apache.logging.log4j.LogManager
 import java.awt.image.BufferedImage
@@ -57,7 +59,7 @@ class PngOutputTask(
         val oldImage = threadLocalBimg.get()
         val baseTask = base.start()
         ImageProcessingStats.onTaskLaunched("PngOutputTask", name)
-        withContext(Dispatchers.IO) {
+        val mkdirs = coroutineScope.plus(Dispatchers.IO).launch {
             files.mapNotNull(File::getParentFile).distinct().forEach { parent ->
                 if (mkdirsedPaths.add(parent)) {
                     parent.mkdirs()
@@ -80,6 +82,7 @@ class PngOutputTask(
             )
         }
         withContext(Dispatchers.IO.plus(threadLocalBimg.asContextElement())) {
+            mkdirs.join()
             val firstFile = files[0]
             val firstFilePath = firstFile.absoluteFile.toPath()
             ImageIO.write(bImg, "PNG", firstFile)
