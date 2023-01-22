@@ -64,7 +64,6 @@ class AnimationTask(
         ImageProcessingStats.onTaskLaunched("AnimationTask", name)
         val backgroundImage = background.await()
         background.removeDirectDependentTask(this)
-        logger.info("Allocating a canvas for {}", name)
         val canvasMutex = Mutex()
         val canvas = createCanvas()
         val canvasCtx = canvas.graphicsContext2D
