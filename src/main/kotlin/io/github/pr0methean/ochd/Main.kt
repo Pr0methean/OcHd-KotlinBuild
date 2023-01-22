@@ -124,19 +124,18 @@ private suspend fun runAll(
         } while (maybeReceive != null)
         val currentInProgressJobs = inProgressJobs.size
         if (currentInProgressJobs < maxJobs) {
-            val task = unstartedTasks.minWithOrNull(taskOrderComparator)
-            checkNotNull(task) { "Could not get an unstarted task" }
-            logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
-            inProgressJobs[task] = scope.launch {
-                try {
-                    task.perform()
-                } catch (t: Throwable) {
-                    logger.fatal("{} failed", task, t)
-                    exitProcess(1)
-                }
-                finishedJobsChannel.send(task)
+            if (currentInProgressJobs + unstartedTasks.size <= maxJobs) {
+                logger.info("{} tasks in progress; starting all {} remaining tasks",
+                    box(currentInProgressJobs), box(unstartedTasks.size))
+                unstartedTasks.forEach { inProgressJobs[it] = startTask(scope, it, finishedJobsChannel) }
+                unstartedTasks.clear()
+            } else {
+                val task = unstartedTasks.minWithOrNull(taskOrderComparator)
+                checkNotNull(task) { "Could not get an unstarted task" }
+                logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
+                inProgressJobs[task] = startTask(scope, task, finishedJobsChannel)
+                check(unstartedTasks.remove(task)) { "Attempted to remove task more than once: $task" }
             }
-            check(unstartedTasks.remove(task)) { "Attempted to remove task more than once: $task" }
         } else {
             logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
             inProgressJobs.remove(finishedJobsChannel.receive())
@@ -148,4 +147,18 @@ private suspend fun runAll(
     }
     logger.info("All jobs done; closing channel")
     finishedJobsChannel.close()
+}
+
+private fun startTask(
+    scope: CoroutineScope,
+    task: PngOutputTask,
+    finishedJobsChannel: Channel<PngOutputTask>
+) = scope.launch {
+    try {
+        task.perform()
+    } catch (t: Throwable) {
+        logger.fatal("{} failed", task, t)
+        exitProcess(1)
+    }
+    finishedJobsChannel.send(task)
 }
