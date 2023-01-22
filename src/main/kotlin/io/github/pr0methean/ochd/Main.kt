@@ -126,7 +126,7 @@ private suspend fun runAll(
         val currentInProgressJobs = inProgressJobs.size
         val task = unstartedTasks.minWithOrNull(taskOrderComparator)
         checkNotNull(task) { "Could not get an unstarted task" }
-        if (currentInProgressJobs < maxJobs || task.netAddedToCache() < 0) {
+        if (currentInProgressJobs < maxJobs) {
             inProgressJobs[task] = scope.launch {
                 logger.info("Joining {}", task)
                 try {
