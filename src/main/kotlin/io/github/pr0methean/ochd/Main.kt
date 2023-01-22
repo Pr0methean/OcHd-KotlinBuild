@@ -8,12 +8,14 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.newFixedThreadPoolContext
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox.box
 import java.nio.file.Paths
@@ -110,6 +112,7 @@ private suspend fun gcIfUsingLargeTiles(tileSize: Int) {
     }
 }
 
+@OptIn(ExperimentalCoroutinesApi::class)
 private suspend fun runAll(
     tasks: Iterable<PngOutputTask>,
     scope: CoroutineScope,
@@ -140,6 +143,9 @@ private suspend fun runAll(
         } else {
             logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
             inProgressJobs.remove(finishedJobsChannel.receive())
+            if (finishedJobsChannel.isEmpty) {
+                yield()
+            }
         }
     }
     logger.info("All jobs started; waiting for {} running jobs to finish", box(inProgressJobs.size))
