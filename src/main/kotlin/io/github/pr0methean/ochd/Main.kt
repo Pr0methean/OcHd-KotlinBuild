@@ -18,12 +18,13 @@ import kotlinx.coroutines.yield
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox.box
 import java.nio.file.Paths
+import java.util.Comparator.comparingDouble
 import java.util.Comparator.comparingInt
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
 private const val CAPACITY_PADDING_FACTOR = 2
-private val taskOrderComparator = comparingInt<PngOutputTask> { runBlocking { it.willRemoveFromCache() } }.reversed()
+private val taskOrderComparator = comparingDouble<PngOutputTask> { runBlocking { it.cacheClearingCoefficient() } }.reversed()
     .then(comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed())
     .then(comparingInt(PngOutputTask::totalSubtasks))
 private val logger = LogManager.getRootLogger()
