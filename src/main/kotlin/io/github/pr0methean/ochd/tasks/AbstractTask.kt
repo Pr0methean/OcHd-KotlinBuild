@@ -127,14 +127,6 @@ abstract class AbstractTask<out T>(
     @Suppress("DeferredIsResult")
     fun start(): Deferred<T> = cache.computeIfAbsent {
         abstractTaskLogger.debug("Creating a new coroutine for {}", name)
-        coroutineScope.async(start = LAZY) {
-            try {
-                return@async perform()
-            } catch (t: Throwable) {
-                abstractTaskLogger.fatal("{} failed", name, t)
-                exitProcess(1)
-            }
-        }
         coroutineScope.async(start = LAZY) { perform() }
     }.apply(Deferred<T>::start)
 
