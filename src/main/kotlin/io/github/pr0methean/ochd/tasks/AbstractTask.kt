@@ -93,7 +93,7 @@ abstract class AbstractTask<out T>(
             0.0
         } else if (isStartedOrAvailable()) {
             val totalDependents = mutex.withLock { directDependentTasks.size }
-            1.0 / (totalDependents * totalDependents)
+            Math.scalb(1.0, 1 - totalDependents)
         } else 0.0
         for (task in directDependencies) {
             coefficient += task.cacheClearingCoefficient()
