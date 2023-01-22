@@ -125,8 +125,10 @@ private suspend fun runAll(
     while (unstartedTasks.isNotEmpty()) {
         do {
             val maybeReceive = finishedJobsChannel.tryReceive().getOrElse {
-                yield()
-                finishedJobsChannel.tryReceive().getOrNull()
+                if (inProgressJobs.isNotEmpty()) {
+                    yield()
+                    finishedJobsChannel.tryReceive().getOrNull()
+                } else null
             }?.also(inProgressJobs::remove)
         } while (maybeReceive != null)
         val currentInProgressJobs = inProgressJobs.size
