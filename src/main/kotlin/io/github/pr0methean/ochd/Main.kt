@@ -123,19 +123,17 @@ private suspend fun runAll(
             val maybeReceive = finishedJobsChannel.tryReceive().getOrNull()?.also(inProgressJobs::remove)
         } while (maybeReceive != null)
         val currentInProgressJobs = inProgressJobs.size
-        if (currentInProgressJobs < maxJobs) {
-            if (currentInProgressJobs + unstartedTasks.size <= maxJobs) {
-                logger.info("{} tasks in progress; starting all {} remaining tasks",
-                    box(currentInProgressJobs), box(unstartedTasks.size))
-                unstartedTasks.forEach { inProgressJobs[it] = startTask(scope, it, finishedJobsChannel) }
-                unstartedTasks.clear()
-            } else {
-                val task = unstartedTasks.minWithOrNull(taskOrderComparator)
-                checkNotNull(task) { "Could not get an unstarted task" }
-                logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
-                inProgressJobs[task] = startTask(scope, task, finishedJobsChannel)
-                check(unstartedTasks.remove(task)) { "Attempted to remove task more than once: $task" }
-            }
+        if (currentInProgressJobs + unstartedTasks.size <= maxJobs) {
+            logger.info("{} tasks in progress; starting all {} remaining tasks",
+                box(currentInProgressJobs), box(unstartedTasks.size))
+            unstartedTasks.forEach { inProgressJobs[it] = startTask(scope, it, finishedJobsChannel) }
+            unstartedTasks.clear()
+        } else if (currentInProgressJobs < maxJobs) {
+            val task = unstartedTasks.minWithOrNull(taskOrderComparator)
+            checkNotNull(task) { "Could not get an unstarted task" }
+            logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
+            inProgressJobs[task] = startTask(scope, task, finishedJobsChannel)
+            check(unstartedTasks.remove(task)) { "Attempted to remove task more than once: $task" }
         } else {
             logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
             inProgressJobs.remove(finishedJobsChannel.receive())
