@@ -13,6 +13,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.newFixedThreadPoolContext
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import org.apache.logging.log4j.LogManager
@@ -23,7 +24,8 @@ import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
 private const val CAPACITY_PADDING_FACTOR = 2
-private val taskOrderComparator = comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed()
+private val taskOrderComparator = comparingInt<PngOutputTask> { runBlocking { it.netAddedToCache() } }
+    .then(comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed())
     .then(comparingInt(PngOutputTask::totalSubtasks))
 private val logger = LogManager.getRootLogger()
 private const val THREADS_PER_CPU = 1.0
