@@ -138,6 +138,7 @@ private suspend fun runAll(
             }
             check(unstartedTasks.remove(task)) { "Attempted to remove task more than once: $task" }
         } else {
+            logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
             inProgressJobs.remove(finishedJobsChannel.receive())
         }
     }
