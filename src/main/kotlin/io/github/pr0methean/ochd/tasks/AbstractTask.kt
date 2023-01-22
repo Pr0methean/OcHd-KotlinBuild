@@ -88,18 +88,16 @@ abstract class AbstractTask<out T>(
         return subtasks
     }
 
-    suspend fun netAddedToCache(): Int {
-        var netAdded = if (!cache.isEnabled()) {
+    suspend fun willRemoveFromCache(): Int {
+        var removed = if (!cache.isEnabled()) {
             0
         } else if (isStartedOrAvailable()) {
-            if (mutex.withLock { directDependentTasks.size == 1 }) -1 else 0
-        } else if (mutex.withLock { directDependentTasks.size >= 2 }) {
-            1
+            if (mutex.withLock { directDependentTasks.size == 1 }) 1 else 0
         } else 0
         for (task in directDependencies) {
-            netAdded += task.netAddedToCache()
+            removed += task.willRemoveFromCache()
         }
-        return netAdded
+        return removed
     }
 
     suspend fun registerRecursiveDependencies(): Unit = mutex.withLock {
