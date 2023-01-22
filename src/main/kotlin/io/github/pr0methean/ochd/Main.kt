@@ -88,9 +88,11 @@ suspend fun main(args: Array<String>) {
         ImageProcessingStats.onTaskCompleted("Build task graph", "Build task graph")
         cleanupAndCopyMetadata.join()
         gcIfUsingLargeTiles(tileSize)
-        runAll(cbTasks, scope, MAX_HUGE_TILE_OUTPUT_TASKS)
-        gcIfUsingLargeTiles(tileSize)
-        runAll(nonCbTasks, scope, MAX_OUTPUT_TASKS)
+        withContext(coroutineContext) {
+            runAll(cbTasks, scope, MAX_HUGE_TILE_OUTPUT_TASKS)
+            gcIfUsingLargeTiles(tileSize)
+            runAll(nonCbTasks, scope, MAX_OUTPUT_TASKS)
+        }
     }
     stopMonitoring()
     Platform.exit()

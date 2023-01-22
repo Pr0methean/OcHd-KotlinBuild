@@ -54,13 +54,15 @@ abstract class AbstractImageTask(
         if (systemErrSwitched.compareAndSet(false, true)) {
             System.setErr(errCatcherStream)
         }
-        logger.info("Snapshotting canvas for {}", name)
         val caughtStderr = AtomicReference<String?>(null)
         val output = WritableImage(canvas.width.toInt(), canvas.height.toInt())
+        logger.info("Waiting to snapshot canvas for {}", name)
         val snapshot = withContext(Dispatchers.Main.plus(CoroutineName("Snapshot of $name"))) {
+            logger.info("Snapshotting canvas for {}", name)
             try {
                 canvas.snapshot(params, output)
             } finally {
+                logger.info("Finished snapshotting canvas for {}", name)
                 Disposer.cleanUp()
                 errCatcherStream.flush()
                 if (errCatcher.size() > 0) {
@@ -79,7 +81,7 @@ abstract class AbstractImageTask(
                 defaultErr.print(interceptedStderr)
             }
         }
-        logger.info("Finished snapshotting canvas for {}", name)
+        logger.info("Collected snapshot for {}", name)
         if (snapshot.isError) {
             throw output.exception
         }
