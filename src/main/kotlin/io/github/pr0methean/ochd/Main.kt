@@ -4,6 +4,7 @@ import com.sun.prism.impl.Disposer
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
 import io.github.pr0methean.ochd.tasks.PngOutputTask
 import javafx.application.Platform
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -12,6 +13,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.newFixedThreadPoolContext
+import kotlinx.coroutines.plus
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.apache.logging.log4j.LogManager
@@ -33,10 +35,12 @@ private val MAX_OUTPUT_TASKS = perCpu(MAX_OUTPUT_TASKS_PER_CPU)
 private const val MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU = 3.0
 private val MAX_HUGE_TILE_OUTPUT_TASKS = perCpu(MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU)
 private const val MIN_TILE_SIZE_FOR_EXPLICIT_GC = 2048
+@OptIn(DelicateCoroutinesApi::class)
+val coroutineContext: CoroutineDispatcher = newFixedThreadPoolContext(THREADS, "Main coroutine context")
+val scope: CoroutineScope = CoroutineScope(coroutineContext)
 
 private fun perCpu(amount: Double) = (amount * Runtime.getRuntime().availableProcessors()).toInt()
 
-@OptIn(DelicateCoroutinesApi::class)
 @Suppress("UnstableApiUsage", "DeferredResultUnused")
 suspend fun main(args: Array<String>) {
     if (args.isEmpty()) {
@@ -59,8 +63,6 @@ suspend fun main(args: Array<String>) {
             }
         }
     }
-    val coroutineContext = newFixedThreadPoolContext(THREADS, "Main coroutine context")
-    val scope = CoroutineScope(coroutineContext)
     val svgDirectory = Paths.get("svg").toAbsolutePath().toFile()
     val outTextureRoot = out.resolve("assets").resolve("minecraft").resolve("textures")
 
@@ -71,10 +73,8 @@ suspend fun main(args: Array<String>) {
         outTextureRoot = outTextureRoot,
         ctx = coroutineContext
     )
-    scope.launch {
-        withContext(Dispatchers.Main) {
-            Thread.currentThread().priority = Thread.MAX_PRIORITY
-        }
+    scope.plus(Dispatchers.Main).launch {
+        Thread.currentThread().priority = Thread.MAX_PRIORITY
     }
     startMonitoring(scope)
     val time = measureNanoTime {
@@ -103,12 +103,12 @@ suspend fun main(args: Array<String>) {
 }
 
 @Suppress("ExplicitGarbageCollectionCall")
-private suspend fun gcIfUsingLargeTiles(tileSize: Int) {
+private fun gcIfUsingLargeTiles(tileSize: Int) {
     if (tileSize >= MIN_TILE_SIZE_FOR_EXPLICIT_GC) {
-        withContext(Dispatchers.Main) {
+        System.gc()
+        scope.plus(Dispatchers.Main).launch {
             Disposer.cleanUp()
         }
-        System.gc()
     }
 }
 
