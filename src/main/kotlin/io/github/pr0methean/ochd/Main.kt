@@ -157,6 +157,7 @@ private fun startTask(
     try {
         ImageProcessingStats.onTaskLaunched("PngOutputTask", task.name)
         val baseImage = task.base.await()
+        task.base.removeDirectDependentTask(task)
         finishedJobsChannel.send(task)
         task.writeToFiles(baseImage)
         ImageProcessingStats.onTaskCompleted("PngOutputTask", task.name)
