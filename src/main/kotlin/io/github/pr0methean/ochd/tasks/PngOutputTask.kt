@@ -56,9 +56,15 @@ class PngOutputTask(
     }
 
     override suspend fun perform() {
-        val oldImage = threadLocalBimg.get()
         val baseTask = base.start()
         ImageProcessingStats.onTaskLaunched("PngOutputTask", name)
+        val fxImage = baseTask.await()
+        writeToFiles(fxImage)
+        ImageProcessingStats.onTaskCompleted("PngOutputTask", name)
+    }
+
+    suspend fun writeToFiles(fxImage: Image) {
+        val oldImage = threadLocalBimg.get()
         val mkdirs = coroutineScope.plus(Dispatchers.IO).launch {
             files.mapNotNull(File::getParentFile).distinct().forEach { parent ->
                 if (mkdirsedPaths.add(parent)) {
@@ -66,7 +72,6 @@ class PngOutputTask(
                 }
             }
         }
-        val fxImage = baseTask.await()
         val bImg: BufferedImage
         if (oldImage == null) {
             bImg = SwingFXUtils.fromFXImage(fxImage, null)
@@ -93,7 +98,6 @@ class PngOutputTask(
                 }
             }
         }
-        ImageProcessingStats.onTaskCompleted("PngOutputTask", name)
     }
 
     val isCommandBlock: Boolean = name.contains("command_block")

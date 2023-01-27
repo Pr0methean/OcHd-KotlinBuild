@@ -155,10 +155,13 @@ private fun startTask(
     finishedJobsChannel: Channel<PngOutputTask>
 ) = scope.launch {
     try {
-        task.perform()
+        ImageProcessingStats.onTaskLaunched("PngOutputTask", task.name)
+        val baseImage = task.base.await()
+        finishedJobsChannel.send(task)
+        task.writeToFiles(baseImage)
+        ImageProcessingStats.onTaskCompleted("PngOutputTask", task.name)
     } catch (t: Throwable) {
         logger.fatal("{} failed", task, t)
         exitProcess(1)
     }
-    finishedJobsChannel.send(task)
 }
