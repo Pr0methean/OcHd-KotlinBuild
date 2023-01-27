@@ -24,27 +24,19 @@ import java.util.WeakHashMap
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
-private const val CAPACITY_PADDING_FACTOR = 2
-private val nCpus = Runtime.getRuntime().availableProcessors() - if (
-    // Software rendering thread needs one CPU
-    com.sun.prism.GraphicsPipeline.getPipeline()::class.qualifiedName == "com.sun.prism.sw.SWPipeline"
-) 1 else 0
 private val taskOrderComparator = comparingDouble<PngOutputTask> {
         runBlocking { it.cacheClearingCoefficient() }
     }.reversed()
     .then(comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed())
     .then(comparingInt(PngOutputTask::totalSubtasks))
 private val logger = LogManager.getRootLogger()
-private const val THREADS_PER_CPU = 1.0
-private val THREADS = perCpu(THREADS_PER_CPU)
+
 private const val MAX_OUTPUT_TASKS_PER_CPU = 2.0
-private val MAX_OUTPUT_TASKS = perCpu(MAX_OUTPUT_TASKS_PER_CPU)
+
 private const val MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU = 4.0
-private val MAX_HUGE_TILE_OUTPUT_TASKS = perCpu(MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU)
+
 private const val MIN_TILE_SIZE_FOR_EXPLICIT_GC = 2048
 val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
-
-private fun perCpu(amount: Double) = (amount * nCpus).toInt()
 
 @Suppress("UnstableApiUsage", "DeferredResultUnused")
 suspend fun main(args: Array<String>) {
@@ -81,6 +73,12 @@ suspend fun main(args: Array<String>) {
     scope.plus(Dispatchers.Main).launch {
         Thread.currentThread().priority = Thread.MAX_PRIORITY
     }
+    val nCpus = Runtime.getRuntime().availableProcessors() - if (
+        // SWPipeline is the software renderer, so its rendering thread needs one CPU
+        com.sun.prism.GraphicsPipeline.getPipeline()::class.qualifiedName == "com.sun.prism.sw.SWPipeline"
+    ) 1 else 0
+    val maxOutputTaskJobs = (MAX_OUTPUT_TASKS_PER_CPU * nCpus).toInt()
+    val maxHugeTileOutputTaskJobs = (MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU * nCpus).toInt()
     startMonitoring(scope)
     val time = measureNanoTime {
         ImageProcessingStats.onTaskLaunched("Build task graph", "Build task graph")
@@ -94,9 +92,9 @@ suspend fun main(args: Array<String>) {
         cleanupAndCopyMetadata.join()
         gcIfUsingLargeTiles(tileSize)
         withContext(Dispatchers.Default) {
-            runAll(cbTasks, scope, MAX_HUGE_TILE_OUTPUT_TASKS)
+            runAll(cbTasks, scope, maxHugeTileOutputTaskJobs)
             gcIfUsingLargeTiles(tileSize)
-            runAll(nonCbTasks, scope, MAX_OUTPUT_TASKS)
+            runAll(nonCbTasks, scope, maxOutputTaskJobs)
         }
     }
     stopMonitoring()
@@ -127,7 +125,7 @@ private suspend fun runAll(
         tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks)).toMutableSet()
     } else tasks.toMutableSet()
     val inProgressJobs = HashMap<PngOutputTask,Job>()
-    val finishedJobsChannel = Channel<PngOutputTask>(capacity = CAPACITY_PADDING_FACTOR * THREADS)
+    val finishedJobsChannel = Channel<PngOutputTask>(capacity = maxJobs)
     while (unstartedTasks.isNotEmpty()) {
         do {
             val maybeReceive = finishedJobsChannel.tryReceive().getOrNull()?.also(inProgressJobs::remove)
