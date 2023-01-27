@@ -172,6 +172,9 @@ object ImageProcessingStats {
     fun onTaskCompleted(typeName: String, name: String) {
         logger.info("Completed: {}: {}", typeName, name)
         taskCompletions.add(typeName)
+        if (typeName != "PngOutputTask") {
+            logCurrentlyCachedTasks()
+        }
     }
 
     fun onDedupeFailed(typename: String, name: String) {
@@ -189,6 +192,10 @@ object ImageProcessingStats {
         logger.info("Disabled caching for: {}: {}", task::class.simpleName, task.name)
         cacheableTasks.remove(task)
         logger.info("Currently cacheable tasks: {}", box(cacheableTasks.size))
+        logCurrentlyCachedTasks()
+    }
+
+    private fun logCurrentlyCachedTasks() {
         if (cacheLock.tryLock()) {
             try {
                 cacheStringBuilder.clear()
