@@ -9,6 +9,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.runBlocking
@@ -18,6 +19,7 @@ import org.apache.logging.log4j.util.Unbox.box
 import java.nio.file.Paths
 import java.util.Comparator.comparingDouble
 import java.util.Comparator.comparingInt
+import kotlin.coroutines.coroutineContext
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
@@ -97,7 +99,7 @@ suspend fun main(args: Array<String>) {
     ImageProcessingStats.log()
     logger.info("")
     logger.info("All tasks finished after {} ns", box(time))
-    exitProcess(0)
+    coroutineContext.job.join()
 }
 
 @Suppress("ExplicitGarbageCollectionCall")
