@@ -3,6 +3,7 @@ package io.github.pr0methean.ochd
 import com.sun.prism.impl.Disposer
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
 import io.github.pr0methean.ochd.tasks.PngOutputTask
+import io.github.pr0methean.ochd.tasks.snapshotQueueSize
 import javafx.application.Platform
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -31,12 +32,13 @@ private val taskOrderComparator = comparingDouble<PngOutputTask> {
     .then(comparingInt(PngOutputTask::totalSubtasks))
 private val logger = LogManager.getRootLogger()
 private const val THREADS_PER_CPU = 1.0
-private val THREADS = perCpu(THREADS_PER_CPU)
+private val threads = perCpu(THREADS_PER_CPU)
 private const val MAX_OUTPUT_TASKS_PER_CPU = 3.0
-private val MAX_OUTPUT_TASKS = perCpu(MAX_OUTPUT_TASKS_PER_CPU)
+private val maxOutputTasks = perCpu(MAX_OUTPUT_TASKS_PER_CPU)
 private const val MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU = 3.0
-private val MAX_HUGE_TILE_OUTPUT_TASKS = perCpu(MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU)
+private val maxHugeOutputTasks = perCpu(MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU)
 private const val MIN_TILE_SIZE_FOR_EXPLICIT_GC = 2048
+private val maxSnapshotTaskQueue = threads
 val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 
 private fun perCpu(amount: Double) = (amount * Runtime.getRuntime().availableProcessors()).toInt()
@@ -89,9 +91,9 @@ suspend fun main(args: Array<String>) {
         cleanupAndCopyMetadata.join()
         gcIfUsingLargeTiles(tileSize)
         withContext(Dispatchers.Default) {
-            runAll(cbTasks, scope, MAX_HUGE_TILE_OUTPUT_TASKS)
+            runAll(cbTasks, scope, maxHugeOutputTasks)
             gcIfUsingLargeTiles(tileSize)
-            runAll(nonCbTasks, scope, MAX_OUTPUT_TASKS)
+            runAll(nonCbTasks, scope, maxOutputTasks)
         }
     }
     stopMonitoring()
@@ -121,11 +123,14 @@ private suspend fun runAll(
         tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks)).toMutableSet()
     } else tasks.toMutableSet()
     val inProgressJobs = HashMap<PngOutputTask,Job>()
-    val finishedJobsChannel = Channel<PngOutputTask>(capacity = CAPACITY_PADDING_FACTOR * THREADS)
+    val finishedJobsChannel = Channel<PngOutputTask>(capacity = CAPACITY_PADDING_FACTOR * threads)
     while (unstartedTasks.isNotEmpty()) {
         do {
             val maybeReceive = finishedJobsChannel.tryReceive().getOrElse {
-                if (inProgressJobs.isNotEmpty()) {
+                if (snapshotQueueSize.get() >= maxSnapshotTaskQueue) {
+                    logger.info("Waiting for a snapshot to finish before starting more tasks")
+                    finishedJobsChannel.receive()
+                } else if (inProgressJobs.isNotEmpty()) {
                     yield()
                     finishedJobsChannel.tryReceive().getOrNull()
                 } else null

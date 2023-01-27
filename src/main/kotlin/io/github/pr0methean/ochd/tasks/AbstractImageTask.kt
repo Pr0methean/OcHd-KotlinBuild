@@ -16,6 +16,7 @@ import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import java.nio.charset.Charset
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.CoroutineContext
 import kotlin.system.measureNanoTime
@@ -27,6 +28,7 @@ private val defaultErrCharset: Charset = defaultErr.charset()
 private val errCatcher: ByteArrayOutputStream = ByteArrayOutputStream()
 private val errCatcherStream: PrintStream = PrintStream(errCatcher, true, defaultErrCharset)
 private val systemErrSwitched: AtomicBoolean = AtomicBoolean(false)
+val snapshotQueueSize: AtomicInteger = AtomicInteger(0)
 
 /** Specialization of [AbstractTask]&lt;[Image]&gt;. */
 abstract class AbstractImageTask(
@@ -51,6 +53,7 @@ abstract class AbstractImageTask(
     }
 
     protected suspend fun snapshotCanvas(canvas: Canvas, params: SnapshotParameters = DEFAULT_SNAPSHOT_PARAMS): Image {
+        snapshotQueueSize.getAndIncrement()
         canvas.graphicsContext2D.isImageSmoothing = false
         if (systemErrSwitched.compareAndSet(false, true)) {
             System.setErr(errCatcherStream)
@@ -75,6 +78,7 @@ abstract class AbstractImageTask(
                     caughtStderr.set(errCatcher.toString(defaultErrCharset))
                     errCatcher.reset()
                 }
+                snapshotQueueSize.getAndDecrement()
             }
         }
         val interceptedStderr = caughtStderr.get()
