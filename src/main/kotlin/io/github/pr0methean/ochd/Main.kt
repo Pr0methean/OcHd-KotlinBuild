@@ -25,6 +25,10 @@ import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
 private const val CAPACITY_PADDING_FACTOR = 2
+private val nCpus = Runtime.getRuntime().availableProcessors() - if (
+    // Software rendering thread needs one CPU
+    com.sun.prism.GraphicsPipeline.getPipeline()::class.qualifiedName == "com.sun.prism.sw.SWPipeline"
+) 1 else 0
 private val taskOrderComparator = comparingDouble<PngOutputTask> {
         runBlocking { it.cacheClearingCoefficient() }
     }.reversed()
@@ -33,14 +37,14 @@ private val taskOrderComparator = comparingDouble<PngOutputTask> {
 private val logger = LogManager.getRootLogger()
 private const val THREADS_PER_CPU = 1.0
 private val THREADS = perCpu(THREADS_PER_CPU)
-private const val MAX_OUTPUT_TASKS_PER_CPU = 1.5
+private const val MAX_OUTPUT_TASKS_PER_CPU = 2.0
 private val MAX_OUTPUT_TASKS = perCpu(MAX_OUTPUT_TASKS_PER_CPU)
-private const val MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU = 3.0
+private const val MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU = 4.0
 private val MAX_HUGE_TILE_OUTPUT_TASKS = perCpu(MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU)
 private const val MIN_TILE_SIZE_FOR_EXPLICIT_GC = 2048
 val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 
-private fun perCpu(amount: Double) = (amount * Runtime.getRuntime().availableProcessors()).toInt()
+private fun perCpu(amount: Double) = (amount * nCpus).toInt()
 
 @Suppress("UnstableApiUsage", "DeferredResultUnused")
 suspend fun main(args: Array<String>) {
