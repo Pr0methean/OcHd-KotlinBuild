@@ -9,21 +9,22 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.getOrElse
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.yield
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox.box
 import java.nio.file.Paths
+import java.util.Comparator.comparingDouble
 import java.util.Comparator.comparingInt
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
 private const val CAPACITY_PADDING_FACTOR = 2
-private val taskOrderComparator = comparingInt<PngOutputTask> { runBlocking { it.willRemoveFromCache() } }.reversed()
+private val taskOrderComparator = comparingDouble<PngOutputTask> {
+        runBlocking { it.cacheClearingCoefficient() }
+    }.reversed()
     .then(comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed())
     .then(comparingInt(PngOutputTask::totalSubtasks))
 private val logger = LogManager.getRootLogger()
@@ -110,21 +111,18 @@ private fun gcIfUsingLargeTiles(tileSize: Int) {
 }
 
 private suspend fun runAll(
-    tasks: Iterable<PngOutputTask>,
+    tasks: Collection<PngOutputTask>,
     scope: CoroutineScope,
     maxJobs: Int
 ) {
-    val unstartedTasks = tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks)).toMutableSet()
+    val unstartedTasks = if (tasks.size > maxJobs) {
+        tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks)).toMutableSet()
+    } else tasks.toMutableSet()
     val inProgressJobs = HashMap<PngOutputTask,Job>()
     val finishedJobsChannel = Channel<PngOutputTask>(capacity = CAPACITY_PADDING_FACTOR * THREADS)
     while (unstartedTasks.isNotEmpty()) {
         do {
-            val maybeReceive = finishedJobsChannel.tryReceive().getOrElse {
-                if (inProgressJobs.isNotEmpty()) {
-                    yield()
-                    finishedJobsChannel.tryReceive().getOrNull()
-                } else null
-            }?.also(inProgressJobs::remove)
+            val maybeReceive = finishedJobsChannel.tryReceive().getOrNull()?.also(inProgressJobs::remove)
         } while (maybeReceive != null)
         val currentInProgressJobs = inProgressJobs.size
         if (currentInProgressJobs + unstartedTasks.size <= maxJobs) {

@@ -89,16 +89,17 @@ abstract class AbstractTask<out T>(
         return subtasks
     }
 
-    suspend fun willRemoveFromCache(): Int {
-        var removed = if (!cache.isEnabled()) {
-            0
+    suspend fun cacheClearingCoefficient(): Double {
+        var coefficient = if (!cache.isEnabled()) {
+            0.0
         } else if (isStartedOrAvailable()) {
-            if (mutex.withLock { directDependentTasks.size == 1 }) 1 else 0
-        } else 0
+            val totalDependents = mutex.withLock { directDependentTasks.count { !it.isStartedOrAvailable() } }
+            1.0 / (totalDependents * totalDependents)
+        } else 0.0
         for (task in directDependencies) {
-            removed += task.willRemoveFromCache()
+            coefficient += task.cacheClearingCoefficient()
         }
-        return removed
+        return coefficient
     }
 
     suspend fun registerRecursiveDependencies(): Unit = mutex.withLock {
