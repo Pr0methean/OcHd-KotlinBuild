@@ -24,9 +24,11 @@ import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
 private const val CAPACITY_PADDING_FACTOR = 2
-private val taskOrderComparator = comparingDouble<PngOutputTask> {
+private val taskOrderComparator =
+    comparingInt(PngOutputTask::cacheableSubtasks)
+    .then(comparingDouble<PngOutputTask> {
         runBlocking { it.cacheClearingCoefficient() }
-    }.reversed()
+    }.reversed())
     .then(comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed())
     .then(comparingInt(PngOutputTask::totalSubtasks))
 private val logger = LogManager.getRootLogger()
