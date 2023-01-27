@@ -9,7 +9,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.job
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
@@ -22,7 +21,6 @@ import java.util.Collections
 import java.util.Comparator.comparingDouble
 import java.util.Comparator.comparingInt
 import java.util.WeakHashMap
-import kotlin.coroutines.coroutineContext
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
@@ -102,7 +100,7 @@ suspend fun main(args: Array<String>) {
     ImageProcessingStats.log()
     logger.info("")
     logger.info("All tasks finished after {} ns", box(time))
-    coroutineContext.job.join()
+    exitProcess(0)
 }
 
 @Suppress("ExplicitGarbageCollectionCall")
