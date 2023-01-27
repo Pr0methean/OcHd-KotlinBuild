@@ -30,6 +30,11 @@ abstract class DeferredTaskCache<T>(val name: String) {
 
     fun isEnabled(): Boolean = enabled.get()
 
+    /**
+     * If this cache is enabled, atomically creates the coroutine if it is absent by calling [coroutineCreator]().
+     * If it is disabled and has no coroutine, returns [coroutineCreator]() without storing it in cache. If it is
+     * disabled but still has a coroutine, returns that coroutine.
+     */
     @Suppress("DeferredIsResult")
     abstract fun computeIfAbsent(coroutineCreator: () -> Deferred<T>): Deferred<T>
 }
