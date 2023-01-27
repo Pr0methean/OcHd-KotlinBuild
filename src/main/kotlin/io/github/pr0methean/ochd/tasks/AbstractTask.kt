@@ -92,8 +92,7 @@ abstract class AbstractTask<out T>(
         var coefficient = if (!cache.isEnabled()) {
             0.0
         } else if (isStartedOrAvailable()) {
-            val totalDependents = mutex.withLock { directDependentTasks.count { !it.isStartedOrAvailable() } }
-            1.0 / (totalDependents * totalDependents)
+            Math.scalb(1.0, 1 - mutex.withLock { directDependentTasks.count { !it.isStartedOrAvailable() } })
         } else 0.0
         for (task in directDependencies) {
             coefficient += task.cacheClearingCoefficient()
