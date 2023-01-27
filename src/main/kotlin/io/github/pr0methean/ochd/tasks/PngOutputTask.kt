@@ -9,6 +9,7 @@ import kotlinx.coroutines.asContextElement
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
 import org.apache.logging.log4j.LogManager
 import java.awt.image.BufferedImage
 import java.io.File
@@ -69,6 +70,10 @@ class PngOutputTask(
             files.mapNotNull(File::getParentFile).distinct().forEach { parent ->
                 if (mkdirsedPaths.add(parent)) {
                     parent.mkdirs()
+                } else {
+                    while (!parent.exists()) {
+                        yield()
+                    }
                 }
             }
         }
