@@ -9,12 +9,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.getOrElse
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.yield
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox.box
 import java.nio.file.Paths
@@ -124,12 +122,7 @@ private suspend fun runAll(
     val finishedJobsChannel = Channel<PngOutputTask>(capacity = CAPACITY_PADDING_FACTOR * THREADS)
     while (unstartedTasks.isNotEmpty()) {
         do {
-            val maybeReceive = finishedJobsChannel.tryReceive().getOrElse {
-                if (inProgressJobs.isNotEmpty()) {
-                    yield()
-                    finishedJobsChannel.tryReceive().getOrNull()
-                } else null
-            }?.also(inProgressJobs::remove)
+            val maybeReceive = finishedJobsChannel.tryReceive().getOrNull()?.also(inProgressJobs::remove)
         } while (maybeReceive != null)
         val currentInProgressJobs = inProgressJobs.size
         if (currentInProgressJobs + unstartedTasks.size <= maxJobs) {
