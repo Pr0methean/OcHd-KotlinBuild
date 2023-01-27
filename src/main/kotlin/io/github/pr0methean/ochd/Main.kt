@@ -113,11 +113,13 @@ private fun gcIfUsingLargeTiles(tileSize: Int) {
 }
 
 private suspend fun runAll(
-    tasks: Iterable<PngOutputTask>,
+    tasks: Collection<PngOutputTask>,
     scope: CoroutineScope,
     maxJobs: Int
 ) {
-    val unstartedTasks = tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks)).toMutableSet()
+    val unstartedTasks = if (tasks.size > maxJobs) {
+        tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks)).toMutableSet()
+    } else tasks.toMutableSet()
     val inProgressJobs = HashMap<PngOutputTask,Job>()
     val finishedJobsChannel = Channel<PngOutputTask>(capacity = CAPACITY_PADDING_FACTOR * THREADS)
     while (unstartedTasks.isNotEmpty()) {
