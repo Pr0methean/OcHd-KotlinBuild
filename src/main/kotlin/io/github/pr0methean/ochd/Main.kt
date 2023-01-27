@@ -10,6 +10,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.job
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.runBlocking
@@ -17,8 +18,10 @@ import kotlinx.coroutines.withContext
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox.box
 import java.nio.file.Paths
+import java.util.Collections
 import java.util.Comparator.comparingDouble
 import java.util.Comparator.comparingInt
+import java.util.WeakHashMap
 import kotlin.coroutines.coroutineContext
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
@@ -117,6 +120,7 @@ private suspend fun runAll(
     scope: CoroutineScope,
     maxJobs: Int
 ) {
+    val ioJobs = Collections.newSetFromMap<Job>(WeakHashMap())
     val unstartedTasks = if (tasks.size > maxJobs) {
         tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks)).toMutableSet()
     } else tasks.toMutableSet()
@@ -130,13 +134,13 @@ private suspend fun runAll(
         if (currentInProgressJobs + unstartedTasks.size <= maxJobs) {
             logger.info("{} tasks in progress; starting all {} remaining tasks",
                 box(currentInProgressJobs), box(unstartedTasks.size))
-            unstartedTasks.forEach { inProgressJobs[it] = startTask(scope, it, finishedJobsChannel) }
+            unstartedTasks.forEach { inProgressJobs[it] = startTask(scope, it, finishedJobsChannel, ioJobs) }
             unstartedTasks.clear()
         } else if (currentInProgressJobs < maxJobs) {
             val task = unstartedTasks.minWithOrNull(taskOrderComparator)
             checkNotNull(task) { "Could not get an unstarted task" }
             logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
-            inProgressJobs[task] = startTask(scope, task, finishedJobsChannel)
+            inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs)
             check(unstartedTasks.remove(task)) { "Attempted to remove task more than once: $task" }
         } else {
             logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
@@ -149,20 +153,24 @@ private suspend fun runAll(
     }
     logger.info("All jobs done; closing channel")
     finishedJobsChannel.close()
+    ioJobs.joinAll()
 }
 
 private fun startTask(
     scope: CoroutineScope,
     task: PngOutputTask,
-    finishedJobsChannel: Channel<PngOutputTask>
+    finishedJobsChannel: Channel<PngOutputTask>,
+    ioJobs: MutableSet<in Job>
 ) = scope.launch {
     try {
         ImageProcessingStats.onTaskLaunched("PngOutputTask", task.name)
         val baseImage = task.base.await()
-        task.base.removeDirectDependentTask(task)
         finishedJobsChannel.send(task)
-        task.writeToFiles(baseImage)
-        ImageProcessingStats.onTaskCompleted("PngOutputTask", task.name)
+        task.base.removeDirectDependentTask(task)
+        ioJobs.add(scope.launch {
+            task.writeToFiles(baseImage)
+            ImageProcessingStats.onTaskCompleted("PngOutputTask", task.name)
+        })
     } catch (t: Throwable) {
         logger.fatal("{} failed", task, t)
         exitProcess(1)
