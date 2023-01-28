@@ -103,6 +103,8 @@ class PngOutputTask(
                     Files.createLink(file.absoluteFile.toPath(), firstFilePath)
                 }
             }
+        } else {
+            writeFirstFile.join()
         }
     }
 
