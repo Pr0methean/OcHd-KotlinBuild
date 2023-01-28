@@ -152,6 +152,7 @@ private suspend fun runAll(
     }
     logger.info("All jobs started; waiting for {} running jobs to finish", box(inProgressJobs.size))
     while (inProgressJobs.isNotEmpty()) {
+        ioJobs.removeIf(Job::isCompleted)
         inProgressJobs.remove(finishedJobsChannel.receive())
     }
     logger.info("All jobs done; closing channel")
