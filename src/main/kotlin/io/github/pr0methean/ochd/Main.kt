@@ -168,7 +168,7 @@ private fun startTask(
         finishedJobsChannel.send(task)
         task.base.removeDirectDependentTask(task)
         ioJobs.add(scope.launch {
-            task.writeToFiles(baseImage)
+            task.writeToFiles(baseImage).join()
             ImageProcessingStats.onTaskCompleted("PngOutputTask", task.name)
         })
     } catch (t: Throwable) {
