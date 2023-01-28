@@ -129,6 +129,7 @@ private suspend fun runAll(
     val inProgressJobs = HashMap<PngOutputTask,Job>()
     val finishedJobsChannel = Channel<PngOutputTask>(capacity = maxJobs)
     while (unstartedTasks.isNotEmpty()) {
+        ioJobs.removeIf(Job::isCompleted)
         do {
             val maybeReceive = finishedJobsChannel.tryReceive().getOrNull()?.also(inProgressJobs::remove)
         } while (maybeReceive != null)
