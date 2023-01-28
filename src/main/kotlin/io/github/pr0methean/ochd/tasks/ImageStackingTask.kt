@@ -65,9 +65,8 @@ class ImageStackingTask(
         layers: List<AbstractImageTask>
     ) {
         ImageProcessingStats.onTaskLaunched("ImageStackingTask", name)
-        val canvasCtx by lazy(canvasCtxSupplier)
         layers.forEach {
-            it.renderOnto({ canvasCtx }, x, y)
+            it.renderOnto(canvasCtxSupplier, x, y)
             it.removeDirectDependentTask(this@ImageStackingTask)
         }
         ImageProcessingStats.onTaskCompleted("ImageStackingTask", name)
