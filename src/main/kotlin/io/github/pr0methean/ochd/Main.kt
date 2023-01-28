@@ -19,10 +19,8 @@ import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox.box
 import java.io.File
 import java.nio.file.Paths
-import java.util.Collections
 import java.util.Comparator.comparingDouble
 import java.util.Comparator.comparingInt
-import java.util.WeakHashMap
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
@@ -131,7 +129,7 @@ private suspend fun runAll(
     scope: CoroutineScope,
     maxJobs: Int
 ) {
-    val ioJobs = Collections.newSetFromMap<Job>(WeakHashMap())
+    val ioJobs = HashSet<Job>()
     val unstartedTasks = if (tasks.size > maxJobs) {
         tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks)).toMutableSet()
     } else tasks.toMutableSet()
@@ -157,10 +155,12 @@ private suspend fun runAll(
             logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
             inProgressJobs.remove(finishedJobsChannel.receive())
         }
+        ioJobs.removeIf(Job::isCompleted)
     }
     logger.info("All jobs started; waiting for {} running jobs to finish", box(inProgressJobs.size))
     while (inProgressJobs.isNotEmpty()) {
         inProgressJobs.remove(finishedJobsChannel.receive())
+        ioJobs.removeIf(Job::isCompleted)
     }
     logger.info("All jobs done; closing channel")
     finishedJobsChannel.close()
