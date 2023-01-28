@@ -153,6 +153,7 @@ private suspend fun runAll(
         do {
             val maybeReceive = finishedJobsChannel.tryReceive().getOrNull()?.also(inProgressJobs::remove)
         } while (maybeReceive != null)
+        ioJobs.removeAll(ioJobs.filter(Job::isCompleted).toSet())
         val currentInProgressJobs = inProgressJobs.size
         if (currentInProgressJobs + unstartedTasks.size <= maxJobs) {
             logger.info("{} tasks in progress; starting all {} remaining tasks",
