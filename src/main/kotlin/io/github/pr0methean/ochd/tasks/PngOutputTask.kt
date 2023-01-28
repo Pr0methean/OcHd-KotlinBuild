@@ -64,8 +64,9 @@ class PngOutputTask(
     suspend fun writeToFiles(fxImage: Image): Job {
         val firstFile = files[0]
         val firstFilePath = firstFile.absoluteFile.toPath()
+        val image = SwingFXUtils.fromFXImage(fxImage, null)
         val writeFirstFile = ioScope.launch {
-            ImageIO.write(SwingFXUtils.fromFXImage(fxImage, null), "PNG", firstFile)
+            ImageIO.write(image, "PNG", firstFile)
         }
         return if (files.size > 1) {
             ioScope.launch {
