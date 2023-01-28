@@ -94,7 +94,6 @@ class PngOutputTask(
         val writeFirstFile = ioScope.launch {
             ImageIO.write(bImg, "PNG", firstFile)
         }
-        base.removeDirectDependentTask(this@PngOutputTask)
         return if (files.size > 1) {
             ioScope.launch {
                 val remainingFiles = files.subList(1, files.size)
