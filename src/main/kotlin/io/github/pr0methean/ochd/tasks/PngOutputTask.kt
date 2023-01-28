@@ -70,8 +70,6 @@ class PngOutputTask(
         val mkdirs = files.mapNotNull(File::getParentFile).distinct().mapNotNull { parent ->
                 if (mkdirsedPaths.add(parent)) {
                     ioScope.launch { parent.mkdirs() }
-                } else if (!parent.exists()) {
-                    ioScope.launch { while (!parent.exists()) { yield() } }
                 } else null
             }
         val bImg: BufferedImage
@@ -91,14 +89,16 @@ class PngOutputTask(
         val firstFile = files[0]
         val firstFilePath = firstFile.absoluteFile.toPath()
         val writeFirstFile = ioScope.launch {
-            mkdirs[0].join()
+            while (!firstFile.parentFile.exists()) {
+                yield()
+            }
             ImageIO.write(bImg, "PNG", firstFile)
         }
         base.removeDirectDependentTask(this@PngOutputTask)
         if (files.size > 1) {
             withContext(ioScope.coroutineContext) {
-                mkdirs.joinAll()
                 writeFirstFile.join()
+                mkdirs.joinAll()
                 for (file in files.subList(1, files.size)) {
                     Files.createLink(file.absoluteFile.toPath(), firstFilePath)
                 }
