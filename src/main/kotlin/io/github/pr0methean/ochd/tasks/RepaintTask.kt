@@ -49,7 +49,11 @@ class RepaintTask(
     }
 
     override suspend fun renderOnto(contextSupplier: () -> GraphicsContext, x: Double, y: Double) {
-        if (alpha != 1.0 || mutex.withLock { directDependentTasks.size } > 1 || isStartedOrAvailable()) {
+        if (alpha != 1.0
+                || isStartedOrAvailable()
+                || mutex.withLock { directDependentTasks.size } > 1
+                || isStartedOrAvailable() // double check in case state changed while locked
+        ) {
             super.renderOnto(contextSupplier, x, y)
         } else {
             renderOntoInternal(contextSupplier, x, y)
