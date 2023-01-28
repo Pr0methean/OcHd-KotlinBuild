@@ -6,7 +6,6 @@ import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.yield
@@ -67,11 +66,6 @@ class PngOutputTask(
     suspend fun writeToFiles(fxImage: Image): Job {
         val oldImage = threadLocalBimg.get()
         val ioScope = coroutineScope.plus(Dispatchers.IO)
-        val mkdirs = files.mapNotNull(File::getParentFile).distinct().mapNotNull { parent ->
-                if (mkdirsedPaths.add(parent)) {
-                    ioScope.launch { parent.mkdirs() }
-                } else null
-            }
         val bImg: BufferedImage
         if (oldImage == null) {
             bImg = SwingFXUtils.fromFXImage(fxImage, null)
@@ -89,17 +83,32 @@ class PngOutputTask(
         val firstFile = files[0]
         val firstFilePath = firstFile.absoluteFile.toPath()
         val writeFirstFile = ioScope.launch {
-            while (!firstFile.parentFile.exists()) {
-                yield()
+            val parentFile = firstFile.parentFile
+            if (mkdirsedPaths.add(parentFile)) {
+                parentFile.mkdirs()
+            } else {
+                while (!firstFile.parentFile.exists()) {
+                    logger.warn("Yielding in {} because a parent file is still being created", name)
+                    yield()
+                }
             }
             ImageIO.write(bImg, "PNG", firstFile)
         }
         base.removeDirectDependentTask(this@PngOutputTask)
         return if (files.size > 1) {
             ioScope.launch {
-                writeFirstFile.join()
-                mkdirs.joinAll()
-                for (file in files.subList(1, files.size)) {
+                for (file in files) {
+                    val parentFile = file.parentFile
+                    if (mkdirsedPaths.add(parentFile)) {
+                        parentFile.mkdirs()
+                        writeFirstFile.join()
+                    } else {
+                        writeFirstFile.join()
+                        while (!parentFile.exists()) {
+                            logger.warn("Yielding in {} because a parent file is still being created", name)
+                            yield()
+                        }
+                    }
                     Files.createLink(file.absoluteFile.toPath(), firstFilePath)
                 }
             }
