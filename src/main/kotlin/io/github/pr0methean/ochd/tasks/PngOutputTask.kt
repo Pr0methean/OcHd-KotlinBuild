@@ -18,7 +18,7 @@ import javax.imageio.ImageIO
 import kotlin.coroutines.CoroutineContext
 
 private val logger = LogManager.getLogger("PngOutputTask")
-private val mkdirsedPaths = ConcurrentHashMap.newKeySet<File>()
+val mkdirsedPaths = ConcurrentHashMap.newKeySet<File>()
 private val threadLocalBimg: ThreadLocal<BufferedImage?> = ThreadLocal.withInitial { null }
 
 /**

@@ -3,6 +3,7 @@ package io.github.pr0methean.ochd
 import com.sun.prism.impl.Disposer
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
 import io.github.pr0methean.ochd.tasks.PngOutputTask
+import io.github.pr0methean.ochd.tasks.mkdirsedPaths
 import javafx.application.Platform
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -55,6 +56,7 @@ suspend fun main(args: Array<String>) {
             val outputPath = out.resolve(it.relativeTo(metadataDirectory))
             if (it.isDirectory) {
                 outputPath.mkdirs()
+                mkdirsedPaths.add(it)
             } else {
                 it.copyTo(outputPath)
             }
