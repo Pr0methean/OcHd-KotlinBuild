@@ -6,6 +6,7 @@ import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.asContextElement
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
 import org.apache.logging.log4j.LogManager
@@ -64,24 +65,24 @@ class PngOutputTask(
     }
 
     suspend fun writeToFiles(fxImage: Image): Job {
-        val oldImage = threadLocalBimg.get()
-        val bImg: BufferedImage
-        if (oldImage == null) {
-            bImg = SwingFXUtils.fromFXImage(fxImage, null)
-            if (!isCommandBlock && bImg.width == bImg.height) {
-                threadLocalBimg.set(bImg)
-            }
-        } else {
-            bImg = SwingFXUtils.fromFXImage(
-                fxImage,
-                if (fxImage.height.toInt() == oldImage.height && fxImage.width.toInt() == oldImage.width) {
-                    oldImage
-                } else null
-            )
-        }
         val firstFile = files[0]
         val firstFilePath = firstFile.absoluteFile.toPath()
-        val writeFirstFile = ioScope.launch {
+        val writeFirstFile = ioScope.plus(threadLocalBimg.asContextElement()).launch {
+            val oldImage = threadLocalBimg.get()
+            val bImg: BufferedImage
+            if (oldImage == null) {
+                bImg = SwingFXUtils.fromFXImage(fxImage, null)
+                if (!isCommandBlock && bImg.width == bImg.height) {
+                    threadLocalBimg.set(bImg)
+                }
+            } else {
+                bImg = SwingFXUtils.fromFXImage(
+                    fxImage,
+                    if (fxImage.height.toInt() == oldImage.height && fxImage.width.toInt() == oldImage.width) {
+                        oldImage
+                    } else null
+                )
+            }
             ImageIO.write(bImg, "PNG", firstFile)
         }
         return if (files.size > 1) {
