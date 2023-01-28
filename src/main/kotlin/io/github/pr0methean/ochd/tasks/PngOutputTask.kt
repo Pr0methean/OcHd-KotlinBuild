@@ -71,6 +71,7 @@ class PngOutputTask(
             val oldImage = threadLocalBimg.get()
             val bImg: BufferedImage
             if (oldImage == null) {
+                logger.info("Creating a new BufferedImage for thread {}", Thread.currentThread())
                 bImg = SwingFXUtils.fromFXImage(fxImage, null)
                 if (!isCommandBlock && bImg.width == bImg.height) {
                     threadLocalBimg.set(bImg)
@@ -80,7 +81,10 @@ class PngOutputTask(
                     fxImage,
                     if (fxImage.height.toInt() == oldImage.height && fxImage.width.toInt() == oldImage.width) {
                         oldImage
-                    } else null
+                    } else {
+                        logger.info("Creating a new BufferedImage because this one's size is nonstandard")
+                        null
+                    }
                 )
             }
             ImageIO.write(bImg, "PNG", firstFile)
