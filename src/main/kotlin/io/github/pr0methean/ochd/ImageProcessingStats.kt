@@ -207,13 +207,14 @@ object ImageProcessingStats {
         if (stamp != 0L) {
             try {
                 val now = System.nanoTime()
-                if (now - lastCacheLogNanoTime >= cacheLoggingMinIntervalNanos) {
-                    lastCacheLogNanoTime = now
-                    cacheStringBuilder.clear()
-                    val cachedTasks = cacheableTasks.filter { it.getNow() != null }
-                    cacheStringBuilder.run { appendList(cachedTasks, "; ") }
-                    logger.info("Currently cached tasks: {}: {}", box(cachedTasks.size), cacheStringBuilder)
+                if (now - lastCacheLogNanoTime < cacheLoggingMinIntervalNanos) {
+                    return
                 }
+                lastCacheLogNanoTime = now
+                cacheStringBuilder.clear()
+                val cachedTasks = cacheableTasks.filter { it.getNow() != null }
+                cacheStringBuilder.run { appendList(cachedTasks, "; ") }
+                logger.info("Currently cached tasks: {}: {}", box(cachedTasks.size), cacheStringBuilder)
             } finally {
                 cacheLock.unlock(stamp)
             }
