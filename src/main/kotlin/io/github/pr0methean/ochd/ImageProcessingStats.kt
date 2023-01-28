@@ -201,6 +201,8 @@ object ImageProcessingStats {
         logCurrentlyCachedTasks()
     }
 
+    fun countCachedTasks(): Int = cacheableTasks.count { it.getNow() != null }
+
     private fun logCurrentlyCachedTasks() {
         // This is a read operation, but we don't want threads redundantly running it in parallel.
         val stamp = cacheLock.tryWriteLock()

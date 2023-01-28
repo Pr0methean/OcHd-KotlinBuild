@@ -2,6 +2,7 @@ package io.github.pr0methean.ochd
 
 import com.sun.management.GarbageCollectorMXBean
 import com.sun.prism.impl.Disposer
+import io.github.pr0methean.ochd.ImageProcessingStats.countCachedTasks
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
 import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.tasks.mkdirsedPaths
@@ -44,6 +45,7 @@ private const val MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU = 4.0
 private const val MIN_TILE_SIZE_FOR_EXPLICIT_GC = 2048
 
 private const val SOFT_HEAP_LIMIT = 0.80
+private const val SOFT_MAX_TASKS_USING_MEMORY = 50
 private val gcMxBean = ManagementFactory.getPlatformMXBeans(GarbageCollectorMXBean::class.java).first()
 private val memoryMxBean = ManagementFactory.getMemoryMXBean()
 private val softHeapLimitBytes = (memoryMxBean.heapMemoryUsage.max * SOFT_HEAP_LIMIT).toLong()
@@ -163,7 +165,7 @@ private suspend fun runAll(
         } else {
             val bestTask = unstartedTasks.minWithOrNull(taskOrderComparator)
             checkNotNull(bestTask) { "Could not get an unstarted task" }
-            val task = if (bestTask.netAddedToCache() > 0 && heapLoadHeavy()) {
+            val task = if (bestTask.netAddedToCache() > 0 && heapLoadHeavy(currentInProgressJobs)) {
                 logger.warn("Changing task selection strategy due to heap pressure")
                 val bestLowMemTask = unstartedTasks.minWithOrNull(taskOrderComparatorWhenLowMemory)
                 checkNotNull(bestLowMemTask) { "bestLowMemTask unexpectedly null" }
@@ -190,12 +192,14 @@ private suspend fun runAll(
     logger.info("All IO jobs are finished")
 }
 
-private fun heapLoadHeavy(): Boolean {
+private fun heapLoadHeavy(inProgressTasks: Int): Boolean {
+    if (countCachedTasks() + inProgressTasks >= SOFT_MAX_TASKS_USING_MEMORY) {
+        return true
+    }
     // Check both after last GC and current, because concurrent GC may have already cleared enough space
     val heapUseAfterLastGc = gcMxBean.lastGcInfo?.memoryUsageAfterGc?.values?.sumOf(MemoryUsage::getUsed) ?: 0
-    val heapLoadHeavy = heapUseAfterLastGc > softHeapLimitBytes
-            && memoryMxBean.heapMemoryUsage.used > softHeapLimitBytes
-    return heapLoadHeavy
+    return (heapUseAfterLastGc > softHeapLimitBytes
+            && memoryMxBean.heapMemoryUsage.used > softHeapLimitBytes)
 }
 
 private fun startTask(
