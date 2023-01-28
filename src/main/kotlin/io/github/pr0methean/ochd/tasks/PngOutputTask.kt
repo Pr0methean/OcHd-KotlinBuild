@@ -97,17 +97,13 @@ class PngOutputTask(
         base.removeDirectDependentTask(this@PngOutputTask)
         return if (files.size > 1) {
             ioScope.launch {
-                for (file in files.subList(1, files.size)) {
-                    val parentFile = file.parentFile
-                    if (mkdirsedPaths.add(parentFile)) {
-                        parentFile.mkdirs()
-                        writeFirstFile.join()
-                    } else {
-                        writeFirstFile.join()
-                        while (!parentFile.exists()) {
-                            logger.warn("Yielding in {} because a parent file is still being created", name)
-                            yield()
-                        }
+                val remainingFiles = files.subList(1, files.size)
+                remainingFiles.map(File::getParentFile).filter(mkdirsedPaths::add).forEach(File::mkdirs)
+                writeFirstFile.join()
+                for (file in remainingFiles) {
+                    while (!file.parentFile.exists()) {
+                        logger.warn("Yielding in {} because a parent file is still being created", name)
+                        yield()
                     }
                     Files.createLink(file.absoluteFile.toPath(), firstFilePath)
                 }
