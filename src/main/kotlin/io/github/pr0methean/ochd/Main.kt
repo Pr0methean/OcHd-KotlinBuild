@@ -32,7 +32,7 @@ private val taskOrderComparator = comparingDouble<PngOutputTask> {
 }.reversed()
     .then(comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed())
     .then(comparingInt(PngOutputTask::totalSubtasks))
-private val taskOrderComparatorWhenCacheLoadHeavy = comparingInt<PngOutputTask> {
+private val taskOrderComparatorWhenLowMemory = comparingInt<PngOutputTask> {
     runBlocking { it.netAddedToCache() }
 }.then(taskOrderComparator)
 private val logger = LogManager.getRootLogger()
@@ -159,8 +159,11 @@ private suspend fun runAll(
         } else if (currentInProgressJobs < maxJobs) {
             val heapUseAfterLastGc = gcMxBean.lastGcInfo?.memoryUsageAfterGc?.values?.sumOf(MemoryUsage::getUsed) ?: 0
             val heapLoadHeavy = heapUseAfterLastGc > softHeapLimitBytes
+            if (heapLoadHeavy) {
+                logger.warn("Changing task selection strategy due to heap pressure")
+            }
             val task = unstartedTasks.minWithOrNull(if (heapLoadHeavy) {
-                taskOrderComparatorWhenCacheLoadHeavy
+                taskOrderComparatorWhenLowMemory
             } else taskOrderComparator)
             checkNotNull(task) { "Could not get an unstarted task" }
             if (heapLoadHeavy && currentInProgressJobs > 0 && task.netAddedToCache() > 0) {
