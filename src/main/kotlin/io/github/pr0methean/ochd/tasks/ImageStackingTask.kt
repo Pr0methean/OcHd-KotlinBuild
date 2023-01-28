@@ -73,7 +73,7 @@ class ImageStackingTask(
     }
 
     override suspend fun renderOnto(contextSupplier: () -> GraphicsContext, x: Double, y: Double) {
-        if (isStartedOrAvailable() || mutex.withLock { directDependentTasks.size } > 1) {
+        if (mutex.withLock { directDependentTasks.size } > 1 || isStartedOrAvailable()) {
             super.renderOnto(contextSupplier, x, y)
         } else {
             renderOntoInternal(contextSupplier, x, y, layers.layers)
