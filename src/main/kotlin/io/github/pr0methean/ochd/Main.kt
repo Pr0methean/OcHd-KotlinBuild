@@ -135,6 +135,7 @@ private fun gcIfUsingLargeTiles(tileSize: Int) {
     }
 }
 
+@Suppress("NestedBlockDepth")
 private suspend fun runAll(
     tasks: Collection<PngOutputTask>,
     scope: CoroutineScope,
@@ -156,29 +157,26 @@ private suspend fun runAll(
                 box(currentInProgressJobs), box(unstartedTasks.size))
             unstartedTasks.forEach { inProgressJobs[it] = startTask(scope, it, finishedJobsChannel, ioJobs) }
             unstartedTasks.clear()
-        } else if (currentInProgressJobs < maxJobs) {
-            // Check both after last GC and current, because concurrent GC may have already cleared enough space
-            val heapUseAfterLastGc = gcMxBean.lastGcInfo?.memoryUsageAfterGc?.values?.sumOf(MemoryUsage::getUsed) ?: 0
-            val heapLoadHeavy = heapUseAfterLastGc > softHeapLimitBytes
-                    && memoryMxBean.heapMemoryUsage.used > softHeapLimitBytes
-            if (heapLoadHeavy) {
-                logger.warn("Changing task selection strategy due to heap pressure")
-            }
-            val task = unstartedTasks.minWithOrNull(if (heapLoadHeavy) {
-                taskOrderComparatorWhenLowMemory
-            } else taskOrderComparator)
-            checkNotNull(task) { "Could not get an unstarted task" }
-            if (heapLoadHeavy && currentInProgressJobs > 0 && task.netAddedToCache() > 0) {
-                logger.warn("Waiting for a task to finish before starting a new one, due to heap pressure")
-                inProgressJobs.remove(finishedJobsChannel.receive())
-            } else {
-                logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
-                inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs)
-                check(unstartedTasks.remove(task)) { "Attempted to remove task more than once: $task" }
-            }
-        } else {
+        } else if (currentInProgressJobs >= maxJobs) {
             logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
             inProgressJobs.remove(finishedJobsChannel.receive())
+        } else {
+            val bestTask = unstartedTasks.minWithOrNull(taskOrderComparator)
+            checkNotNull(bestTask) { "Could not get an unstarted task" }
+            val task = if (bestTask.netAddedToCache() >= 0 && heapLoadHeavy()) {
+                logger.warn("Changing task selection strategy due to heap pressure")
+                val bestLowMemTask = unstartedTasks.minWithOrNull(taskOrderComparatorWhenLowMemory)
+                checkNotNull(bestLowMemTask) { "bestLowMemTask unexpectedly null" }
+                if (currentInProgressJobs > 0 && bestLowMemTask.netAddedToCache() > 0) {
+                    logger.warn("Waiting for a task to finish before starting a new one, due to heap pressure")
+                    inProgressJobs.remove(finishedJobsChannel.receive())
+                    continue
+                }
+                bestLowMemTask
+            } else bestTask
+            logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
+            inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs)
+            check(unstartedTasks.remove(task)) { "Attempted to remove task more than once: $task" }
         }
     }
     logger.info("All jobs started; waiting for {} running jobs to finish", box(inProgressJobs.size))
@@ -190,6 +188,14 @@ private suspend fun runAll(
     logger.info("Waiting for remaining IO jobs to finish")
     ioJobs.joinAll()
     logger.info("All IO jobs are finished")
+}
+
+private fun heapLoadHeavy(): Boolean {
+    // Check both after last GC and current, because concurrent GC may have already cleared enough space
+    val heapUseAfterLastGc = gcMxBean.lastGcInfo?.memoryUsageAfterGc?.values?.sumOf(MemoryUsage::getUsed) ?: 0
+    val heapLoadHeavy = heapUseAfterLastGc > softHeapLimitBytes
+            && memoryMxBean.heapMemoryUsage.used > softHeapLimitBytes
+    return heapLoadHeavy
 }
 
 private fun startTask(
