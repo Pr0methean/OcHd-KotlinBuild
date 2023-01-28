@@ -6,11 +6,9 @@ import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.asContextElement
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
 import org.apache.logging.log4j.LogManager
-import java.awt.image.BufferedImage
 import java.io.File
 import java.nio.file.Files
 import java.util.concurrent.ConcurrentHashMap
@@ -19,7 +17,6 @@ import kotlin.coroutines.CoroutineContext
 
 private val logger = LogManager.getLogger("PngOutputTask")
 val mkdirsedPaths = ConcurrentHashMap.newKeySet<File>()
-private val threadLocalBimg: ThreadLocal<BufferedImage?> = ThreadLocal.withInitial { null }
 
 /**
  * Task that saves an image to one or more PNG files.
@@ -67,27 +64,8 @@ class PngOutputTask(
     suspend fun writeToFiles(fxImage: Image): Job {
         val firstFile = files[0]
         val firstFilePath = firstFile.absoluteFile.toPath()
-        val writeFirstFile = ioScope.plus(threadLocalBimg.asContextElement()).launch {
-            val oldImage = threadLocalBimg.get()
-            val bImg: BufferedImage
-            if (oldImage == null) {
-                logger.info("Creating a new BufferedImage for thread {}", Thread.currentThread())
-                bImg = SwingFXUtils.fromFXImage(fxImage, null)
-                if (!isCommandBlock && bImg.width == bImg.height) {
-                    threadLocalBimg.set(bImg)
-                }
-            } else {
-                bImg = SwingFXUtils.fromFXImage(
-                    fxImage,
-                    if (fxImage.height.toInt() == oldImage.height && fxImage.width.toInt() == oldImage.width) {
-                        oldImage
-                    } else {
-                        logger.info("Creating a new BufferedImage because this one's size is nonstandard")
-                        null
-                    }
-                )
-            }
-            ImageIO.write(bImg, "PNG", firstFile)
+        val writeFirstFile = ioScope.launch {
+            ImageIO.write(SwingFXUtils.fromFXImage(fxImage, null), "PNG", firstFile)
         }
         return if (files.size > 1) {
             ioScope.launch {
