@@ -51,14 +51,15 @@ abstract class AbstractTask<out T>(
      * all dependents have done so.
      */
     suspend fun removeDirectDependentTask(task: AbstractTask<*>) {
-        abstractTaskLogger.info("Removing dependency of {} on {}", task.name, name)
-        if (mutex.withLock {
-                directDependentTasks.remove(task)
-                directDependentTasks.isEmpty()
-            }) {
-            directDependencies.forEach { it.removeDirectDependentTask(this) }
-            if (cache.disable()) {
-                ImageProcessingStats.onCachingDisabled(this)
+        mutex.withLock {
+            if (directDependentTasks.remove(task)) {
+                abstractTaskLogger.info("Removed dependency of {} on {}", task.name, name)
+            }
+            if (directDependentTasks.isEmpty()) {
+                directDependencies.forEach { it.removeDirectDependentTask(this) }
+                if (cache.disable()) {
+                    ImageProcessingStats.onCachingDisabled(this)
+                }
             }
         }
     }
@@ -110,6 +111,14 @@ abstract class AbstractTask<out T>(
         }
         return coefficient
     }
+
+    /**
+     * True when this task should prepare to output an Image so that that Image can be cached, rather than rendering
+     * onto a consuming task's canvas.
+     */
+    protected suspend fun shouldRenderForCaching(): Boolean = isStartedOrAvailable()
+            || (cache.isEnabled() && mutex.withLock { directDependentTasks.size } > 1)
+            || isStartedOrAvailable()
 
     suspend fun registerRecursiveDependencies(): Unit = mutex.withLock {
         directDependencies.forEach {

@@ -8,7 +8,6 @@ import javafx.scene.effect.BlendMode.SRC_ATOP
 import javafx.scene.effect.ColorInput
 import javafx.scene.image.Image
 import javafx.scene.paint.Paint
-import kotlinx.coroutines.sync.withLock
 import org.apache.logging.log4j.LogManager
 import java.util.Objects
 import kotlin.coroutines.CoroutineContext
@@ -49,7 +48,7 @@ class RepaintTask(
     }
 
     override suspend fun renderOnto(contextSupplier: () -> GraphicsContext, x: Double, y: Double) {
-        if (alpha != 1.0 || isStartedOrAvailable() || mutex.withLock { directDependentTasks.size } > 1) {
+        if (alpha != 1.0 || shouldRenderForCaching()) {
             super.renderOnto(contextSupplier, x, y)
         } else {
             renderOntoInternal(contextSupplier, x, y)

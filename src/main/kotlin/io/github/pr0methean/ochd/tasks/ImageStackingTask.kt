@@ -7,7 +7,6 @@ import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import javafx.scene.SnapshotParameters
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.image.Image
-import kotlinx.coroutines.sync.withLock
 import org.apache.logging.log4j.LogManager
 import java.util.*
 import kotlin.coroutines.CoroutineContext
@@ -65,16 +64,15 @@ class ImageStackingTask(
         layers: List<AbstractImageTask>
     ) {
         ImageProcessingStats.onTaskLaunched("ImageStackingTask", name)
-        val canvasCtx by lazy(canvasCtxSupplier)
         layers.forEach {
-            it.renderOnto({ canvasCtx }, x, y)
+            it.renderOnto(canvasCtxSupplier, x, y)
             it.removeDirectDependentTask(this@ImageStackingTask)
         }
         ImageProcessingStats.onTaskCompleted("ImageStackingTask", name)
     }
 
     override suspend fun renderOnto(contextSupplier: () -> GraphicsContext, x: Double, y: Double) {
-        if (isStartedOrAvailable() || mutex.withLock { directDependentTasks.size } > 1) {
+        if (shouldRenderForCaching()) {
             super.renderOnto(contextSupplier, x, y)
         } else {
             renderOntoInternal(contextSupplier, x, y, layers.layers)

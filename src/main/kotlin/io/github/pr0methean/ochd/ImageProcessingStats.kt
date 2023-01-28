@@ -23,8 +23,10 @@ import java.lang.management.ThreadInfo
 import java.lang.management.ThreadMXBean
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.locks.StampedLock
+import javax.annotation.concurrent.GuardedBy
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 
 private fun Multiset<*>.log() {
     var total = 0L
@@ -47,6 +49,7 @@ val threadMxBean: ThreadMXBean = ManagementFactory.getThreadMXBean()
 var monitoringJob: Job? = null
 private val cacheLock = StampedLock()
 private val cacheStringBuilder = StringBuilder()
+private val cacheLoggingMinIntervalNanos = 0.5.seconds.inWholeNanoseconds
 @OptIn(ExperimentalCoroutinesApi::class)
 @Suppress("DeferredResultUnused")
 fun startMonitoring(scope: CoroutineScope) {
@@ -101,6 +104,9 @@ object ImageProcessingStats {
     private val dedupeFailuresByName = HashMultiset.create<Pair<String, String>>()
     private val tasksByRunCount = ConcurrentHashMultiset.create<Pair<String, String>>()
     private val cacheableTasks = ConcurrentHashMap.newKeySet<AbstractTask<*>>()
+
+    @GuardedBy("cacheLock")
+    var lastCacheLogNanoTime: Long = System.nanoTime()
 
     init {
         dedupeFailures.add("Build task graph")
@@ -198,12 +204,16 @@ object ImageProcessingStats {
     private fun logCurrentlyCachedTasks() {
         // This is a read operation, but we don't want threads redundantly running it in parallel.
         val stamp = cacheLock.tryWriteLock()
-
         if (stamp != 0L) {
             try {
+                val now = System.nanoTime()
+                if (now - lastCacheLogNanoTime < cacheLoggingMinIntervalNanos) {
+                    return
+                }
+                lastCacheLogNanoTime = now
                 cacheStringBuilder.clear()
                 val cachedTasks = cacheableTasks.filter { it.getNow() != null }
-                cacheStringBuilder.run { appendList(cachedTasks, "; ") }
+                cacheStringBuilder.appendList(cachedTasks, "; ")
                 logger.info("Currently cached tasks: {}: {}", box(cachedTasks.size), cacheStringBuilder)
             } finally {
                 cacheLock.unlock(stamp)
