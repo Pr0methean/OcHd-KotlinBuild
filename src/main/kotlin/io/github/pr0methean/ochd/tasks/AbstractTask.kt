@@ -89,12 +89,20 @@ abstract class AbstractTask<out T>(
         return subtasks
     }
 
+    /**
+     * If this task has only one direct-dependent task that's yet to start, we're worth 1 point to our direct and
+     * transitive dependencies of that task because finishing that task will cause us to disable our cache.
+     * If it has 2 direct-dependent tasks left to start, it's worth 1/4 point; if it has 3, it's worth 1/16 point,
+     * and so on. Tasks with the highest cache-clearing coefficient are launched first.
+     */
     suspend fun cacheClearingCoefficient(): Double {
         var coefficient = if (!cache.isEnabled()) {
             0.0
         } else if (isStartedOrAvailable()) {
-            val totalDependents = mutex.withLock { directDependentTasks.count { !it.isStartedOrAvailable() } }
-            1.0 / (totalDependents * totalDependents)
+
+            Math.scalb(1.0,
+                    (2 - 2 * mutex.withLock { directDependentTasks.count { !it.isStartedOrAvailable() } })
+                    .coerceAtLeast(java.lang.Double.MIN_EXPONENT))
         } else 0.0
         for (task in directDependencies) {
             coefficient += task.cacheClearingCoefficient()

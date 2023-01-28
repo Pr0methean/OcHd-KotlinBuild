@@ -22,7 +22,7 @@ import java.lang.management.ManagementFactory
 import java.lang.management.ThreadInfo
 import java.lang.management.ThreadMXBean
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.locks.ReentrantLock
+import java.util.concurrent.locks.StampedLock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
@@ -45,7 +45,7 @@ private val NEED_COROUTINE_DEBUG = logger.isDebugEnabled
 private val REPORTING_INTERVAL: Duration = 1.minutes
 val threadMxBean: ThreadMXBean = ManagementFactory.getThreadMXBean()
 var monitoringJob: Job? = null
-private val cacheLock = ReentrantLock()
+private val cacheLock = StampedLock()
 private val cacheStringBuilder = StringBuilder()
 @OptIn(ExperimentalCoroutinesApi::class)
 @Suppress("DeferredResultUnused")
@@ -172,6 +172,9 @@ object ImageProcessingStats {
     fun onTaskCompleted(typeName: String, name: String) {
         logger.info("Completed: {}: {}", typeName, name)
         taskCompletions.add(typeName)
+        if (typeName != "PngOutputTask") {
+            logCurrentlyCachedTasks()
+        }
     }
 
     fun onDedupeFailed(typename: String, name: String) {
@@ -189,14 +192,21 @@ object ImageProcessingStats {
         logger.info("Disabled caching for: {}: {}", task::class.simpleName, task.name)
         cacheableTasks.remove(task)
         logger.info("Currently cacheable tasks: {}", box(cacheableTasks.size))
-        if (cacheLock.tryLock()) {
+        logCurrentlyCachedTasks()
+    }
+
+    private fun logCurrentlyCachedTasks() {
+        // This is a read operation, but we don't want threads redundantly running it in parallel.
+        val stamp = cacheLock.tryWriteLock()
+
+        if (stamp != 0L) {
             try {
                 cacheStringBuilder.clear()
                 val cachedTasks = cacheableTasks.filter { it.getNow() != null }
                 cacheStringBuilder.run { appendList(cachedTasks, "; ") }
                 logger.info("Currently cached tasks: {}: {}", box(cachedTasks.size), cacheStringBuilder)
             } finally {
-                cacheLock.unlock()
+                cacheLock.unlock(stamp)
             }
         }
     }

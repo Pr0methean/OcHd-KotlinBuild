@@ -3,6 +3,7 @@ package io.github.pr0methean.ochd
 import com.sun.prism.impl.Disposer
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
 import io.github.pr0methean.ochd.tasks.PngOutputTask
+import io.github.pr0methean.ochd.tasks.mkdirsedPaths
 import javafx.application.Platform
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -16,31 +17,26 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox.box
+import java.io.File
 import java.nio.file.Paths
-import java.util.Collections
 import java.util.Comparator.comparingDouble
 import java.util.Comparator.comparingInt
-import java.util.WeakHashMap
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
-private const val CAPACITY_PADDING_FACTOR = 2
 private val taskOrderComparator = comparingDouble<PngOutputTask> {
         runBlocking { it.cacheClearingCoefficient() }
     }.reversed()
     .then(comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed())
     .then(comparingInt(PngOutputTask::totalSubtasks))
 private val logger = LogManager.getRootLogger()
-private const val THREADS_PER_CPU = 1.0
-private val THREADS = perCpu(THREADS_PER_CPU)
-private const val MAX_OUTPUT_TASKS_PER_CPU = 1.5
-private val MAX_OUTPUT_TASKS = perCpu(MAX_OUTPUT_TASKS_PER_CPU)
-private const val MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU = 3.0
-private val MAX_HUGE_TILE_OUTPUT_TASKS = perCpu(MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU)
+
+private const val MAX_OUTPUT_TASKS_PER_CPU = 2.0
+
+private const val MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU = 4.0
+
 private const val MIN_TILE_SIZE_FOR_EXPLICIT_GC = 2048
 val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
-
-private fun perCpu(amount: Double) = (amount * Runtime.getRuntime().availableProcessors()).toInt()
 
 @Suppress("UnstableApiUsage", "DeferredResultUnused")
 suspend fun main(args: Array<String>) {
@@ -59,6 +55,7 @@ suspend fun main(args: Array<String>) {
             val outputPath = out.resolve(it.relativeTo(metadataDirectory))
             if (it.isDirectory) {
                 outputPath.mkdirs()
+                mkdirsedPaths.add(it)
             } else {
                 it.copyTo(outputPath)
             }
@@ -77,22 +74,36 @@ suspend fun main(args: Array<String>) {
     scope.plus(Dispatchers.Main).launch {
         Thread.currentThread().priority = Thread.MAX_PRIORITY
     }
+    val nCpus = Runtime.getRuntime().availableProcessors() - if (
+        // SWPipeline is the software renderer, so its rendering thread needs one CPU
+        com.sun.prism.GraphicsPipeline.getPipeline()::class.qualifiedName == "com.sun.prism.sw.SWPipeline"
+    ) 1 else 0
+    val maxOutputTaskJobs = (MAX_OUTPUT_TASKS_PER_CPU * nCpus).toInt()
+    val maxHugeTileOutputTaskJobs = (MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU * nCpus).toInt()
     startMonitoring(scope)
     val time = measureNanoTime {
         ImageProcessingStats.onTaskLaunched("Build task graph", "Build task graph")
         val tasks = ALL_MATERIALS.outputTasks(ctx).toSet()
+        val mkdirs = ioScope.launch {
+            cleanupAndCopyMetadata.join()
+            tasks.flatMap(PngOutputTask::files)
+                .mapNotNull(File::getParentFile)
+                .distinct()
+                .filter(mkdirsedPaths::add)
+                .forEach(File::mkdirs)
+        }
         logger.debug("Got deduplicated output tasks")
         val depsBuildTask = scope.launch { tasks.forEach { it.registerRecursiveDependencies() } }
         logger.debug("Launched deps build task")
         val (cbTasks, nonCbTasks) = tasks.partition(PngOutputTask::isCommandBlock)
         depsBuildTask.join()
+        mkdirs.join()
         ImageProcessingStats.onTaskCompleted("Build task graph", "Build task graph")
-        cleanupAndCopyMetadata.join()
         gcIfUsingLargeTiles(tileSize)
         withContext(Dispatchers.Default) {
-            runAll(cbTasks, scope, MAX_HUGE_TILE_OUTPUT_TASKS)
+            runAll(cbTasks, scope, maxHugeTileOutputTaskJobs)
             gcIfUsingLargeTiles(tileSize)
-            runAll(nonCbTasks, scope, MAX_OUTPUT_TASKS)
+            runAll(nonCbTasks, scope, maxOutputTaskJobs)
         }
     }
     stopMonitoring()
@@ -118,12 +129,12 @@ private suspend fun runAll(
     scope: CoroutineScope,
     maxJobs: Int
 ) {
-    val ioJobs = Collections.newSetFromMap<Job>(WeakHashMap())
+    val ioJobs = HashSet<Job>()
     val unstartedTasks = if (tasks.size > maxJobs) {
         tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks)).toMutableSet()
     } else tasks.toMutableSet()
     val inProgressJobs = HashMap<PngOutputTask,Job>()
-    val finishedJobsChannel = Channel<PngOutputTask>(capacity = CAPACITY_PADDING_FACTOR * THREADS)
+    val finishedJobsChannel = Channel<PngOutputTask>(capacity = maxJobs)
     while (unstartedTasks.isNotEmpty()) {
         do {
             val maybeReceive = finishedJobsChannel.tryReceive().getOrNull()?.also(inProgressJobs::remove)
@@ -151,7 +162,9 @@ private suspend fun runAll(
     }
     logger.info("All jobs done; closing channel")
     finishedJobsChannel.close()
+    logger.info("Waiting for remaining IO jobs to finish")
     ioJobs.joinAll()
+    logger.info("All IO jobs are finished")
 }
 
 private fun startTask(
@@ -163,10 +176,11 @@ private fun startTask(
     try {
         ImageProcessingStats.onTaskLaunched("PngOutputTask", task.name)
         val baseImage = task.base.await()
-        finishedJobsChannel.send(task)
         task.base.removeDirectDependentTask(task)
+        finishedJobsChannel.send(task)
         ioJobs.add(scope.launch {
-            task.writeToFiles(baseImage)
+            logger.info("Starting file write for {}", task.name)
+            task.writeToFiles(baseImage).join()
             ImageProcessingStats.onTaskCompleted("PngOutputTask", task.name)
         })
     } catch (t: Throwable) {

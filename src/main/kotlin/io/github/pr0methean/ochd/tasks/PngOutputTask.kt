@@ -5,13 +5,10 @@ import io.github.pr0methean.ochd.tasks.caching.noopDeferredTaskCache
 import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.asContextElement
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.yield
 import org.apache.logging.log4j.LogManager
-import java.awt.image.BufferedImage
 import java.io.File
 import java.nio.file.Files
 import java.util.concurrent.ConcurrentHashMap
@@ -19,8 +16,7 @@ import javax.imageio.ImageIO
 import kotlin.coroutines.CoroutineContext
 
 private val logger = LogManager.getLogger("PngOutputTask")
-private val mkdirsedPaths = ConcurrentHashMap.newKeySet<File>()
-private val threadLocalBimg: ThreadLocal<BufferedImage?> = ThreadLocal.withInitial { null }
+val mkdirsedPaths = ConcurrentHashMap.newKeySet<File>()
 
 /**
  * Task that saves an image to one or more PNG files.
@@ -29,10 +25,11 @@ private val threadLocalBimg: ThreadLocal<BufferedImage?> = ThreadLocal.withIniti
 class PngOutputTask(
     name: String,
     val base: AbstractTask<Image>,
-    private val files: List<File>,
+    val files: List<File>,
     ctx: CoroutineContext,
 ): AbstractTask<Unit>("Output $name", noopDeferredTaskCache(), ctx) {
     override val directDependencies: Iterable<AbstractTask<*>> = listOf(base)
+    private val ioScope = coroutineScope.plus(Dispatchers.IO)
     override fun mergeWithDuplicate(other: AbstractTask<*>): AbstractTask<Unit> {
         if (other is PngOutputTask && other !== this && other.base !== base) {
             logger.debug("Merging PngOutputTask {} with duplicate {}", name, other.name)
@@ -64,44 +61,22 @@ class PngOutputTask(
         ImageProcessingStats.onTaskCompleted("PngOutputTask", name)
     }
 
-    suspend fun writeToFiles(fxImage: Image) {
-        val oldImage = threadLocalBimg.get()
-        val mkdirs = coroutineScope.plus(Dispatchers.IO).launch {
-            files.mapNotNull(File::getParentFile).distinct().forEach { parent ->
-                if (mkdirsedPaths.add(parent)) {
-                    parent.mkdirs()
-                } else {
-                    while (!parent.exists()) {
-                        yield()
-                    }
-                }
-            }
+    suspend fun writeToFiles(fxImage: Image): Job {
+        val firstFile = files[0]
+        val firstFilePath = firstFile.absoluteFile.toPath()
+        val writeFirstFile = ioScope.launch {
+            ImageIO.write(SwingFXUtils.fromFXImage(fxImage, null), "PNG", firstFile)
         }
-        val bImg: BufferedImage
-        if (oldImage == null) {
-            bImg = SwingFXUtils.fromFXImage(fxImage, null)
-            if (!isCommandBlock && bImg.width == bImg.height) {
-                threadLocalBimg.set(bImg)
-            }
-        } else {
-            bImg = SwingFXUtils.fromFXImage(
-                fxImage,
-                if (fxImage.height.toInt() == oldImage.height && fxImage.width.toInt() == oldImage.width) {
-                    oldImage
-                } else null
-            )
-        }
-        withContext(Dispatchers.IO.plus(threadLocalBimg.asContextElement())) {
-            mkdirs.join()
-            val firstFile = files[0]
-            val firstFilePath = firstFile.absoluteFile.toPath()
-            ImageIO.write(bImg, "PNG", firstFile)
-            base.removeDirectDependentTask(this@PngOutputTask)
-            if (files.size > 1) {
-                for (file in files.subList(1, files.size)) {
+        return if (files.size > 1) {
+            ioScope.launch {
+                val remainingFiles = files.subList(1, files.size)
+                writeFirstFile.join()
+                for (file in remainingFiles) {
                     Files.createLink(file.absoluteFile.toPath(), firstFilePath)
                 }
             }
+        } else {
+            writeFirstFile
         }
     }
 
