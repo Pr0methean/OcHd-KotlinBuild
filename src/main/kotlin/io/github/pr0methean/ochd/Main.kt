@@ -40,7 +40,7 @@ private const val MAX_OUTPUT_TASKS_PER_CPU = 2.0
 private const val MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU = 4.0
 
 private const val MIN_TILE_SIZE_FOR_EXPLICIT_GC = 2048
-private const val SOFT_MAX_CACHE_SIZE = 40
+private const val SOFT_MAX_CACHE_SIZE = 30 // above this size, SoftReferences start being cleared
 val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 
 @Suppress("UnstableApiUsage", "DeferredResultUnused")
