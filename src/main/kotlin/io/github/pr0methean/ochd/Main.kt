@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd
 
+import com.sun.management.GarbageCollectorMXBean
 import com.sun.prism.impl.Disposer
-import io.github.pr0methean.ochd.ImageProcessingStats.countCachedTasks
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
 import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.tasks.mkdirsedPaths
@@ -19,6 +19,8 @@ import kotlinx.coroutines.withContext
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox.box
 import java.io.File
+import java.lang.management.ManagementFactory
+import java.lang.management.MemoryUsage
 import java.nio.file.Paths
 import java.util.Comparator.comparingDouble
 import java.util.Comparator.comparingInt
@@ -40,7 +42,11 @@ private const val MAX_OUTPUT_TASKS_PER_CPU = 2.0
 private const val MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU = 4.0
 
 private const val MIN_TILE_SIZE_FOR_EXPLICIT_GC = 2048
-private const val SOFT_MAX_CACHE_SIZE = 30 // above this size, SoftReferences start being cleared
+
+private const val SOFT_HEAP_LIMIT = 0.9
+private val gcMxBean = ManagementFactory.getPlatformMXBeans(GarbageCollectorMXBean::class.java).first()
+private val memoryMxBean = ManagementFactory.getMemoryMXBean()
+private val softHeapLimitBytes = (memoryMxBean.heapMemoryUsage.max * SOFT_HEAP_LIMIT).toLong()
 val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 
 @Suppress("UnstableApiUsage", "DeferredResultUnused")
@@ -151,8 +157,8 @@ private suspend fun runAll(
             unstartedTasks.forEach { inProgressJobs[it] = startTask(scope, it, finishedJobsChannel, ioJobs) }
             unstartedTasks.clear()
         } else if (currentInProgressJobs < maxJobs) {
-            val cacheSize = countCachedTasks()
-            val task = unstartedTasks.minWithOrNull(if (cacheSize >= SOFT_MAX_CACHE_SIZE) {
+            val heapUseAfterLastGc = gcMxBean.lastGcInfo?.memoryUsageAfterGc?.values?.sumOf(MemoryUsage::getUsed) ?: 0
+            val task = unstartedTasks.minWithOrNull(if (heapUseAfterLastGc > softHeapLimitBytes) {
                 taskOrderComparatorWhenCacheLoadHeavy
             } else taskOrderComparator)
             checkNotNull(task) { "Could not get an unstarted task" }

@@ -92,7 +92,8 @@ abstract class AbstractTask<out T>(
      * If this task has only one direct-dependent task that's yet to start, we're worth 1 point to our direct and
      * transitive dependencies of that task because finishing that task will cause us to disable our cache.
      * If it has 2 direct-dependent tasks left to start, it's worth 1/4 point; if it has 3, it's worth 1/16 point,
-     * and so on. Tasks with the highest cache-clearing coefficient are launched first.
+     * and so on. Tasks with the highest cache-clearing coefficient are launched first when we're not immediately low
+     * on memory.
      */
     suspend fun cacheClearingCoefficient(): Double {
         var coefficient = if (!cache.isEnabled()) {
@@ -161,6 +162,10 @@ abstract class AbstractTask<out T>(
         return subtasks
     }
 
+    /**
+     * Number of new entries that will be added to the cache if this task runs now, minus the number that
+     * will be removed. Used to prioritize tasks when memory is low.
+     */
     suspend fun netAddedToCache(): Int {
         var netAdded = if (!cache.isEnabled()) {
             0
