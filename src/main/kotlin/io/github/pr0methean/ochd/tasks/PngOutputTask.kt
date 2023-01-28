@@ -32,6 +32,7 @@ class PngOutputTask(
     ctx: CoroutineContext,
 ): AbstractTask<Unit>("Output $name", noopDeferredTaskCache(), ctx) {
     override val directDependencies: Iterable<AbstractTask<*>> = listOf(base)
+    private val ioScope = coroutineScope.plus(Dispatchers.IO)
     override fun mergeWithDuplicate(other: AbstractTask<*>): AbstractTask<Unit> {
         if (other is PngOutputTask && other !== this && other.base !== base) {
             logger.debug("Merging PngOutputTask {} with duplicate {}", name, other.name)
@@ -63,9 +64,15 @@ class PngOutputTask(
         ImageProcessingStats.onTaskCompleted("PngOutputTask", name)
     }
 
+    fun mkdirs(): Job = ioScope.launch {
+        val foldersToMkdir = files.map(File::getParentFile).filter(mkdirsedPaths::add)
+        for (file in foldersToMkdir) {
+            file.mkdirs()
+        }
+    }
+
     suspend fun writeToFiles(fxImage: Image): Job {
         val oldImage = threadLocalBimg.get()
-        val ioScope = coroutineScope.plus(Dispatchers.IO)
         val bImg: BufferedImage
         if (oldImage == null) {
             bImg = SwingFXUtils.fromFXImage(fxImage, null)
@@ -83,22 +90,12 @@ class PngOutputTask(
         val firstFile = files[0]
         val firstFilePath = firstFile.absoluteFile.toPath()
         val writeFirstFile = ioScope.launch {
-            val parentFile = firstFile.parentFile
-            if (mkdirsedPaths.add(parentFile)) {
-                parentFile.mkdirs()
-            } else {
-                while (!firstFile.parentFile.exists()) {
-                    logger.warn("Yielding in {} because a parent file is still being created", name)
-                    yield()
-                }
-            }
             ImageIO.write(bImg, "PNG", firstFile)
         }
         base.removeDirectDependentTask(this@PngOutputTask)
         return if (files.size > 1) {
             ioScope.launch {
                 val remainingFiles = files.subList(1, files.size)
-                remainingFiles.map(File::getParentFile).filter(mkdirsedPaths::add).forEach(File::mkdirs)
                 writeFirstFile.join()
                 for (file in remainingFiles) {
                     while (!file.parentFile.exists()) {
