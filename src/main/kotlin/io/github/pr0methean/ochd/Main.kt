@@ -152,12 +152,14 @@ private suspend fun runAll(
     }
     logger.info("All jobs started; waiting for {} running jobs to finish", box(inProgressJobs.size))
     while (inProgressJobs.isNotEmpty()) {
-        ioJobs.removeIf(Job::isCompleted)
         inProgressJobs.remove(finishedJobsChannel.receive())
+        ioJobs.removeIf(Job::isCompleted)
     }
     logger.info("All jobs done; closing channel")
     finishedJobsChannel.close()
+    logger.info("Waiting for remaining IO jobs to finish")
     ioJobs.joinAll()
+    logger.info("All IO jobs are finished")
 }
 
 private fun startTask(
@@ -174,6 +176,7 @@ private fun startTask(
         task.base.removeDirectDependentTask(task)
         finishedJobsChannel.send(task)
         ioJobs.add(scope.launch {
+            logger.info("Joining mkdirs for {}", task.name)
             mkdirs.join()
             logger.info("Starting file write for {}", task.name)
             task.writeToFiles(baseImage).join()
