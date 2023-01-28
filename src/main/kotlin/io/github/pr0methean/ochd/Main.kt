@@ -1,5 +1,6 @@
 package io.github.pr0methean.ochd
 
+import com.sun.management.GarbageCollectorMXBean
 import com.sun.prism.impl.Disposer
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
 import io.github.pr0methean.ochd.tasks.PngOutputTask
@@ -18,6 +19,8 @@ import kotlinx.coroutines.withContext
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox.box
 import java.io.File
+import java.lang.management.ManagementFactory
+import java.lang.management.MemoryUsage
 import java.nio.file.Paths
 import java.util.Comparator.comparingDouble
 import java.util.Comparator.comparingInt
@@ -25,10 +28,13 @@ import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
 private val taskOrderComparator = comparingDouble<PngOutputTask> {
-        runBlocking { it.cacheClearingCoefficient() }
-    }.reversed()
+    runBlocking { it.cacheClearingCoefficient() }
+}.reversed()
     .then(comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed())
     .then(comparingInt(PngOutputTask::totalSubtasks))
+private val taskOrderComparatorWhenLowMemory = comparingInt<PngOutputTask> {
+    runBlocking { it.netAddedToCache() }
+}.then(taskOrderComparator)
 private val logger = LogManager.getRootLogger()
 
 private const val MAX_OUTPUT_TASKS_PER_CPU = 1.0
@@ -36,6 +42,11 @@ private const val MAX_OUTPUT_TASKS_PER_CPU = 1.0
 private const val MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU = 4.0
 
 private const val MIN_TILE_SIZE_FOR_EXPLICIT_GC = 2048
+
+private const val SOFT_HEAP_LIMIT = 0.85
+private val gcMxBean = ManagementFactory.getPlatformMXBeans(GarbageCollectorMXBean::class.java).first()
+private val memoryMxBean = ManagementFactory.getMemoryMXBean()
+private val softHeapLimitBytes = (memoryMxBean.heapMemoryUsage.max * SOFT_HEAP_LIMIT).toLong()
 val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 
 @Suppress("UnstableApiUsage", "DeferredResultUnused")
@@ -146,11 +157,23 @@ private suspend fun runAll(
             unstartedTasks.forEach { inProgressJobs[it] = startTask(scope, it, finishedJobsChannel, ioJobs) }
             unstartedTasks.clear()
         } else if (currentInProgressJobs < maxJobs) {
-            val task = unstartedTasks.minWithOrNull(taskOrderComparator)
+            val heapUseAfterLastGc = gcMxBean.lastGcInfo?.memoryUsageAfterGc?.values?.sumOf(MemoryUsage::getUsed) ?: 0
+            val heapLoadHeavy = heapUseAfterLastGc > softHeapLimitBytes
+            if (heapLoadHeavy) {
+                logger.warn("Changing task selection strategy due to heap pressure")
+            }
+            val task = unstartedTasks.minWithOrNull(if (heapLoadHeavy) {
+                taskOrderComparatorWhenLowMemory
+            } else taskOrderComparator)
             checkNotNull(task) { "Could not get an unstarted task" }
-            logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
-            inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs)
-            check(unstartedTasks.remove(task)) { "Attempted to remove task more than once: $task" }
+            if (heapLoadHeavy && currentInProgressJobs > 0 && task.netAddedToCache() > 0) {
+                logger.warn("Waiting for a task to finish before starting a new one, due to heap pressure")
+                inProgressJobs.remove(finishedJobsChannel.receive())
+            } else {
+                logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
+                inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs)
+                check(unstartedTasks.remove(task)) { "Attempted to remove task more than once: $task" }
+            }
         } else {
             logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
             inProgressJobs.remove(finishedJobsChannel.receive())
