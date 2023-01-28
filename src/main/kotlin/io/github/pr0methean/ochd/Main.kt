@@ -168,8 +168,8 @@ private fun startTask(
         ImageProcessingStats.onTaskLaunched("PngOutputTask", task.name)
         val mkdirs = task.mkdirs()
         val baseImage = task.base.await()
-        finishedJobsChannel.send(task)
         task.base.removeDirectDependentTask(task)
+        finishedJobsChannel.send(task)
         ioJobs.add(scope.launch {
             mkdirs.join()
             task.writeToFiles(baseImage).join()
