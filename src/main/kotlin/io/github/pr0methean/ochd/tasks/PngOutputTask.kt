@@ -5,11 +5,10 @@ import io.github.pr0methean.ochd.tasks.caching.noopDeferredTaskCache
 import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.asContextElement
+import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.yield
 import org.apache.logging.log4j.LogManager
 import java.awt.image.BufferedImage
 import java.io.File
@@ -66,17 +65,12 @@ class PngOutputTask(
 
     suspend fun writeToFiles(fxImage: Image) {
         val oldImage = threadLocalBimg.get()
-        val mkdirs = coroutineScope.plus(Dispatchers.IO).launch {
-            files.mapNotNull(File::getParentFile).distinct().forEach { parent ->
+        val ioScope = coroutineScope.plus(Dispatchers.IO)
+        val mkdirs = files.mapNotNull(File::getParentFile).distinct().mapNotNull { parent ->
                 if (mkdirsedPaths.add(parent)) {
-                    parent.mkdirs()
-                } else {
-                    while (!parent.exists()) {
-                        yield()
-                    }
-                }
+                    ioScope.launch { parent.mkdirs() }
+                } else null
             }
-        }
         val bImg: BufferedImage
         if (oldImage == null) {
             bImg = SwingFXUtils.fromFXImage(fxImage, null)
@@ -91,13 +85,17 @@ class PngOutputTask(
                 } else null
             )
         }
-        withContext(Dispatchers.IO.plus(threadLocalBimg.asContextElement())) {
-            mkdirs.join()
-            val firstFile = files[0]
-            val firstFilePath = firstFile.absoluteFile.toPath()
+        val firstFile = files[0]
+        val firstFilePath = firstFile.absoluteFile.toPath()
+        val writeFirstFile = ioScope.launch {
+            mkdirs[0].join()
             ImageIO.write(bImg, "PNG", firstFile)
-            base.removeDirectDependentTask(this@PngOutputTask)
-            if (files.size > 1) {
+        }
+        base.removeDirectDependentTask(this@PngOutputTask)
+        if (files.size > 1) {
+            withContext(ioScope.coroutineContext) {
+                mkdirs.joinAll()
+                writeFirstFile.join()
                 for (file in files.subList(1, files.size)) {
                     Files.createLink(file.absoluteFile.toPath(), firstFilePath)
                 }
