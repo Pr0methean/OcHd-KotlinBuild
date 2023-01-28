@@ -213,7 +213,7 @@ object ImageProcessingStats {
                 lastCacheLogNanoTime = now
                 cacheStringBuilder.clear()
                 val cachedTasks = cacheableTasks.filter { it.getNow() != null }
-                cacheStringBuilder.run { appendList(cachedTasks, "; ") }
+                cacheStringBuilder.appendList(cachedTasks, "; ")
                 logger.info("Currently cached tasks: {}: {}", box(cachedTasks.size), cacheStringBuilder)
             } finally {
                 cacheLock.unlock(stamp)
