@@ -97,7 +97,7 @@ class PngOutputTask(
         base.removeDirectDependentTask(this@PngOutputTask)
         return if (files.size > 1) {
             ioScope.launch {
-                for (file in files) {
+                for (file in files.subList(1, files.size)) {
                     val parentFile = file.parentFile
                     if (mkdirsedPaths.add(parentFile)) {
                         parentFile.mkdirs()
