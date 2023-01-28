@@ -175,7 +175,6 @@ private fun startTask(
 ) = scope.launch {
     try {
         ImageProcessingStats.onTaskLaunched("PngOutputTask", task.name)
-        logger.info("Starting mkdirs for {}", task.name)
         val baseImage = task.base.await()
         task.base.removeDirectDependentTask(task)
         finishedJobsChannel.send(task)
