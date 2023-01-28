@@ -92,7 +92,9 @@ abstract class AbstractTask<out T>(
         var coefficient = if (!cache.isEnabled()) {
             0.0
         } else if (isStartedOrAvailable()) {
-            Math.scalb(1.0, 2 - 2*mutex.withLock { directDependentTasks.count { !it.isStartedOrAvailable() } })
+            Math.scalb(1.0,
+                    (2 - 2 * mutex.withLock { directDependentTasks.count { !it.isStartedOrAvailable() } })
+                    .coerceAtLeast(java.lang.Double.MIN_EXPONENT))
         } else 0.0
         for (task in directDependencies) {
             coefficient += task.cacheClearingCoefficient()
