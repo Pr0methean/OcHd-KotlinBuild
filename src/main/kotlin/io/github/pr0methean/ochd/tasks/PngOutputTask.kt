@@ -64,7 +64,10 @@ class PngOutputTask(
     }
 
     fun mkdirs(): Job = ioScope.launch {
-        val foldersToMkdir = files.map(File::getParentFile).filter(mkdirsedPaths::add)
+        val foldersToMkdir = files
+                .mapNotNull(File::getParentFile)
+                .distinct()
+                .filter(mkdirsedPaths::add)
         for (file in foldersToMkdir) {
             file.mkdirs()
         }
