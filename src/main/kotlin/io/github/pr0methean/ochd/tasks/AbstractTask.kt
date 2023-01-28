@@ -112,6 +112,14 @@ abstract class AbstractTask<out T>(
         return coefficient
     }
 
+    /**
+     * True when this task should prepare to output an Image so that that Image can be cached, rather than rendering
+     * onto a consuming task's canvas.
+     */
+    protected suspend fun shouldRenderForCaching(): Boolean = isStartedOrAvailable()
+            || (cache.isEnabled() && mutex.withLock { directDependentTasks.size } > 1)
+            || isStartedOrAvailable()
+
     suspend fun registerRecursiveDependencies(): Unit = mutex.withLock {
         directDependencies.forEach {
             it.addDirectDependentTask(this@AbstractTask)
