@@ -1,6 +1,7 @@
 package io.github.pr0methean.ochd
 
 import com.sun.prism.impl.Disposer
+import io.github.pr0methean.ochd.ImageProcessingStats.countCachedTasks
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
 import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.tasks.mkdirsedPaths
@@ -25,10 +26,13 @@ import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
 private val taskOrderComparator = comparingDouble<PngOutputTask> {
-        runBlocking { it.cacheClearingCoefficient() }
-    }.reversed()
+    runBlocking { it.cacheClearingCoefficient() }
+}.reversed()
     .then(comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed())
     .then(comparingInt(PngOutputTask::totalSubtasks))
+private val taskOrderComparatorWhenCacheLoadHeavy = comparingInt<PngOutputTask> {
+    runBlocking { it.netAddedToCache() }
+}.then(taskOrderComparator)
 private val logger = LogManager.getRootLogger()
 
 private const val MAX_OUTPUT_TASKS_PER_CPU = 2.0
@@ -36,6 +40,7 @@ private const val MAX_OUTPUT_TASKS_PER_CPU = 2.0
 private const val MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU = 4.0
 
 private const val MIN_TILE_SIZE_FOR_EXPLICIT_GC = 2048
+private const val SOFT_MAX_CACHE_SIZE = 40
 val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 
 @Suppress("UnstableApiUsage", "DeferredResultUnused")
@@ -146,7 +151,10 @@ private suspend fun runAll(
             unstartedTasks.forEach { inProgressJobs[it] = startTask(scope, it, finishedJobsChannel, ioJobs) }
             unstartedTasks.clear()
         } else if (currentInProgressJobs < maxJobs) {
-            val task = unstartedTasks.minWithOrNull(taskOrderComparator)
+            val cacheSize = countCachedTasks()
+            val task = unstartedTasks.minWithOrNull(if (cacheSize >= SOFT_MAX_CACHE_SIZE) {
+                taskOrderComparatorWhenCacheLoadHeavy
+            } else taskOrderComparator)
             checkNotNull(task) { "Could not get an unstarted task" }
             logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
             inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs)

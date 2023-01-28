@@ -210,4 +210,6 @@ object ImageProcessingStats {
             }
         }
     }
+
+    fun countCachedTasks(): Int = cacheableTasks.count { it.getNow() != null }
 }
