@@ -92,9 +92,9 @@ abstract class AbstractTask<out T>(
         var coefficient = if (!cache.isEnabled()) {
             0.0
         } else if (isStartedOrAvailable()) {
-            // If this task has only one direct-dependent task that's yet to start, it's worth 1 point because
-            // finishing it will clear a cache entry. If it has 2 direct-dependent tasks, it's worth 1/4 point;
-            // if it has 3, it's worth 1/16 point, and so on.
+            // If this task has only one direct-dependent task that's yet to start, it's worth 1 point to dependencies
+            // of that task because finishing that task will cause us to disable our cache. If it has 2 direct-dependent
+            // tasks left to start, it's worth 1/4 point; if it has 3, it's worth 1/16 point, and so on.
             Math.scalb(1.0,
                     (2 - 2 * mutex.withLock { directDependentTasks.count { !it.isStartedOrAvailable() } })
                     .coerceAtLeast(java.lang.Double.MIN_EXPONENT))
