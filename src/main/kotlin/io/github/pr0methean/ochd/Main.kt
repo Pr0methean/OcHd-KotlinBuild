@@ -43,7 +43,7 @@ private const val MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU = 4.0
 
 private const val MIN_TILE_SIZE_FOR_EXPLICIT_GC = 2048
 
-private const val SOFT_HEAP_LIMIT = 0.85
+private const val SOFT_HEAP_LIMIT = 0.80
 private val gcMxBean = ManagementFactory.getPlatformMXBeans(GarbageCollectorMXBean::class.java).first()
 private val memoryMxBean = ManagementFactory.getMemoryMXBean()
 private val softHeapLimitBytes = (memoryMxBean.heapMemoryUsage.max * SOFT_HEAP_LIMIT).toLong()
@@ -157,8 +157,10 @@ private suspend fun runAll(
             unstartedTasks.forEach { inProgressJobs[it] = startTask(scope, it, finishedJobsChannel, ioJobs) }
             unstartedTasks.clear()
         } else if (currentInProgressJobs < maxJobs) {
+            // Check both after last GC and current, because concurrent GC may have already cleared enough space
             val heapUseAfterLastGc = gcMxBean.lastGcInfo?.memoryUsageAfterGc?.values?.sumOf(MemoryUsage::getUsed) ?: 0
             val heapLoadHeavy = heapUseAfterLastGc > softHeapLimitBytes
+                    && memoryMxBean.heapMemoryUsage.used > softHeapLimitBytes
             if (heapLoadHeavy) {
                 logger.warn("Changing task selection strategy due to heap pressure")
             }
