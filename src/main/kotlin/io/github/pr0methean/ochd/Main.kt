@@ -17,6 +17,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox.box
+import java.io.File
 import java.nio.file.Paths
 import java.util.Collections
 import java.util.Comparator.comparingDouble
@@ -85,13 +86,20 @@ suspend fun main(args: Array<String>) {
     val time = measureNanoTime {
         ImageProcessingStats.onTaskLaunched("Build task graph", "Build task graph")
         val tasks = ALL_MATERIALS.outputTasks(ctx).toSet()
+        val mkdirs = ioScope.launch {
+            cleanupAndCopyMetadata.join()
+            tasks.flatMap(PngOutputTask::files)
+                .mapNotNull(File::getParentFile)
+                .distinct()
+                .filter(mkdirsedPaths::add)
+        }
         logger.debug("Got deduplicated output tasks")
         val depsBuildTask = scope.launch { tasks.forEach { it.registerRecursiveDependencies() } }
         logger.debug("Launched deps build task")
         val (cbTasks, nonCbTasks) = tasks.partition(PngOutputTask::isCommandBlock)
         depsBuildTask.join()
+        mkdirs.join()
         ImageProcessingStats.onTaskCompleted("Build task graph", "Build task graph")
-        cleanupAndCopyMetadata.join()
         gcIfUsingLargeTiles(tileSize)
         withContext(Dispatchers.Default) {
             runAll(cbTasks, scope, maxHugeTileOutputTaskJobs)
@@ -169,13 +177,10 @@ private fun startTask(
     try {
         ImageProcessingStats.onTaskLaunched("PngOutputTask", task.name)
         logger.info("Starting mkdirs for {}", task.name)
-        val mkdirs = task.mkdirs()
         val baseImage = task.base.await()
         task.base.removeDirectDependentTask(task)
         finishedJobsChannel.send(task)
         ioJobs.add(scope.launch {
-            logger.info("Joining mkdirs for {}", task.name)
-            mkdirs.join()
             logger.info("Starting file write for {}", task.name)
             task.writeToFiles(baseImage).join()
             ImageProcessingStats.onTaskCompleted("PngOutputTask", task.name)

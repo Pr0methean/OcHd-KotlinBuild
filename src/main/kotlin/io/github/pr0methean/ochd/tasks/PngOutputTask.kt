@@ -27,7 +27,7 @@ private val threadLocalBimg: ThreadLocal<BufferedImage?> = ThreadLocal.withIniti
 class PngOutputTask(
     name: String,
     val base: AbstractTask<Image>,
-    private val files: List<File>,
+    val files: List<File>,
     ctx: CoroutineContext,
 ): AbstractTask<Unit>("Output $name", noopDeferredTaskCache(), ctx) {
     override val directDependencies: Iterable<AbstractTask<*>> = listOf(base)
@@ -61,16 +61,6 @@ class PngOutputTask(
         val fxImage = baseTask.await()
         writeToFiles(fxImage)
         ImageProcessingStats.onTaskCompleted("PngOutputTask", name)
-    }
-
-    fun mkdirs(): Job = ioScope.launch {
-        val foldersToMkdir = files
-                .mapNotNull(File::getParentFile)
-                .distinct()
-                .filter(mkdirsedPaths::add)
-        for (file in foldersToMkdir) {
-            file.mkdirs()
-        }
     }
 
     suspend fun writeToFiles(fxImage: Image): Job {
