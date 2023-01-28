@@ -5,10 +5,10 @@ import io.github.pr0methean.ochd.tasks.caching.noopDeferredTaskCache
 import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
-import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import org.apache.logging.log4j.LogManager
 import java.awt.image.BufferedImage
@@ -64,7 +64,7 @@ class PngOutputTask(
         ImageProcessingStats.onTaskCompleted("PngOutputTask", name)
     }
 
-    suspend fun writeToFiles(fxImage: Image) {
+    suspend fun writeToFiles(fxImage: Image): Job {
         val oldImage = threadLocalBimg.get()
         val ioScope = coroutineScope.plus(Dispatchers.IO)
         val mkdirs = files.mapNotNull(File::getParentFile).distinct().mapNotNull { parent ->
@@ -95,8 +95,8 @@ class PngOutputTask(
             ImageIO.write(bImg, "PNG", firstFile)
         }
         base.removeDirectDependentTask(this@PngOutputTask)
-        if (files.size > 1) {
-            withContext(ioScope.coroutineContext) {
+        return if (files.size > 1) {
+            ioScope.launch {
                 writeFirstFile.join()
                 mkdirs.joinAll()
                 for (file in files.subList(1, files.size)) {
@@ -104,7 +104,7 @@ class PngOutputTask(
                 }
             }
         } else {
-            writeFirstFile.join()
+            writeFirstFile
         }
     }
 
