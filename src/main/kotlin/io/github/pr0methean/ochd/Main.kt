@@ -92,6 +92,7 @@ suspend fun main(args: Array<String>) {
                 .mapNotNull(File::getParentFile)
                 .distinct()
                 .filter(mkdirsedPaths::add)
+                .forEach(File::mkdirs)
         }
         logger.debug("Got deduplicated output tasks")
         val depsBuildTask = scope.launch { tasks.forEach { it.registerRecursiveDependencies() } }
