@@ -152,7 +152,10 @@ private suspend fun runAll(
             val maybeReceive = finishedJobsChannel.tryReceive().getOrNull()?.also(inProgressJobs::remove)
 
             // Can't use removeIf because of ConcurrentModificationException
-            val finishedIoJobs = ioJobs.filter(Job::isCompleted).toSet().also(ioJobs::removeAll)
+            val finishedIoJobs = ioJobs.filter(Job::isCompleted).toSet()
+            if (finishedIoJobs.isNotEmpty()) {
+                ioJobs.removeAll(finishedIoJobs)
+            }
         } while (maybeReceive != null || finishedIoJobs.isNotEmpty())
         val currentInProgressJobs = inProgressJobs.size
         if (currentInProgressJobs + unstartedTasks.size <= maxJobs) {
