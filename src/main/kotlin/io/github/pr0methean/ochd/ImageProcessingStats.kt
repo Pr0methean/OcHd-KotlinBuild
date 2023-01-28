@@ -22,9 +22,8 @@ import java.lang.management.ManagementFactory
 import java.lang.management.ThreadInfo
 import java.lang.management.ThreadMXBean
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.locks.StampedLock
+import javax.annotation.concurrent.GuardedBy
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -105,7 +104,9 @@ object ImageProcessingStats {
     private val dedupeFailuresByName = HashMultiset.create<Pair<String, String>>()
     private val tasksByRunCount = ConcurrentHashMultiset.create<Pair<String, String>>()
     private val cacheableTasks = ConcurrentHashMap.newKeySet<AbstractTask<*>>()
-    val lastCacheLogNanoTime = AtomicLong(System.nanoTime())
+
+    @GuardedBy("cacheLock")
+    var lastCacheLogNanoTime: Long = System.nanoTime()
 
     init {
         dedupeFailures.add("Build task graph")
@@ -205,16 +206,9 @@ object ImageProcessingStats {
         val stamp = cacheLock.tryWriteLock()
         if (stamp != 0L) {
             try {
-                val ready = AtomicBoolean(false)
-                lastCacheLogNanoTime.updateAndGet {
-                    ready.set(false) // not true unless set in last iteration of the updater
-                    val now = System.nanoTime()
-                    if (now - it >= cacheLoggingMinIntervalNanos) {
-                        ready.set(true)
-                        return@updateAndGet now
-                    } else return@updateAndGet it
-                }
-                if (ready.get()) {
+                val now = System.nanoTime()
+                if (now - lastCacheLogNanoTime >= cacheLoggingMinIntervalNanos) {
+                    lastCacheLogNanoTime = now
                     cacheStringBuilder.clear()
                     val cachedTasks = cacheableTasks.filter { it.getNow() != null }
                     cacheStringBuilder.run { appendList(cachedTasks, "; ") }
