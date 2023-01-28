@@ -31,7 +31,7 @@ private val taskOrderComparator = comparingDouble<PngOutputTask> {
     .then(comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed())
     .then(comparingInt(PngOutputTask::totalSubtasks))
 private val taskOrderComparatorWhenCacheLoadHeavy = comparingInt<PngOutputTask> {
-    runBlocking { it.addedToCache() }
+    runBlocking { it.netAddedToCache() }
 }.then(taskOrderComparator)
 private val logger = LogManager.getRootLogger()
 

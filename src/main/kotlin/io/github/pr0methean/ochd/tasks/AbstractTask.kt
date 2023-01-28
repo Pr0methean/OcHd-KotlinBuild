@@ -161,18 +161,18 @@ abstract class AbstractTask<out T>(
         return subtasks
     }
 
-    suspend fun addedToCache(): Int {
-        var added = if (!cache.isEnabled()) {
+    suspend fun netAddedToCache(): Int {
+        var netAdded = if (!cache.isEnabled()) {
             0
         } else if (isStartedOrAvailable()) {
-            0
+            if (mutex.withLock { directDependentTasks.size == 1 }) -1 else 0
         } else if (mutex.withLock { directDependentTasks.size >= 2 }) {
             1
         } else 0
         for (task in directDependencies) {
-            added += task.addedToCache()
+            netAdded += task.netAddedToCache()
         }
-        return added
+        return netAdded
     }
 
     suspend inline fun await(): T = start().await()
