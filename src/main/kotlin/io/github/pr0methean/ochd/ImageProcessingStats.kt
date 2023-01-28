@@ -196,15 +196,17 @@ object ImageProcessingStats {
     }
 
     private fun logCurrentlyCachedTasks() {
-        val writeStamp = cacheLock.tryWriteLock()
-        if (writeStamp != 0L) {
+        // This is a read operation, but we don't want threads redundantly running it in parallel.
+        val stamp = cacheLock.tryWriteLock()
+
+        if (stamp != 0L) {
             try {
                 cacheStringBuilder.clear()
                 val cachedTasks = cacheableTasks.filter { it.getNow() != null }
                 cacheStringBuilder.run { appendList(cachedTasks, "; ") }
                 logger.info("Currently cached tasks: {}: {}", box(cachedTasks.size), cacheStringBuilder)
             } finally {
-                cacheLock.unlock(writeStamp)
+                cacheLock.unlock(stamp)
             }
         }
     }
