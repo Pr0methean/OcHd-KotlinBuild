@@ -8,7 +8,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
-import kotlinx.coroutines.yield
 import org.apache.logging.log4j.LogManager
 import java.awt.image.BufferedImage
 import java.io.File
@@ -98,10 +97,6 @@ class PngOutputTask(
                 val remainingFiles = files.subList(1, files.size)
                 writeFirstFile.join()
                 for (file in remainingFiles) {
-                    while (!file.parentFile.exists()) {
-                        logger.warn("Yielding in {} because a parent file is still being created", name)
-                        yield()
-                    }
                     Files.createLink(file.absoluteFile.toPath(), firstFilePath)
                 }
             }
