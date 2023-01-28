@@ -163,7 +163,7 @@ private suspend fun runAll(
         } else {
             val bestTask = unstartedTasks.minWithOrNull(taskOrderComparator)
             checkNotNull(bestTask) { "Could not get an unstarted task" }
-            val task = if (bestTask.netAddedToCache() >= 0 && heapLoadHeavy()) {
+            val task = if (bestTask.netAddedToCache() > 0 && heapLoadHeavy()) {
                 logger.warn("Changing task selection strategy due to heap pressure")
                 val bestLowMemTask = unstartedTasks.minWithOrNull(taskOrderComparatorWhenLowMemory)
                 checkNotNull(bestLowMemTask) { "bestLowMemTask unexpectedly null" }
