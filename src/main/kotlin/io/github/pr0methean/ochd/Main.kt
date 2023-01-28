@@ -27,14 +27,14 @@ import java.util.Comparator.comparingInt
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
-private val taskOrderComparator = comparingDouble<PngOutputTask> {
-    runBlocking { it.cacheClearingCoefficient() }
-}.reversed()
-    .then(comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed())
-    .then(comparingInt(PngOutputTask::totalSubtasks))
-private val taskOrderComparatorWhenLowMemory = comparingInt<PngOutputTask> {
+private val taskOrderComparator = comparingInt<PngOutputTask> {
     runBlocking { it.netAddedToCache() }
-}.then(taskOrderComparator)
+}.then(
+    comparingDouble<PngOutputTask> {
+        runBlocking { it.cacheClearingCoefficient() }
+    }.reversed())
+.then(comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed())
+.then(comparingInt(PngOutputTask::totalSubtasks))
 private val logger = LogManager.getRootLogger()
 
 private const val MAX_OUTPUT_TASKS_PER_CPU = 2.0
@@ -157,16 +157,9 @@ private suspend fun runAll(
             unstartedTasks.forEach { inProgressJobs[it] = startTask(scope, it, finishedJobsChannel, ioJobs) }
             unstartedTasks.clear()
         } else if (currentInProgressJobs < maxJobs) {
-            val heapUseAfterLastGc = gcMxBean.lastGcInfo?.memoryUsageAfterGc?.values?.sumOf(MemoryUsage::getUsed) ?: 0
-            val heapLoadHeavy = heapUseAfterLastGc > softHeapLimitBytes
-            if (heapLoadHeavy) {
-                logger.warn("Changing task selection strategy due to heap pressure")
-            }
-            val task = unstartedTasks.minWithOrNull(if (heapLoadHeavy) {
-                taskOrderComparatorWhenLowMemory
-            } else taskOrderComparator)
+            val task = unstartedTasks.minWithOrNull(taskOrderComparator)
             checkNotNull(task) { "Could not get an unstarted task" }
-            if (heapLoadHeavy && currentInProgressJobs > 0 && task.netAddedToCache() > 0) {
+            if (currentInProgressJobs > 0 && task.netAddedToCache() > 0 && heapLoadHeavy()) {
                 logger.warn("Waiting for a task to finish before starting a new one, due to heap pressure")
                 inProgressJobs.remove(finishedJobsChannel.receive())
             } else {
@@ -188,6 +181,13 @@ private suspend fun runAll(
     logger.info("Waiting for remaining IO jobs to finish")
     ioJobs.joinAll()
     logger.info("All IO jobs are finished")
+}
+
+private fun heapLoadHeavy(): Boolean {
+    val currentHeap = memoryMxBean.heapMemoryUsage.used
+    val heapUseAfterLastGc = gcMxBean.lastGcInfo?.memoryUsageAfterGc?.values?.sumOf(MemoryUsage::getUsed) ?: 0
+    val heapLoadHeavy = heapUseAfterLastGc > softHeapLimitBytes && currentHeap > softHeapLimitBytes
+    return heapLoadHeavy
 }
 
 private fun startTask(
