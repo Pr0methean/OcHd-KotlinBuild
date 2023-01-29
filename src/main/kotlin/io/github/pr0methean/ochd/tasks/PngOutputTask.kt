@@ -62,9 +62,8 @@ class PngOutputTask(
         }
         return if (files.size > 1) {
             ioScope.launch {
-                val remainingFiles = files.subList(1, files.size)
                 writeFirstFile.join()
-                for (file in remainingFiles) {
+                for (file in files.drop(1)) {
                     Files.createLink(file.absoluteFile.toPath(), firstFilePath)
                 }
             }
