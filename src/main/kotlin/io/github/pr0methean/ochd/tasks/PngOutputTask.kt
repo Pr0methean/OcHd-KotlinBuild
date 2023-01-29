@@ -9,6 +9,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
 import org.apache.logging.log4j.LogManager
+import java.awt.image.BufferedImage
 import java.io.File
 import java.nio.file.Files
 import java.util.concurrent.ConcurrentHashMap
@@ -54,19 +55,21 @@ class PngOutputTask(
     }
 
     override suspend fun perform() {
-        val baseTask = base.start()
         ImageProcessingStats.onTaskLaunched("PngOutputTask", name)
-        val fxImage = baseTask.await()
-        writeToFiles(fxImage)
+        if (base is SvgToBitmapTask && !base.shouldRenderForCaching()) {
+            writeToFiles(base.getAwtImage())
+        } else {
+            val fxImage = base.await()
+            writeToFiles(SwingFXUtils.fromFXImage(fxImage, null))
+        }
         ImageProcessingStats.onTaskCompleted("PngOutputTask", name)
     }
 
-    suspend fun writeToFiles(fxImage: Image): Job {
+    suspend fun writeToFiles(awtImage: BufferedImage): Job {
         val firstFile = files[0]
         val firstFilePath = firstFile.absoluteFile.toPath()
-        val image = SwingFXUtils.fromFXImage(fxImage, null)
         val writeFirstFile = ioScope.launch {
-            ImageIO.write(image, "PNG", firstFile)
+            ImageIO.write(awtImage, "PNG", firstFile)
         }
         return if (files.size > 1) {
             ioScope.launch {

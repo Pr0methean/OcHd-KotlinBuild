@@ -101,16 +101,17 @@ class SvgToBitmapTask(
 
     override suspend fun perform(): Image {
         ImageProcessingStats.onTaskLaunched("SvgToBitmapTask", name)
-        val image = withContext(batikTranscoder.asContextElement()) {
-            val transcoder = batikTranscoder.get()
-            transcoder.setTranscodingHints(mapOf(SVGAbstractTranscoder.KEY_WIDTH to width.toFloat()))
-            transcoder.transcode(input, null)
-            val awtImage = transcoder.takeLastImage()!!
-            val image = SwingFXUtils.toFXImage(awtImage, null)
-            awtImage.flush()
-            image
-        }
+        val awtImage = getAwtImage()
+        val image = SwingFXUtils.toFXImage(awtImage, null)
+        awtImage.flush()
         ImageProcessingStats.onTaskCompleted("SvgToBitmapTask", name)
         return image
+    }
+
+    suspend fun getAwtImage(): BufferedImage = withContext(batikTranscoder.asContextElement()) {
+        val transcoder = batikTranscoder.get()
+        transcoder.setTranscodingHints(mapOf(SVGAbstractTranscoder.KEY_WIDTH to width.toFloat()))
+        transcoder.transcode(input, null)
+        return@withContext transcoder.takeLastImage()!!
     }
 }
