@@ -16,6 +16,7 @@ import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import java.nio.charset.Charset
 import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.CoroutineContext
 import kotlin.system.measureNanoTime
@@ -27,6 +28,9 @@ private val defaultErrCharset: Charset = defaultErr.charset()
 private val errCatcher: ByteArrayOutputStream = ByteArrayOutputStream()
 private val errCatcherStream: PrintStream = PrintStream(errCatcher, true, defaultErrCharset)
 private val systemErrSwitched: AtomicBoolean = AtomicBoolean(false)
+private val pendingSnapshotTasks: AtomicLong = AtomicLong(0)
+
+fun countPendingSnapshotTasks() = pendingSnapshotTasks.get()
 
 /** Specialization of [AbstractTask]&lt;[Image]&gt;. */
 abstract class AbstractImageTask(
@@ -57,6 +61,7 @@ abstract class AbstractImageTask(
         }
         val caughtStderr = AtomicReference<String?>(null)
         val output = WritableImage(canvas.width.toInt(), canvas.height.toInt())
+        pendingSnapshotTasks.getAndIncrement()
         logger.info("Waiting to snapshot canvas for {}", name)
         val startWaitingTime = System.nanoTime()
         val snapshot = withContext(Dispatchers.Main.plus(CoroutineName("Snapshot of $name"))) {
@@ -75,6 +80,7 @@ abstract class AbstractImageTask(
                     caughtStderr.set(errCatcher.toString(defaultErrCharset))
                     errCatcher.reset()
                 }
+                pendingSnapshotTasks.getAndDecrement()
             }
         }
         val interceptedStderr = caughtStderr.get()
