@@ -6,7 +6,7 @@ import java.lang.ref.SoftReference
 import java.lang.ref.WeakReference
 import java.util.concurrent.atomic.AtomicReference
 
-val nullReference: SoftReference<Nothing?> = SoftReference<Nothing?>(null)
+val nullReference: WeakReference<Nothing?> = WeakReference<Nothing?>(null)
 
 /**
  * A [DeferredTaskCache] that's backed by a soft reference.
@@ -21,9 +21,7 @@ class SoftTaskCache<T>(
     override fun clear() {
         coroutineRef.updateAndGet {
             val current = it.get()
-            if (current == null) {
-                nullReference
-            } else if (it is WeakReference) {
+            if (it is WeakReference) {
                 it
             } else WeakReference(current)
         }
