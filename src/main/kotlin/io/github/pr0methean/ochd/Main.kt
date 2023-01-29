@@ -156,6 +156,8 @@ private suspend fun runAll(
     val inProgressJobs = HashMap<PngOutputTask,Job>()
     val finishedJobsChannel = Channel<PngOutputTask>(capacity = maxJobs)
     for (connectedComponent in connectedComponents) {
+        logger.info("Starting new connected component: {}",
+                StringBuilder().appendList(connectedComponent))
         while (connectedComponent.isNotEmpty()) {
             clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)
             val currentInProgressJobs = inProgressJobs.size
