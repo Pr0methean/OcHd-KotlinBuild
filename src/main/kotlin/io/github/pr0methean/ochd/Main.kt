@@ -156,6 +156,7 @@ private suspend fun runAll(
             if (finishedIoJobs.isNotEmpty()) {
                 ioJobs.removeAll(finishedIoJobs)
             }
+            logger.info("Got finished job {} and finished IO jobs {}", maybeReceive, finishedIoJobs)
         } while (maybeReceive != null || finishedIoJobs.isNotEmpty())
         val currentInProgressJobs = inProgressJobs.size
         if (currentInProgressJobs + unstartedTasks.size <= maxJobs) {
