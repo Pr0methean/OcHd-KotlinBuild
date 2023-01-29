@@ -152,7 +152,6 @@ private suspend fun runAll(
         do {
             val maybeReceive = finishedJobsChannel.tryReceive().getOrNull()?.also(inProgressJobs::remove)
             val finishedIoJobs = ioJobs.removeIf(Job::isCompleted)
-            logger.info("Got finished job {} and finished IO jobs {}", maybeReceive, finishedIoJobs)
         } while (maybeReceive != null || finishedIoJobs)
         val currentInProgressJobs = inProgressJobs.size
         if (currentInProgressJobs + unstartedTasks.size <= maxJobs) {
@@ -211,12 +210,12 @@ private fun startTask(
         ImageProcessingStats.onTaskLaunched("PngOutputTask", task.name)
         val baseImage = task.base.await()
         task.base.removeDirectDependentTask(task)
-        finishedJobsChannel.send(task)
         ioJobs.add(scope.launch {
             logger.info("Starting file write for {}", task.name)
             task.writeToFiles(baseImage).join()
             ImageProcessingStats.onTaskCompleted("PngOutputTask", task.name)
         })
+        finishedJobsChannel.send(task)
     } catch (t: Throwable) {
         logger.fatal("{} failed", task, t)
         exitProcess(1)
