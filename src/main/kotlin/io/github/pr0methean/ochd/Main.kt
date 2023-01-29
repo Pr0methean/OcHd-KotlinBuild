@@ -198,15 +198,17 @@ private suspend fun runAll(
 private fun <T: AbstractTask<*>> List<T>.sortedByConnectedComponents(): List<MutableList<T>> {
     val components = mutableListOf<MutableList<T>>()
     sortTask@ for (task in this) {
-        for (component in components) {
-            for (otherTask in component) {
-                if (task.overlapsWith(otherTask)) {
-                    component.add(task)
-                    continue@sortTask
-                }
+        val matchingComponents = components.filter {it.any(task::overlapsWith) }
+        if (matchingComponents.isEmpty()) {
+            components.add(mutableListOf(task))
+        } else {
+            components.first().add(task)
+            for (component in components.drop(1)) {
+                // More than one match = need to merge components
+                components.first().addAll(component)
+                components.remove(component)
             }
         }
-        components.add(mutableListOf(task))
     }
     return components
 }
