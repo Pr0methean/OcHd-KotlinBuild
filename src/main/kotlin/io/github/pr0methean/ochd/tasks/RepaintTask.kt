@@ -8,6 +8,7 @@ import javafx.scene.effect.BlendMode.SRC_ATOP
 import javafx.scene.effect.ColorInput
 import javafx.scene.image.Image
 import javafx.scene.paint.Paint
+import kotlinx.coroutines.CompletableDeferred
 import org.apache.logging.log4j.LogManager
 import java.util.Objects
 import kotlin.coroutines.CoroutineContext
@@ -84,10 +85,18 @@ class RepaintTask(
         return super.mergeWithDuplicate(other)
     }
 
+    @Suppress("DeferredResultUnused")
     override suspend fun perform(): Image {
         val canvas by lazy(::createCanvas)
         renderOntoInternal({ canvas.graphicsContext2D }, 0.0, 0.0)
         val snapshot = snapshotCanvas(canvas)
+        if (alpha == 1.0 && base.cache.isEnabled() && base.getNow() == null
+                && base.directDependentTasks.all { it is RepaintTask }) {
+            base.cache.computeIfAbsent {
+                logger.info("Using repaint {} to replace base image {}", name, base.name)
+                CompletableDeferred(snapshot)
+            }
+        }
         return snapshot
     }
 
