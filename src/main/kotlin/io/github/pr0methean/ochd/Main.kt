@@ -24,6 +24,7 @@ import java.lang.management.MemoryUsage
 import java.nio.file.Paths
 import java.util.Comparator.comparingDouble
 import java.util.Comparator.comparingInt
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
@@ -141,7 +142,7 @@ private suspend fun runAll(
     scope: CoroutineScope,
     maxJobs: Int
 ) {
-    val ioJobs = HashSet<Job>()
+    val ioJobs = ConcurrentHashMap.newKeySet<Job>()
     val unstartedTasks = if (tasks.size > maxJobs) {
         tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks)).toMutableSet()
     } else tasks.toMutableSet()
@@ -150,7 +151,8 @@ private suspend fun runAll(
     while (unstartedTasks.isNotEmpty()) {
         do {
             val maybeReceive = finishedJobsChannel.tryReceive().getOrNull()?.also(inProgressJobs::remove)
-        } while (maybeReceive != null)
+            val finishedIoJobs = ioJobs.removeIf(Job::isCompleted)
+        } while (maybeReceive != null || finishedIoJobs)
         val currentInProgressJobs = inProgressJobs.size
         if (currentInProgressJobs + unstartedTasks.size <= maxJobs) {
             logger.info("{} tasks in progress; starting all {} remaining tasks",
@@ -208,12 +210,12 @@ private fun startTask(
         ImageProcessingStats.onTaskLaunched("PngOutputTask", task.name)
         val baseImage = task.base.await()
         task.base.removeDirectDependentTask(task)
-        finishedJobsChannel.send(task)
         ioJobs.add(scope.launch {
             logger.info("Starting file write for {}", task.name)
             task.writeToFiles(baseImage).join()
             ImageProcessingStats.onTaskCompleted("PngOutputTask", task.name)
         })
+        finishedJobsChannel.send(task)
     } catch (t: Throwable) {
         logger.fatal("{} failed", task, t)
         exitProcess(1)
