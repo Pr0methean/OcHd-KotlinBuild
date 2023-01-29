@@ -101,10 +101,8 @@ abstract class AbstractTask<out T>(
         var coefficient = if (!cache.isEnabled()) {
             0.0
         } else if (isStartedOrAvailable()) {
-
-            Math.scalb(1.0,
-                    (2 - 2 * mutex.withLock { directDependentTasks.count { !it.isStartedOrAvailable() } })
-                    .coerceAtLeast(java.lang.Double.MIN_EXPONENT))
+            (1.0 / mutex.withLock { directDependentTasks.count { !it.isStartedOrAvailable() } })
+                    .coerceAtLeast(java.lang.Double.MIN_NORMAL)
         } else 0.0
         for (task in directDependencies) {
             coefficient += task.cacheClearingCoefficient()
@@ -188,6 +186,13 @@ abstract class AbstractTask<out T>(
             netAdded += task.netAddedToCache()
         }
         return netAdded
+    }
+
+    fun isCacheAllocationFreeOnMargin(): Boolean {
+        if (isStartedOrAvailable() || !cache.isEnabled()) {
+            return true
+        }
+        return directDependencies.all(AbstractTask<*>::isCacheAllocationFreeOnMargin)
     }
 
     suspend inline fun await(): T = start().await()

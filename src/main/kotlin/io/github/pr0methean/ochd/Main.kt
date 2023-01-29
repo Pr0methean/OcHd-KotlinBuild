@@ -25,17 +25,18 @@ import java.nio.file.Paths
 import java.util.Comparator.comparingDouble
 import java.util.Comparator.comparingInt
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentHashMap.KeySetView
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
-private val taskOrderComparator = comparingDouble<PngOutputTask> {
+private val taskOrderComparator = comparingInt<PngOutputTask> {
+    if (it.isCacheAllocationFreeOnMargin()) 0 else 1
+}.then(comparingDouble<PngOutputTask> {
     runBlocking { it.cacheClearingCoefficient() }
-}.reversed()
-    .then(comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed())
-    .then(comparingInt(PngOutputTask::totalSubtasks))
-private val taskOrderComparatorWhenLowMemory = comparingInt<PngOutputTask> {
-    runBlocking { it.netAddedToCache() }
-}.then(taskOrderComparator)
+}.reversed())
+.then(comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed())
+.then(comparingInt(PngOutputTask::totalSubtasks))
+
 private val logger = LogManager.getRootLogger()
 
 private const val MAX_OUTPUT_TASKS_PER_CPU = 1.0
@@ -149,10 +150,7 @@ private suspend fun runAll(
     val inProgressJobs = HashMap<PngOutputTask,Job>()
     val finishedJobsChannel = Channel<PngOutputTask>(capacity = maxJobs)
     while (unstartedTasks.isNotEmpty()) {
-        do {
-            val maybeReceive = finishedJobsChannel.tryReceive().getOrNull()?.also(inProgressJobs::remove)
-            val finishedIoJobs = ioJobs.removeIf(Job::isCompleted)
-        } while (maybeReceive != null || finishedIoJobs)
+        clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)
         val currentInProgressJobs = inProgressJobs.size
         if (currentInProgressJobs + unstartedTasks.size <= maxJobs) {
             logger.info("{} tasks in progress; starting all {} remaining tasks",
@@ -163,22 +161,17 @@ private suspend fun runAll(
             logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
             inProgressJobs.remove(finishedJobsChannel.receive())
         } else {
-            val bestTask = unstartedTasks.minWithOrNull(taskOrderComparator)
-            checkNotNull(bestTask) { "Could not get an unstarted task" }
-            val task = if (bestTask.netAddedToCache() > 0 && heapLoadHeavy()) {
-                logger.warn("Changing task selection strategy due to heap pressure")
-                val bestLowMemTask = unstartedTasks.minWithOrNull(taskOrderComparatorWhenLowMemory)
-                checkNotNull(bestLowMemTask) { "bestLowMemTask unexpectedly null" }
-                if (currentInProgressJobs > 0 && bestLowMemTask.netAddedToCache() > 0) {
-                    logger.warn("Waiting for a task to finish before starting a new one, due to heap pressure")
-                    inProgressJobs.remove(finishedJobsChannel.receive())
-                    continue
-                }
-                bestLowMemTask
-            } else bestTask
-            logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
-            inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs)
-            check(unstartedTasks.remove(task)) { "Attempted to remove task more than once: $task" }
+            val task = unstartedTasks.minWithOrNull(taskOrderComparator)
+            checkNotNull(task) { "Could not get an unstarted task" }
+            if (currentInProgressJobs > 0 && !task.isCacheAllocationFreeOnMargin() && heapLoadHeavy()) {
+                logger.warn("Not starting a new task until one finishes, due to heap pressure")
+                inProgressJobs.remove(finishedJobsChannel.receive())
+                continue
+            } else {
+                logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
+                inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs)
+                check(unstartedTasks.remove(task)) { "Attempted to remove task more than once: $task" }
+            }
         }
     }
     logger.info("All jobs started; waiting for {} running jobs to finish", box(inProgressJobs.size))
@@ -190,6 +183,17 @@ private suspend fun runAll(
     logger.info("Waiting for remaining IO jobs to finish")
     ioJobs.joinAll()
     logger.info("All IO jobs are finished")
+}
+
+private fun clearFinishedJobs(
+    finishedJobsChannel: Channel<PngOutputTask>,
+    inProgressJobs: HashMap<PngOutputTask, Job>,
+    ioJobs: KeySetView<Job, Boolean>
+) {
+    do {
+        val maybeReceive = finishedJobsChannel.tryReceive().getOrNull()?.also(inProgressJobs::remove)
+        val finishedIoJobs = ioJobs.removeIf(Job::isCompleted)
+    } while (maybeReceive != null || finishedIoJobs)
 }
 
 private fun heapLoadHeavy(): Boolean {
