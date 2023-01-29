@@ -164,16 +164,20 @@ private suspend fun runAll(
             val bestTask = unstartedTasks.minWithOrNull(taskOrderComparator)
             checkNotNull(bestTask) { "Could not get an unstarted task" }
             val task = if (bestTask.netAddedToCache() > 0 && heapLoadHeavy()) {
-                logger.warn("Changing task selection strategy due to heap pressure")
                 clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)
-                val bestLowMemTask = unstartedTasks.minWithOrNull(taskOrderComparatorWhenLowMemory)
-                checkNotNull(bestLowMemTask) { "bestLowMemTask unexpectedly null" }
-                if (currentInProgressJobs > 0 && bestLowMemTask.netAddedToCache() > 0) {
-                    logger.warn("Waiting for a task to finish before starting a new one, due to heap pressure")
-                    inProgressJobs.remove(finishedJobsChannel.receive())
-                    continue
+                if (!heapLoadHeavy()) {
+                    bestTask
+                } else {
+                    logger.warn("Changing task selection strategy due to heap pressure")
+                    val bestLowMemTask = unstartedTasks.minWithOrNull(taskOrderComparatorWhenLowMemory)
+                    checkNotNull(bestLowMemTask) { "bestLowMemTask unexpectedly null" }
+                    if (currentInProgressJobs > 0 && bestLowMemTask.netAddedToCache() > 0) {
+                        logger.warn("Waiting for a task to finish before starting a new one, due to heap pressure")
+                        inProgressJobs.remove(finishedJobsChannel.receive())
+                        continue
+                    }
+                    bestLowMemTask
                 }
-                bestLowMemTask
             } else bestTask
             logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
             inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs)
