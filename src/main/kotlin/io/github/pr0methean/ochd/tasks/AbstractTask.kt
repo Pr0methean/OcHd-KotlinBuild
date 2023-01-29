@@ -190,6 +190,13 @@ abstract class AbstractTask<out T>(
         return netAdded
     }
 
+    fun isAllocationFree(): Boolean {
+        if (isStartedOrAvailable()) {
+            return true
+        }
+        return directDependencies.all(AbstractTask<*>::isAllocationFree)
+    }
+
     suspend inline fun await(): T = start().await()
     override fun hashCode(): Int = hashCode
 }

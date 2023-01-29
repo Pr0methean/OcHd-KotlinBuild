@@ -35,7 +35,7 @@ private val taskOrderComparator = comparingDouble<PngOutputTask> {
     .then(comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed())
     .then(comparingInt(PngOutputTask::totalSubtasks))
 private val taskOrderComparatorWhenLowMemory = comparingInt<PngOutputTask> {
-    runBlocking { it.netAddedToCache() }
+    if (it.isAllocationFree()) 0 else 1
 }.then(taskOrderComparator)
 private val logger = LogManager.getRootLogger()
 
@@ -163,7 +163,7 @@ private suspend fun runAll(
         } else {
             val bestTask = unstartedTasks.minWithOrNull(taskOrderComparator)
             checkNotNull(bestTask) { "Could not get an unstarted task" }
-            val task = if (bestTask.netAddedToCache() > 0 && heapLoadHeavy()) {
+            val task = if (!bestTask.isAllocationFree() && heapLoadHeavy()) {
                 clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)
                 if (!heapLoadHeavy()) {
                     bestTask
