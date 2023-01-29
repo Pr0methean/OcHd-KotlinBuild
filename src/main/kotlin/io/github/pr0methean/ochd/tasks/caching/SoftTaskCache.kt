@@ -20,10 +20,16 @@ class SoftTaskCache<T>(
 
     override fun clear() {
         coroutineRef.updateAndGet {
-            val current = it.get()
             if (it is WeakReference) {
                 it
-            } else WeakReference(current)
+            } else {
+                val current = it.get()
+                if (current == null) {
+                    nullReference
+                } else {
+                    WeakReference(current)
+                }
+            }
         }
     }
 
