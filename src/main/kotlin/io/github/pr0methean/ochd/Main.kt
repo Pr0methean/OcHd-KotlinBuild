@@ -2,6 +2,8 @@ package io.github.pr0methean.ochd
 
 import com.sun.management.GarbageCollectorMXBean
 import com.sun.prism.impl.Disposer
+import io.github.pr0methean.ochd.ImageProcessingStats.onTaskCompleted
+import io.github.pr0methean.ochd.ImageProcessingStats.onTaskLaunched
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
 import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.tasks.SvgToBitmapTask
@@ -97,7 +99,7 @@ suspend fun main(args: Array<String>) {
     val maxHugeTileOutputTaskJobs = (MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU * nCpus).toInt()
     startMonitoring(scope)
     val time = measureNanoTime {
-        ImageProcessingStats.onTaskLaunched("Build task graph", "Build task graph")
+        onTaskLaunched("Build task graph", "Build task graph")
         val tasks = ALL_MATERIALS.outputTasks(ctx).toSet()
         val mkdirs = ioScope.launch {
             cleanupAndCopyMetadata.join()
@@ -113,7 +115,7 @@ suspend fun main(args: Array<String>) {
         val (cbTasks, nonCbTasks) = tasks.partition(PngOutputTask::isCommandBlock)
         depsBuildTask.join()
         mkdirs.join()
-        ImageProcessingStats.onTaskCompleted("Build task graph", "Build task graph")
+        onTaskCompleted("Build task graph", "Build task graph")
         gcIfUsingLargeTiles(tileSize)
         withContext(Dispatchers.Default) {
             runAll(cbTasks, scope, maxHugeTileOutputTaskJobs)
@@ -213,9 +215,10 @@ private fun startTask(
     ioJobs: MutableSet<in Job>
 ) = scope.launch {
     try {
-        ImageProcessingStats.onTaskLaunched("PngOutputTask", task.name)
+        onTaskLaunched("PngOutputTask", task.name)
         val awtImage = if (task.base is SvgToBitmapTask && !task.base.shouldRenderForCaching()) {
-            task.base.getAwtImage()
+            onTaskLaunched("SvgToBitmapTask", task.base.name)
+            task.base.getAwtImage().also { onTaskCompleted("SvgToBitmapTask", task.base.name) }
         } else {
             SwingFXUtils.fromFXImage(task.base.await(), null)
         }
@@ -223,7 +226,7 @@ private fun startTask(
         ioJobs.add(scope.launch {
             logger.info("Starting file write for {}", task.name)
             task.writeToFiles(awtImage).join()
-            ImageProcessingStats.onTaskCompleted("PngOutputTask", task.name)
+            onTaskCompleted("PngOutputTask", task.name)
         })
         finishedJobsChannel.send(task)
     } catch (t: Throwable) {
