@@ -1,8 +1,6 @@
 package io.github.pr0methean.ochd.tasks
 
-import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.tasks.caching.noopDeferredTaskCache
-import javafx.embed.swing.SwingFXUtils
 import javafx.scene.image.Image
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -54,16 +52,7 @@ class PngOutputTask(
         return (this === other) || other is PngOutputTask && base == other.base
     }
 
-    override suspend fun perform() {
-        ImageProcessingStats.onTaskLaunched("PngOutputTask", name)
-        if (base is SvgToBitmapTask && !base.shouldRenderForCaching()) {
-            writeToFiles(base.getAwtImage())
-        } else {
-            val fxImage = base.await()
-            writeToFiles(SwingFXUtils.fromFXImage(fxImage, null))
-        }
-        ImageProcessingStats.onTaskCompleted("PngOutputTask", name)
-    }
+    override suspend fun perform(): Nothing = throw IllegalStateException("The output task is defined in Main.kt")
 
     suspend fun writeToFiles(awtImage: BufferedImage): Job {
         val firstFile = files[0]

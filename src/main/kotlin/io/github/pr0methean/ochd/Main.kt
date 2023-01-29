@@ -4,8 +4,10 @@ import com.sun.management.GarbageCollectorMXBean
 import com.sun.prism.impl.Disposer
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
 import io.github.pr0methean.ochd.tasks.PngOutputTask
+import io.github.pr0methean.ochd.tasks.SvgToBitmapTask
 import io.github.pr0methean.ochd.tasks.mkdirsedPaths
 import javafx.application.Platform
+import javafx.embed.swing.SwingFXUtils
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -212,11 +214,15 @@ private fun startTask(
 ) = scope.launch {
     try {
         ImageProcessingStats.onTaskLaunched("PngOutputTask", task.name)
-        val baseImage = task.base.await()
+        val awtImage = if (task.base is SvgToBitmapTask && !task.base.shouldRenderForCaching()) {
+            task.base.getAwtImage()
+        } else {
+            SwingFXUtils.fromFXImage(task.base.await(), null)
+        }
         task.base.removeDirectDependentTask(task)
         ioJobs.add(scope.launch {
             logger.info("Starting file write for {}", task.name)
-            task.writeToFiles(baseImage).join()
+            task.writeToFiles(awtImage).join()
             ImageProcessingStats.onTaskCompleted("PngOutputTask", task.name)
         })
         finishedJobsChannel.send(task)
