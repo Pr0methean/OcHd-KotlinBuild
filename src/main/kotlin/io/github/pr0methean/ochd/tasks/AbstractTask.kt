@@ -189,8 +189,10 @@ abstract class AbstractTask<out T>(
     }
 
     fun isCacheAllocationFreeOnMargin(): Boolean {
-        if (isStartedOrAvailable() || !cache.isEnabled()) {
+        if (isStartedOrAvailable()) {
             return true
+        } else if (cache.isEnabled()) {
+            return false
         }
         return directDependencies.all(AbstractTask<*>::isCacheAllocationFreeOnMargin)
     }
