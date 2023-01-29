@@ -5,6 +5,7 @@ import com.sun.prism.impl.Disposer
 import io.github.pr0methean.ochd.ImageProcessingStats.onTaskCompleted
 import io.github.pr0methean.ochd.ImageProcessingStats.onTaskLaunched
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
+import io.github.pr0methean.ochd.tasks.AbstractTask
 import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.tasks.SvgToBitmapTask
 import io.github.pr0methean.ochd.tasks.mkdirsedPaths
@@ -148,33 +149,38 @@ private suspend fun runAll(
     maxJobs: Int
 ) {
     val ioJobs = ConcurrentHashMap.newKeySet<Job>()
-    val unstartedTasks = if (tasks.size > maxJobs) {
-        tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks)).toMutableSet()
-    } else tasks.toMutableSet()
+    val connectedComponents = if (tasks.size > maxJobs) {
+        tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks))
+            .sortedByConnectedComponents()
+    } else setOf(tasks.toMutableList())
     val inProgressJobs = HashMap<PngOutputTask,Job>()
     val finishedJobsChannel = Channel<PngOutputTask>(capacity = maxJobs)
-    while (unstartedTasks.isNotEmpty()) {
-        clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)
-        val currentInProgressJobs = inProgressJobs.size
-        if (currentInProgressJobs + unstartedTasks.size <= maxJobs) {
-            logger.info("{} tasks in progress; starting all {} remaining tasks",
-                box(currentInProgressJobs), box(unstartedTasks.size))
-            unstartedTasks.forEach { inProgressJobs[it] = startTask(scope, it, finishedJobsChannel, ioJobs) }
-            unstartedTasks.clear()
-        } else if (currentInProgressJobs >= maxJobs) {
-            logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
-            inProgressJobs.remove(finishedJobsChannel.receive())
-        } else {
-            val task = unstartedTasks.minWithOrNull(taskOrderComparator)
-            checkNotNull(task) { "Could not get an unstarted task" }
-            if (currentInProgressJobs > 0 && !task.isCacheAllocationFreeOnMargin() && heapLoadHeavy()) {
-                logger.warn("Not starting a new task until one finishes, due to heap pressure")
+    for (connectedComponent in connectedComponents) {
+        while (connectedComponent.isNotEmpty()) {
+            clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)
+            val currentInProgressJobs = inProgressJobs.size
+            if (currentInProgressJobs + connectedComponent.size <= maxJobs) {
+                logger.info(
+                    "{} tasks in progress; starting all {} remaining tasks",
+                    box(currentInProgressJobs), box(connectedComponent.size)
+                )
+                connectedComponent.forEach { inProgressJobs[it] = startTask(scope, it, finishedJobsChannel, ioJobs) }
+                connectedComponent.clear()
+            } else if (currentInProgressJobs >= maxJobs) {
+                logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
                 inProgressJobs.remove(finishedJobsChannel.receive())
-                continue
             } else {
-                logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
-                inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs)
-                check(unstartedTasks.remove(task)) { "Attempted to remove task more than once: $task" }
+                val task = connectedComponent.minWithOrNull(taskOrderComparator)
+                checkNotNull(task) { "Could not get an unstarted task" }
+                if (currentInProgressJobs > 0 && !task.isCacheAllocationFreeOnMargin() && heapLoadHeavy()) {
+                    logger.warn("Not starting a new task until one finishes, due to heap pressure")
+                    inProgressJobs.remove(finishedJobsChannel.receive())
+                    continue
+                } else {
+                    logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
+                    inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs)
+                    check(connectedComponent.remove(task)) { "Attempted to remove task more than once: $task" }
+                }
             }
         }
     }
@@ -187,6 +193,22 @@ private suspend fun runAll(
     logger.info("Waiting for remaining IO jobs to finish")
     ioJobs.joinAll()
     logger.info("All IO jobs are finished")
+}
+
+private fun <T: AbstractTask<*>> List<T>.sortedByConnectedComponents(): List<MutableList<T>> {
+    val components = mutableListOf<MutableList<T>>()
+    sortTask@ for (task in this) {
+        for (component in components) {
+            for (otherTask in component) {
+                if (task.overlapsWith(otherTask)) {
+                    component.add(task)
+                    continue@sortTask
+                }
+            }
+        }
+        components.add(mutableListOf(task))
+    }
+    return components
 }
 
 private fun clearFinishedJobs(
