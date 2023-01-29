@@ -24,6 +24,7 @@ import java.lang.management.MemoryUsage
 import java.nio.file.Paths
 import java.util.Comparator.comparingDouble
 import java.util.Comparator.comparingInt
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
@@ -141,7 +142,7 @@ private suspend fun runAll(
     scope: CoroutineScope,
     maxJobs: Int
 ) {
-    val ioJobs = HashSet<Job>()
+    val ioJobs = ConcurrentHashMap.newKeySet<Job>()
     val unstartedTasks = if (tasks.size > maxJobs) {
         tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks)).toMutableSet()
     } else tasks.toMutableSet()
