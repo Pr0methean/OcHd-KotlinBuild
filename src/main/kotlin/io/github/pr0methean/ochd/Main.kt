@@ -30,7 +30,7 @@ import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
 private val taskOrderComparator = comparingInt<PngOutputTask> {
-    if (it.isAllocationFree()) 0 else 1
+    if (it.isCacheAllocationFreeOnMargin()) 0 else 1
 }.then(comparingDouble<PngOutputTask> {
     runBlocking { it.cacheClearingCoefficient() }
 }.reversed())
@@ -163,7 +163,7 @@ private suspend fun runAll(
         } else {
             val task = unstartedTasks.minWithOrNull(taskOrderComparator)
             checkNotNull(task) { "Could not get an unstarted task" }
-            if (currentInProgressJobs > 0 && !task.isAllocationFree() && heapLoadHeavy()) {
+            if (currentInProgressJobs > 0 && !task.isCacheAllocationFreeOnMargin() && heapLoadHeavy()) {
                 logger.warn("Not starting a new task until one finishes, due to heap pressure")
                 inProgressJobs.remove(finishedJobsChannel.receive())
                 continue
