@@ -191,7 +191,7 @@ abstract class AbstractTask<out T>(
     }
 
     fun isAllocationFree(): Boolean {
-        if (isStartedOrAvailable()) {
+        if (isStartedOrAvailable() || !cache.isEnabled()) {
             return true
         }
         return directDependencies.all(AbstractTask<*>::isAllocationFree)
