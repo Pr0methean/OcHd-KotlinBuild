@@ -29,14 +29,14 @@ import java.util.concurrent.ConcurrentHashMap.KeySetView
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 
-private val taskOrderComparator = comparingDouble<PngOutputTask> {
-    runBlocking { it.cacheClearingCoefficient() }
-}.reversed()
-    .then(comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed())
-    .then(comparingInt(PngOutputTask::totalSubtasks))
-private val taskOrderComparatorWhenLowMemory = comparingInt<PngOutputTask> {
+private val taskOrderComparator = comparingInt<PngOutputTask> {
     if (it.isAllocationFree()) 0 else 1
-}.then(taskOrderComparator)
+}.then(comparingDouble<PngOutputTask> {
+    runBlocking { it.cacheClearingCoefficient() }
+}.reversed())
+.then(comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed())
+.then(comparingInt(PngOutputTask::totalSubtasks))
+
 private val logger = LogManager.getRootLogger()
 
 private const val MAX_OUTPUT_TASKS_PER_CPU = 2.0
@@ -161,27 +161,17 @@ private suspend fun runAll(
             logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
             inProgressJobs.remove(finishedJobsChannel.receive())
         } else {
-            val bestTask = unstartedTasks.minWithOrNull(taskOrderComparator)
-            checkNotNull(bestTask) { "Could not get an unstarted task" }
-            val task = if (!bestTask.isAllocationFree() && heapLoadHeavy()) {
-                clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)
-                if (!heapLoadHeavy()) {
-                    bestTask
-                } else {
-                    logger.warn("Changing task selection strategy due to heap pressure")
-                    val bestLowMemTask = unstartedTasks.minWithOrNull(taskOrderComparatorWhenLowMemory)
-                    checkNotNull(bestLowMemTask) { "bestLowMemTask unexpectedly null" }
-                    if (currentInProgressJobs > 0 && bestLowMemTask.netAddedToCache() > 0) {
-                        logger.warn("Waiting for a task to finish before starting a new one, due to heap pressure")
-                        inProgressJobs.remove(finishedJobsChannel.receive())
-                        continue
-                    }
-                    bestLowMemTask
-                }
-            } else bestTask
-            logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
-            inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs)
-            check(unstartedTasks.remove(task)) { "Attempted to remove task more than once: $task" }
+            val task = unstartedTasks.minWithOrNull(taskOrderComparator)
+            checkNotNull(task) { "Could not get an unstarted task" }
+            if (currentInProgressJobs > 0 && !task.isAllocationFree() && heapLoadHeavy()) {
+                logger.warn("Not starting a new task until one finishes, due to heap pressure")
+                inProgressJobs.remove(finishedJobsChannel.receive())
+                continue
+            } else {
+                logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
+                inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs)
+                check(unstartedTasks.remove(task)) { "Attempted to remove task more than once: $task" }
+            }
         }
     }
     logger.info("All jobs started; waiting for {} running jobs to finish", box(inProgressJobs.size))
