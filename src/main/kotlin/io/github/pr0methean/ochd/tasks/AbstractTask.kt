@@ -188,6 +188,11 @@ abstract class AbstractTask<out T>(
         return netAdded
     }
 
+    /**
+     * True if starting this task will not cause new entries to be added to the cache, other
+     * than those that tasks already started would be caching anyway. Tasks for which this
+     * is true are prioritized when memory is low.
+     */
     fun isCacheAllocationFreeOnMargin(): Boolean {
         if (isStartedOrAvailable()) {
             return true
