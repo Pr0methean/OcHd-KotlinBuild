@@ -34,7 +34,7 @@ abstract class AbstractTask<out T>(
         CoroutineScope(ctx.plus(CoroutineName(name)))
     }
 
-    protected val mutex: Mutex = Mutex()
+    val mutex: Mutex = Mutex()
 
     @GuardedBy("mutex")
     val directDependentTasks: MutableSet<AbstractTask<*>> = newSetFromMap(WeakHashMap())

@@ -9,6 +9,7 @@ import javafx.scene.effect.ColorInput
 import javafx.scene.image.Image
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.sync.withLock
 import org.apache.logging.log4j.LogManager
 import java.util.Objects
 import kotlin.coroutines.CoroutineContext
@@ -91,7 +92,7 @@ class RepaintTask(
         renderOntoInternal({ canvas.graphicsContext2D }, 0.0, 0.0)
         val snapshot = snapshotCanvas(canvas)
         if (alpha == 1.0 && cache.isEnabled() && base.cache.isEnabled()
-                && base.directDependentTasks.all { it is RepaintTask }) {
+                && base.mutex.withLock { base.directDependentTasks.all { it is RepaintTask } }) {
             base.cache.computeIfAbsent {
                 logger.info("Using repaint {} to replace base image {}", name, base.name)
                 CompletableDeferred(snapshot)
