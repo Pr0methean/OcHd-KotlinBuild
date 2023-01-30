@@ -23,9 +23,9 @@ fun <T> List<T>.isShallowCopyOf(other: List<T>): Boolean {
     return this === other || (size == other.size && indices.all { this[it] === other[it] })
 }
 
-fun StringBuilder.appendList(list: List<StringBuilderFormattable>, delim: String = ", "): StringBuilder {
-    if (list.isNotEmpty()) {
-        for (item in list) {
+fun StringBuilder.appendCollection(collection: Collection<StringBuilderFormattable>, delim: String = ", "): StringBuilder {
+    if (collection.isNotEmpty()) {
+        for (item in collection) {
             item.formatTo(this)
             append(delim)
         }

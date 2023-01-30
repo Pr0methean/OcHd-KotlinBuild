@@ -157,7 +157,7 @@ private suspend fun runAll(
     val finishedJobsChannel = Channel<PngOutputTask>(capacity = maxJobs)
     for (connectedComponent in connectedComponents) {
         logger.info("Starting new connected component: {}",
-                StringBuilder().appendList(connectedComponent))
+                StringBuilder().appendCollection(connectedComponent))
         while (connectedComponent.isNotEmpty()) {
             clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)
             val currentInProgressJobs = inProgressJobs.size
@@ -197,12 +197,12 @@ private suspend fun runAll(
     logger.info("All IO jobs are finished")
 }
 
-private fun <T: AbstractTask<*>> List<T>.sortedByConnectedComponents(): List<MutableList<T>> {
-    val components = mutableListOf<MutableList<T>>()
+private fun <T: AbstractTask<*>> List<T>.sortedByConnectedComponents(): List<MutableSet<T>> {
+    val components = mutableListOf<MutableSet<T>>()
     sortTask@ for (task in this) {
         val matchingComponents = components.filter {it.any(task::overlapsWith) }
         if (matchingComponents.isEmpty()) {
-            components.add(mutableListOf(task))
+            components.add(mutableSetOf(task))
         } else {
             components.first().add(task)
             for (component in components.drop(1)) {
