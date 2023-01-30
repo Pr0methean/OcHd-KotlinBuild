@@ -202,8 +202,6 @@ abstract class AbstractTask<out T>(
      * least one transitive dependency).
      */
     fun overlapsWith(other: AbstractTask<*>): Boolean = (this === other)
-            || directDependencies.contains(other)
-            || other.directDependencies.contains(this)
             || directDependencies.any(other::overlapsWith)
             || other.directDependencies.any(this::overlapsWith)
 

@@ -52,7 +52,7 @@ class PngOutputTask(
         return (this === other) || other is PngOutputTask && base == other.base
     }
 
-    override suspend fun perform(): Nothing = error("The output task is defined in Main.kt")
+    override suspend fun perform(): Nothing = throw IllegalStateException("The output task is defined in Main.kt")
 
     suspend fun writeToFiles(awtImage: BufferedImage): Job {
         val firstFile = files[0]
@@ -62,8 +62,9 @@ class PngOutputTask(
         }
         return if (files.size > 1) {
             ioScope.launch {
+                val remainingFiles = files.subList(1, files.size)
                 writeFirstFile.join()
-                for (file in files.drop(1)) {
+                for (file in remainingFiles) {
                     Files.createLink(file.absoluteFile.toPath(), firstFilePath)
                 }
             }
