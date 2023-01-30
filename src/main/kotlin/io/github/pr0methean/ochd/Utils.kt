@@ -23,7 +23,8 @@ fun <T> List<T>.isShallowCopyOf(other: List<T>): Boolean {
     return this === other || (size == other.size && indices.all { this[it] === other[it] })
 }
 
-fun StringBuilder.appendCollection(collection: Collection<StringBuilderFormattable>, delim: String = ", "): StringBuilder {
+fun StringBuilder.appendCollection(
+        collection: Collection<StringBuilderFormattable>, delim: String = ", "): StringBuilder {
     if (collection.isNotEmpty()) {
         for (item in collection) {
             item.formatTo(this)

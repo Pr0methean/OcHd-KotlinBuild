@@ -52,7 +52,7 @@ class PngOutputTask(
         return (this === other) || other is PngOutputTask && base == other.base
     }
 
-    override suspend fun perform(): Nothing = throw IllegalStateException("The output task is defined in Main.kt")
+    override suspend fun perform(): Nothing = error("The output task is defined in Main.kt")
 
     suspend fun writeToFiles(awtImage: BufferedImage): Job {
         val firstFile = files[0]
