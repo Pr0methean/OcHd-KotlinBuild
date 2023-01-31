@@ -34,7 +34,7 @@ abstract class AbstractTask<out T>(
         CoroutineScope(ctx.plus(CoroutineName(name)))
     }
 
-    protected val mutex: Mutex = Mutex()
+    val mutex: Mutex = Mutex()
 
     @GuardedBy("mutex")
     val directDependentTasks: MutableSet<AbstractTask<*>> = newSetFromMap(WeakHashMap())
@@ -114,7 +114,7 @@ abstract class AbstractTask<out T>(
      * True when this task should prepare to output an Image so that that Image can be cached, rather than rendering
      * onto a consuming task's canvas.
      */
-    protected suspend fun shouldRenderForCaching(): Boolean = isStartedOrAvailable()
+    suspend fun shouldRenderForCaching(): Boolean = isStartedOrAvailable()
             || (cache.isEnabled() && mutex.withLock { directDependentTasks.size } > 1)
             || isStartedOrAvailable()
 
@@ -188,12 +188,27 @@ abstract class AbstractTask<out T>(
         return netAdded
     }
 
+    /**
+     * True if starting this task will not cause new entries to be added to the cache, other
+     * than those that tasks already started would be caching anyway. Tasks for which this
+     * is true are prioritized when memory is low.
+     */
     fun isCacheAllocationFreeOnMargin(): Boolean {
-        if (isStartedOrAvailable() || !cache.isEnabled()) {
+        if (isStartedOrAvailable()) {
             return true
+        } else if (cache.isEnabled()) {
+            return false
         }
         return directDependencies.all(AbstractTask<*>::isCacheAllocationFreeOnMargin)
     }
+
+    /**
+     * True if this is weakly connected to [other] in a dependency graph (i.e. they share at
+     * least one transitive dependency).
+     */
+    fun overlapsWith(other: AbstractTask<*>): Boolean = (this === other)
+            || directDependencies.any(other::overlapsWith)
+            || other.directDependencies.any(this::overlapsWith)
 
     suspend inline fun await(): T = start().await()
     override fun hashCode(): Int = hashCode
