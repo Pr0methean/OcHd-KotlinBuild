@@ -156,15 +156,15 @@ private suspend fun runAll(
     val inProgressJobs = HashMap<PngOutputTask,Job>()
     val finishedJobsChannel = Channel<PngOutputTask>(capacity = maxJobs)
     for (connectedComponent in connectedComponents) {
-        logger.info("Starting new connected component: {}",
-                StringBuilder().appendCollection(connectedComponent))
+        logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
         while (connectedComponent.isNotEmpty()) {
             clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)
             val currentInProgressJobs = inProgressJobs.size
             if (currentInProgressJobs + connectedComponent.size <= maxJobs) {
                 logger.info(
-                    "{} tasks in progress; starting all {} remaining tasks",
-                    box(currentInProgressJobs), box(connectedComponent.size)
+                    "{} tasks in progress; starting all {} remaining tasks: {}",
+                    box(currentInProgressJobs), box(connectedComponent.size),
+                            StringBuilder().appendCollection(connectedComponent)
                 )
                 connectedComponent.forEach { inProgressJobs[it] = startTask(scope, it, finishedJobsChannel, ioJobs) }
                 connectedComponent.clear()
@@ -201,7 +201,7 @@ private fun <T: AbstractTask<*>> List<T>.sortedByConnectedComponents(): List<Mut
     val components = mutableListOf<MutableSet<T>>()
     sortTask@ for (task in this) {
         val matchingComponents = components.filter {it.any(task::overlapsWith) }
-        logger.info("{} is connected to: {}", task, matchingComponents)
+        logger.debug("{} is connected to: {}", task, matchingComponents)
         if (matchingComponents.isEmpty()) {
             components.add(mutableSetOf(task))
         } else {
