@@ -205,10 +205,10 @@ private fun <T: AbstractTask<*>> List<T>.sortedByConnectedComponents(): List<Mut
         if (matchingComponents.isEmpty()) {
             components.add(mutableSetOf(task))
         } else {
-            components.first().add(task)
-            for (component in components.drop(1)) {
+            matchingComponents.first().add(task)
+            for (component in matchingComponents.drop(1)) {
                 // More than one match = need to merge components
-                components.first().addAll(component)
+                matchingComponents.first().addAll(component)
                 components.remove(component)
             }
         }
