@@ -209,7 +209,9 @@ private fun <T: AbstractTask<*>> List<T>.sortedByConnectedComponents(): List<Mut
             for (component in matchingComponents.drop(1)) {
                 // More than one match = need to merge components
                 matchingComponents.first().addAll(component)
-                components.remove(component)
+                check(components.remove(component)) {
+                    "Failed to remove $component after merging into ${matchingComponents.first()}"
+                }
             }
         }
     }
