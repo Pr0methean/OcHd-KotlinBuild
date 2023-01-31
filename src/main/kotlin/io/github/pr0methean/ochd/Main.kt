@@ -164,7 +164,7 @@ private suspend fun runAll(
                 logger.info(
                     "{} tasks in progress; starting all {} remaining tasks: {}",
                     box(currentInProgressJobs), box(connectedComponent.size),
-                            StringBuilder().appendCollection(connectedComponent)
+                            StringBuilder().appendCollection(connectedComponent, "; ")
                 )
                 connectedComponent.forEach { inProgressJobs[it] = startTask(scope, it, finishedJobsChannel, ioJobs) }
                 connectedComponent.clear()
