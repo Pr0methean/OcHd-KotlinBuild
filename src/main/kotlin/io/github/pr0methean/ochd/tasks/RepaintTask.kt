@@ -92,6 +92,11 @@ class RepaintTask(
         val snapshot = snapshotCanvas(canvas)
         if (alpha == 1.0 && cache.isEnabled() && base.cache.isEnabled()
                 && base.mutex.withLock { base.directDependentTasks.all { it is RepaintTask } }) {
+            /*
+             * Painting a black X blue or green has the same result as painting a red X blue or green.
+             * Therefore, if the only impending uses of a black X are to repaint it blue and green, we can replace the
+             * black X with a red one in cache.
+             */
             logger.info("Using repaint {} to replace base image {}", name, base.name)
             base.cache.setValue(snapshot)
         }
