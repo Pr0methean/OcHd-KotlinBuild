@@ -50,7 +50,7 @@ private const val MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU = 4.0
 
 private const val MIN_TILE_SIZE_FOR_EXPLICIT_GC = 2048
 
-private const val SOFT_HEAP_LIMIT_FRACTION = 0.90
+private const val SOFT_HEAP_LIMIT_FRACTION = 0.95
 private val gcMxBean = ManagementFactory.getPlatformMXBeans(GarbageCollectorMXBean::class.java).first()
 private val memoryMxBean = ManagementFactory.getMemoryMXBean()
 private val softHeapLimitBytes = (memoryMxBean.heapMemoryUsage.max * SOFT_HEAP_LIMIT_FRACTION).toLong()
