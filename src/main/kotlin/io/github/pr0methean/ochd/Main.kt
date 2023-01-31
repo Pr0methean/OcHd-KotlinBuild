@@ -201,6 +201,7 @@ private fun <T: AbstractTask<*>> List<T>.sortedByConnectedComponents(): List<Mut
     val components = mutableListOf<MutableSet<T>>()
     sortTask@ for (task in this) {
         val matchingComponents = components.filter {it.any(task::overlapsWith) }
+        logger.info("{} is connected to: {}", task, matchingComponents)
         if (matchingComponents.isEmpty()) {
             components.add(mutableSetOf(task))
         } else {
