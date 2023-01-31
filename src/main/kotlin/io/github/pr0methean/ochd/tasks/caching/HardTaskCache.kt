@@ -1,5 +1,6 @@
 package io.github.pr0methean.ochd.tasks.caching
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 import java.util.concurrent.atomic.AtomicReference
 
@@ -16,6 +17,12 @@ class HardTaskCache<T>(
 
     override fun clear() {
         coroutineRef.set(null)
+    }
+
+    override fun setValue(newValue: T) {
+        if (isEnabled()) {
+            coroutineRef.set(CompletableDeferred(newValue))
+        }
     }
 
     @Suppress("OVERRIDE_BY_INLINE")

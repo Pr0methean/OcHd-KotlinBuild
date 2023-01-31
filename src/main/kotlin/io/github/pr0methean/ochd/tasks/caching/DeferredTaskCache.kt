@@ -37,4 +37,10 @@ abstract class DeferredTaskCache<T>(val name: String) {
      */
     @Suppress("DeferredIsResult")
     abstract fun computeIfAbsent(coroutineCreator: () -> Deferred<T>): Deferred<T>
+
+    /**
+     * Replaces the cached coroutine with one that immediately returns [newValue] if this cache [isEnabled](), and may
+     * do so even if not.
+     */
+    abstract fun setValue(newValue: T)
 }

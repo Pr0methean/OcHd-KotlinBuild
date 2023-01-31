@@ -1,5 +1,6 @@
 package io.github.pr0methean.ochd.tasks.caching
 
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Deferred
 import java.lang.ref.Reference
 import java.lang.ref.SoftReference
@@ -31,6 +32,11 @@ class SoftTaskCache<T>(
                 }
             }
         }
+    }
+
+    override fun setValue(newValue: T) {
+        val newValueDeferred = CompletableDeferred(newValue)
+        coroutineRef.set(if (isEnabled()) { SoftReference(newValueDeferred) } else { WeakReference(newValueDeferred) } )
     }
 
     @Suppress("DeferredIsResult", "OVERRIDE_BY_INLINE")
