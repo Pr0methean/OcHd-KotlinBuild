@@ -71,7 +71,7 @@ abstract class AbstractImageTask(
                     snapshot = canvas.snapshot(params, output)
                 }
                 logger.info("Finished snapshotting canvas for {} after {} ns. Pending snapshot tasks: {}",
-                    name, box(ns), box(pendingSnapshotTasks.getAndDecrement()))
+                    name, box(ns), box(pendingSnapshotTasks.decrementAndGet()))
                 return@withContext snapshot
             } finally {
                 errCatcherStream.flush()
