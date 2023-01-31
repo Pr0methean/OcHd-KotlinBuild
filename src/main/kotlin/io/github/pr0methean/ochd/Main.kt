@@ -215,7 +215,7 @@ private fun <T: AbstractTask<*>> List<T>.sortedByConnectedComponents(): List<Mut
             }
         }
     }
-    return components
+    return components.sortedBy(Set<*>::size)
 }
 
 private fun clearFinishedJobs(
