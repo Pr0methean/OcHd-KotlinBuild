@@ -41,9 +41,9 @@ private val taskOrderComparator = comparingInt<PngOutputTask> {
 
 private val logger = LogManager.getRootLogger()
 
-private const val MAX_OUTPUT_TASKS_PER_CPU = 2.0
+private const val MAX_OUTPUT_TASKS_PER_CPU = 1.0
 
-private const val MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU = 4.0
+private const val MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU = 3.0
 
 private const val MIN_TILE_SIZE_FOR_EXPLICIT_GC = 2048
 
@@ -85,10 +85,7 @@ suspend fun main(args: Array<String>) {
     scope.plus(Dispatchers.Main).launch {
         Thread.currentThread().priority = Thread.MAX_PRIORITY
     }
-    val nCpus = Runtime.getRuntime().availableProcessors() - if (
-        // SWPipeline is the software renderer, so its rendering thread needs one CPU
-        com.sun.prism.GraphicsPipeline.getPipeline()::class.qualifiedName == "com.sun.prism.sw.SWPipeline"
-    ) 1 else 0
+    val nCpus = Runtime.getRuntime().availableProcessors()
     val maxOutputTaskJobs = (MAX_OUTPUT_TASKS_PER_CPU * nCpus).toInt()
     val maxHugeTileOutputTaskJobs = (MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU * nCpus).toInt()
     startMonitoring(scope)
