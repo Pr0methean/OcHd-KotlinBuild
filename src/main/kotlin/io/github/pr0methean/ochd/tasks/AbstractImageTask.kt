@@ -30,8 +30,6 @@ private val errCatcherStream: PrintStream = PrintStream(errCatcher, true, defaul
 private val systemErrSwitched: AtomicBoolean = AtomicBoolean(false)
 private val pendingSnapshotTasks: AtomicLong = AtomicLong(0)
 
-fun countPendingSnapshotTasks() = pendingSnapshotTasks.get()
-
 /** Specialization of [AbstractTask]&lt;[Image]&gt;. */
 abstract class AbstractImageTask(
     name: String, cache: DeferredTaskCache<Image>,
@@ -61,8 +59,8 @@ abstract class AbstractImageTask(
         }
         val caughtStderr = AtomicReference<String?>(null)
         val output = WritableImage(canvas.width.toInt(), canvas.height.toInt())
-        pendingSnapshotTasks.getAndIncrement()
-        logger.info("Waiting to snapshot canvas for {}", name)
+        logger.info("Waiting to snapshot canvas for {}. Pending snapshot tasks: {}",
+                name, box(pendingSnapshotTasks.incrementAndGet()))
         val startWaitingTime = System.nanoTime()
         val snapshot = withContext(Dispatchers.Main.plus(CoroutineName("Snapshot of $name"))) {
             logger.info("Snapshotting canvas for {} after waiting {} ns", name,
@@ -72,7 +70,8 @@ abstract class AbstractImageTask(
                 val ns = measureNanoTime {
                     snapshot = canvas.snapshot(params, output)
                 }
-                logger.info("Finished snapshotting canvas for {} after {} ns", name, box(ns))
+                logger.info("Finished snapshotting canvas for {} after {} ns. Pending snapshot tasks: {}",
+                    name, box(ns), box(pendingSnapshotTasks.getAndDecrement()))
                 return@withContext snapshot
             } finally {
                 errCatcherStream.flush()
@@ -80,7 +79,6 @@ abstract class AbstractImageTask(
                     caughtStderr.set(errCatcher.toString(defaultErrCharset))
                     errCatcher.reset()
                 }
-                pendingSnapshotTasks.getAndDecrement()
             }
         }
         val interceptedStderr = caughtStderr.get()

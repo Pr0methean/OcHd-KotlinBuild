@@ -6,7 +6,6 @@ import com.google.common.collect.Multiset
 import com.google.common.collect.Multisets
 import io.github.pr0methean.ochd.tasks.AbstractTask
 import io.github.pr0methean.ochd.tasks.InvalidTask
-import io.github.pr0methean.ochd.tasks.countPendingSnapshotTasks
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -216,7 +215,6 @@ object ImageProcessingStats {
                 val cachedTasks = cacheableTasks.filter { it.cache.isEnabled() && it.getNow() != null }
                 cacheStringBuilder.appendCollection(cachedTasks, "; ")
                 logger.info("Currently cached tasks: {}: {}", box(cachedTasks.size), cacheStringBuilder)
-                logger.info("Currently pending snapshot tasks: {}", box(countPendingSnapshotTasks()))
             } finally {
                 cacheLock.unlock(stamp)
             }
