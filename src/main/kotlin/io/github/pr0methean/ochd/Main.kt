@@ -4,7 +4,6 @@ import com.sun.prism.impl.Disposer
 import io.github.pr0methean.ochd.ImageProcessingStats.onTaskCompleted
 import io.github.pr0methean.ochd.ImageProcessingStats.onTaskLaunched
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
-import io.github.pr0methean.ochd.tasks.AbstractTask
 import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.tasks.SvgToBitmapTask
 import io.github.pr0methean.ochd.tasks.mkdirsedPaths
@@ -42,8 +41,6 @@ private val taskOrderComparator = comparingInt<PngOutputTask> {
 private val logger = LogManager.getRootLogger()
 
 private const val MAX_OUTPUT_TASKS_PER_CPU = 1.0
-
-private const val MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU = 3.0
 
 private const val MIN_TILE_SIZE_FOR_EXPLICIT_GC = 2048
 
@@ -87,7 +84,6 @@ suspend fun main(args: Array<String>) {
     }
     val nCpus = Runtime.getRuntime().availableProcessors()
     val maxOutputTaskJobs = (MAX_OUTPUT_TASKS_PER_CPU * nCpus).toInt()
-    val maxHugeTileOutputTaskJobs = (MAX_HUGE_TILE_OUTPUT_TASKS_PER_CPU * nCpus).toInt()
     startMonitoring(scope)
     val time = measureNanoTime {
         onTaskLaunched("Build task graph", "Build task graph")
@@ -103,15 +99,12 @@ suspend fun main(args: Array<String>) {
         logger.debug("Got deduplicated output tasks")
         val depsBuildTask = scope.launch { tasks.forEach { it.registerRecursiveDependencies() } }
         logger.debug("Launched deps build task")
-        val (cbTasks, nonCbTasks) = tasks.partition(PngOutputTask::isCommandBlock)
         depsBuildTask.join()
         mkdirs.join()
         onTaskCompleted("Build task graph", "Build task graph")
         gcIfUsingLargeTiles(tileSize)
         withContext(Dispatchers.Default) {
-            runAll(cbTasks, scope, maxHugeTileOutputTaskJobs)
-            gcIfUsingLargeTiles(tileSize)
-            runAll(nonCbTasks, scope, maxOutputTaskJobs)
+            runAll(tasks, scope, maxOutputTaskJobs)
         }
     }
     stopMonitoring()
@@ -181,8 +174,8 @@ private suspend fun runAll(
     logger.info("All IO jobs are finished")
 }
 
-private fun <T: AbstractTask<*>> List<T>.sortedByConnectedComponents(): List<MutableSet<T>> {
-    val components = mutableListOf<MutableSet<T>>()
+private fun List<PngOutputTask>.sortedByConnectedComponents(): List<MutableSet<PngOutputTask>> {
+    val components = mutableListOf<MutableSet<PngOutputTask>>()
     sortTask@ for (task in this) {
         val matchingComponents = components.filter {it.any(task::overlapsWith) }
         logger.debug("{} is connected to: {}", task, matchingComponents)
@@ -199,7 +192,7 @@ private fun <T: AbstractTask<*>> List<T>.sortedByConnectedComponents(): List<Mut
             }
         }
     }
-    return components.sortedBy(Set<*>::size)
+    return components.sortedBy(MutableSet<PngOutputTask>::size)
 }
 
 private fun clearFinishedJobs(
