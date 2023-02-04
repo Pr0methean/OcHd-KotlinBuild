@@ -135,10 +135,18 @@ private suspend fun runAll(
     maxJobs: Int
 ) {
     val ioJobs = ConcurrentHashMap.newKeySet<Job>()
+
+    /*
+     * If two output tasks are in different weakly-connected components of the task graph, then they're in different
+     * connected components. Launching only one connected component at a time minimizes the number of cached images.
+     * Launching the smallest ones first means there'll be fewer tasks in the live set when the cache is at its largest
+     * and so GC performance will suffer the least possible.
+     */
     val connectedComponents = if (tasks.size > maxJobs) {
         tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks))
             .sortedByConnectedComponents()
     } else setOf(tasks.toMutableList())
+
     val inProgressJobs = HashMap<PngOutputTask,Job>()
     val finishedJobsChannel = Channel<PngOutputTask>(capacity = maxJobs)
     for (connectedComponent in connectedComponents) {
