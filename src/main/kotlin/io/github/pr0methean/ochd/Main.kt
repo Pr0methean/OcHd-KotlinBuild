@@ -23,6 +23,7 @@ import kotlinx.coroutines.withContext
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox.box
 import java.io.File
+import java.io.PrintWriter
 import java.nio.file.Paths
 import java.util.Comparator.comparingDouble
 import java.util.Comparator.comparingInt
@@ -116,8 +117,6 @@ suspend fun main(args: Array<String>) {
                 // Output connected components in .dot format
                 withContext(Dispatchers.IO) {
                     @Suppress("BlockingMethodInNonBlockingContext")
-                    Paths.get("out").toFile().mkdirs()
-                    Paths.get("out", "graph.dot").toFile().printWriter(UTF_8).use {
                     Paths.get("out").toFile().mkdirs()
                     Paths.get("out", "graph.dot").toFile().printWriter(UTF_8).use { writer ->
                         // Strict because multiedges are possible
