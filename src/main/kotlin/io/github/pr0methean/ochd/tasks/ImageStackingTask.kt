@@ -32,14 +32,15 @@ class ImageStackingTask(
     }
 
     // An ImageStackingTask that contains a RepaintTask is too long for one line on the graph.
-    override val nameForGraphPrinting: String
-        get() = if (layers.layers.any { it is RepaintTask }) {
-                buildString {
-                    append(layers.background)
-                    append(", ")
-                    appendCollection(layers.layers, ",\n")
-                }
-            } else name
+    override val nameForGraphPrinting: String by lazy {
+        if (layers.layers.any { it is RepaintTask }) {
+            buildString {
+                append(layers.background)
+                append(", ")
+                appendCollection(layers.layers, ",\n")
+            }
+        } else name
+    }
 
     init {
         require(layers.layers.isNotEmpty()) { "Empty layer list" }
