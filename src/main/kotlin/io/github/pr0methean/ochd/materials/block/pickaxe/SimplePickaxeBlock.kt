@@ -380,9 +380,10 @@ enum class SimplePickaxeBlock(
     },
     CYAN_GLAZED_TERRACOTTA(c(0x828282), c(0x3a3a3a), c(0x009c9c)) {
         override fun LayerListBuilder.createTextureLayers() {
-            background(color)
+            background(shadow)
+            layer("bottomHalf", highlight)
+            layer("checksLarge", shadow)
             layer("strokeBottomLeftTopRight4", WHITE)
-            layer("strokeTopLeftBottomRight2", highlight)
             layer("craftingGridSquare", color)
             layer("creeperFaceSmall", shadow)
         }
