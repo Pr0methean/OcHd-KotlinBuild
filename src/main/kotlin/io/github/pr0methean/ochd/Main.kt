@@ -182,11 +182,11 @@ private fun AbstractTask<*>.printDependencies(writer: PrintWriter) {
     if (directDependencies.none()) return
     // "task" -> {"dep1" "dep2" }
     writer.print('\"')
-    writer.print(this)
+    writer.print(nameForGraphPrinting)
     writer.print("\" -> {")
     directDependencies.forEach { dependency ->
         writer.print('\"')
-        writer.print(dependency)
+        writer.print(dependency.nameForGraphPrinting)
         writer.print("\" ")
     }
     writer.println('}')
