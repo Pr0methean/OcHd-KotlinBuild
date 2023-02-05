@@ -125,7 +125,12 @@ suspend fun main(args: Array<String>) {
                             writer.print("subgraph cluster_")
                             writer.print(index)
                             writer.println('{')
-                            connectedComponent.forEach { it.printDependencies(writer) }
+                            connectedComponent.forEach {
+                                writer.print('\"')
+                                writer.print(it.nameForGraphPrinting)
+                                writer.println("\" [root=true]")
+                                it.printDependencies(writer)
+                            }
                             writer.println('}')
                         }
                         writer.println('}')
