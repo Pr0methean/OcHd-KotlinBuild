@@ -127,8 +127,6 @@ suspend fun main(args: Array<String>) {
                             writer.print(index)
                             writer.println('{')
                             connectedComponent.forEach {
-                                writer.print('\"')
-                                writer.print(it.nameForGraphPrinting)
                                 it.printDependencies(writer)
                             }
                             writer.println('}')
