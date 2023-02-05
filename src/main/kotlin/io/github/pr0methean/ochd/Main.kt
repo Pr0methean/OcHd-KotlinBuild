@@ -121,6 +121,7 @@ suspend fun main(args: Array<String>) {
                     Paths.get("out", "graph.dot").toFile().printWriter(UTF_8).use { writer ->
                         // Strict because multiedges are possible
                         writer.println("strict digraph {")
+                        writer.println("\"OcHd\" [root=true]")
                         connectedComponents.forEachIndexed { index, connectedComponent ->
                             writer.print("subgraph cluster_")
                             writer.print(index)
@@ -128,10 +129,17 @@ suspend fun main(args: Array<String>) {
                             connectedComponent.forEach {
                                 writer.print('\"')
                                 writer.print(it.nameForGraphPrinting)
-                                writer.println("\" [root=true]")
                                 it.printDependencies(writer)
                             }
                             writer.println('}')
+                        }
+                        connectedComponents.forEach { connectedComponent ->
+                            connectedComponent.forEach {
+                                writer.print("\"OcHd\" -> \"")
+                                writer.print(it.nameForGraphPrinting)
+                                writer.println("\"")
+                                it.printDependencies(writer)
+                            }
                         }
                         writer.println('}')
                     }
