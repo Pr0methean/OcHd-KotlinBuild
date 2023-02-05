@@ -4,6 +4,7 @@ import com.sun.prism.impl.Disposer
 import io.github.pr0methean.ochd.ImageProcessingStats.onTaskCompleted
 import io.github.pr0methean.ochd.ImageProcessingStats.onTaskLaunched
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
+import io.github.pr0methean.ochd.tasks.AbstractTask
 import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.tasks.SvgToBitmapTask
 import io.github.pr0methean.ochd.tasks.mkdirsedPaths
@@ -117,22 +118,16 @@ suspend fun main(args: Array<String>) {
                     @Suppress("BlockingMethodInNonBlockingContext")
                     Paths.get("out").toFile().mkdirs()
                     Paths.get("out", "graph.dot").toFile().printWriter(UTF_8).use {
+                    Paths.get("out").toFile().mkdirs()
+                    Paths.get("out", "graph.dot").toFile().printWriter(UTF_8).use { writer ->
+                        // Strict because multiedges are possible
+                        writer.println("strict digraph {")
                         connectedComponents.forEach { connectedComponent ->
-                            it.println("subgraph {")
-                            connectedComponent.forEach { task ->
-                                // "task" -> {"dep1" "dep2" }
-                                it.print('\"')
-                                it.print(task)
-                                it.print("\" -> {")
-                                task.directDependencies.forEach { dependency ->
-                                    it.print('\"')
-                                    it.print(dependency)
-                                    it.print("\" ")
-                                }
-                                it.println('}')
-                            }
-                            it.println('}')
+                            writer.println("subgraph {")
+                            connectedComponent.forEach { it.printDependencies(writer) }
+                            writer.println('}')
                         }
+                        writer.println('}')
                     }
                 }
             }
@@ -182,6 +177,21 @@ suspend fun main(args: Array<String>) {
     logger.info("")
     logger.info("All tasks finished after {} ns", box(time))
     exitProcess(0)
+}
+
+private fun AbstractTask<*>.printDependencies(writer: PrintWriter) {
+    if (directDependencies.none()) return
+    // "task" -> {"dep1" "dep2" }
+    writer.print('\"')
+    writer.print(this)
+    writer.print("\" -> {")
+    directDependencies.forEach { dependency ->
+        writer.print('\"')
+        writer.print(dependency)
+        writer.print("\" ")
+    }
+    writer.println('}')
+    directDependencies.forEach { it.printDependencies(writer) }
 }
 
 @Suppress("ExplicitGarbageCollectionCall")
