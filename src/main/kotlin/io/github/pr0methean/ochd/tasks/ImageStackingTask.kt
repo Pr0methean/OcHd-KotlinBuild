@@ -37,7 +37,7 @@ class ImageStackingTask(
             buildString {
                 append(layers.background)
                 append(", ")
-                appendCollection(layers.layers, ",\n")
+                appendCollection(layers.layers, ",\\n")
             }
         } else name
     }
