@@ -21,7 +21,10 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox.box
+import java.io.BufferedOutputStream
 import java.io.File
+import java.io.PrintStream
+import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.Comparator.comparingDouble
 import java.util.Comparator.comparingInt
@@ -43,10 +46,11 @@ private val logger = LogManager.getRootLogger()
 private const val MAX_OUTPUT_TASKS_PER_CPU = 1.0
 
 private const val MIN_TILE_SIZE_FOR_EXPLICIT_GC = 2048
+private const val MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH = 32
 
 val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 
-@Suppress("UnstableApiUsage", "DeferredResultUnused")
+@Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod")
 suspend fun main(args: Array<String>) {
     if (args.isEmpty()) {
         println("Usage: main <size>")
@@ -104,7 +108,74 @@ suspend fun main(args: Array<String>) {
         onTaskCompleted("Build task graph", "Build task graph")
         gcIfUsingLargeTiles(tileSize)
         withContext(Dispatchers.Default) {
-            runAll(tasks, scope, maxOutputTaskJobs)
+            val ioJobs = ConcurrentHashMap.newKeySet<Job>()
+            val connectedComponents = if (tasks.size > maxOutputTaskJobs) {
+                tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks))
+                    .sortedByConnectedComponents()
+            } else setOf(tasks.toMutableList())
+            if (tileSize <= MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH) {
+                // Output connected components in .dot format
+                withContext(Dispatchers.IO) {
+                    @Suppress("BlockingMethodInNonBlockingContext")
+                    PrintStream(BufferedOutputStream(Files.newOutputStream(Paths.get("out", "graph.dot"))))
+                    .use {
+                        connectedComponents.forEach { connectedComponent ->
+                            it.println("subgraph {")
+                            connectedComponent.forEach { task ->
+                                // "task" -> {"dep1" "dep2" }
+                                it.print('\"')
+                                it.print(task)
+                                it.print("\" -> {")
+                                task.directDependencies.forEach { dependency ->
+                                    it.print('\"')
+                                    it.print(dependency)
+                                    it.print("\" ")
+                                }
+                                it.println('}')
+                            }
+                            it.println('}')
+                        }
+                    }
+                }
+            }
+            val inProgressJobs = HashMap<PngOutputTask, Job>()
+            val finishedJobsChannel = Channel<PngOutputTask>(capacity = maxOutputTaskJobs)
+            for (connectedComponent in connectedComponents) {
+                logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
+                while (connectedComponent.isNotEmpty()) {
+                    clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)
+                    val currentInProgressJobs = inProgressJobs.size
+                    if (currentInProgressJobs + connectedComponent.size <= maxOutputTaskJobs) {
+                        logger.info(
+                            "{} tasks in progress; starting all {} remaining tasks: {}",
+                            box(currentInProgressJobs), box(connectedComponent.size),
+                                    StringBuilder().appendCollection(connectedComponent, "; ")
+                        )
+                        connectedComponent.forEach {
+                            inProgressJobs[it] = startTask(scope, it, finishedJobsChannel, ioJobs)
+                        }
+                        connectedComponent.clear()
+                    } else if (currentInProgressJobs >= maxOutputTaskJobs) {
+                        logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
+                        inProgressJobs.remove(finishedJobsChannel.receive())
+                    } else {
+                        val task = connectedComponent.minWithOrNull(taskOrderComparator)
+                        checkNotNull(task) { "Could not get an unstarted task" }
+                        logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
+                        inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs)
+                        check(connectedComponent.remove(task)) { "Attempted to remove task more than once: $task" }
+                    }
+                }
+            }
+            logger.info("All jobs started; waiting for {} running jobs to finish", box(inProgressJobs.size))
+            while (inProgressJobs.isNotEmpty()) {
+                inProgressJobs.remove(finishedJobsChannel.receive())
+            }
+            logger.info("All jobs done; closing channel")
+            finishedJobsChannel.close()
+            logger.info("Waiting for remaining IO jobs to finish")
+            ioJobs.joinAll()
+            logger.info("All IO jobs are finished")
         }
     }
     stopMonitoring()
@@ -123,55 +194,6 @@ private fun gcIfUsingLargeTiles(tileSize: Int) {
             Disposer.cleanUp()
         }
     }
-}
-
-@Suppress("NestedBlockDepth")
-private suspend fun runAll(
-    tasks: Collection<PngOutputTask>,
-    scope: CoroutineScope,
-    maxJobs: Int
-) {
-    val ioJobs = ConcurrentHashMap.newKeySet<Job>()
-    val connectedComponents = if (tasks.size > maxJobs) {
-        tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks))
-            .sortedByConnectedComponents()
-    } else setOf(tasks.toMutableList())
-    val inProgressJobs = HashMap<PngOutputTask,Job>()
-    val finishedJobsChannel = Channel<PngOutputTask>(capacity = maxJobs)
-    for (connectedComponent in connectedComponents) {
-        logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
-        while (connectedComponent.isNotEmpty()) {
-            clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)
-            val currentInProgressJobs = inProgressJobs.size
-            if (currentInProgressJobs + connectedComponent.size <= maxJobs) {
-                logger.info(
-                    "{} tasks in progress; starting all {} remaining tasks: {}",
-                    box(currentInProgressJobs), box(connectedComponent.size),
-                            StringBuilder().appendCollection(connectedComponent, "; ")
-                )
-                connectedComponent.forEach { inProgressJobs[it] = startTask(scope, it, finishedJobsChannel, ioJobs) }
-                connectedComponent.clear()
-            } else if (currentInProgressJobs >= maxJobs) {
-                logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
-                inProgressJobs.remove(finishedJobsChannel.receive())
-            } else {
-                val task = connectedComponent.minWithOrNull(taskOrderComparator)
-                checkNotNull(task) { "Could not get an unstarted task" }
-                logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
-                inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs)
-                check(connectedComponent.remove(task)) { "Attempted to remove task more than once: $task" }
-            }
-        }
-    }
-    logger.info("All jobs started; waiting for {} running jobs to finish", box(inProgressJobs.size))
-    while (inProgressJobs.isNotEmpty()) {
-        inProgressJobs.remove(finishedJobsChannel.receive())
-    }
-    logger.info("All jobs done; closing channel")
-    finishedJobsChannel.close()
-    logger.info("Waiting for remaining IO jobs to finish")
-    ioJobs.joinAll()
-    logger.info("All IO jobs are finished")
 }
 
 private fun List<PngOutputTask>.sortedByConnectedComponents(): List<MutableSet<PngOutputTask>> {
