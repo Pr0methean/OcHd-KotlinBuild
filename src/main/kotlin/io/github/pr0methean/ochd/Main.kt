@@ -21,10 +21,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox.box
-import java.io.BufferedOutputStream
 import java.io.File
-import java.io.PrintStream
-import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.Comparator.comparingDouble
 import java.util.Comparator.comparingInt
@@ -32,6 +29,7 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentHashMap.KeySetView
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
+import kotlin.text.Charsets.UTF_8
 
 private val taskOrderComparator = comparingInt<PngOutputTask> {
     if (it.isCacheAllocationFreeOnMargin()) 0 else 1
@@ -117,8 +115,8 @@ suspend fun main(args: Array<String>) {
                 // Output connected components in .dot format
                 withContext(Dispatchers.IO) {
                     @Suppress("BlockingMethodInNonBlockingContext")
-                    PrintStream(BufferedOutputStream(Files.newOutputStream(Paths.get("out", "graph.dot"))))
-                    .use {
+                    Paths.get("out").toFile().mkdirs()
+                    Paths.get("out", "graph.dot").toFile().printWriter(UTF_8).use {
                         connectedComponents.forEach { connectedComponent ->
                             it.println("subgraph {")
                             connectedComponent.forEach { task ->
