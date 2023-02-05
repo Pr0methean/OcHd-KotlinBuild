@@ -13,6 +13,7 @@ import io.github.pr0methean.ochd.texturebase.Block
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
 import javafx.scene.paint.Color
+import javafx.scene.paint.Color.WHITE
 import javafx.scene.paint.Paint
 
 val mortarColor: Color = c(0xa2867d)
@@ -191,7 +192,7 @@ enum class SimplePickaxeBlock(
             background(color)
             layer("borderSolid", shadow)
             layer("checksSmall", highlight)
-            layer("lampOn", Color.WHITE)
+            layer("lampOn", WHITE)
         }
     },
     END_STONE(c(0xdeffa4),c(0xc5be8b),c(0xffffb4)) {
@@ -380,7 +381,7 @@ enum class SimplePickaxeBlock(
     CYAN_GLAZED_TERRACOTTA(c(0x828282), c(0x3a3a3a), c(0x009c9c)) {
         override fun LayerListBuilder.createTextureLayers() {
             background(color)
-            layer("strokeBottomLeftTopRight2", Color.WHITE)
+            layer("strokeBottomLeftTopRight2", WHITE)
             layer("strokeTopLeftBottomRight", highlight)
             layer("creeperFaceSmall", shadow)
         }
@@ -388,9 +389,10 @@ enum class SimplePickaxeBlock(
     LIGHT_BLUE_GLAZED_TERRACOTTA(c(0x2389c7), c(0x2d2d8f), c(0x57bddf)) {
         override fun LayerListBuilder.createTextureLayers() {
             // TODO: maybe add the parallelogram-shaped pieces and white corners?
-            background(highlight)
-            layer("checksLarge", shadow)
-            layer("emeraldTopLeft", Color.WHITE)
+            background(shadow)
+            layer("bottomHalf", WHITE)
+            layer("checksLarge", highlight)
+            layer("emeraldTopLeft", WHITE)
             layer("emeraldBottomRight", color)
         }
     }
