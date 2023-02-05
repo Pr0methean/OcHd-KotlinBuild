@@ -376,6 +376,15 @@ enum class SimplePickaxeBlock(
             layer("strokeTopLeftBottomRight", highlight)
             layer("creeperFace", shadow)
         }
+    },
+    LIGHT_BLUE_GLAZED_TERRACOTTA(c(0x2389c7), c(0x2d2d8f), c(0x57bddf)) {
+        override fun LayerListBuilder.createTextureLayers() {
+            // TODO: maybe add the parallelogram-shaped pieces and white corners?
+            background(highlight)
+            layer("checksLarge", shadow)
+            layer("emeraldTopLeft", Color.WHITE)
+            layer("emeraldBottomRight", color)
+        }
     }
     ;
 
