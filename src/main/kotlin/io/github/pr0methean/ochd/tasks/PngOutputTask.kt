@@ -26,7 +26,7 @@ class PngOutputTask(
     val base: AbstractTask<Image>,
     val files: List<File>,
     ctx: CoroutineContext,
-): AbstractTask<Unit>("Output $name", noopDeferredTaskCache(), ctx) {
+): AbstractTask<Unit>(name, noopDeferredTaskCache(), ctx) {
     override val directDependencies: Iterable<AbstractTask<*>> = listOf(base)
     private val ioScope = coroutineScope.plus(Dispatchers.IO)
     override fun mergeWithDuplicate(other: AbstractTask<*>): AbstractTask<Unit> {
@@ -72,8 +72,6 @@ class PngOutputTask(
             writeFirstFile
         }
     }
-
-    val isCommandBlock: Boolean = name.contains("command_block")
 
     init {
         check(files.isNotEmpty()) { "PngOutputTask $name has no destination files" }

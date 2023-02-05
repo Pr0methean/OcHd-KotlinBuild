@@ -2,6 +2,7 @@ package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.LayerList
+import io.github.pr0methean.ochd.appendCollection
 import io.github.pr0methean.ochd.isShallowCopyOf
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import javafx.scene.SnapshotParameters
@@ -29,6 +30,16 @@ class ImageStackingTask(
         return (this === other) || (other is ImageStackingTask
                 && other.layers == layers)
     }
+
+    // An ImageStackingTask that contains a RepaintTask is too long for one line on the graph.
+    override val nameForGraphPrinting: String
+        get() = if (layers.layers.any { it is RepaintTask }) {
+                buildString {
+                    append(layers.background)
+                    append(", ")
+                    appendCollection(layers.layers, ",\n")
+                }
+            } else name
 
     init {
         require(layers.layers.isNotEmpty()) { "Empty layer list" }

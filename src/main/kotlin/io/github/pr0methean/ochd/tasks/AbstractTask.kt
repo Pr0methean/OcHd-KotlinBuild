@@ -34,6 +34,8 @@ abstract class AbstractTask<out T>(
         CoroutineScope(ctx.plus(CoroutineName(name)))
     }
 
+    open val nameForGraphPrinting = name
+
     val mutex: Mutex = Mutex()
 
     @GuardedBy("mutex")
