@@ -2,7 +2,6 @@ package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.LayerList
-import io.github.pr0methean.ochd.appendCollection
 import io.github.pr0methean.ochd.isShallowCopyOf
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import javafx.scene.SnapshotParameters
@@ -36,8 +35,9 @@ class ImageStackingTask(
         if (layers.layers.any { it is RepaintTask }) {
             buildString {
                 append(layers.background)
-                append(", ")
-                appendCollection(layers.layers, ",\\n")
+                layers.layers.forEach {
+                    append(",\\n").append(it.nameForGraphPrinting)
+                }
             }
         } else name
     }
