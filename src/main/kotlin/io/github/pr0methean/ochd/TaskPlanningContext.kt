@@ -69,7 +69,7 @@ class TaskPlanningContext(
             -> deduplicate(if (task.paint.isOpaque) {
                 task.base
             } else if (task.base.paint is Color) {
-                layerNoDedup(task.base, task.base.paint, task.base.paint.opacity)
+                layerNoDedup(task.base, task.base.paint)
             } else task)
             task is ImageStackingTask
                     && task.layers.layers.size == 1
@@ -113,7 +113,7 @@ class TaskPlanningContext(
 
 
     fun layer(name: String, paint: Paint, alpha: Double = 1.0): AbstractImageTask
-            = deduplicate(layerNoDedup(findSvgTask(name), paint, alpha))
+            = deduplicate(layerNoDedup(findSvgTask(name), paint * alpha))
 
     fun layer(
         source: AbstractImageTask,
@@ -122,15 +122,14 @@ class TaskPlanningContext(
     ): AbstractImageTask {
         logger.debug("layer({},{},{})", source, paint, alpha)
         return deduplicate(
-            layerNoDedup(deduplicate(source), paint, alpha)
+            layerNoDedup(deduplicate(source), paint * alpha)
         )
     }
 
     fun layerNoDedup(
         source: AbstractImageTask,
-        paint: Paint,
-        alpha: Double
-    ): RepaintTask = RepaintTask(source, paint * alpha, ::HardTaskCache, ctx)
+        paint: Paint
+    ): RepaintTask = RepaintTask(source, paint, ::HardTaskCache, ctx)
 
     inline fun stack(init: LayerListBuilder.() -> Unit): AbstractImageTask {
         val layerTasksBuilder = LayerListBuilder(this)

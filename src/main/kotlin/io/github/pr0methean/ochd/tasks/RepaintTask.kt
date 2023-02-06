@@ -78,16 +78,20 @@ AbstractImageTask(name, cache, ctx, base.width, base.width) {
     private suspend fun renderOntoInternal(context: () -> GraphicsContext, x: Double, y: Double) {
         ImageProcessingStats.onTaskLaunched("RepaintTask", name)
         val ctx = context()
-        if (ctx.getEffect(null) != null) {
+        if (ctx.getEffect(null) != null ||
+                ctx.canvas.opacity != paint.opacity()) {
             // Can't chain effects
             super.renderOnto({ ctx }, x, y)
             return
         }
-        val colorLayer = ColorInput(0.0, 0.0, ctx.canvas.width, ctx.canvas.height, paint)
+        val colorLayer = ColorInput(0.0, 0.0, ctx.canvas.width, ctx.canvas.height, paint.toOpaque())
         val blend = Blend()
         blend.mode = SRC_ATOP
         blend.topInput = colorLayer
         blend.bottomInput = null
+        if (paint is Color && paint.opacity != 1.0) {
+            ctx.canvas.opacity = paint.opacity
+        }
         ctx.setEffect(blend)
         base.renderOnto({ ctx }, x, y)
         base.removeDirectDependentTask(this)
@@ -133,4 +137,24 @@ AbstractImageTask(name, cache, ctx, base.width, base.width) {
                 && other.base == base
                 && other.paint == paint)
     }
+}
+
+private fun Paint.opacity(): Double {
+    if (this.isOpaque) {
+        return 1.0
+    }
+    if (this is Color) {
+        return opacity
+    }
+    error("Can't determine opacity")
+}
+
+private fun Paint.toOpaque(): Paint {
+    if (this.isOpaque) {
+        return this
+    }
+    if (this is Color) {
+        return Color(red, green, blue, 1.0)
+    }
+    error("Can't convert $this to opaque")
 }

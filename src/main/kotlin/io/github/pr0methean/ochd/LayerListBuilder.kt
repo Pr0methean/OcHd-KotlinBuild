@@ -29,14 +29,14 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
     }
 
     fun layer(name: String, paint: Paint, alpha: Double = 1.0) {
-        val layer = ctx.layerNoDedup(ctx.findSvgTask(name), paint, alpha)
+        val layer = ctx.layerNoDedup(ctx.findSvgTask(name), paint * alpha)
         copy(layer)
     }
 
     fun layer(
         source: AbstractImageTask, paint: Paint, alpha: Double = 1.0
     ) {
-        val layer = ctx.layerNoDedup(source, paint, alpha)
+        val layer = ctx.layerNoDedup(source, paint * alpha)
         copy(layer)
     }
 
@@ -72,7 +72,7 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
                 ctx.stack(
                     LayerList(listOf(currentTop.base, element.base), Color.TRANSPARENT, ctx.tileSize, ctx.tileSize)
                 ),
-                element.paint, 1.0
+                element.paint
             )
             layers.add(combinedRepaint)
         } else {
