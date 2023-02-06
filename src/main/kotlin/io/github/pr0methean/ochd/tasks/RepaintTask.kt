@@ -68,8 +68,13 @@ AbstractImageTask(name, cache, ctx, base.width, base.width) {
     }
 
     override suspend fun renderOnto(contextSupplier: () -> GraphicsContext, x: Double, y: Double) {
-        if (shouldRenderForCaching() || (paint is Color && paint.opacity != 1.0)) {
+        if (shouldRenderForCaching()) {
             super.renderOnto(contextSupplier, x, y)
+        } else if (paint.opacity() != 1.0) {
+            val context = contextSupplier()
+            if (context.canvas.opacity == paint.opacity()) {
+                renderOntoInternal(contextSupplier, x, y)
+            } else super.renderOnto(contextSupplier, x, y)
         } else {
             renderOntoInternal(contextSupplier, x, y)
         }
@@ -112,7 +117,7 @@ AbstractImageTask(name, cache, ctx, base.width, base.width) {
 
     @Suppress("DeferredResultUnused", "ComplexCondition")
     override suspend fun perform(): Image {
-        val canvas by lazy(::createCanvas)
+        val canvas by lazy { createCanvas().also { it.opacity = paint.opacity() } }
         renderOntoInternal({ canvas.graphicsContext2D }, 0.0, 0.0)
         val snapshot = snapshotCanvas(canvas)
         if (paint is Color && paint.opacity == 1.0 && cache.isEnabled() && base.cache.isEnabled()
