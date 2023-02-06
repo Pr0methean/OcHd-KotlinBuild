@@ -60,7 +60,7 @@ class RepaintTask(
     }
 
     override suspend fun renderOnto(contextSupplier: () -> GraphicsContext, x: Double, y: Double) {
-        if (shouldRenderForCaching() || (paint is Color && paint.opacity != 1.0)) {
+        if (shouldRenderForCaching()) {
             super.renderOnto(contextSupplier, x, y)
         } else {
             renderOntoInternal(contextSupplier, x, y)
@@ -75,6 +75,9 @@ class RepaintTask(
         blend.mode = SRC_ATOP
         blend.topInput = colorLayer
         blend.bottomInput = null
+        if (paint is Color) {
+            blend.opacity = paint.opacity
+        }
         ctx.setEffect(blend)
         base.renderOnto({ ctx }, x, y)
         base.removeDirectDependentTask(this)
