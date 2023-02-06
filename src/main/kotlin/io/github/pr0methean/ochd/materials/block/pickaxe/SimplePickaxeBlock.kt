@@ -418,6 +418,7 @@ enum class SimplePickaxeBlock(
         override fun LayerListBuilder.createTextureLayers() {
             background(shadow)
             layer("strokeTopLeftBottomRight4", highlight)
+            layer("cornersTri", shadow)
             layer("fishTail", shadow)
             layer("fishFins", shadow)
             layer("fishBody", color)
