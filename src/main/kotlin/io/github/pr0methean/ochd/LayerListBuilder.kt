@@ -11,11 +11,7 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
     private val layers: MutableList<AbstractImageTask> = mutableListOf()
     var background: Paint = Color.TRANSPARENT
     fun background(paint: Paint, opacity: Double = 1.0) {
-        background = if (opacity == 1.0 || paint !is Color) {
-            paint
-        } else {
-            Color(paint.red, paint.green, paint.blue, opacity * paint.opacity)
-        }
+        background = paint * opacity
     }
 
     fun background(red: Int, green: Int, blue: Int) {
