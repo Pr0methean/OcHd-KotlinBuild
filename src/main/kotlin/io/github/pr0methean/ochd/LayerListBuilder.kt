@@ -10,10 +10,11 @@ import javafx.scene.paint.Paint
 class LayerListBuilder(val ctx: TaskPlanningContext) {
     private val layers: MutableList<AbstractImageTask> = mutableListOf()
     var background: Paint = Color.TRANSPARENT
-    fun background(paint: Paint, opacity: Double = 1.0) {
+
+    fun background(paint: Paint) {
         check(layers.isEmpty()) { "Background would overwrite layers: $layers" }
         check(background == Color.TRANSPARENT) { "Background would overwrite another background: $background " }
-        background = paint * opacity
+        background = paint
     }
 
     fun background(red: Int, green: Int, blue: Int) {
@@ -45,14 +46,12 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
 
     fun copy(source: LayerList) {
         check(source.layers.isNotEmpty()) { "Copying from empty LayerList" }
-        if (source.background != Color.TRANSPARENT) {
-            check(background == Color.TRANSPARENT) { "Source's background would overwrite an existing background" }
-            check(layers.isEmpty()) { "Source's background would overwrite an existing layer" }
-        }
         if (source.layers.size > 1) { // Don't flatten sub-stacks since we want to deduplicate them at build time
             copy(ctx.stackNoDedup(source))
         } else {
-            background = source.background
+            if (source.background != Color.TRANSPARENT) {
+                background(source.background)
+            }
             copy(source.layers[0])
         }
     }

@@ -70,11 +70,6 @@ AbstractImageTask(name, cache, ctx, base.width, base.width) {
     override suspend fun renderOnto(contextSupplier: () -> GraphicsContext, x: Double, y: Double) {
         if (shouldRenderForCaching()) {
             super.renderOnto(contextSupplier, x, y)
-        } else if (paint.opacity() != 1.0) {
-            val context = contextSupplier()
-            if (context.canvas.opacity == paint.opacity()) {
-                renderOntoInternal(contextSupplier, x, y)
-            } else super.renderOnto(contextSupplier, x, y)
         } else {
             renderOntoInternal(contextSupplier, x, y)
         }
@@ -83,8 +78,7 @@ AbstractImageTask(name, cache, ctx, base.width, base.width) {
     private suspend fun renderOntoInternal(context: () -> GraphicsContext, x: Double, y: Double) {
         ImageProcessingStats.onTaskLaunched("RepaintTask", name)
         val ctx = context()
-        if (ctx.getEffect(null) != null ||
-                ctx.canvas.opacity != paint.opacity()) {
+        if (ctx.getEffect(null) != null) {
             // Can't chain effects
             super.renderOnto({ ctx }, x, y)
             return
@@ -94,12 +88,12 @@ AbstractImageTask(name, cache, ctx, base.width, base.width) {
         blend.mode = SRC_ATOP
         blend.topInput = colorLayer
         blend.bottomInput = null
-        if (paint is Color && paint.opacity != 1.0) {
-            ctx.canvas.opacity = paint.opacity
-        }
         ctx.setEffect(blend)
+        val oldAlpha = ctx.globalAlpha
+        ctx.globalAlpha = oldAlpha * paint.opacity()
         base.renderOnto({ ctx }, x, y)
         base.removeDirectDependentTask(this)
+        ctx.globalAlpha = oldAlpha
         ctx.setEffect(null)
         ImageProcessingStats.onTaskCompleted("RepaintTask", name)
     }

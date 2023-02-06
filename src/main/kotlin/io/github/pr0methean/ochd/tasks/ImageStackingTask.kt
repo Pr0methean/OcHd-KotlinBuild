@@ -7,6 +7,7 @@ import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import javafx.scene.SnapshotParameters
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.image.Image
+import javafx.scene.paint.Color
 import org.apache.logging.log4j.LogManager
 import java.util.*
 import kotlin.coroutines.CoroutineContext
@@ -85,6 +86,11 @@ class ImageStackingTask(
     override suspend fun renderOnto(contextSupplier: () -> GraphicsContext, x: Double, y: Double) {
         if (shouldRenderForCaching()) {
             super.renderOnto(contextSupplier, x, y)
+        } else if (layers.background != Color.TRANSPARENT) {
+            val context = contextSupplier()
+            context.fill = layers.background
+            context.fillRect(0.0, 0.0, x, y)
+            renderOntoInternal( {context}, x, y, layers.layers)
         } else {
             renderOntoInternal(contextSupplier, x, y, layers.layers)
         }

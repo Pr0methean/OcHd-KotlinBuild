@@ -4,6 +4,7 @@ import io.github.pr0methean.ochd.LayerListBuilder
 import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.tasks.AbstractImageTask
 import io.github.pr0methean.ochd.texturebase.DyedBlock
+import io.github.pr0methean.ochd.times
 import javafx.scene.paint.Color
 
 /**
@@ -18,7 +19,7 @@ object StainedGlassFront: DyedBlock("stained_glass") {
     }
 
     override fun createSharedLayersTask(ctx: TaskPlanningContext): AbstractImageTask = ctx.stack {
-        background(Color.BLACK, 0.25)
+        background(Color.BLACK * 0.25)
         layer("borderSolid")
         layer("streaks")
     }
