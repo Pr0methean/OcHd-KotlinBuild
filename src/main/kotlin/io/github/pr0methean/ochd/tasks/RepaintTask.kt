@@ -2,6 +2,7 @@ package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
+import io.github.pr0methean.ochd.times
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.effect.Blend
 import javafx.scene.effect.BlendMode.SRC_ATOP
@@ -28,28 +29,35 @@ private val logger = LogManager.getLogger("RepaintTask")
  */
 @Suppress("EqualsWithHashCodeExist", "EqualsOrHashCode")
 class RepaintTask(
-    base: AbstractImageTask,
-    paint: Paint,
-    alpha: Double = 1.0,
-    cache: DeferredTaskCache<Image>,
-    ctx: CoroutineContext
-): AbstractImageTask("{$base}@$paint", cache, ctx, base.width, base.height) {
+        name: String,
+        base: AbstractImageTask,
+        paint: Paint,
+        cache: DeferredTaskCache<Image>,
+        ctx: CoroutineContext):
+AbstractImageTask(name, cache, ctx, base.width, base.width) {
+
+    constructor(base: AbstractImageTask, paint: Paint, cache: (String) -> DeferredTaskCache<Image>,
+            ctx: CoroutineContext):
+            this("{$base}@$paint", base, paint, cache, ctx)
+
+    constructor(name: String,
+                base: AbstractImageTask,
+                paint: Paint,
+                cache: (String) -> DeferredTaskCache<Image>,
+                ctx: CoroutineContext):
+            this(name, base, paint, cache(name), ctx)
 
     val base: AbstractImageTask
     val paint: Paint
 
     init {
         var realBase = base
-        var realAlpha = alpha
+        var realAlphaMult = 1.0
         while (realBase is RepaintTask) {
-            realAlpha *= (realBase.paint as? Color)?.opacity ?: 1.0
+            realAlphaMult *= (realBase.paint as? Color)?.opacity ?: 1.0
             realBase = realBase.base
         }
-        this.paint = if (realAlpha == 1.0) {
-            paint
-        } else if (paint is Color) {
-            Color(paint.red, paint.green, paint.blue, paint.opacity * realAlpha)
-        } else error("Can't implement transparency")
+        this.paint = paint * realAlphaMult
         this.base = realBase
     }
 
@@ -92,7 +100,7 @@ class RepaintTask(
             logger.debug("Merging RepaintTask {} with duplicate {}", name, other.name)
             val newBase = base.mergeWithDuplicate(other.base)
             if (newBase !== base) {
-                return RepaintTask(newBase, paint, 1.0, cache, ctx)
+                return RepaintTask(name, newBase, paint, cache, ctx)
             }
         }
         return super.mergeWithDuplicate(other)

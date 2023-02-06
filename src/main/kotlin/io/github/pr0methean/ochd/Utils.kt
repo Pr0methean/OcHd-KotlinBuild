@@ -2,6 +2,7 @@ package io.github.pr0methean.ochd
 
 import javafx.scene.SnapshotParameters
 import javafx.scene.paint.Color
+import javafx.scene.paint.Paint
 import org.apache.logging.log4j.util.StringBuilderFormattable
 
 @Suppress("MagicNumber")
@@ -22,6 +23,12 @@ val DEFAULT_SNAPSHOT_PARAMS: SnapshotParameters = SnapshotParameters().also {
 fun <T> List<T>.isShallowCopyOf(other: List<T>): Boolean {
     return this === other || (size == other.size && indices.all { this[it] === other[it] })
 }
+
+operator fun Paint.times(alpha: Double): Paint = if (alpha == 1.0) {
+    this
+} else if (this is Color) {
+    Color(red, green, blue, opacity * alpha)
+} else error("Alpha multiplier not implemented for non-Color paints")
 
 fun StringBuilder.appendCollection(
         collection: Collection<StringBuilderFormattable>, delim: String = ", "): StringBuilder {

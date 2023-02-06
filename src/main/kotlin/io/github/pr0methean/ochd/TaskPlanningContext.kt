@@ -130,7 +130,7 @@ class TaskPlanningContext(
         source: AbstractImageTask,
         paint: Paint,
         alpha: Double
-    ): RepaintTask = RepaintTask(source, paint, alpha, HardTaskCache("$source@$paint@$alpha"), ctx)
+    ): RepaintTask = RepaintTask(source, paint * alpha, ::HardTaskCache, ctx)
 
     inline fun stack(init: LayerListBuilder.() -> Unit): AbstractImageTask {
         val layerTasksBuilder = LayerListBuilder(this)
