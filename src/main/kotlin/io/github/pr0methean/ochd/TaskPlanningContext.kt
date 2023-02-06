@@ -66,11 +66,10 @@ class TaskPlanningContext(
             -> InvalidTask as TTask
             task is RepaintTask
                     && (task.paint == null || task.paint == Color.BLACK)
-                    && task.alpha == 1.0
             -> deduplicate(task.base)
             task is RepaintTask
                     && (task.base is RepaintTask && task.paint == task.base.paint)
-            -> deduplicate(RepaintTask(task.base, task.paint, task.alpha * task.base.alpha,
+            -> deduplicate(RepaintTask(task.base, task.paint, 1.0,
                     HardTaskCache(task.name), task.base.ctx))
             task is ImageStackingTask
                     && task.layers.layers.size == 1
@@ -127,7 +126,7 @@ class TaskPlanningContext(
         source: AbstractImageTask,
         paint: Paint?,
         alpha: Double
-    ) = RepaintTask(source, paint, alpha, HardTaskCache("$source@$paint@$alpha"), ctx)
+    ): RepaintTask = RepaintTask(source, paint, alpha, HardTaskCache("$source@$paint@$alpha"), ctx)
 
     inline fun stack(init: LayerListBuilder.() -> Unit): AbstractImageTask {
         val layerTasksBuilder = LayerListBuilder(this)
@@ -170,7 +169,7 @@ class TaskPlanningContext(
         return deduplicate(stackNoDedup(layers))
     }
 
-    fun stackNoDedup(layers: LayerList) = ImageStackingTask(
+    fun stackNoDedup(layers: LayerList): ImageStackingTask = ImageStackingTask(
         layers, HardTaskCache(layers.toString()), ctx
     )
 }

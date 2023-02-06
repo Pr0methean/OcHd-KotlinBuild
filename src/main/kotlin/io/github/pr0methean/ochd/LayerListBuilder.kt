@@ -39,7 +39,7 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
         copy(layer)
     }
 
-    inline fun copy(sourceInit: LayerListBuilder.() -> Unit) =
+    inline fun copy(sourceInit: LayerListBuilder.() -> Unit): Unit =
         copy(LayerListBuilder(ctx).apply(sourceInit).build())
 
     fun copy(source: LayerList) {
@@ -65,14 +65,13 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
         val currentTop = layers.lastOrNull()
         if (element is RepaintTask && currentTop is RepaintTask
             && element.paint == currentTop.paint
-            && element.alpha == currentTop.alpha
         ) {
             layers.removeLast()
             val combinedRepaint = ctx.layerNoDedup(
                 ctx.stack(
                     LayerList(listOf(currentTop.base, element.base), Color.TRANSPARENT, ctx.tileSize, ctx.tileSize)
                 ),
-                element.paint, element.alpha
+                element.paint, 1.0
             )
             layers.add(combinedRepaint)
         } else {
