@@ -413,6 +413,15 @@ enum class SimplePickaxeBlock(
             layer("cornerRoundTopLeft", shadow)
         }
     },
+    PINK_GLAZED_TERRACOTTA(c(0xf38baa), c(0xd6658f), c(0xffb5cb)) {
+        override fun LayerListBuilder.createTextureLayers() {
+            background(shadow)
+            layer("strokeTopLeftBottomRight4", highlight)
+            layer("fishTail", shadow)
+            layer("fishFins", shadow)
+            layer("fishBody", color)
+        }
+    },
     MAGENTA_GLAZED_TERRACOTTA(c(0xdc68dc), c(0xae33ae), c(0xffa5bf)) {
         override fun LayerListBuilder.createTextureLayers() {
             background(shadow)
