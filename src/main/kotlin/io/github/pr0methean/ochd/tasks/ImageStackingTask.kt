@@ -7,7 +7,7 @@ import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import javafx.scene.SnapshotParameters
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.image.Image
-import javafx.scene.paint.Color
+import javafx.scene.paint.Color.TRANSPARENT
 import org.apache.logging.log4j.LogManager
 import java.util.*
 import kotlin.coroutines.CoroutineContext
@@ -61,7 +61,7 @@ class ImageStackingTask(
 
     @Suppress("DeferredResultUnused")
     override suspend fun perform(): Image {
-        val canvas by lazy(::createCanvas)
+        val canvas = createCanvas()
         renderOntoInternal({ canvas.graphicsContext2D }, 0.0, 0.0, layers.layers)
         logger.debug("Taking snapshot of {}", name)
         val params = SnapshotParameters()
@@ -76,6 +76,11 @@ class ImageStackingTask(
         layers: List<AbstractImageTask>
     ) {
         ImageProcessingStats.onTaskLaunched("ImageStackingTask", name)
+        if (this.layers.background != TRANSPARENT) {
+            val context = canvasCtxSupplier()
+            context.fill = this.layers.background
+            context.fillRect(0.0, 0.0, context.canvas.width, context.canvas.height)
+        }
         layers.forEach {
             it.renderOnto(canvasCtxSupplier, x, y)
             it.removeDirectDependentTask(this@ImageStackingTask)
@@ -86,13 +91,9 @@ class ImageStackingTask(
     override suspend fun renderOnto(contextSupplier: () -> GraphicsContext, x: Double, y: Double) {
         if (shouldRenderForCaching()) {
             super.renderOnto(contextSupplier, x, y)
-        } else if (layers.background != Color.TRANSPARENT) {
-            val context = contextSupplier()
-            context.fill = layers.background
-            context.fillRect(0.0, 0.0, x, y)
-            renderOntoInternal( {context}, x, y, layers.layers)
         } else {
             renderOntoInternal(contextSupplier, x, y, layers.layers)
         }
     }
+
 }
