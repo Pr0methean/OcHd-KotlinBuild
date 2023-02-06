@@ -16,9 +16,10 @@ enum class OreBase(
 ) : Block, ShadowHighlightMaterial {
     STONE(c(0x888888), c(0x737373), c(0xaaaaaa), "") {
         override fun LayerListBuilder.createTextureLayers() {
-            background(STONE.shadow)
-            layer("checksLarge", STONE.highlight)
-            layer("borderDotted", STONE.color)
+            background(color)
+            layer("checksQuarterCircles", highlight)
+            layer("checksQuarterCircles", shadow)
+            layer("sunflowerPistil, color")
         }
     },
     DEEPSLATE(c(0x515151), c(0x2f2f3f), c(0x737373), "deepslate_") {
