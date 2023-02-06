@@ -112,7 +112,7 @@ AbstractImageTask(name, cache, ctx, base.width, base.width) {
 
     @Suppress("DeferredResultUnused", "ComplexCondition")
     override suspend fun perform(): Image {
-        val canvas by lazy { createCanvas().also { it.opacity = paint.opacity() } }
+        val canvas by lazy(::createCanvas)
         renderOntoInternal({ canvas.graphicsContext2D }, 0.0, 0.0)
         val snapshot = snapshotCanvas(canvas)
         if (paint is Color && paint.opacity == 1.0 && cache.isEnabled() && base.cache.isEnabled()
