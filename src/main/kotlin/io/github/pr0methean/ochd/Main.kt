@@ -132,7 +132,7 @@ suspend fun main(args: Array<String>) {
                         connectedComponents.forEach { connectedComponent ->
                             connectedComponent.forEach {
                                 writer.print("\"OcHd\" -> \"")
-                                writer.print(it.nameForGraphPrinting)
+                                it.appendForGraphPrinting(writer)
                                 writer.println("\"")
                                 it.printDependencies(writer)
                             }

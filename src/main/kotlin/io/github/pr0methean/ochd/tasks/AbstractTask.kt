@@ -35,7 +35,9 @@ abstract class AbstractTask<out T>(
         CoroutineScope(ctx.plus(CoroutineName(name)))
     }
 
-    open val nameForGraphPrinting: String = name
+    open fun appendForGraphPrinting(appendable: Appendable) {
+        appendable.append(name)
+    }
 
     val mutex: Mutex = Mutex()
 
@@ -194,11 +196,11 @@ abstract class AbstractTask<out T>(
         if (directDependencies.none()) return
         // "task" -> {"dep1" "dep2" }
         writer.print('\"')
-        writer.print(nameForGraphPrinting)
+        appendForGraphPrinting(writer)
         writer.print("\" -> {")
         directDependencies.forEach { dependency ->
             writer.print('\"')
-            writer.print(dependency.nameForGraphPrinting)
+            dependency.appendForGraphPrinting(writer)
             writer.print("\" ")
         }
         writer.println('}')

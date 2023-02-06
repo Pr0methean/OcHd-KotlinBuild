@@ -31,13 +31,12 @@ class ImageStackingTask(
     }
 
     // An ImageStackingTask that contains a RepaintTask is too long for one line on the graph.
-    override val nameForGraphPrinting: String by lazy {
-        if (layers.layers.any { it is RepaintTask || it.nameForGraphPrinting.contains("\\n") }) {
-            buildString {
-                append(layers.background)
-                layers.layers.forEach {
-                    append(",\\n").append(it.nameForGraphPrinting)
-                }
+    override fun appendForGraphPrinting(appendable: Appendable) {
+        if (layers.layers.any { it is RepaintTask || it is ImageStackingTask }) {
+            appendable.append(layers.background.toString())
+            layers.layers.forEach {
+                appendable.append(",\\n")
+                it.appendForGraphPrinting(appendable)
             }
         } else name
     }

@@ -53,14 +53,11 @@ class RepaintTask(
         this.base = realBase
     }
 
-    override val nameForGraphPrinting: String by lazy { buildString {
-        val baseName = base.nameForGraphPrinting
-        append('{').append(baseName).append('}')
-        if (baseName.contains("\\n")) {
-            append("\\n")
-        }
-        append('@').append(paint).append('@').append(alpha)
-    } }
+    override fun appendForGraphPrinting(appendable: Appendable) {
+        appendable.append('{')
+        base.appendForGraphPrinting(appendable)
+        appendable.append("}@").append(this.paint.toString())
+    }
 
     override suspend fun renderOnto(contextSupplier: () -> GraphicsContext, x: Double, y: Double) {
         if (shouldRenderForCaching() || (paint is Color && paint.opacity != 1.0)) {
