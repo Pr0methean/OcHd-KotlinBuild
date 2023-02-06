@@ -4,7 +4,6 @@ import com.sun.prism.impl.Disposer
 import io.github.pr0methean.ochd.ImageProcessingStats.onTaskCompleted
 import io.github.pr0methean.ochd.ImageProcessingStats.onTaskLaunched
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
-import io.github.pr0methean.ochd.tasks.AbstractTask
 import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.tasks.SvgToBitmapTask
 import io.github.pr0methean.ochd.tasks.mkdirsedPaths
@@ -23,7 +22,6 @@ import kotlinx.coroutines.withContext
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox.box
 import java.io.File
-import java.io.PrintWriter
 import java.nio.file.Paths
 import java.util.Comparator.comparingDouble
 import java.util.Comparator.comparingInt
@@ -189,21 +187,6 @@ suspend fun main(args: Array<String>) {
     logger.info("")
     logger.info("All tasks finished after {} ns", box(time))
     exitProcess(0)
-}
-
-private fun AbstractTask<*>.printDependencies(writer: PrintWriter) {
-    if (directDependencies.none()) return
-    // "task" -> {"dep1" "dep2" }
-    writer.print('\"')
-    writer.print(nameForGraphPrinting)
-    writer.print("\" -> {")
-    directDependencies.forEach { dependency ->
-        writer.print('\"')
-        writer.print(dependency.nameForGraphPrinting)
-        writer.print("\" ")
-    }
-    writer.println('}')
-    directDependencies.forEach { it.printDependencies(writer) }
 }
 
 @Suppress("ExplicitGarbageCollectionCall")

@@ -13,6 +13,7 @@ import kotlinx.coroutines.sync.withLock
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import org.apache.logging.log4j.util.StringBuilderFormattable
+import java.io.PrintWriter
 import java.util.Collections.newSetFromMap
 import java.util.WeakHashMap
 import javax.annotation.concurrent.GuardedBy
@@ -34,7 +35,7 @@ abstract class AbstractTask<out T>(
         CoroutineScope(ctx.plus(CoroutineName(name)))
     }
 
-    open val nameForGraphPrinting = name
+    open val nameForGraphPrinting: String = name
 
     val mutex: Mutex = Mutex()
 
@@ -162,7 +163,7 @@ abstract class AbstractTask<out T>(
         return this
     }
 
-    fun isStartedOrAvailable(): Boolean = cache.getNowAsync()?.run { isActive || isCompleted } ?: false
+    private fun isStartedOrAvailable(): Boolean = cache.getNowAsync()?.run { isActive || isCompleted } ?: false
 
     fun cacheableSubtasks(): Int {
         var subtasks = if (cache.isEnabled()) 1 else 0
@@ -170,24 +171,6 @@ abstract class AbstractTask<out T>(
             subtasks += task.cacheableSubtasks()
         }
         return subtasks
-    }
-
-    /**
-     * Number of new entries that will be added to the cache if this task runs now, minus the number that
-     * will be removed. Used to prioritize tasks when memory is low.
-     */
-    suspend fun netAddedToCache(): Int {
-        var netAdded = if (!cache.isEnabled()) {
-            0
-        } else if (isStartedOrAvailable()) {
-            if (mutex.withLock { directDependentTasks.size == 1 }) -1 else 0
-        } else if (mutex.withLock { directDependentTasks.size >= 2 }) {
-            1
-        } else 0
-        for (task in directDependencies) {
-            netAdded += task.netAddedToCache()
-        }
-        return netAdded
     }
 
     /**
@@ -202,6 +185,24 @@ abstract class AbstractTask<out T>(
             return false
         }
         return directDependencies.all(AbstractTask<*>::isCacheAllocationFreeOnMargin)
+    }
+
+    /**
+     * Prints the dependency edges originating from this task in graphviz format.
+     */
+    fun printDependencies(writer: PrintWriter) {
+        if (directDependencies.none()) return
+        // "task" -> {"dep1" "dep2" }
+        writer.print('\"')
+        writer.print(nameForGraphPrinting)
+        writer.print("\" -> {")
+        directDependencies.forEach { dependency ->
+            writer.print('\"')
+            writer.print(dependency.nameForGraphPrinting)
+            writer.print("\" ")
+        }
+        writer.println('}')
+        directDependencies.forEach { it.printDependencies(writer) }
     }
 
     /**
