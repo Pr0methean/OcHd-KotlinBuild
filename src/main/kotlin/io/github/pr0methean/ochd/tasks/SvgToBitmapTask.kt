@@ -26,6 +26,29 @@ private fun getHeight(name: String, width: Int): Int = if (name.contains("comman
     FRAMES_PER_COMMAND_BLOCK_TEXTURE * width
 } else width
 
+private val coloredSvgNames = setOf(
+    "bed",
+    "blastFurnaceHoles",
+    "blastFurnaceHoles1",
+    "bonemeal",
+    "bonemealSmall",
+    "bonemealSmallNoBorder",
+    "bookShelves",
+    "chain",
+    "commandBlockChains",
+    "commandBlockChains4x",
+    "commandBlockGrid",
+    "commandBlockGridFront",
+    "doorKnob",
+    "furnaceFrontLit",
+    "loopArrow4x",
+    "soulFlameTorch",
+    "soulFlameTorchSmall",
+    "torchFlame",
+    "torchFlameSmall",
+    
+)
+
 /** SVG decoder that stores the last image it decoded, rather than passing it to an encoder. */
 private class ToImageTranscoder: SVGAbstractTranscoder() {
     private var lastImage: BufferedImage? = null
@@ -114,4 +137,6 @@ class SvgToBitmapTask(
         transcoder.transcode(input, null)
         return@withContext transcoder.takeLastImage()!!
     }
+
+    fun hasColor(): Boolean = coloredSvgNames.contains(name)
 }
