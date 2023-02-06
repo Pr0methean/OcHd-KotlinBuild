@@ -18,8 +18,8 @@ enum class OreBase(
         override fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("checksQuarterCircles", highlight)
-            layer("checksQuarterCircles", shadow)
-            layer("sunflowerPistil, color")
+            layer("checksQuarterCircles2", shadow)
+            layer("sunflowerPistil", color)
         }
     },
     DEEPSLATE(c(0x515151), c(0x2f2f3f), c(0x737373), "deepslate_") {
