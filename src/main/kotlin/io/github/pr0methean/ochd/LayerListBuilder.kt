@@ -11,6 +11,8 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
     private val layers: MutableList<AbstractImageTask> = mutableListOf()
     var background: Paint = Color.TRANSPARENT
     fun background(paint: Paint, opacity: Double = 1.0) {
+        check(layers.isEmpty()) { "Background would overwrite layers: $layers" }
+        check(background == Color.TRANSPARENT) { "Background would overwrite another background: $background " }
         background = paint * opacity
     }
 
