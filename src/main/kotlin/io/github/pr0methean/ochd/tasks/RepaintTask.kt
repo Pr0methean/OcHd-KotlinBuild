@@ -70,6 +70,11 @@ class RepaintTask(
     private suspend fun renderOntoInternal(context: () -> GraphicsContext, x: Double, y: Double) {
         ImageProcessingStats.onTaskLaunched("RepaintTask", name)
         val ctx = context()
+        if (ctx.getEffect(null) != null) {
+            // Can't chain effects
+            super.renderOnto({ ctx }, x, y)
+            return
+        }
         val colorLayer = ColorInput(0.0, 0.0, ctx.canvas.width, ctx.canvas.height, paint)
         val blend = Blend()
         blend.mode = SRC_ATOP
