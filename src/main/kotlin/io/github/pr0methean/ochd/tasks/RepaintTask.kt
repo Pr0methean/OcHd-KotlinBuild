@@ -40,12 +40,12 @@ class RepaintTask(
 
     init {
         var realBase = base
-        var realAlpha = 1.0
+        var realAlpha = alpha
         while (realBase is RepaintTask) {
             realAlpha *= (realBase.paint as? Color)?.opacity ?: 1.0
             realBase = realBase.base
         }
-        this.paint = if (alpha == 1.0) {
+        this.paint = if (realAlpha == 1.0) {
             paint
         } else if (paint is Color) {
             Color(paint.red, paint.green, paint.blue, paint.opacity * realAlpha)
