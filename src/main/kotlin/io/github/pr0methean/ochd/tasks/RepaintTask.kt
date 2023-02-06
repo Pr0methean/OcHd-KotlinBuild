@@ -9,6 +9,7 @@ import javafx.scene.effect.BlendMode.SRC_ATOP
 import javafx.scene.effect.ColorInput
 import javafx.scene.image.Image
 import javafx.scene.paint.Color
+import javafx.scene.paint.Color.BLACK
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.sync.withLock
 import org.apache.logging.log4j.LogManager
@@ -37,7 +38,7 @@ class RepaintTask(
 AbstractImageTask(name, cache, ctx, base.width, base.width) {
 
     constructor(base: AbstractImageTask, paint: Paint, cache: (String) -> DeferredTaskCache<Image>,
-            ctx: CoroutineContext):
+                ctx: CoroutineContext):
             this("{$base}@$paint", base, paint, cache, ctx)
 
     constructor(name: String,
@@ -136,6 +137,8 @@ AbstractImageTask(name, cache, ctx, base.width, base.width) {
                 && other.base == base
                 && other.paint == paint)
     }
+
+    override fun hasColor(): Boolean = paint is Color && paint.toOpaque() == BLACK
 }
 
 private fun Paint.opacity(): Double {

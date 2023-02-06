@@ -85,4 +85,5 @@ class AnimationTask(
     }
 
     override val directDependencies: List<AbstractTask<Image>> = dependencies
+    override fun hasColor(): Boolean = background.hasColor() || frames.any(AbstractImageTask::hasColor)
 }

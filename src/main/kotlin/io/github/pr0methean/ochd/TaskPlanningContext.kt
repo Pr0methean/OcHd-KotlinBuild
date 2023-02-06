@@ -73,7 +73,6 @@ class TaskPlanningContext(
                 layerNoDedup(task.base, task.base.paint * task.paint.opacity)
             } else task)
             task is RepaintTask
-                    && task.base is SvgToBitmapTask
                     && task.paint == BLACK
                     && !task.base.hasColor()
             -> task.base as TTask

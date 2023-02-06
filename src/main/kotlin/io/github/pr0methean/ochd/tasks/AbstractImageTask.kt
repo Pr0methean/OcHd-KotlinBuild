@@ -97,4 +97,9 @@ abstract class AbstractImageTask(
         }
         return snapshot
     }
+
+    /**
+     * If false, this task's output is the same as its output repainted black and can be deduplicated accordingly.
+     */
+    abstract fun hasColor(): Boolean
 }

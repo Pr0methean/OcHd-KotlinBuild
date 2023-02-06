@@ -88,6 +88,10 @@ class ImageStackingTask(
         ImageProcessingStats.onTaskCompleted("ImageStackingTask", name)
     }
 
+    override fun hasColor(): Boolean {
+        return layers.background != TRANSPARENT || layers.layers.any(AbstractImageTask::hasColor)
+    }
+
     override suspend fun renderOnto(contextSupplier: () -> GraphicsContext, x: Double, y: Double) {
         if (shouldRenderForCaching()) {
             super.renderOnto(contextSupplier, x, y)

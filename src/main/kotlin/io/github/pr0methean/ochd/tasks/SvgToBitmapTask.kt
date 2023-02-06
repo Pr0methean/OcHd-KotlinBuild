@@ -46,7 +46,7 @@ private val coloredSvgNames = setOf(
     "soulFlameTorchSmall",
     "torchFlame",
     "torchFlameSmall",
-    
+
 )
 
 /** SVG decoder that stores the last image it decoded, rather than passing it to an encoder. */
@@ -138,5 +138,5 @@ class SvgToBitmapTask(
         return@withContext transcoder.takeLastImage()!!
     }
 
-    fun hasColor(): Boolean = coloredSvgNames.contains(name)
+    override fun hasColor(): Boolean = coloredSvgNames.contains(name)
 }
