@@ -39,6 +39,6 @@ enum class MusicDisc(private val labelDyeName: String): SingleTextureMaterial, I
             layer("musicDisc", musicDiscColor)
             layer("musicDiscGroove", musicDiscShadow)
         }
-        layer("musicDiscLabel", DYES[labelDyeName])
+        layer("musicDiscLabel", DYES[labelDyeName]!!)
     }
 }

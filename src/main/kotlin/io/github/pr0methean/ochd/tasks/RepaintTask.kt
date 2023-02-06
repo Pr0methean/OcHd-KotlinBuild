@@ -29,14 +29,14 @@ private val logger = LogManager.getLogger("RepaintTask")
 @Suppress("EqualsWithHashCodeExist", "EqualsOrHashCode")
 class RepaintTask(
     base: AbstractImageTask,
-    paint: Paint?,
+    paint: Paint,
     alpha: Double = 1.0,
     cache: DeferredTaskCache<Image>,
     ctx: CoroutineContext
 ): AbstractImageTask("{$base}@$paint", cache, ctx, base.width, base.height) {
 
     val base: AbstractImageTask
-    val paint: Paint?
+    val paint: Paint
 
     init {
         var realBase = base
@@ -73,14 +73,12 @@ class RepaintTask(
     private suspend fun renderOntoInternal(context: () -> GraphicsContext, x: Double, y: Double) {
         ImageProcessingStats.onTaskLaunched("RepaintTask", name)
         val ctx = context()
-        if (paint != null) {
-            val colorLayer = ColorInput(0.0, 0.0, ctx.canvas.width, ctx.canvas.height, paint)
-            val blend = Blend()
-            blend.mode = SRC_ATOP
-            blend.topInput = colorLayer
-            blend.bottomInput = null
-            ctx.setEffect(blend)
-        }
+        val colorLayer = ColorInput(0.0, 0.0, ctx.canvas.width, ctx.canvas.height, paint)
+        val blend = Blend()
+        blend.mode = SRC_ATOP
+        blend.topInput = colorLayer
+        blend.bottomInput = null
+        ctx.setEffect(blend)
         base.renderOnto({ ctx }, x, y)
         base.removeDirectDependentTask(this)
         ctx.setEffect(null)

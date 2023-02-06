@@ -65,7 +65,7 @@ class TaskPlanningContext(
             task is InvalidTask
             -> InvalidTask as TTask
             task is RepaintTask
-                    && (task.paint == null || task.paint == Color.BLACK)
+                    && task.paint == Color.BLACK
             -> deduplicate(task.base)
             task is RepaintTask
                     && (task.base is RepaintTask && task.paint == task.base.paint)
@@ -108,12 +108,16 @@ class TaskPlanningContext(
         return task
     }
 
-    fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): AbstractImageTask
+    fun layer(name: String): AbstractImageTask
+            = findSvgTask(name)
+
+
+    fun layer(name: String, paint: Paint, alpha: Double = 1.0): AbstractImageTask
             = deduplicate(layerNoDedup(findSvgTask(name), paint, alpha))
 
     fun layer(
         source: AbstractImageTask,
-        paint: Paint? = null,
+        paint: Paint,
         alpha: Double = 1.0
     ): AbstractImageTask {
         logger.debug("layer({},{},{})", source, paint, alpha)
@@ -124,7 +128,7 @@ class TaskPlanningContext(
 
     fun layerNoDedup(
         source: AbstractImageTask,
-        paint: Paint?,
+        paint: Paint,
         alpha: Double
     ): RepaintTask = RepaintTask(source, paint, alpha, HardTaskCache("$source@$paint@$alpha"), ctx)
 

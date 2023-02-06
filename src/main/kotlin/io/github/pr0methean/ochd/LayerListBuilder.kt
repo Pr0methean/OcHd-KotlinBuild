@@ -26,14 +26,17 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
         background = c(color)
     }
 
+    fun layer(name: String) {
+        layers.add(ctx.findSvgTask(name))
+    }
 
-    fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0) {
+    fun layer(name: String, paint: Paint, alpha: Double = 1.0) {
         val layer = ctx.layerNoDedup(ctx.findSvgTask(name), paint, alpha)
         copy(layer)
     }
 
     fun layer(
-        source: AbstractImageTask, paint: Paint? = null, alpha: Double = 1.0
+        source: AbstractImageTask, paint: Paint, alpha: Double = 1.0
     ) {
         val layer = ctx.layerNoDedup(source, paint, alpha)
         copy(layer)

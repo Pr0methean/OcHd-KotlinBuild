@@ -1,8 +1,7 @@
 package io.github.pr0methean.ochd.texturebase
 
 import io.github.pr0methean.ochd.LayerListBuilder
-import io.github.pr0methean.ochd.TaskPlanningContext
-import io.github.pr0methean.ochd.tasks.PngOutputTask
+import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 
 abstract class SingleLayerMaterial(
@@ -12,14 +11,16 @@ abstract class SingleLayerMaterial(
     val color: Paint? = null,
     private val alpha: Double = 1.0
 ) : SingleTextureMaterial {
+    init {
+        if (color !is Color) {
+            check(alpha == 1.0) { "Can't implement transparency" }
+        }
+    }
     override fun LayerListBuilder.createTextureLayers() {
-        layer(sourceFileName, color, alpha)
+        if (color != null) {
+            layer(sourceFileName, color, alpha)
+        } else {
+            layer(sourceFileName)
+        }
     }
-
-    override fun copyTo(dest: LayerListBuilder) {
-        dest.layer(sourceFileName, color, alpha)
-    }
-
-    override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequenceOf(ctx.out(
-            ctx.layer(sourceFileName, color, alpha), "$directory/$name"))
 }
