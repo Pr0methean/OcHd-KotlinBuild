@@ -415,7 +415,7 @@ enum class SimplePickaxeBlock(
             layer("cornerRoundTopLeft", shadow)
         }
     },
-    PINK_GLAZED_TERRACOTTA(c(0xf38baa), c(0xd6658f), c(0xffb5cb)) {
+    PINK_GLAZED_TERRACOTTA(c(0xff8baa), c(0xd6658f), c(0xffb5cb)) {
         override fun LayerListBuilder.createTextureLayers() {
             background(shadow)
             layer("strokeTopLeftBottomRight4", highlight)
@@ -451,7 +451,15 @@ enum class SimplePickaxeBlock(
             layer("emeraldTopLeft", WHITE)
             layer("emeraldBottomRight", color)
         }
-    }
+    },
+    LIME_GLAZED_TERRACOTTA(c(0x8bd922), c(0x5ea900), c(0xffffc4)) {
+        override fun LayerListBuilder.createTextureLayers() {
+            background(color)
+            layer("borderSolidTopLeft", shadow)
+            layer("strokeTopLeftBottomRight", shadow)
+            layer("railCornerInverted", highlight)
+        }
+    },
     ;
 
     override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> =
