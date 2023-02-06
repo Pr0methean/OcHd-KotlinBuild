@@ -48,13 +48,11 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
         if (source.background != Color.TRANSPARENT) {
             check(background == Color.TRANSPARENT) { "Source's background would overwrite an existing background" }
             check(layers.isEmpty()) { "Source's background would overwrite an existing layer" }
-            if (source.layers.size == 1) {
-                background = source.background
-            }
         }
         if (source.layers.size > 1) { // Don't flatten sub-stacks since we want to deduplicate them at build time
             copy(ctx.stackNoDedup(source))
         } else {
+            background = source.background
             copy(source.layers[0])
         }
     }
