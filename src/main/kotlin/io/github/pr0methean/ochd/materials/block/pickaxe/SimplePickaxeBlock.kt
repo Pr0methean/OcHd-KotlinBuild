@@ -389,6 +389,7 @@ enum class SimplePickaxeBlock(
     },
     GRAY_GLAZED_TERRACOTTA(c(0x737373), c(0x333333), c(0x999999)) {
         override fun LayerListBuilder.createTextureLayers() {
+            background(color)
             layer("asymmetricalQuarterCircles", shadow)
             layer("cornerRingTopLeft", highlight)
             layer("comparator", highlight)
@@ -398,8 +399,8 @@ enum class SimplePickaxeBlock(
     GREEN_GLAZED_TERRACOTTA(c(0x729b24), c(0x495b24), c(0xd6d6d6)) {
         override fun LayerListBuilder.createTextureLayers() {
             background(color)
-            layer("bigCircleTwoQuarters", shadow)
             layer("railCorner", shadow)
+            layer("strokeTopLeftBottomRight", highlight)
             layer("cornerRingTopLeft", highlight)
         }
     },
