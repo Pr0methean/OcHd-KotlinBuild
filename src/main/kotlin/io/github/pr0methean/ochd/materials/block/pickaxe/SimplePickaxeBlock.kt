@@ -375,6 +375,7 @@ enum class SimplePickaxeBlock(
             background(shadow)
             layer("checksLarge", color)
             layer("bigDotsTopLeftBottomRight", Color.BLACK)
+            layer("bigRingsTopLeftBottomRight", color)
             layer("checksLargeOutline", highlight)
             layer("cornerRingTopLeft", highlight)
         }
