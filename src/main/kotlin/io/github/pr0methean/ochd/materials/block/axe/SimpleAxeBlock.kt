@@ -6,7 +6,6 @@ import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.texturebase.Block
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
-import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 
 @Suppress("unused")
@@ -55,7 +54,7 @@ enum class SimpleAxeBlock: SingleTextureMaterial, ShadowHighlightMaterial, Block
             background(color)
             layer("borderSolidThick", highlight)
             layer("borderDotted", shadow)
-            layer("thirdRail", Color.BLACK)
+            layer("thirdRail")
         }
     },
     JUKEBOX_SIDE {

@@ -65,12 +65,12 @@ class TaskPlanningContext(
             task is InvalidTask
             -> InvalidTask as TTask
             task is RepaintTask
-                    && task.paint == Color.BLACK
-            -> deduplicate(task.base)
-            task is RepaintTask
                     && (task.base is RepaintTask && task.paint == task.base.paint)
-            -> deduplicate(RepaintTask(task.base, task.paint, 1.0,
-                    HardTaskCache(task.name), task.base.ctx))
+            -> deduplicate(if (task.paint.isOpaque) {
+                task.base
+            } else if (task.base.paint is Color) {
+                layerNoDedup(task.base, task.base.paint, task.base.paint.opacity)
+            } else task)
             task is ImageStackingTask
                     && task.layers.layers.size == 1
                     && task.layers.background == Color.TRANSPARENT

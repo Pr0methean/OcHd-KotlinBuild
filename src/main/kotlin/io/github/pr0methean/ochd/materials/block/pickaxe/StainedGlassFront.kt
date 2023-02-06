@@ -19,7 +19,7 @@ object StainedGlassFront: DyedBlock("stained_glass") {
 
     override fun createSharedLayersTask(ctx: TaskPlanningContext): AbstractImageTask = ctx.stack {
         background(Color.BLACK, 0.25)
-        layer("borderSolid", Color.BLACK)
-        layer("streaks", Color.BLACK)
+        layer("borderSolid")
+        layer("streaks")
     }
 }

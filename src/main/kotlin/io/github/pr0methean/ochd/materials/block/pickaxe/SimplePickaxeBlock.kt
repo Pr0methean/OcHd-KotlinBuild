@@ -374,7 +374,7 @@ enum class SimplePickaxeBlock(
         override fun LayerListBuilder.createTextureLayers() {
             background(shadow)
             layer("checksQuarterCircles", color)
-            layer("bigDotsTopLeftBottomRight", Color.BLACK)
+            layer("bigDotsTopLeftBottomRight")
             layer("bigRingsTopLeftBottomRight", color)
             layer("checksLargeOutline", highlight)
             layer("cornerRingTopLeft", highlight)

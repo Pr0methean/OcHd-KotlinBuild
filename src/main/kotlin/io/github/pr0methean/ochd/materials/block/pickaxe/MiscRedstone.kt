@@ -5,7 +5,6 @@ import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.texturebase.Material
 import io.github.pr0methean.ochd.texturebase.redstoneOffAndOn
-import javafx.scene.paint.Color
 
 object MiscRedstone: Material {
     override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
@@ -24,7 +23,7 @@ object MiscRedstone: Material {
         yield(ctx.out({
             background(Ore.REDSTONE.shadow)
             layer("lamp", Ore.REDSTONE.highlight)
-            layer("borderSolid", Color.BLACK)
+            layer("borderSolid")
             layer("borderSolidTopLeft", Ore.REDSTONE.highlight)
         }, "block/redstone_lamp"))
         yield(ctx.out({

@@ -15,7 +15,7 @@ object Furnace: Material {
         yield(ctx.out(furnaceSide, "block/furnace_side"))
         yield(ctx.out({
             copy(furnaceSide)
-            layer("furnaceFront", Color.BLACK)
+            layer("furnaceFrontLit", Color.BLACK)
         }, "block/furnace_front"))
         yield(ctx.out({
             copy(furnaceSide)
