@@ -7,6 +7,7 @@ import javafx.scene.effect.Blend
 import javafx.scene.effect.BlendMode.SRC_ATOP
 import javafx.scene.effect.ColorInput
 import javafx.scene.image.Image
+import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.sync.withLock
 import org.apache.logging.log4j.LogManager
@@ -28,24 +29,28 @@ private val logger = LogManager.getLogger("RepaintTask")
 @Suppress("EqualsWithHashCodeExist", "EqualsOrHashCode")
 class RepaintTask(
     base: AbstractImageTask,
-    val paint: Paint?,
+    paint: Paint?,
     alpha: Double = 1.0,
     cache: DeferredTaskCache<Image>,
     ctx: CoroutineContext
-): AbstractImageTask("{$base}@$paint@$alpha", cache, ctx, base.width, base.height) {
+): AbstractImageTask("{$base}@$paint", cache, ctx, base.width, base.height) {
 
     val base: AbstractImageTask
-    val alpha: Double
+    val paint: Paint?
 
     init {
         var realBase = base
         var realAlpha = 1.0
         while (realBase is RepaintTask) {
-            realAlpha *= realBase.alpha
+            realAlpha *= (realBase.paint as? Color)?.opacity ?: 1.0
             realBase = realBase.base
         }
+        this.paint = if (alpha == 1.0) {
+            paint
+        } else if (paint is Color) {
+            Color(paint.red, paint.green, paint.blue, paint.opacity * realAlpha)
+        } else error("Can't implement transparency")
         this.base = realBase
-        this.alpha = realAlpha
     }
 
     override val nameForGraphPrinting: String by lazy { buildString {
@@ -58,7 +63,7 @@ class RepaintTask(
     } }
 
     override suspend fun renderOnto(contextSupplier: () -> GraphicsContext, x: Double, y: Double) {
-        if (alpha != 1.0 || shouldRenderForCaching()) {
+        if (shouldRenderForCaching() || (paint is Color && paint.opacity != 1.0)) {
             super.renderOnto(contextSupplier, x, y)
         } else {
             renderOntoInternal(contextSupplier, x, y)
@@ -79,7 +84,6 @@ class RepaintTask(
         base.renderOnto({ ctx }, x, y)
         base.removeDirectDependentTask(this)
         ctx.setEffect(null)
-        ctx.canvas.opacity = alpha
         ImageProcessingStats.onTaskCompleted("RepaintTask", name)
     }
 
@@ -88,7 +92,7 @@ class RepaintTask(
             logger.debug("Merging RepaintTask {} with duplicate {}", name, other.name)
             val newBase = base.mergeWithDuplicate(other.base)
             if (newBase !== base) {
-                return RepaintTask(newBase, paint, alpha, cache, ctx)
+                return RepaintTask(newBase, paint, 1.0, cache, ctx)
             }
         }
         return super.mergeWithDuplicate(other)
@@ -99,7 +103,7 @@ class RepaintTask(
         val canvas by lazy(::createCanvas)
         renderOntoInternal({ canvas.graphicsContext2D }, 0.0, 0.0)
         val snapshot = snapshotCanvas(canvas)
-        if (alpha == 1.0 && cache.isEnabled() && base.cache.isEnabled()
+        if (paint is Color && paint.opacity == 1.0 && cache.isEnabled() && base.cache.isEnabled()
                 && base.mutex.withLock { base.directDependentTasks.all { it is RepaintTask } }) {
             /*
              * Painting a black X blue or green has the same result as painting a red X blue or green.
@@ -114,12 +118,11 @@ class RepaintTask(
 
     override val directDependencies: List<AbstractImageTask> = listOf(base)
 
-    override fun computeHashCode(): Int = Objects.hash(base, paint, alpha)
+    override fun computeHashCode(): Int = Objects.hash(base, paint)
 
     override fun equals(other: Any?): Boolean {
         return (this === other) || (other is RepaintTask
                 && other.base == base
-                && other.paint == paint
-                && other.alpha == alpha)
+                && other.paint == paint)
     }
 }
