@@ -46,12 +46,15 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
 
     fun copy(source: LayerList) {
         check(source.layers.isNotEmpty()) { "Copying from empty LayerList" }
+        if (source.background != Color.TRANSPARENT) {
+            background(source.background) // For validation, even if we don't end up using it
+        }
         if (source.layers.size > 1) { // Don't flatten sub-stacks since we want to deduplicate them at build time
             copy(ctx.stackNoDedup(source))
-        } else {
             if (source.background != Color.TRANSPARENT) {
-                background(source.background)
+                background = Color.TRANSPARENT // let source draw the background
             }
+        } else {
             copy(source.layers[0])
         }
     }
