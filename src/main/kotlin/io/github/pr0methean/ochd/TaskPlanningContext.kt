@@ -87,10 +87,12 @@ class TaskPlanningContext(
                     oldValue?.run {
                         if (this === task) {
                             this
-                        } else mergeWithDuplicate(task)
-                    }.also {
-                        logger.info("Deduplicated: {}", task)
-                        ImageProcessingStats.dedupeSuccesses.add(className)
+                        } else {
+                            ImageProcessingStats.dedupeSuccesses.add(className)
+                            mergeWithDuplicate(task).also {
+                                logger.info("Deduplicated: {} -> {}", this@run, it)
+                            }
+                        }
                     } ?: task.also {
                         logger.info("New task: {}", task)
                         ImageProcessingStats.onDedupeFailed(className, task.name)
