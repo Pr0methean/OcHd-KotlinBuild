@@ -121,7 +121,7 @@ class TaskPlanningContext(
 
     fun layer(
         source: AbstractImageTask,
-        paint: Paint?,
+        paint: Paint? = null,
         alpha: Double = 1.0
     ): AbstractImageTask {
         logger.debug("layer({},{},{})", source, paint, alpha)
