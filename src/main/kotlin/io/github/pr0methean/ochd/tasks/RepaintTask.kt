@@ -1,8 +1,6 @@
 package io.github.pr0methean.ochd.tasks
 
-import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
-import io.github.pr0methean.ochd.times
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.effect.Blend
 import javafx.scene.effect.BlendMode.SRC_ATOP
@@ -13,7 +11,6 @@ import javafx.scene.paint.Color.BLACK
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.sync.withLock
 import org.apache.logging.log4j.LogManager
-import java.util.Objects
 import kotlin.coroutines.CoroutineContext
 
 private val logger = LogManager.getLogger("RepaintTask")
@@ -32,10 +29,10 @@ private val logger = LogManager.getLogger("RepaintTask")
 class RepaintTask(
         name: String,
         base: AbstractImageTask,
-        paint: Paint,
+        val paint: Paint,
         cache: DeferredTaskCache<Image>,
         ctx: CoroutineContext):
-AbstractImageTask(name, cache, ctx, base.width, base.width) {
+    UnaryImageTransform<Double>(name, base, cache, ctx) {
 
     constructor(base: AbstractImageTask, paint: Paint, cache: (String) -> DeferredTaskCache<Image>,
                 ctx: CoroutineContext):
@@ -48,73 +45,15 @@ AbstractImageTask(name, cache, ctx, base.width, base.width) {
                 ctx: CoroutineContext):
             this(name, base, paint, cache(name), ctx)
 
-    val base: AbstractImageTask
-    val paint: Paint
-
-    init {
-        var realBase = base
-        var realAlphaMult = 1.0
-        while (realBase is RepaintTask) {
-            realAlphaMult *= (realBase.paint as? Color)?.opacity ?: 1.0
-            realBase = realBase.base
-        }
-        this.paint = paint * realAlphaMult
-        this.base = realBase
-    }
-
     override fun appendForGraphPrinting(appendable: Appendable) {
         appendable.append('{')
         base.appendForGraphPrinting(appendable)
         appendable.append("}@").append(this.paint.toString())
     }
 
-    override suspend fun renderOnto(contextSupplier: () -> GraphicsContext, x: Double, y: Double) {
-        if (shouldRenderForCaching()) {
-            super.renderOnto(contextSupplier, x, y)
-        } else {
-            renderOntoInternal(contextSupplier, x, y)
-        }
-    }
-
-    private suspend fun renderOntoInternal(context: () -> GraphicsContext, x: Double, y: Double) {
-        ImageProcessingStats.onTaskLaunched("RepaintTask", name)
-        val ctx = context()
-        if (ctx.getEffect(null) != null) {
-            // Can't chain effects
-            super.renderOnto({ ctx }, x, y)
-            return
-        }
-        val colorLayer = ColorInput(0.0, 0.0, ctx.canvas.width, ctx.canvas.height, paint.toOpaque())
-        val blend = Blend()
-        blend.mode = SRC_ATOP
-        blend.topInput = colorLayer
-        blend.bottomInput = null
-        ctx.setEffect(blend)
-        val oldAlpha = ctx.globalAlpha
-        ctx.globalAlpha = oldAlpha * paint.opacity()
-        base.renderOnto({ ctx }, x, y)
-        base.removeDirectDependentTask(this)
-        ctx.globalAlpha = oldAlpha
-        ctx.setEffect(null)
-        ImageProcessingStats.onTaskCompleted("RepaintTask", name)
-    }
-
-    override fun mergeWithDuplicate(other: AbstractTask<*>): AbstractImageTask {
-        if (other is RepaintTask && other !== this && other.base !== base) {
-            logger.debug("Merging RepaintTask {} with duplicate {}", name, other.name)
-            val newBase = base.mergeWithDuplicate(other.base)
-            if (newBase !== base) {
-                return RepaintTask(name, newBase, paint, cache, ctx)
-            }
-        }
-        return super.mergeWithDuplicate(other)
-    }
-
     @Suppress("DeferredResultUnused", "ComplexCondition")
     override suspend fun perform(): Image {
-        val canvas by lazy(::createCanvas)
-        renderOntoInternal({ canvas.graphicsContext2D }, 0.0, 0.0)
-        val snapshot = snapshotCanvas(canvas)
+        val snapshot = super.perform()
         if (paint is Color && paint.opacity == 1.0 && cache.isEnabled() && base.cache.isEnabled()
                 && base.mutex.withLock { base.directDependentTasks.all { it is RepaintTask } }) {
             /*
@@ -128,10 +67,6 @@ AbstractImageTask(name, cache, ctx, base.width, base.width) {
         return snapshot
     }
 
-    override val directDependencies: List<AbstractImageTask> = listOf(base)
-
-    override fun computeHashCode(): Int = Objects.hash(base, paint)
-
     override fun equals(other: Any?): Boolean {
         return (this === other) || (other is RepaintTask
                 && other.base == base
@@ -139,6 +74,34 @@ AbstractImageTask(name, cache, ctx, base.width, base.width) {
     }
 
     override fun hasColor(): Boolean = paint is Color && paint.toOpaque() == BLACK
+    override fun prepareContext(ctx: GraphicsContext): Double {
+        check(ctx.getEffect(null) == null) {"Can't chain $this onto ${ctx.getEffect(null)}"}
+        val colorLayer = ColorInput(0.0, 0.0, ctx.canvas.width, ctx.canvas.height, paint.toOpaque())
+        val blend = Blend()
+        blend.mode = SRC_ATOP
+        blend.topInput = colorLayer
+        blend.bottomInput = null
+        ctx.setEffect(blend)
+        val oldAlpha = ctx.globalAlpha
+        ctx.globalAlpha = oldAlpha * paint.opacity()
+        return oldAlpha
+    }
+
+    override fun mergeWithDuplicate(other: AbstractTask<*>): AbstractImageTask {
+        if (other !== this && other is UnaryImageTransform<*> && other.base !== base) {
+            logger.debug("Merging RepaintTask {} with duplicate {}", name, other.name)
+            val newBase = base.mergeWithDuplicate(other.base)
+            if (newBase !== base) {
+                return RepaintTask(name, newBase, paint, cache, ctx)
+            }
+        }
+        return super.mergeWithDuplicate(other)
+    }
+
+    override fun unprepareContext(ctx: GraphicsContext, teardownContext: Double) {
+        ctx.globalAlpha = teardownContext
+        ctx.setEffect(null)
+    }
 }
 
 private fun Paint.opacity(): Double {
