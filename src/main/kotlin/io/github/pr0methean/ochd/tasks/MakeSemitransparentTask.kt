@@ -7,6 +7,7 @@ import javafx.scene.image.Image
 import java.util.Objects
 import kotlin.coroutines.CoroutineContext
 
+@Suppress("EqualsWithHashCodeExist", "EqualsOrHashCode")
 class MakeSemitransparentTask(
     base: AbstractImageTask,
     val opacity: Double,
