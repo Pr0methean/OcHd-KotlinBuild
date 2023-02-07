@@ -37,8 +37,8 @@ abstract class UnaryImageTransform<TCanvasTeardownContext>(
         return snapshotCanvas(canvas)
     }
 
-    protected suspend fun renderOntoInternal(context: () -> GraphicsContext, x: Double, y: Double) {
-        ImageProcessingStats.onTaskLaunched("RepaintTask", name)
+    private suspend fun renderOntoInternal(context: () -> GraphicsContext, x: Double, y: Double) {
+        ImageProcessingStats.onTaskLaunched(javaClass.simpleName, name)
         val ctx = context()
         try {
             val teardownContext = prepareContext(ctx)
@@ -49,7 +49,7 @@ abstract class UnaryImageTransform<TCanvasTeardownContext>(
             logger.warn("Falling back to a second canvas", e)
             super.renderOnto({ ctx }, x, y)
         }
-        ImageProcessingStats.onTaskCompleted("RepaintTask", name)
+        ImageProcessingStats.onTaskCompleted(javaClass.simpleName, name)
     }
 
     protected abstract fun unprepareContext(ctx: GraphicsContext, teardownContext: TCanvasTeardownContext)
