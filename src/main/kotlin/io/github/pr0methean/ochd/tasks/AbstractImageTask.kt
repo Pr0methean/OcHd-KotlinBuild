@@ -7,6 +7,8 @@ import javafx.scene.canvas.Canvas
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.image.Image
 import javafx.scene.image.WritableImage
+import javafx.scene.paint.Color
+import javafx.scene.paint.Paint
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -102,4 +104,14 @@ abstract class AbstractImageTask(
      * If false, this task's output is the same as its output repainted black and can be deduplicated accordingly.
      */
     abstract fun hasColor(): Boolean
+}
+
+fun Paint.toOpaque(): Paint {
+    if (this.isOpaque) {
+        return this
+    }
+    if (this is Color) {
+        return Color(red, green, blue, 1.0)
+    }
+    error("Can't convert $this to opaque")
 }

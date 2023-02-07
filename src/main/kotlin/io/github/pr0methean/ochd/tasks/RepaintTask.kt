@@ -114,12 +114,3 @@ private fun Paint.opacity(): Double {
     error("Can't determine opacity")
 }
 
-private fun Paint.toOpaque(): Paint {
-    if (this.isOpaque) {
-        return this
-    }
-    if (this is Color) {
-        return Color(red, green, blue, 1.0)
-    }
-    error("Can't convert $this to opaque")
-}

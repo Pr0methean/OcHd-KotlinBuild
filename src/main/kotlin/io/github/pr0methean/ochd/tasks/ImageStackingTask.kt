@@ -7,6 +7,7 @@ import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import javafx.scene.SnapshotParameters
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.image.Image
+import javafx.scene.paint.Color.BLACK
 import javafx.scene.paint.Color.TRANSPARENT
 import org.apache.logging.log4j.LogManager
 import java.util.*
@@ -89,7 +90,8 @@ class ImageStackingTask(
     }
 
     override fun hasColor(): Boolean {
-        return layers.background != TRANSPARENT || layers.layers.any(AbstractImageTask::hasColor)
+        return (layers.background != TRANSPARENT && layers.background.toOpaque() != BLACK)
+                || layers.layers.any(AbstractImageTask::hasColor)
     }
 
     override suspend fun renderOnto(contextSupplier: () -> GraphicsContext, x: Double, y: Double) {
