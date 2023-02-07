@@ -108,9 +108,10 @@ abstract class AbstractImageTask(
 
     /**
      * Returns a list of previousLayer and this if there's no benefit to combining them, or a combined
-     * version otherwise.
+     * version if there is.
      */
-    open fun tryCombineWith(previousLayer: AbstractImageTask, ctx: TaskPlanningContext): List<AbstractImageTask> = listOf(previousLayer, this)
+    open fun tryCombineWith(previousLayer: AbstractImageTask, ctx: TaskPlanningContext): List<AbstractImageTask>
+            = listOf(previousLayer, this)
 }
 
 fun Paint.toOpaque(): Paint {
