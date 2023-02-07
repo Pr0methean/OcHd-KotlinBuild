@@ -6,6 +6,7 @@ import io.github.pr0methean.ochd.tasks.AbstractTask
 import io.github.pr0methean.ochd.tasks.AnimationTask
 import io.github.pr0methean.ochd.tasks.ImageStackingTask
 import io.github.pr0methean.ochd.tasks.InvalidTask
+import io.github.pr0methean.ochd.tasks.MakeSemitransparentTask
 import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.tasks.RepaintTask
 import io.github.pr0methean.ochd.tasks.SvgToBitmapTask
@@ -115,22 +116,25 @@ class TaskPlanningContext(
         return task
     }
 
-    fun layer(name: String): AbstractImageTask
-            = findSvgTask(name)
-
-
-    fun layer(name: String, paint: Paint, alpha: Double = 1.0): AbstractImageTask
-            = deduplicate(layerNoDedup(findSvgTask(name), paint * alpha))
+    fun layer(name: String, paint: Paint?, alpha: Double = 1.0): AbstractImageTask
+            = layer(findSvgTask(name), paint, alpha)
 
     fun layer(
         source: AbstractImageTask,
-        paint: Paint,
+        paint: Paint?,
         alpha: Double = 1.0
     ): AbstractImageTask {
         logger.debug("layer({},{},{})", source, paint, alpha)
-        return deduplicate(
-            layerNoDedup(deduplicate(source), paint * alpha)
-        )
+        if (paint != null) {
+            return deduplicate(
+                RepaintTask(deduplicate(source), paint * alpha, ::HardTaskCache, ctx)
+            )
+        }
+        if (alpha != 1.0) {
+            return deduplicate(
+                MakeSemitransparentTask(deduplicate(source), alpha, ::HardTaskCache, ctx))
+        }
+        return deduplicate(source)
     }
 
     fun layerNoDedup(

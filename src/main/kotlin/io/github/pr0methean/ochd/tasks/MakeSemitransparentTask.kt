@@ -12,6 +12,9 @@ class MakeSemitransparentTask(
     ctx: CoroutineContext
 ): UnaryImageTransform<Double>("$base@$opacity", base, cache, ctx) {
 
+    constructor(base: AbstractImageTask, opacity: Double, cache: (String) -> DeferredTaskCache<Image>,
+                ctx: CoroutineContext):
+            this(base, opacity, cache("$base@$opacity"), ctx)
     override fun prepareContext(ctx: GraphicsContext): Double {
         val oldAlpha = ctx.globalAlpha
         ctx.globalAlpha = oldAlpha * opacity
