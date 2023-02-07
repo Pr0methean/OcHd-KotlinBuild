@@ -75,7 +75,7 @@ class TaskPlanningContext(
             -> deduplicate(if (task.paint.isOpaque) {
                     task.base
                 } else if (task.paint is Color) {
-                    layerNoDedup(task.base, task.base.paint * task.paint.opacity)
+                    RepaintTask(task.base, task.base.paint * task.paint.opacity, ::HardTaskCache, ctx)
                 } else task)
             task is ImageStackingTask
                     && task.layers.layers.size == 1
@@ -137,11 +137,6 @@ class TaskPlanningContext(
         return deduplicate(source)
     }
 
-    fun layerNoDedup(
-        source: AbstractImageTask,
-        paint: Paint
-    ): RepaintTask = RepaintTask(source, paint, ::HardTaskCache, ctx)
-
     inline fun stack(init: LayerListBuilder.() -> Unit): AbstractImageTask {
         val layerTasksBuilder = LayerListBuilder(this)
         layerTasksBuilder.init()
@@ -180,10 +175,11 @@ class TaskPlanningContext(
 
     fun stack(layers: LayerList): AbstractImageTask {
         logger.debug("stack({})", layers)
-        return deduplicate(stackNoDedup(layers))
+        return deduplicate(
+            ImageStackingTask(
+                layers, HardTaskCache(layers.toString()), ctx
+            )
+        )
     }
 
-    fun stackNoDedup(layers: LayerList): ImageStackingTask = ImageStackingTask(
-        layers, HardTaskCache(layers.toString()), ctx
-    )
 }

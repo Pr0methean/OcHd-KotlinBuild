@@ -25,20 +25,14 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
         background = c(color)
     }
 
-    fun layer(name: String) {
-        layers.add(ctx.findSvgTask(name))
-    }
-
-    fun layer(name: String, paint: Paint, alpha: Double = 1.0) {
-        val layer = ctx.layerNoDedup(ctx.findSvgTask(name), paint * alpha)
-        copy(layer)
+    fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0) {
+        layers.add(ctx.layer(ctx.findSvgTask(name), paint, alpha))
     }
 
     fun layer(
-        source: AbstractImageTask, paint: Paint, alpha: Double = 1.0
+        source: AbstractImageTask, paint: Paint? = null, alpha: Double = 1.0
     ) {
-        val layer = ctx.layerNoDedup(source, paint * alpha)
-        copy(layer)
+        layers.add(ctx.layer(source, paint, alpha))
     }
 
     inline fun copy(sourceInit: LayerListBuilder.() -> Unit): Unit =
@@ -50,12 +44,12 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
             background(source.background) // For validation, even if we don't end up using it
         }
         if (source.layers.size > 1) { // Don't flatten sub-stacks since we want to deduplicate them at build time
-            copy(ctx.stackNoDedup(source))
+            layers.add(ctx.stack(source))
             if (source.background != Color.TRANSPARENT) {
                 background = Color.TRANSPARENT // let source draw the background
             }
         } else {
-            copy(source.layers[0])
+            layers.add(source.layers[0])
         }
     }
 
@@ -68,9 +62,9 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
             && element.paint == currentTop.paint
         ) {
             layers.removeLast()
-            val combinedRepaint = ctx.layerNoDedup(
-                ctx.stack(
-                    LayerList(listOf(currentTop.base, element.base), Color.TRANSPARENT, ctx.tileSize, ctx.tileSize)
+            val combinedRepaint = ctx.layer(
+                ctx.stack(LayerList(listOf(currentTop.base, element.base),
+                        Color.TRANSPARENT, ctx.tileSize, ctx.tileSize)
                 ),
                 element.paint
             )
@@ -82,6 +76,6 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
 
     fun build(): LayerList {
         check(layers.isNotEmpty()) { "Trying to create an empty LayerList" }
-        return LayerList(layers.map(ctx::deduplicate), background, ctx.tileSize, ctx.tileSize)
+        return LayerList(layers, background, ctx.tileSize, ctx.tileSize)
     }
 }
