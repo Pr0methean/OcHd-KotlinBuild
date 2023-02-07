@@ -1,5 +1,6 @@
 package io.github.pr0methean.ochd.tasks
 
+import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.effect.Blend
@@ -101,6 +102,15 @@ class RepaintTask(
     override fun unprepareContext(ctx: GraphicsContext, teardownContext: Double) {
         ctx.globalAlpha = teardownContext
         ctx.setEffect(null)
+    }
+
+    override fun tryCombineWith(previousLayer: AbstractImageTask, ctx: TaskPlanningContext): List<AbstractImageTask> {
+        if (previousLayer is RepaintTask && previousLayer.paint == paint) {
+            return listOf(ctx.layer(ctx.stack {
+                copy(previousLayer)
+            }, paint))
+        }
+        return super.tryCombineWith(previousLayer, ctx)
     }
 }
 

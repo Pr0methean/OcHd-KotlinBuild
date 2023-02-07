@@ -57,10 +57,16 @@ class TaskPlanningContext(
         svgTasks = builder.toMap()
     }
 
+    fun <T, TTask : AbstractTask<T>> deduplicate(task: AbstractTask<T>): TTask {
+        val other = deduplicateInternal<T, TTask>(task)
+        if (other !== task) {
+            logger.info("Deduplicated/simplified: {} -> {}", task, other)
+        }
+        return other
+    }
+
     @Suppress("UNCHECKED_CAST")
-    tailrec fun <T, TTask : AbstractTask<T>> deduplicate(task: AbstractTask<T>): TTask {
-        logger.debug("Deduplicating: {}", task)
-        
+    tailrec fun <T, TTask : AbstractTask<T>> deduplicateInternal(task: AbstractTask<T>): TTask {
         return when {
             task is SvgToBitmapTask
             -> task as TTask
@@ -69,10 +75,10 @@ class TaskPlanningContext(
             task is RepaintTask
                     && task.paint == BLACK
                     && !task.base.hasColor()
-            -> deduplicate(task.base)
+            -> deduplicateInternal(task.base)
             task is RepaintTask
                     && (task.base is RepaintTask && task.paint == task.base.paint)
-            -> deduplicate(if (task.paint.isOpaque) {
+            -> deduplicateInternal(if (task.paint.isOpaque) {
                     task.base
                 } else if (task.paint is Color) {
                     RepaintTask(task.base, task.base.paint * task.paint.opacity, ::HardTaskCache, ctx)
@@ -80,7 +86,7 @@ class TaskPlanningContext(
             task is ImageStackingTask
                     && task.layers.layers.size == 1
                     && task.layers.background == Color.TRANSPARENT
-            -> deduplicate(task.layers.layers[0] as TTask)
+            -> deduplicateInternal(task.layers.layers[0] as TTask)
             else -> {
                 logger.debug("Main deduplication branch for {}", task)
                 val className = task::class.simpleName ?: "[unnamed class]"

@@ -1,5 +1,6 @@
 package io.github.pr0methean.ochd.tasks
 
+import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.image.Image
@@ -23,6 +24,16 @@ class MakeSemitransparentTask(
 
     override fun unprepareContext(ctx: GraphicsContext, teardownContext: Double) {
         ctx.globalAlpha = teardownContext
+    }
+
+    override fun tryCombineWith(previousLayer: AbstractImageTask, ctx: TaskPlanningContext): List<AbstractImageTask> {
+        if (previousLayer is MakeSemitransparentTask && previousLayer.opacity == opacity) {
+            return listOf(ctx.layer(ctx.stack {
+                copy(previousLayer)
+                copy(this@MakeSemitransparentTask)
+            }, alpha = opacity))
+        }
+        return super.tryCombineWith(previousLayer, ctx)
     }
 
     override fun hasColor(): Boolean = base.hasColor()

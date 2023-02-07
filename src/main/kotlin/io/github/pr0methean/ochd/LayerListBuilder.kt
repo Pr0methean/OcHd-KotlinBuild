@@ -1,7 +1,6 @@
 package io.github.pr0methean.ochd
 
 import io.github.pr0methean.ochd.tasks.AbstractImageTask
-import io.github.pr0methean.ochd.tasks.RepaintTask
 import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
@@ -58,17 +57,9 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
     @Suppress("ComplexCondition")
     fun copy(element: AbstractImageTask) {
         val currentTop = layers.lastOrNull()
-        if (element is RepaintTask && currentTop is RepaintTask
-            && element.paint == currentTop.paint
-        ) {
+        if (currentTop != null) {
             layers.removeLast()
-            val combinedRepaint = ctx.layer(
-                ctx.stack(LayerList(listOf(currentTop.base, element.base),
-                        Color.TRANSPARENT, ctx.tileSize, ctx.tileSize)
-                ),
-                element.paint
-            )
-            layers.add(combinedRepaint)
+            layers.addAll(element.tryCombineWith(currentTop, ctx))
         } else {
             layers.add(element)
         }

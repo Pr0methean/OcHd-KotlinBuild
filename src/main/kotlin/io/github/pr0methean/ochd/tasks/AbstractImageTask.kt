@@ -1,6 +1,7 @@
 package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.DEFAULT_SNAPSHOT_PARAMS
+import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import javafx.scene.SnapshotParameters
 import javafx.scene.canvas.Canvas
@@ -104,6 +105,12 @@ abstract class AbstractImageTask(
      * If false, this task's output is the same as its output repainted black and can be deduplicated accordingly.
      */
     abstract fun hasColor(): Boolean
+
+    /**
+     * Returns a list of previousLayer and this if there's no benefit to combining them, or a combined
+     * version otherwise.
+     */
+    open fun tryCombineWith(previousLayer: AbstractImageTask, ctx: TaskPlanningContext): List<AbstractImageTask> = listOf(previousLayer, this)
 }
 
 fun Paint.toOpaque(): Paint {
