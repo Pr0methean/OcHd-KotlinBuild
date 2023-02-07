@@ -13,9 +13,9 @@ import io.github.pr0methean.ochd.tasks.SvgToBitmapTask
 import io.github.pr0methean.ochd.tasks.caching.HardTaskCache
 import io.github.pr0methean.ochd.tasks.caching.noopDeferredTaskCache
 import javafx.scene.paint.Color
+import javafx.scene.paint.Color.BLACK
 import javafx.scene.paint.Paint
 import org.apache.logging.log4j.LogManager
-import java.awt.Color.BLACK
 import java.io.File
 import java.util.Locale
 import kotlin.coroutines.CoroutineContext
