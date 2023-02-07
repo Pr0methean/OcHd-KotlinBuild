@@ -116,7 +116,7 @@ class TaskPlanningContext(
         return task
     }
 
-    fun layer(name: String, paint: Paint?, alpha: Double = 1.0): AbstractImageTask
+    fun layer(name: String, paint: Paint? = null, alpha: Double = 1.0): AbstractImageTask
             = layer(findSvgTask(name), paint, alpha)
 
     fun layer(
