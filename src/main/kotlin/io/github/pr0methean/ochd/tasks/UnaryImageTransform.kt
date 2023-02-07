@@ -9,6 +9,8 @@ import java.util.Objects
 import kotlin.coroutines.CoroutineContext
 
 private val logger = LogManager.getLogger("UnaryImageTransform")
+
+@Suppress("EqualsWithHashCodeExist", "EqualsOrHashCode")
 abstract class UnaryImageTransform<TCanvasTeardownContext>(
     name: String,
     val base: AbstractImageTask,
