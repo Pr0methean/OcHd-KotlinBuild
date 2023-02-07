@@ -57,4 +57,8 @@ abstract class UnaryImageTransform<TCanvasTeardownContext>(
     protected abstract fun prepareContext(ctx: GraphicsContext): TCanvasTeardownContext
 
     override fun computeHashCode(): Int = Objects.hash(base, javaClass)
+
+    override fun equals(other: Any?) = (this === other) || (other is UnaryImageTransform<*>
+            && javaClass == other.javaClass
+            && base == other.base)
 }

@@ -12,6 +12,7 @@ import javafx.scene.paint.Color.BLACK
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.sync.withLock
 import org.apache.logging.log4j.LogManager
+import java.util.Objects
 import kotlin.coroutines.CoroutineContext
 
 private val logger = LogManager.getLogger("RepaintTask")
@@ -68,12 +69,6 @@ class RepaintTask(
         return snapshot
     }
 
-    override fun equals(other: Any?): Boolean {
-        return (this === other) || (other is RepaintTask
-                && other.base == base
-                && other.paint == paint)
-    }
-
     override fun hasColor(): Boolean = paint is Color && paint.toOpaque() == BLACK
     override fun prepareContext(ctx: GraphicsContext): Double {
         check(ctx.getEffect(null) == null) {"Can't chain $this onto ${ctx.getEffect(null)}"}
@@ -112,6 +107,14 @@ class RepaintTask(
             }, paint))
         }
         return super.tryCombineWith(previousLayer, ctx)
+    }
+
+    override fun computeHashCode(): Int {
+        return Objects.hash(super.computeHashCode(), paint)
+    }
+
+    override fun equals(other: Any?): Boolean {
+        return super.equals(other) && other is RepaintTask && other.paint == paint
     }
 }
 

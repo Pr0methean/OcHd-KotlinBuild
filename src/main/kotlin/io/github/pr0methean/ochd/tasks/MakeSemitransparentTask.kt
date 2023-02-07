@@ -4,6 +4,7 @@ import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.image.Image
+import java.util.Objects
 import kotlin.coroutines.CoroutineContext
 
 class MakeSemitransparentTask(
@@ -37,4 +38,12 @@ class MakeSemitransparentTask(
     }
 
     override fun hasColor(): Boolean = base.hasColor()
+
+    override fun computeHashCode(): Int {
+        return Objects.hash(super.computeHashCode(), opacity)
+    }
+
+    override fun equals(other: Any?): Boolean {
+        return super.equals(other) && other is MakeSemitransparentTask && other.opacity == opacity
+    }
 }
