@@ -107,7 +107,8 @@ class RepaintTask(
     override fun tryCombineWith(previousLayer: AbstractImageTask, ctx: TaskPlanningContext): List<AbstractImageTask> {
         if (previousLayer is RepaintTask && previousLayer.paint == paint) {
             return listOf(ctx.layer(ctx.stack {
-                copy(previousLayer)
+                copy(previousLayer.base)
+                copy(base)
             }, paint))
         }
         return super.tryCombineWith(previousLayer, ctx)

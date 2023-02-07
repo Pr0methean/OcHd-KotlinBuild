@@ -29,8 +29,8 @@ class MakeSemitransparentTask(
     override fun tryCombineWith(previousLayer: AbstractImageTask, ctx: TaskPlanningContext): List<AbstractImageTask> {
         if (previousLayer is MakeSemitransparentTask && previousLayer.opacity == opacity) {
             return listOf(ctx.layer(ctx.stack {
-                copy(previousLayer)
-                copy(this@MakeSemitransparentTask)
+                copy(previousLayer.base)
+                copy(base)
             }, alpha = opacity))
         }
         return super.tryCombineWith(previousLayer, ctx)
