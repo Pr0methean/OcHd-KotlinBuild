@@ -2,6 +2,7 @@ package io.github.pr0methean.ochd
 
 import io.github.pr0methean.ochd.tasks.AbstractImageTask
 import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
+import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
 
@@ -59,7 +60,9 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
         val currentTop = layers.lastOrNull()
         if (currentTop != null) {
             layers.removeLast()
-            layers.addAll(element.tryCombineWith(currentTop, ctx))
+            layers.addAll(ctx.deduplicate<Image,AbstractImageTask>(element)
+                .tryCombineWith(currentTop, ctx)
+                .map(ctx::deduplicate))
         } else {
             layers.add(element)
         }
