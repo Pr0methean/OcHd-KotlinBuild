@@ -16,9 +16,9 @@ object Concrete: DyedBlock("concrete") {
         copy(sharedLayers)
     }
 
-    override fun createSharedLayersTask(ctx: TaskPlanningContext): AbstractImageTask = ctx.stack {
-        layer("strokeBottomLeftTopRight", c(0x515151), 0.25)
-        layer("strokeTopLeftBottomRight", c(0x515151), 0.25)
-        layer("borderShortDashes", c(0xaaaaaa), 0.25)
-    }
+    override fun createSharedLayersTask(ctx: TaskPlanningContext): AbstractImageTask = ctx.layer(ctx.stack {
+        layer("strokeBottomLeftTopRight", c(0x515151))
+        layer("strokeTopLeftBottomRight", c(0x515151))
+        layer("borderShortDashes", c(0xaaaaaa))
+    }, alpha = 0.25)
 }

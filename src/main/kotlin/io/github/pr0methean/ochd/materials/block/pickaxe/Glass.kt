@@ -4,7 +4,6 @@ import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.texturebase.Material
-import io.github.pr0methean.ochd.times
 import javafx.scene.paint.Color
 
 object Glass: Material {
@@ -15,10 +14,10 @@ object Glass: Material {
             layer("borderSolidTopLeft", Color.WHITE)
             layer("streaks", Color.WHITE)
         }, "block/glass"))
-        yield(ctx.out(ctx.stack {
-            background(Color.BLACK * 0.25)
-            layer("borderSolid", Color.WHITE, 0.25)
-            layer("streaks", Color.WHITE, 0.25)
-        }, "block/tinted_glass"))
+        yield(ctx.out(ctx.layer(ctx.stack {
+            background(Color.BLACK)
+            layer("borderSolid", Color.WHITE)
+            layer("streaks", Color.WHITE)
+        }, alpha = 0.25), "block/tinted_glass"))
     }
 }
