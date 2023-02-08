@@ -106,6 +106,12 @@ class RepaintTask(
                 copy(base)
             }, paint))
         }
+        if (previousLayer is MakeSemitransparentTask && previousLayer.opacity == paint.opacity()) {
+            return listOf(ctx.layer(ctx.stack {
+                layer(previousLayer.base, paint.toOpaque())
+                layer(base, paint.toOpaque())
+            }, alpha = paint.opacity()))
+        }
         return super.tryCombineWith(previousLayer, ctx)
     }
 
@@ -118,7 +124,7 @@ class RepaintTask(
     }
 }
 
-private fun Paint.opacity(): Double {
+fun Paint.opacity(): Double {
     if (this.isOpaque) {
         return 1.0
     }
