@@ -172,8 +172,10 @@ suspend fun main(args: Array<String>) {
                         checkNotNull(task) { "Could not get an unstarted task" }
                         if (currentInProgressJobs > 0 && !task.isCacheAllocationFreeOnMargin()
                                 && heapLoad > THROTTLING_THRESHOLD) {
-                            logger.warn("Not starting a new task until one finishes, due to heap pressure")
-                            inProgressJobs.remove(finishedJobsChannel.receive())
+                            val delay = measureNanoTime {
+                                inProgressJobs.remove(finishedJobsChannel.receive())
+                            }
+                            logger.warn("Throttled new task for {} ns due to heap pressure", box(delay))
                         } else {
                             logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
                             inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs)
