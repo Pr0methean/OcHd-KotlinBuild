@@ -36,8 +36,8 @@ import kotlin.system.measureNanoTime
 import kotlin.text.Charsets.UTF_8
 
 private val taskOrderComparator = comparingDouble<PngOutputTask> {
-    runBlocking { it.cacheClearingCoefficient() }
-}.reversed()
+    - runBlocking { it.cacheClearingCoefficient() }
+}
 .then(comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed())
 .then(comparingInt(PngOutputTask::totalSubtasks))
 
