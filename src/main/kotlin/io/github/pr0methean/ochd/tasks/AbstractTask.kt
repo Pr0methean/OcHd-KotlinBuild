@@ -107,8 +107,8 @@ abstract class AbstractTask<out T>(
             0.0
         } else if (isStartedOrAvailable()) {
             (1.0 / mutex.withLock { directDependentTasks.count { !it.isStartedOrAvailable() } })
-                    .coerceAtLeast(java.lang.Double.MIN_NORMAL)
-        } else 0.0
+                .coerceAtLeast(java.lang.Double.MIN_NORMAL)
+        } else -(1.0 - 1.0 / directDependencies.count { !it.isStartedOrAvailable() && it.getNow() == null })
         for (task in directDependencies) {
             coefficient += task.cacheClearingCoefficient()
         }
