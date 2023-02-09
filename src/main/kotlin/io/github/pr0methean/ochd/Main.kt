@@ -42,7 +42,7 @@ private const val MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH = 32
 
 val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 
-private const val THROTTLING_THRESHOLD = 0.85
+private const val THROTTLING_THRESHOLD = 0.80
 private val gcMxBean = ManagementFactory.getPlatformMXBeans(GarbageCollectorMXBean::class.java).first()
 private val memoryMxBean = ManagementFactory.getMemoryMXBean()
 private val heapSizeBytes = memoryMxBean.heapMemoryUsage.max.toDouble()
