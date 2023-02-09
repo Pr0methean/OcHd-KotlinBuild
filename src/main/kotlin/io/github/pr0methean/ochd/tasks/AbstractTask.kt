@@ -105,10 +105,13 @@ abstract class AbstractTask<out T>(
     suspend fun cacheClearingCoefficient(): Double {
         var coefficient = if (!cache.isEnabled()) {
             0.0
-        } else if (isStartedOrAvailable()) {
-            (1.0 / mutex.withLock { directDependentTasks.count { !it.isStartedOrAvailable() } })
-                .coerceAtLeast(java.lang.Double.MIN_NORMAL)
-        } else -(1.0 - 1.0 / directDependencies.count { !it.isStartedOrAvailable() && it.getNow() == null })
+        } else {
+            val unstartedDirectDependents = mutex.withLock { directDependentTasks.count { !it.isStartedOrAvailable() } }
+            val clearingScore = 1.0 / (1.0 / (unstartedDirectDependents - 1)).coerceAtLeast(java.lang.Double.MIN_NORMAL)
+            if (isStartedOrAvailable()) {
+                clearingScore
+            } else -1.0 + clearingScore
+        }
         for (task in directDependencies) {
             coefficient += task.cacheClearingCoefficient()
         }
