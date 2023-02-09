@@ -158,17 +158,17 @@ suspend fun main(args: Array<String>) {
                     clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)
                     val currentInProgressJobs = inProgressJobs.size
                     val tasksToConsider: Set<PngOutputTask> = if (currentInProgressJobs > 0 && heapLoadHeavy()) {
-                        connectedComponent.filter {
+                        val allocationFreeTasks = connectedComponent.filter {
                             it.isCacheAllocationFreeOnMargin()
-                        }.toSet().also {
-                            if (it.isEmpty()) {
-                                val delay = measureNanoTime {
-                                    inProgressJobs.remove(finishedJobsChannel.receive())
-                                }
-                                logger.warn("Throttled new task for {} ns due to heap pressure", box(delay))
-                                continue@TryLaunchTask
+                        }.toSet()
+                        if (allocationFreeTasks.isEmpty()) {
+                            val delay = measureNanoTime {
+                                inProgressJobs.remove(finishedJobsChannel.receive())
                             }
+                            logger.warn("Throttled new task for {} ns due to heap pressure", box(delay))
+                            continue@TryLaunchTask
                         }
+                        allocationFreeTasks
                     } else connectedComponent
                     if (currentInProgressJobs + tasksToConsider.size <= maxOutputTaskJobs) {
                         logger.info(
