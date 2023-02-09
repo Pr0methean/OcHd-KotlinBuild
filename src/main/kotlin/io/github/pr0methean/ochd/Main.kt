@@ -42,7 +42,7 @@ private const val MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH = 32
 
 val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 
-private const val SOFT_HEAP_LIMIT_FRACTION = 0.80
+private const val SOFT_HEAP_LIMIT_FRACTION = 0.75
 private val gcMxBean = ManagementFactory.getPlatformMXBeans(GarbageCollectorMXBean::class.java).first()
 private val memoryMxBean = ManagementFactory.getMemoryMXBean()
 private val softHeapLimitBytes = (memoryMxBean.heapMemoryUsage.max * SOFT_HEAP_LIMIT_FRACTION).toLong()
