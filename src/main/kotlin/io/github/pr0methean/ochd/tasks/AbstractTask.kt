@@ -176,20 +176,6 @@ abstract class AbstractTask<out T>(
     }
 
     /**
-     * True if starting this task will not cause new entries to be added to the cache, other
-     * than those that tasks already started are going to cache anyway. Tasks for which this
-     * is true are prioritized when memory is low.
-     */
-    fun isCacheAllocationFreeOnMargin(): Boolean {
-        if (isStartedOrAvailable()) {
-            return true
-        } else if (cache.isEnabled()) {
-            return false
-        }
-        return directDependencies.all(AbstractTask<*>::isCacheAllocationFreeOnMargin)
-    }
-
-    /**
      * Prints the dependency edges originating from this task in graphviz format.
      */
     fun printDependencies(writer: PrintWriter) {
