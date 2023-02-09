@@ -52,12 +52,10 @@ private const val MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH = 32
 
 val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 
-private const val THROTTLING_THRESHOLD = 0.75
-private const val HARD_THROTTLING_THRESHOLD = 0.95
+private const val HARD_THROTTLING_THRESHOLD = 0.9
 private val gcMxBean = ManagementFactory.getPlatformMXBeans(GarbageCollectorMXBean::class.java).first()
 private val memoryMxBean = ManagementFactory.getMemoryMXBean()
 private val heapSizeBytes = memoryMxBean.heapMemoryUsage.max.toDouble()
-private val softThrottlingPointBytes = (heapSizeBytes * THROTTLING_THRESHOLD).toLong()
 private val hardThrottlingPointBytes = (heapSizeBytes * HARD_THROTTLING_THRESHOLD).toLong()
 
 @Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod",
@@ -161,43 +159,29 @@ suspend fun main(args: Array<String>) {
                 TryLaunchTask@ while (connectedComponent.isNotEmpty()) {
                     clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)
                     val currentInProgressJobs = inProgressJobs.size
-                    val heapLoad = heapLoad()
-                    val tasksToConsider = if (heapLoad > hardThrottlingPointBytes && currentInProgressJobs > 0) {
-                            val delay = measureNanoTime {
-                                inProgressJobs.remove(finishedJobsChannel.receive())
-                            }
-                            logger.warn("Hard-throttled new task for {} ns", box(delay))
-                            continue@TryLaunchTask
-                        } else if (heapLoad > softThrottlingPointBytes) {
-                            val allocationFreeTasks = connectedComponent.filter {
-                                it.isCacheAllocationFreeOnMargin()
-                            }.toSet()
-                            if (allocationFreeTasks.isEmpty()) {
-                                if (currentInProgressJobs > 0) {
-                                    val delay = measureNanoTime {
-                                        inProgressJobs.remove(finishedJobsChannel.receive())
-                                    }
-                                    logger.warn("Soft-throttled new task for {} ns", box(delay))
-                                    continue@TryLaunchTask
-                                } else connectedComponent
-                            } else allocationFreeTasks
-                        } else connectedComponent
-                    if (currentInProgressJobs + tasksToConsider.size <= maxOutputTaskJobs) {
+                    if (currentInProgressJobs > 0 && heapLoad() > hardThrottlingPointBytes) {
+                        val delay = measureNanoTime {
+                            inProgressJobs.remove(finishedJobsChannel.receive())
+                        }
+                        logger.warn("Hard-throttled new task for {} ns", box(delay))
+                        continue@TryLaunchTask
+                    }
+                    if (currentInProgressJobs + connectedComponent.size <= maxOutputTaskJobs) {
                         logger.info(
                             "{} tasks in progress; starting all {} currently eligible tasks: {}",
-                            box(currentInProgressJobs), box(tasksToConsider.size), StringBuilderFormattable {
-                                it.appendCollection(tasksToConsider, "; ")
+                            box(currentInProgressJobs), box(connectedComponent.size), StringBuilderFormattable {
+                                it.appendCollection(connectedComponent, "; ")
                             }
                         )
-                        tasksToConsider.forEach {
+                        connectedComponent.forEach {
                             inProgressJobs[it] = startTask(scope, it, finishedJobsChannel, ioJobs)
                         }
-                        connectedComponent.removeAll(tasksToConsider)
+                        connectedComponent.clear()
                     } else if (currentInProgressJobs >= maxOutputTaskJobs) {
                         logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
                         inProgressJobs.remove(finishedJobsChannel.receive())
                     } else {
-                        val task = tasksToConsider.minWithOrNull(taskOrderComparator)
+                        val task = connectedComponent.minWithOrNull(taskOrderComparator)
                         checkNotNull(task) { "Error finding a new task to start" }
                         logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
                         inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs)
