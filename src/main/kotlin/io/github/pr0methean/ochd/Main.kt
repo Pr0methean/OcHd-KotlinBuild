@@ -42,10 +42,10 @@ private const val MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH = 32
 
 val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 
-private const val SOFT_HEAP_LIMIT_FRACTION = 0.75
+private const val THROTTLING_THRESHOLD = 0.85
 private val gcMxBean = ManagementFactory.getPlatformMXBeans(GarbageCollectorMXBean::class.java).first()
 private val memoryMxBean = ManagementFactory.getMemoryMXBean()
-private val softHeapLimitBytes = (memoryMxBean.heapMemoryUsage.max * SOFT_HEAP_LIMIT_FRACTION).toLong()
+private val heapSizeBytes = memoryMxBean.heapMemoryUsage.max.toDouble()
 
 
 @Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod")
@@ -162,15 +162,16 @@ suspend fun main(args: Array<String>) {
                         logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
                         inProgressJobs.remove(finishedJobsChannel.receive())
                     } else {
-                        val heapLoadHeavy by lazy(::heapLoadHeavy)
+                        val heapLoad by lazy(::heapLoad)
                         val task = connectedComponent.minWithOrNull(
                             comparingDouble<PngOutputTask> {
-                                runBlocking { it.cacheClearingCoefficient { heapLoadHeavy } }
+                                runBlocking { it.cacheClearingCoefficient { heapLoad } }
                             }.reversed()
                                 .then(comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed())
                                 .then(comparingInt(PngOutputTask::totalSubtasks)))
                         checkNotNull(task) { "Could not get an unstarted task" }
-                        if (currentInProgressJobs > 0 && !task.isCacheAllocationFreeOnMargin() && heapLoadHeavy) {
+                        if (currentInProgressJobs > 0 && !task.isCacheAllocationFreeOnMargin()
+                                && heapLoad > THROTTLING_THRESHOLD) {
                             logger.warn("Not starting a new task until one finishes, due to heap pressure")
                             inProgressJobs.remove(finishedJobsChannel.receive())
                         } else {
@@ -241,12 +242,10 @@ private fun clearFinishedJobs(
     } while (maybeReceive != null || finishedIoJobs)
 }
 
-private fun heapLoadHeavy(): Boolean {
+private fun heapLoad(): Double {
     // Check both after last GC and current, because concurrent GC may have already cleared enough space
     val heapUseAfterLastGc = gcMxBean.lastGcInfo?.memoryUsageAfterGc?.values?.sumOf(MemoryUsage::getUsed) ?: 0
-    val heapLoadHeavy = heapUseAfterLastGc > softHeapLimitBytes
-            && memoryMxBean.heapMemoryUsage.used > softHeapLimitBytes
-    return heapLoadHeavy
+    return heapUseAfterLastGc.coerceAtLeast(memoryMxBean.heapMemoryUsage.used) / heapSizeBytes
 }
 
 private fun startTask(
