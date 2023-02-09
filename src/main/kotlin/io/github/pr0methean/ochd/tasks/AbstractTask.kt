@@ -102,15 +102,17 @@ abstract class AbstractTask<out T>(
      * and so on. Tasks with the highest cache-clearing coefficient are launched first when we're not immediately low
      * on memory.
      */
-    suspend fun cacheClearingCoefficient(): Double {
+    suspend fun cacheClearingCoefficient(net: () -> Boolean = { false }): Double {
         var coefficient = if (!cache.isEnabled()) {
             0.0
         } else if (isStartedOrAvailable()) {
             (1.0 / mutex.withLock { directDependentTasks.count { !it.isStartedOrAvailable() } })
                     .coerceAtLeast(java.lang.Double.MIN_NORMAL)
+        } else if (net()) {
+            -1.0
         } else 0.0
         for (task in directDependencies) {
-            coefficient += task.cacheClearingCoefficient()
+            coefficient += task.cacheClearingCoefficient(net)
         }
         return coefficient
     }
