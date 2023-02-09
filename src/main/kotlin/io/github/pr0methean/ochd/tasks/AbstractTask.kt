@@ -107,7 +107,7 @@ abstract class AbstractTask<out T>(
             0.0
         } else {
             val unstartedDirectDependents = mutex.withLock { directDependentTasks.count { !it.isStartedOrAvailable() } }
-            val clearingScore = 1.0 / (1.0 / (unstartedDirectDependents - 1)).coerceAtLeast(java.lang.Double.MIN_NORMAL)
+            val clearingScore = (1.0 / unstartedDirectDependents).coerceAtLeast(java.lang.Double.MIN_NORMAL)
             if (isStartedOrAvailable()) {
                 clearingScore
             } else -1.0 + clearingScore
