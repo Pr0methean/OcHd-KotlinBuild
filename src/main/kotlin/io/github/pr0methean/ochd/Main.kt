@@ -170,7 +170,7 @@ suspend fun main(args: Array<String>) {
                                 .then(comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed())
                                 .then(comparingInt(PngOutputTask::totalSubtasks)))
                         checkNotNull(task) { "Could not get an unstarted task" }
-                        if (currentInProgressJobs > 0 && !task.isCacheAllocationFreeOnMargin() && heapLoadHeavy()) {
+                        if (currentInProgressJobs > 0 && !task.isCacheAllocationFreeOnMargin() && heapLoadHeavy) {
                             logger.warn("Not starting a new task until one finishes, due to heap pressure")
                             inProgressJobs.remove(finishedJobsChannel.receive())
                         } else {
