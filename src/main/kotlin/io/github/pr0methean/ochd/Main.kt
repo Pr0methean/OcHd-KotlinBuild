@@ -53,10 +53,12 @@ private const val MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH = 32
 val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 
 private const val THROTTLING_THRESHOLD = 0.75
+private const val HARD_THROTTLING_THRESHOLD = 0.95
 private val gcMxBean = ManagementFactory.getPlatformMXBeans(GarbageCollectorMXBean::class.java).first()
 private val memoryMxBean = ManagementFactory.getMemoryMXBean()
 private val heapSizeBytes = memoryMxBean.heapMemoryUsage.max.toDouble()
-private val softHeapLimitBytes = (heapSizeBytes * THROTTLING_THRESHOLD).toLong()
+private val softThrottlingPointBytes = (heapSizeBytes * THROTTLING_THRESHOLD).toLong()
+private val hardThrottlingPointBytes = (heapSizeBytes * HARD_THROTTLING_THRESHOLD).toLong()
 
 @Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod")
 suspend fun main(args: Array<String>) {
@@ -158,19 +160,27 @@ suspend fun main(args: Array<String>) {
                 TryLaunchTask@ while (connectedComponent.isNotEmpty()) {
                     clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)
                     val currentInProgressJobs = inProgressJobs.size
-                    val tasksToConsider: Set<PngOutputTask> = if (currentInProgressJobs > 0 && heapLoadHeavy()) {
-                        val allocationFreeTasks = connectedComponent.filter {
-                            it.isCacheAllocationFreeOnMargin()
-                        }.toSet()
-                        if (allocationFreeTasks.isEmpty()) {
+                    val heapLoad = heapLoad()
+                    val tasksToConsider = if (heapLoad > hardThrottlingPointBytes && currentInProgressJobs > 0) {
                             val delay = measureNanoTime {
                                 inProgressJobs.remove(finishedJobsChannel.receive())
                             }
-                            logger.warn("Throttled new task for {} ns due to heap pressure", box(delay))
+                            logger.warn("Hard-throttled new task for {} ns", box(delay))
                             continue@TryLaunchTask
-                        }
-                        allocationFreeTasks
-                    } else connectedComponent
+                        } else if (heapLoad > softThrottlingPointBytes) {
+                            val allocationFreeTasks = connectedComponent.filter {
+                                it.isCacheAllocationFreeOnMargin()
+                            }.toSet()
+                            if (allocationFreeTasks.isEmpty()) {
+                                if (currentInProgressJobs > 0) {
+                                    val delay = measureNanoTime {
+                                        inProgressJobs.remove(finishedJobsChannel.receive())
+                                    }
+                                    logger.warn("Soft-throttled new task for {} ns", box(delay))
+                                    continue@TryLaunchTask
+                                } else connectedComponent
+                            } else allocationFreeTasks
+                        } else connectedComponent
                     if (currentInProgressJobs + tasksToConsider.size <= maxOutputTaskJobs) {
                         logger.info(
                             "{} tasks in progress; starting all {} currently eligible tasks: {}",
@@ -255,12 +265,10 @@ private fun clearFinishedJobs(
     } while (maybeReceive != null || finishedIoJobs)
 }
 
-private fun heapLoadHeavy(): Boolean {
+private fun heapLoad(): Long {
     // Check both after last GC and current, because concurrent GC may have already cleared enough space
-    val heapUseAfterLastGc = gcMxBean.lastGcInfo?.memoryUsageAfterGc?.values?.sumOf(MemoryUsage::getUsed) ?: 0
-    val heapLoadHeavy = heapUseAfterLastGc > softHeapLimitBytes
-            && memoryMxBean.heapMemoryUsage.used > softHeapLimitBytes
-    return heapLoadHeavy
+    val heapUseAfterLastGc = gcMxBean.lastGcInfo?.memoryUsageAfterGc?.values?.sumOf(MemoryUsage::getUsed)
+    return heapUseAfterLastGc?.coerceAtMost(memoryMxBean.heapMemoryUsage.used) ?: memoryMxBean.heapMemoryUsage.used
 }
 
 private fun startTask(
