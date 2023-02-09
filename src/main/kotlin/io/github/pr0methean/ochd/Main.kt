@@ -20,6 +20,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.StringBuilderFormattable
 import org.apache.logging.log4j.util.Unbox.box
@@ -184,6 +185,7 @@ suspend fun main(args: Array<String>) {
                         logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
                         inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs)
                         check(connectedComponent.remove(task)) { "Attempted to remove task more than once: $task" }
+                        yield() // Let this start its dependencies before reading task graph again
                     }
                 }
             }
