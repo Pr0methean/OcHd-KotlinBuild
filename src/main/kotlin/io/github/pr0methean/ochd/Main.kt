@@ -21,6 +21,7 @@ import kotlinx.coroutines.plus
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.apache.logging.log4j.LogManager
+import org.apache.logging.log4j.util.StringBuilderFormattable
 import org.apache.logging.log4j.util.Unbox.box
 import java.io.File
 import java.lang.management.ManagementFactory
@@ -172,9 +173,10 @@ suspend fun main(args: Array<String>) {
                     } else connectedComponent
                     if (currentInProgressJobs + tasksToConsider.size <= maxOutputTaskJobs) {
                         logger.info(
-                            "{} tasks in progress; starting all {} remaining tasks: {}",
-                            box(currentInProgressJobs), box(connectedComponent.size),
-                                    StringBuilder().appendCollection(tasksToConsider, "; ")
+                            "{} tasks in progress; starting all {} currently eligible tasks: {}",
+                            box(currentInProgressJobs), box(tasksToConsider.size), StringBuilderFormattable {
+                                it.appendCollection(tasksToConsider, "; ")
+                            }
                         )
                         tasksToConsider.forEach {
                             inProgressJobs[it] = startTask(scope, it, finishedJobsChannel, ioJobs)
