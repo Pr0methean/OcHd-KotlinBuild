@@ -60,7 +60,8 @@ private val heapSizeBytes = memoryMxBean.heapMemoryUsage.max.toDouble()
 private val softThrottlingPointBytes = (heapSizeBytes * THROTTLING_THRESHOLD).toLong()
 private val hardThrottlingPointBytes = (heapSizeBytes * HARD_THROTTLING_THRESHOLD).toLong()
 
-@Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod")
+@Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod",
+        "LoopWithTooManyJumpStatements")
 suspend fun main(args: Array<String>) {
     if (args.isEmpty()) {
         println("Usage: main <size>")
