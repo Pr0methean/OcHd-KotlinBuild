@@ -20,6 +20,7 @@ import javax.annotation.concurrent.GuardedBy
 import kotlin.coroutines.CoroutineContext
 
 val abstractTaskLogger: Logger = LogManager.getLogger("AbstractTask")
+private const val USE_NET_CLEARING_WHEN_HEAP_ABOVE = 0.7
 
 /**
  * Unit of work that wraps its coroutine to support reuse (including under heap-constrained conditions).
@@ -110,7 +111,9 @@ abstract class AbstractTask<out T>(
                 (1.0 / mutex.withLock { directDependentTasks.count { !it.isStartedOrAvailable() } })
                     .coerceAtLeast(java.lang.Double.MIN_NORMAL)
             } else {
-                -1.0 + 1.0 / directDependencies.count { !it.isStartedOrAvailable() && it.getNow() == null }
+                (heapLoad() / USE_NET_CLEARING_WHEN_HEAP_ABOVE).coerceAtMost(1.0)
+                    .times(1.0 - 1.0 / directDependencies.count { !it.isStartedOrAvailable() && it.getNow() == null })
+                    .times(-1.0)
             }
         }
         for (task in directDependencies) {
