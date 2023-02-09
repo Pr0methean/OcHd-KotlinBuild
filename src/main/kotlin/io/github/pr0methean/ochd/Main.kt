@@ -160,40 +160,35 @@ suspend fun main(args: Array<String>) {
                     val filteredConnectedComponent = if (heapLoadHeavy()) {
                         connectedComponent.filter {
                             it.isCacheAllocationFreeOnMargin()
-                        }.ifEmpty {
+                        }.toSet().ifEmpty {
                             if (currentInProgressJobs > 0) {
                                 val delay = measureNanoTime {
                                     inProgressJobs.remove(finishedJobsChannel.receive())
                                 }
                                 logger.warn("Throttled new task for {} ns due to heap pressure", box(delay))
+                                continue@TryLaunchTask
                             }
-                            continue@TryLaunchTask
+                            connectedComponent
                         }
                     } else connectedComponent
-                    if (currentInProgressJobs + connectedComponent.size <= maxOutputTaskJobs) {
+                    if (currentInProgressJobs + filteredConnectedComponent.size <= maxOutputTaskJobs) {
                         logger.info(
                             "{} tasks in progress; starting all {} remaining tasks: {}",
                             box(currentInProgressJobs), box(connectedComponent.size),
                                     StringBuilder().appendCollection(connectedComponent, "; ")
                         )
-                        connectedComponent.forEach {
+                        filteredConnectedComponent.forEach {
                             inProgressJobs[it] = startTask(scope, it, finishedJobsChannel, ioJobs)
                         }
-                        connectedComponent.clear()
+                        connectedComponent.removeAll(filteredConnectedComponent)
                     } else if (currentInProgressJobs >= maxOutputTaskJobs) {
                         logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
                         inProgressJobs.remove(finishedJobsChannel.receive())
                     } else {
                         val task = connectedComponent.minWithOrNull(taskOrderComparator)
-                        checkNotNull(task) { "Could not get an unstarted task" }
-                        if (currentInProgressJobs > 0 && !task.isCacheAllocationFreeOnMargin()
-                                && heapLoadHeavy()) {
-
-                        } else {
-                            logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
-                            inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs)
-                            check(connectedComponent.remove(task)) { "Attempted to remove task more than once: $task" }
-                        }
+                        logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
+                        inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs)
+                        check(connectedComponent.remove(task)) { "Attempted to remove task more than once: $task" }
                     }
                 }
             }
