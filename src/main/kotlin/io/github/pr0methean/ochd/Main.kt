@@ -154,9 +154,22 @@ suspend fun main(args: Array<String>) {
             val finishedJobsChannel = Channel<PngOutputTask>(capacity = maxOutputTaskJobs)
             for (connectedComponent in connectedComponents) {
                 logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
-                while (connectedComponent.isNotEmpty()) {
+                TryLaunchTask@ while (connectedComponent.isNotEmpty()) {
                     clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)
                     val currentInProgressJobs = inProgressJobs.size
+                    val filteredConnectedComponent = if (heapLoadHeavy()) {
+                        connectedComponent.filter {
+                            it.isCacheAllocationFreeOnMargin()
+                        }.ifEmpty {
+                            if (currentInProgressJobs > 0) {
+                                val delay = measureNanoTime {
+                                    inProgressJobs.remove(finishedJobsChannel.receive())
+                                }
+                                logger.warn("Throttled new task for {} ns due to heap pressure", box(delay))
+                            }
+                            continue@TryLaunchTask
+                        }
+                    } else connectedComponent
                     if (currentInProgressJobs + connectedComponent.size <= maxOutputTaskJobs) {
                         logger.info(
                             "{} tasks in progress; starting all {} remaining tasks: {}",
@@ -175,10 +188,7 @@ suspend fun main(args: Array<String>) {
                         checkNotNull(task) { "Could not get an unstarted task" }
                         if (currentInProgressJobs > 0 && !task.isCacheAllocationFreeOnMargin()
                                 && heapLoadHeavy()) {
-                            val delay = measureNanoTime {
-                                inProgressJobs.remove(finishedJobsChannel.receive())
-                            }
-                            logger.warn("Throttled new task for {} ns due to heap pressure", box(delay))
+
                         } else {
                             logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
                             inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs)

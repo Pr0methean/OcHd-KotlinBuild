@@ -81,6 +81,7 @@ tasks.test {
 }
 
 tasks.withType<KotlinCompile> {
+    kotlinOptions.languageVersion = "1.9"
     kotlinOptions.jvmTarget = jdkVersion
     kotlinOptions.useK2 = true
 }
