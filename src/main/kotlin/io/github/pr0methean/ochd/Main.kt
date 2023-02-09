@@ -119,7 +119,7 @@ suspend fun main(args: Array<String>) {
             val connectedComponents = if (tasks.size > maxOutputTaskJobs) {
                 tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks))
                     .sortedByConnectedComponents()
-            } else setOf(tasks.toMutableList())
+            } else listOf(tasks.toMutableSet())
             if (tileSize <= MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH) {
                 // Output connected components in .dot format
                 withContext(Dispatchers.IO) {
@@ -157,35 +157,35 @@ suspend fun main(args: Array<String>) {
                 TryLaunchTask@ while (connectedComponent.isNotEmpty()) {
                     clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)
                     val currentInProgressJobs = inProgressJobs.size
-                    val filteredConnectedComponent = if (heapLoadHeavy()) {
+                    val tasksToConsider: Set<PngOutputTask> = if (currentInProgressJobs > 0 && heapLoadHeavy()) {
                         connectedComponent.filter {
                             it.isCacheAllocationFreeOnMargin()
-                        }.toSet().ifEmpty {
-                            if (currentInProgressJobs > 0) {
+                        }.toSet().also {
+                            if (it.isEmpty()) {
                                 val delay = measureNanoTime {
                                     inProgressJobs.remove(finishedJobsChannel.receive())
                                 }
                                 logger.warn("Throttled new task for {} ns due to heap pressure", box(delay))
                                 continue@TryLaunchTask
                             }
-                            connectedComponent
                         }
                     } else connectedComponent
-                    if (currentInProgressJobs + filteredConnectedComponent.size <= maxOutputTaskJobs) {
+                    if (currentInProgressJobs + tasksToConsider.size <= maxOutputTaskJobs) {
                         logger.info(
                             "{} tasks in progress; starting all {} remaining tasks: {}",
                             box(currentInProgressJobs), box(connectedComponent.size),
                                     StringBuilder().appendCollection(connectedComponent, "; ")
                         )
-                        filteredConnectedComponent.forEach {
+                        tasksToConsider.forEach {
                             inProgressJobs[it] = startTask(scope, it, finishedJobsChannel, ioJobs)
                         }
-                        connectedComponent.removeAll(filteredConnectedComponent)
+                        connectedComponent.removeAll(tasksToConsider)
                     } else if (currentInProgressJobs >= maxOutputTaskJobs) {
                         logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
                         inProgressJobs.remove(finishedJobsChannel.receive())
                     } else {
-                        val task = connectedComponent.minWithOrNull(taskOrderComparator)
+                        val task = tasksToConsider.minWithOrNull(taskOrderComparator)
+                        checkNotNull(task) { "Error finding a new task to start" }
                         logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
                         inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs)
                         check(connectedComponent.remove(task)) { "Attempted to remove task more than once: $task" }
