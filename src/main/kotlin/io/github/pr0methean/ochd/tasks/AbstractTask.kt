@@ -20,7 +20,6 @@ import javax.annotation.concurrent.GuardedBy
 import kotlin.coroutines.CoroutineContext
 
 val abstractTaskLogger: Logger = LogManager.getLogger("AbstractTask")
-private const val USE_NET_CLEARING_WHEN_HEAP_ABOVE = .75
 
 /**
  * Unit of work that wraps its coroutine to support reuse (including under heap-constrained conditions).
@@ -103,15 +102,15 @@ abstract class AbstractTask<out T>(
      * and so on. Tasks with the highest cache-clearing coefficient are launched first when we're not immediately low
      * on memory.
      */
-    suspend fun cacheClearingCoefficient(heapLoad: () -> Double): Double {
+    suspend fun cacheClearingCoefficient(): Double {
         var coefficient = if (!cache.isEnabled()) {
             0.0
         } else if (isStartedOrAvailable()) {
             (1.0 / mutex.withLock { directDependentTasks.count { !it.isStartedOrAvailable() } })
                     .coerceAtLeast(java.lang.Double.MIN_NORMAL)
-        } else -(heapLoad() / USE_NET_CLEARING_WHEN_HEAP_ABOVE).coerceAtLeast(-1.0)
+        } else 0.0
         for (task in directDependencies) {
-            coefficient += task.cacheClearingCoefficient(heapLoad)
+            coefficient += task.cacheClearingCoefficient()
         }
         return coefficient
     }

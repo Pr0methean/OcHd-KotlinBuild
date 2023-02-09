@@ -8,6 +8,7 @@ import io.github.pr0methean.ochd.materials.ALL_MATERIALS
 import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.tasks.SvgToBitmapTask
 import io.github.pr0methean.ochd.tasks.mkdirsedPaths
+import javafx.application.Platform
 import javafx.embed.swing.SwingFXUtils
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -33,6 +34,14 @@ import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 import kotlin.text.Charsets.UTF_8
 
+private val taskOrderComparator = comparingInt<PngOutputTask> {
+    if (it.isCacheAllocationFreeOnMargin()) 0 else 1
+}.then(comparingDouble<PngOutputTask> {
+    runBlocking { it.cacheClearingCoefficient() }
+}.reversed())
+.then(comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed())
+.then(comparingInt(PngOutputTask::totalSubtasks))
+
 private val logger = LogManager.getRootLogger()
 
 private const val MAX_OUTPUT_TASKS_PER_CPU = 1.0
@@ -46,7 +55,7 @@ private const val THROTTLING_THRESHOLD = 0.85
 private val gcMxBean = ManagementFactory.getPlatformMXBeans(GarbageCollectorMXBean::class.java).first()
 private val memoryMxBean = ManagementFactory.getMemoryMXBean()
 private val heapSizeBytes = memoryMxBean.heapMemoryUsage.max.toDouble()
-
+private val softHeapLimitBytes = (heapSizeBytes * THROTTLING_THRESHOLD).toLong()
 
 @Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod")
 suspend fun main(args: Array<String>) {
@@ -162,16 +171,10 @@ suspend fun main(args: Array<String>) {
                         logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
                         inProgressJobs.remove(finishedJobsChannel.receive())
                     } else {
-                        val heapLoad by lazy(::heapLoad)
-                        val task = connectedComponent.minWithOrNull(
-                            comparingDouble<PngOutputTask> {
-                                runBlocking { it.cacheClearingCoefficient { heapLoad } }
-                            }.reversed()
-                                .then(comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed())
-                                .then(comparingInt(PngOutputTask::totalSubtasks)))
+                        val task = connectedComponent.minWithOrNull(taskOrderComparator)
                         checkNotNull(task) { "Could not get an unstarted task" }
                         if (currentInProgressJobs > 0 && !task.isCacheAllocationFreeOnMargin()
-                                && heapLoad > THROTTLING_THRESHOLD) {
+                                && heapLoadHeavy()) {
                             val delay = measureNanoTime {
                                 inProgressJobs.remove(finishedJobsChannel.receive())
                             }
@@ -196,6 +199,7 @@ suspend fun main(args: Array<String>) {
         }
     }
     stopMonitoring()
+    Platform.exit()
     ImageProcessingStats.log()
     logger.info("")
     logger.info("All tasks finished after {} ns", box(time))
@@ -244,10 +248,12 @@ private fun clearFinishedJobs(
     } while (maybeReceive != null || finishedIoJobs)
 }
 
-private fun heapLoad(): Double {
+private fun heapLoadHeavy(): Boolean {
     // Check both after last GC and current, because concurrent GC may have already cleared enough space
     val heapUseAfterLastGc = gcMxBean.lastGcInfo?.memoryUsageAfterGc?.values?.sumOf(MemoryUsage::getUsed) ?: 0
-    return heapUseAfterLastGc.coerceAtLeast(memoryMxBean.heapMemoryUsage.used) / heapSizeBytes
+    val heapLoadHeavy = heapUseAfterLastGc > softHeapLimitBytes
+            && memoryMxBean.heapMemoryUsage.used > softHeapLimitBytes
+    return heapLoadHeavy
 }
 
 private fun startTask(
