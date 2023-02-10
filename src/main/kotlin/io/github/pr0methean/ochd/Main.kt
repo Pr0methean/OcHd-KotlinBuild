@@ -168,11 +168,13 @@ suspend fun main(args: Array<String>) {
                     clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)
                     val currentInProgressJobs = inProgressJobs.size
                     if (currentInProgressJobs > 0 && heapLoad() > hardThrottlingPointBytes) {
-                        val delay = measureNanoTime {
-                            System.gc()
-                            inProgressJobs.remove(finishedJobsChannel.receive())
+                        System.gc()
+                        if (!clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)) {
+                            val delay = measureNanoTime {
+                                inProgressJobs.remove(finishedJobsChannel.receive())
+                            }
+                            logger.warn("Hard-throttled new task for {} ns", box(delay))
                         }
-                        logger.warn("Hard-throttled new task for {} ns", box(delay))
                         continue@TryLaunchTask
                     }
                     if (currentInProgressJobs + connectedComponent.size <= maxOutputTaskJobs) {
@@ -261,11 +263,17 @@ private fun clearFinishedJobs(
     finishedJobsChannel: Channel<PngOutputTask>,
     inProgressJobs: HashMap<PngOutputTask, Job>,
     ioJobs: KeySetView<Job, Boolean>
-) {
+): Boolean {
+    var anyCleared = false
     do {
-        val maybeReceive = finishedJobsChannel.tryReceive().getOrNull()?.also(inProgressJobs::remove)
+        val maybeReceive = finishedJobsChannel.tryReceive().getOrNull()
+        if (maybeReceive != null) {
+            anyCleared = true
+            inProgressJobs.remove(maybeReceive)
+        }
         val finishedIoJobs = ioJobs.removeIf(Job::isCompleted)
     } while (maybeReceive != null || finishedIoJobs)
+    return anyCleared
 }
 
 private fun heapLoad(): Long {
