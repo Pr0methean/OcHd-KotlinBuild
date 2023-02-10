@@ -38,9 +38,9 @@ import kotlin.text.Charsets.UTF_8
 
 private val taskOrderComparator = comparingInt<PngOutputTask> {
     if (it.isCacheAllocationFreeOnMargin()) 0 else 1
-}.then(comparingDouble<PngOutputTask> {
-    runBlocking { it.cacheClearingCoefficient() }
-}.reversed())
+}.then(comparingDouble {
+    - runBlocking { it.cacheClearingCoefficient() }
+})
 .then(comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed())
 .then(comparingInt(PngOutputTask::totalSubtasks))
 
@@ -111,7 +111,7 @@ suspend fun main(args: Array<String>) {
         val mkdirs = ioScope.launch {
             cleanupAndCopyMetadata.join()
             tasks.flatMap(PngOutputTask::files)
-                .mapNotNull(File::getParentFile)
+                .mapNotNull(File::parentFile)
                 .distinct()
                 .filter(mkdirsedPaths::add)
                 .forEach(File::mkdirs)
@@ -268,7 +268,7 @@ private fun clearFinishedJobs(
 
 private fun heapLoad(): Long {
     // Check both after last GC and current, because concurrent GC may have already cleared enough space
-    val heapUseAfterLastGc = gcMxBean.lastGcInfo?.memoryUsageAfterGc?.values?.sumOf(MemoryUsage::getUsed)
+    val heapUseAfterLastGc = gcMxBean.lastGcInfo?.memoryUsageAfterGc?.values?.sumOf(MemoryUsage::used)
     return heapUseAfterLastGc?.coerceAtMost(memoryMxBean.heapMemoryUsage.used) ?: memoryMxBean.heapMemoryUsage.used
 }
 
