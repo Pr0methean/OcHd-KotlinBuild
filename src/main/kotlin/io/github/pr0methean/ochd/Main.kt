@@ -58,6 +58,7 @@ val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 private const val HARD_THROTTLING_THRESHOLD = 0.98
 private const val HARD_THROTTLING_AFTER_GC_THRESHOLD = 0.88
 private const val GC_BASED_THROTTLING_RULES_THRESHOLD = 0.70
+private const val MIN_JOBS_TO_ALLOW = 2
 private val gcMxBean by lazy { ManagementFactory.getPlatformMXBeans(GarbageCollectorMXBean::class.java).first() }
 private val memoryMxBean by lazy(ManagementFactory::getMemoryMXBean)
 private val heapSizeBytes by lazy { memoryMxBean.heapMemoryUsage.max.toDouble() }
@@ -173,7 +174,7 @@ suspend fun main(args: Array<String>) {
                 while (connectedComponent.isNotEmpty()) {
                     clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)
                     val currentInProgressJobs = inProgressJobs.size
-                    if (currentInProgressJobs > 0 && heapLoadHeavy()) {
+                    if (currentInProgressJobs >= MIN_JOBS_TO_ALLOW && heapLoadHeavy()) {
                         if (!clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)) {
                             val delay = measureNanoTime {
                                 inProgressJobs.remove(finishedJobsChannel.receive())
