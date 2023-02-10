@@ -44,7 +44,7 @@ private val taskOrderComparator = comparingDouble<PngOutputTask> {
 
 private val logger = LogManager.getRootLogger()
 
-private const val MAX_OUTPUT_TASKS_PER_CPU = 2.0
+private const val MAX_OUTPUT_TASKS_PER_CPU = 1.0
 private const val SOFT_MAX_OUTPUT_TASKS_PER_CPU = 1.0
 
 private const val MIN_TILE_SIZE_FOR_EXPLICIT_GC = 2048
