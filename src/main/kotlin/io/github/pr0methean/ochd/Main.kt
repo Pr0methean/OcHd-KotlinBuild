@@ -282,23 +282,24 @@ private fun clearFinishedJobs(
 private fun heapLoadHeavy(): Boolean {
     val bytesInUse = memoryMxBean.heapMemoryUsage.used
     // Check both after last GC and current, because concurrent GC may have already cleared enough space
-    if (bytesInUse > hardThrottlingPointBytes) {
+    return if (bytesInUse > hardThrottlingPointBytes) {
         logger.warn("Heap load too high: {} bytes in use", box(bytesInUse))
         System.gc()
-        return true
+        true
     } else if (bytesInUse < gcThrottlingRulesThresholdBytes) {
-        return false
+        false
+    } else {
+        val heapUseAfterLastGc = gcMxBean.lastGcInfo ?: return false
+        val bytesAfter = heapUseAfterLastGc.memoryUsageAfterGc.values.sumOf(MemoryUsage::used)
+        val bytesBefore = heapUseAfterLastGc.memoryUsageBeforeGc.values.sumOf(MemoryUsage::used)
+        if (bytesAfter > hardThrottlingPointBytesAfterGc) {
+            logger.warn("Heap load too high after last GC: {} bytes in use", box(bytesAfter))
+            true
+        } else if (bytesAfter > bytesBefore) {
+            logger.warn("Heap load too high: GC falling behind allocation")
+            true
+        } else false
     }
-    val heapUseAfterLastGc = gcMxBean.lastGcInfo ?: return false
-    val bytesAfter = heapUseAfterLastGc.memoryUsageAfterGc.values.sumOf(MemoryUsage::used)
-    val bytesBefore = heapUseAfterLastGc.memoryUsageBeforeGc.values.sumOf(MemoryUsage::used)
-    return if (bytesAfter > hardThrottlingPointBytesAfterGc) {
-        logger.warn("Heap load too high after last GC: {} bytes in use", box(bytesAfter))
-        true
-    } else if (bytesAfter > bytesBefore) {
-        logger.warn("Heap load too high: GC falling behind allocation")
-        true
-    } else false
 }
 
 private fun startTask(
