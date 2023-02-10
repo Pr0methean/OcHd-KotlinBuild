@@ -51,7 +51,7 @@ private const val MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH = 32
 
 val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 
-private const val HARD_THROTTLING_THRESHOLD = 0.96
+private const val HARD_THROTTLING_THRESHOLD = 0.95
 private val gcMxBean = ManagementFactory.getPlatformMXBeans(GarbageCollectorMXBean::class.java).first()
 private val memoryMxBean = ManagementFactory.getMemoryMXBean()
 private val heapSizeBytes = memoryMxBean.heapMemoryUsage.max.toDouble()
@@ -185,7 +185,12 @@ suspend fun main(args: Array<String>) {
                         logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
                         inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs)
                         check(connectedComponent.remove(task)) { "Attempted to remove task more than once: $task" }
-                        yield() // Let this start its dependencies before reading task graph again
+
+                        // Adjusted by 1 for just-launched job and 1 for rendering thread
+                        if (currentInProgressJobs >= maxOutputTaskJobs - 2) {
+
+                            yield() // Let this start its dependencies before reading task graph again
+                        }
                     }
                 }
             }
