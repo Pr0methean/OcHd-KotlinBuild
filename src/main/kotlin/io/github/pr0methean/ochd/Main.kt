@@ -283,9 +283,15 @@ private fun heapLoadHeavy(): Boolean {
         System.gc()
         return true
     }
-    val heapUseAfterLastGc = gcMxBean.lastGcInfo
-    return heapUseAfterLastGc != null
-            && heapUseAfterLastGc.memoryUsageAfterGc.values.sumOf(MemoryUsage::used) > hardThrottlingPointBytesAfterGc
+    val heapUseAfterLastGc = gcMxBean.lastGcInfo ?: return false
+    val bytesAfter = heapUseAfterLastGc.memoryUsageAfterGc.values.sumOf(MemoryUsage::used)
+    val bytesBefore = heapUseAfterLastGc.memoryUsageBeforeGc.values.sumOf(MemoryUsage::used)
+    if (bytesAfter > hardThrottlingPointBytesAfterGc) {
+        return true
+    } else if (bytesAfter > bytesBefore) {
+        return true
+    }
+    return false
 }
 
 private fun startTask(
