@@ -189,8 +189,8 @@ suspend fun main(args: Array<String>) {
                         inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs)
                         check(connectedComponent.remove(task)) { "Attempted to remove task more than once: $task" }
 
-                        // Adjusted by 1 for just-launched job (render thread isn't always busy)
-                        if (currentInProgressJobs >= maxOutputTaskJobs - 1) {
+                        // Adjusted by 1 for just-launched job and 1 for rendering thread
+                        if (currentInProgressJobs >= maxOutputTaskJobs - 2) {
 
                             yield() // Let this start its dependencies before reading task graph again
                         }
