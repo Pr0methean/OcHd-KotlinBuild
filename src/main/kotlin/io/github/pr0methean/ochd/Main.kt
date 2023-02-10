@@ -187,11 +187,14 @@ suspend fun main(args: Array<String>) {
                         }
                         connectedComponent.clear()
                     } else if (currentInProgressJobs >= maxOutputTaskJobs) {
-                        logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
-                        val delay = measureNanoTime {
-                            inProgressJobs.remove(finishedJobsChannel.receive())
+                        if (!clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)) {
+                            logger.info("{} tasks in progress; waiting for one to finish",
+                                    box(currentInProgressJobs))
+                            val delay = measureNanoTime {
+                                inProgressJobs.remove(finishedJobsChannel.receive())
+                            }
+                            logger.warn("Waited for tasks in progress to fall below limit for {} ns", box(delay))
                         }
-                        logger.warn("Waited for tasks in progress to fall below limit for {} ns", box(delay))
                     } else {
                         val task = connectedComponent.minWithOrNull(taskOrderComparator)
                         checkNotNull(task) { "Error finding a new task to start" }
