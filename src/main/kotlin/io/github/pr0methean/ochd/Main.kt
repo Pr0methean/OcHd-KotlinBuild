@@ -44,7 +44,8 @@ private val taskOrderComparator = comparingDouble<PngOutputTask> {
 
 private val logger = LogManager.getRootLogger()
 
-private const val MAX_OUTPUT_TASKS_PER_CPU = 1.0
+private const val MAX_OUTPUT_TASKS_PER_CPU = 2.0
+private const val SOFT_MAX_OUTPUT_TASKS_PER_CPU = 1.0
 
 private const val MIN_TILE_SIZE_FOR_EXPLICIT_GC = 2048
 private const val MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH = 32
@@ -189,8 +190,8 @@ suspend fun main(args: Array<String>) {
                         inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs)
                         check(connectedComponent.remove(task)) { "Attempted to remove task more than once: $task" }
 
-                        // Adjusted by 1 for just-launched job and 1 for rendering thread
-                        if (currentInProgressJobs >= maxOutputTaskJobs - 2) {
+                        // Adjusted by 1 for just-launched job
+                        if (currentInProgressJobs >= softMaxOutputTaskJobs - 1) {
 
                             yield() // Let this start its dependencies before reading task graph again
                         }
