@@ -70,6 +70,6 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
 
     fun build(): LayerList {
         check(layers.isNotEmpty()) { "Trying to create an empty LayerList" }
-        return LayerList(layers, background, ctx.tileSize, ctx.tileSize)
+        return LayerList(layers, background, layers.maxOf { it.width }, layers.maxOf { it.height })
     }
 }
