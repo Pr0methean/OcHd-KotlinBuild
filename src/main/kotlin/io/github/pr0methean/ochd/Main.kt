@@ -36,6 +36,7 @@ import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 import kotlin.text.Charsets.UTF_8
 
+const val MIN_OUTPUT_TASK_JOBS: Int = 1
 const val CAPACITY_PADDING_FACTOR: Int = 2
 private val taskOrderComparator = comparingInt<PngOutputTask> {
     if (it.isCacheAllocationFreeOnMargin()) 0 else 1
@@ -58,7 +59,6 @@ val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 private const val HARD_THROTTLING_THRESHOLD = 0.98
 private const val HARD_THROTTLING_AFTER_GC_THRESHOLD = 0.88
 private const val GC_BASED_THROTTLING_RULES_THRESHOLD = 0.70
-private const val MIN_JOBS_TO_ALLOW = 2
 private val gcMxBean by lazy { ManagementFactory.getPlatformMXBeans(GarbageCollectorMXBean::class.java).first() }
 private val memoryMxBean by lazy(ManagementFactory::getMemoryMXBean)
 private val heapSizeBytes by lazy { memoryMxBean.heapMemoryUsage.max.toDouble() }
@@ -110,7 +110,6 @@ suspend fun main(args: Array<String>) {
 
     // subtract 1 for this thread or the render thread, whichever is the bottleneck
     val maxOutputTaskJobs = (MAX_OUTPUT_TASKS_PER_CPU * nCpus).toInt() - 1
-
     val softMaxOutputTaskJobs = (SOFT_MAX_OUTPUT_TASKS_PER_CPU * nNonRenderCpus).toInt()
     startMonitoring(scope)
     val time = measureNanoTime {
@@ -174,7 +173,7 @@ suspend fun main(args: Array<String>) {
                 while (connectedComponent.isNotEmpty()) {
                     clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)
                     val currentInProgressJobs = inProgressJobs.size
-                    if (currentInProgressJobs >= MIN_JOBS_TO_ALLOW && heapLoadHeavy()) {
+                    if (currentInProgressJobs >= MIN_OUTPUT_TASK_JOBS && heapLoadHeavy()) {
                         if (!clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)) {
                             val delay = measureNanoTime {
                                 inProgressJobs.remove(finishedJobsChannel.receive())
