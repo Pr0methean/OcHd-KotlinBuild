@@ -169,6 +169,7 @@ suspend fun main(args: Array<String>) {
                     val currentInProgressJobs = inProgressJobs.size
                     if (currentInProgressJobs > 0 && heapLoad() > hardThrottlingPointBytes) {
                         val delay = measureNanoTime {
+                            System.gc()
                             inProgressJobs.remove(finishedJobsChannel.receive())
                         }
                         logger.warn("Hard-throttled new task for {} ns", box(delay))
