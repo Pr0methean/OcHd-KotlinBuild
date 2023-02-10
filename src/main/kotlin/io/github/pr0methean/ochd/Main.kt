@@ -175,9 +175,7 @@ suspend fun main(args: Array<String>) {
                             }
                             logger.warn("Hard-throttled new task for {} ns", box(delay))
                         }
-                        continue@TryLaunchTask
-                    }
-                    if (currentInProgressJobs + connectedComponent.size <= maxOutputTaskJobs) {
+                    } else if (currentInProgressJobs + connectedComponent.size <= maxOutputTaskJobs) {
                         logger.info(
                             "{} tasks in progress; starting all {} currently eligible tasks: {}",
                             box(currentInProgressJobs), box(connectedComponent.size), StringBuilderFormattable {
@@ -203,7 +201,6 @@ suspend fun main(args: Array<String>) {
 
                         // Adjusted by 1 for just-launched job
                         if (currentInProgressJobs >= softMaxOutputTaskJobs - 1) {
-
                             yield() // Let this start its dependencies before reading task graph again
                         }
                     }
