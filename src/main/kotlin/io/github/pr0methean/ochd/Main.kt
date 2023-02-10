@@ -36,6 +36,7 @@ import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 import kotlin.text.Charsets.UTF_8
 
+const val CAPACITY_PADDING_FACTOR: Int = 2
 private val taskOrderComparator = comparingInt<PngOutputTask> {
     if (it.isCacheAllocationFreeOnMargin()) 0 else 1
 }.then(comparingDouble {
@@ -160,7 +161,7 @@ suspend fun main(args: Array<String>) {
                 }
             }
             val inProgressJobs = HashMap<PngOutputTask, Job>()
-            val finishedJobsChannel = Channel<PngOutputTask>(capacity = maxOutputTaskJobs)
+            val finishedJobsChannel = Channel<PngOutputTask>(capacity = CAPACITY_PADDING_FACTOR * maxOutputTaskJobs)
             for (connectedComponent in connectedComponents) {
                 logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
                 TryLaunchTask@ while (connectedComponent.isNotEmpty()) {
