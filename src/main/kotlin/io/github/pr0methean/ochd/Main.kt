@@ -173,7 +173,6 @@ suspend fun main(args: Array<String>) {
                     clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)
                     val currentInProgressJobs = inProgressJobs.size
                     if (currentInProgressJobs > 0 && heapLoadHeavy()) {
-                        System.gc()
                         if (!clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)) {
                             val delay = measureNanoTime {
                                 inProgressJobs.remove(finishedJobsChannel.receive())
@@ -278,9 +277,11 @@ private fun clearFinishedJobs(
     return anyCleared
 }
 
+@Suppress("ExplicitGarbageCollectionCall")
 private fun heapLoadHeavy(): Boolean {
     // Check both after last GC and current, because concurrent GC may have already cleared enough space
     if (memoryMxBean.heapMemoryUsage.used > hardThrottlingPointBytes) {
+        System.gc()
         return true
     }
     val heapUseAfterLastGc = gcMxBean.lastGcInfo
