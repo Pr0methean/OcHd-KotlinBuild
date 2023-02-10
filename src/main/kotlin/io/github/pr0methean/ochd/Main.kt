@@ -96,7 +96,12 @@ suspend fun main(args: Array<String>) {
         Thread.currentThread().priority = Thread.MAX_PRIORITY
     }
     val nCpus = Runtime.getRuntime().availableProcessors()
+    val nNonRenderCpus = nCpus - if (
+        // SWPipeline is the software renderer, so its rendering thread needs one CPU
+        com.sun.prism.GraphicsPipeline.getPipeline()::class.qualifiedName == "com.sun.prism.sw.SWPipeline"
+    ) 1 else 0
     val maxOutputTaskJobs = (MAX_OUTPUT_TASKS_PER_CPU * nCpus).toInt()
+    val softMaxOutputTaskJobs = (SOFT_MAX_OUTPUT_TASKS_PER_CPU * nNonRenderCpus).toInt()
     startMonitoring(scope)
     val time = measureNanoTime {
         onTaskLaunched("Build task graph", "Build task graph")
