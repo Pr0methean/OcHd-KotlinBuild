@@ -63,8 +63,7 @@ private val heapSizeBytes = memoryMxBean.heapMemoryUsage.max.toDouble()
 private val hardThrottlingPointBytes = (heapSizeBytes * HARD_THROTTLING_THRESHOLD).toLong()
 private val hardThrottlingPointBytesAfterGc = (heapSizeBytes * HARD_THROTTLING_AFTER_GC_THRESHOLD).toLong()
 
-@Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod",
-        "LoopWithTooManyJumpStatements")
+@Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod")
 suspend fun main(args: Array<String>) {
     if (args.isEmpty()) {
         println("Usage: main <size>")
@@ -169,7 +168,7 @@ suspend fun main(args: Array<String>) {
             val finishedJobsChannel = Channel<PngOutputTask>(capacity = CAPACITY_PADDING_FACTOR * maxOutputTaskJobs)
             for (connectedComponent in connectedComponents) {
                 logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
-                TryLaunchTask@ while (connectedComponent.isNotEmpty()) {
+                while (connectedComponent.isNotEmpty()) {
                     clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)
                     val currentInProgressJobs = inProgressJobs.size
                     if (currentInProgressJobs > 0 && heapLoadHeavy()) {
