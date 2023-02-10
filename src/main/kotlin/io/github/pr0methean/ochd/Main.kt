@@ -57,11 +57,13 @@ val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 
 private const val HARD_THROTTLING_THRESHOLD = 0.98
 private const val HARD_THROTTLING_AFTER_GC_THRESHOLD = 0.91
-private val gcMxBean = ManagementFactory.getPlatformMXBeans(GarbageCollectorMXBean::class.java).first()
-private val memoryMxBean = ManagementFactory.getMemoryMXBean()
-private val heapSizeBytes = memoryMxBean.heapMemoryUsage.max.toDouble()
-private val hardThrottlingPointBytes = (heapSizeBytes * HARD_THROTTLING_THRESHOLD).toLong()
-private val hardThrottlingPointBytesAfterGc = (heapSizeBytes * HARD_THROTTLING_AFTER_GC_THRESHOLD).toLong()
+private const val GC_BASED_THROTTLING_RULES_THRESHOLD = 0.70
+private val gcMxBean by lazy { ManagementFactory.getPlatformMXBeans(GarbageCollectorMXBean::class.java).first() }
+private val memoryMxBean by lazy(ManagementFactory::getMemoryMXBean)
+private val heapSizeBytes by lazy { memoryMxBean.heapMemoryUsage.max.toDouble() }
+private val hardThrottlingPointBytes by lazy { (heapSizeBytes * HARD_THROTTLING_THRESHOLD).toLong() }
+private val hardThrottlingPointBytesAfterGc by lazy { (heapSizeBytes * HARD_THROTTLING_AFTER_GC_THRESHOLD).toLong() }
+private val gcThrottlingRulesThresholdBytes by lazy { (heapSizeBytes * GC_BASED_THROTTLING_RULES_THRESHOLD).toLong() }
 
 @Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod")
 suspend fun main(args: Array<String>) {
@@ -284,6 +286,8 @@ private fun heapLoadHeavy(): Boolean {
         logger.warn("Heap load too high: {} bytes in use", box(bytesInUse))
         System.gc()
         return true
+    } else if (bytesInUse < gcThrottlingRulesThresholdBytes) {
+        return false
     }
     val heapUseAfterLastGc = gcMxBean.lastGcInfo ?: return false
     val bytesAfter = heapUseAfterLastGc.memoryUsageAfterGc.values.sumOf(MemoryUsage::used)
