@@ -48,7 +48,7 @@ private val taskOrderComparator = comparingInt<PngOutputTask> {
 
 private val logger = LogManager.getRootLogger()
 
-private const val HARD_MAX_OUTPUT_TASKS_PER_CPU = 4.0
+private const val HARD_MAX_OUTPUT_TASKS_PER_CPU = 2.0
 private const val SOFT_MAX_OUTPUT_TASKS_PER_CPU = 1.0
 
 private const val MIN_TILE_SIZE_FOR_EXPLICIT_GC = 2048
@@ -65,7 +65,7 @@ private val heapSizeBytes by lazy { memoryMxBean.heapMemoryUsage.max.toDouble() 
 private val hardThrottlingPointBytes by lazy { (heapSizeBytes * HARD_THROTTLING_THRESHOLD).toLong() }
 private val hardThrottlingPointBytesAfterGc by lazy { (heapSizeBytes * HARD_THROTTLING_AFTER_GC_THRESHOLD).toLong() }
 private val gcThrottlingRulesThresholdBytes by lazy { (heapSizeBytes * GC_BASED_THROTTLING_RULES_THRESHOLD).toLong() }
-private const val WORKING_BYTES_PER_PIXEL = 48
+private const val WORKING_BYTES_PER_PIXEL = 64
 private const val HEAP_RESERVE_FRACTION = 0.05
 private val heapReserveBytes by lazy { heapSizeBytes * HEAP_RESERVE_FRACTION }
 
