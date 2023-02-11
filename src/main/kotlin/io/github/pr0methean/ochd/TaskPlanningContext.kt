@@ -97,7 +97,7 @@ class TaskPlanningContext(
                         } else {
                             ImageProcessingStats.dedupeSuccesses.add(className)
                             mergeWithDuplicate(task).also {
-                                logger.info("Deduplicated: {} -> {}", this@run, it)
+                                logger.info("Deduplicated: {} -> {}", this@run.name, it.name)
                             }
                         }
                     } ?: task.also {

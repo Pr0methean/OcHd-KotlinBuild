@@ -90,7 +90,7 @@ fun startMonitoring(scope: CoroutineScope) {
 fun logThread(logLevel: Level, id: Long, threadInfo: ThreadInfo) {
     logger.log(logLevel, "Thread: {} (id: {})", threadInfo.threadName, box(id))
     threadInfo.stackTrace.forEach {logger.log(logLevel, "{}.{} ({} line {})",
-        it.className, it.methodName, it.fileName, it.lineNumber)}
+        it.className, it.methodName, it.fileName, box(it.lineNumber))}
 }
 
 fun stopMonitoring() {
@@ -137,7 +137,7 @@ object ImageProcessingStats {
             val count = repeatedTasks.count(it)
             if (count >= 2) {
                 val (typeName, name) = it
-                logger.info("{}: {}: {}", typeName, name, count)
+                logger.info("{}: {}: {}", typeName, name, box(count))
             }
         }
         logger.info("")
@@ -151,7 +151,8 @@ object ImageProcessingStats {
             val worstCase = unique + dedupeSuccesses.count(className)
             val efficiency = (unique.toDouble() / actual)
             val hitRate = 1.0 - (actual - unique).toDouble()/(worstCase - unique)
-            logger.printf(Level.INFO, "%20s: %3.2f%% / %3.2f%%", className, 100.0 * efficiency, 100.0 * hitRate)
+            logger.printf(Level.INFO, "%20s: %3.2f%% / %3.2f%%", className,
+                    box(100.0 * efficiency), box(100.0 * hitRate))
             totalUnique += unique
             totalActual += actual
             totalWorstCase += worstCase
@@ -167,7 +168,7 @@ object ImageProcessingStats {
         val totalEfficiency = (totalUnique.toDouble() / totalActual)
         val totalHitRate = 1.0 - (totalActual - totalUnique).toDouble()/(totalWorstCase - totalUnique)
         logger.printf(Level.INFO, "Total               : %3.2f%% / %3.2f%%",
-            100.0 * totalEfficiency, 100.0 * totalHitRate)
+            box(100.0 * totalEfficiency), box(100.0 * totalHitRate))
     }
 
     fun onTaskLaunched(typeName: String, name: String) {
@@ -214,8 +215,9 @@ object ImageProcessingStats {
                 lastCacheLogNanoTime = now
                 cacheStringBuilder.clear()
                 val cachedTasks = cacheableTasks.filter { it.cache.isEnabled() && it.getNow() != null }
+                        .sortedBy(AbstractTask<*>::name)
                 logger.info("Currently cached tasks: {}: {}", box(cachedTasks.size), StringBuilderFormattable {
-                    it.appendCollection(cachedTasks.sortedBy(AbstractTask<*>::name), "; ")
+                    it.appendCollection(cachedTasks, "; ")
                 })
             } finally {
                 cacheLock.unlock(stamp)
