@@ -64,8 +64,8 @@ private val heapSizeBytes by lazy { memoryMxBean.heapMemoryUsage.max.toDouble() 
 private val hardThrottlingPointBytes by lazy { (heapSizeBytes * HARD_THROTTLING_THRESHOLD).toLong() }
 private val hardThrottlingPointBytesAfterGc by lazy { (heapSizeBytes * HARD_THROTTLING_AFTER_GC_THRESHOLD).toLong() }
 private val gcThrottlingRulesThresholdBytes by lazy { (heapSizeBytes * GC_BASED_THROTTLING_RULES_THRESHOLD).toLong() }
-private const val MIN_FREE_BYTES_PER_OUTPUT_TASK = 400 * 1024 * 1024
-private const val HEAP_RESERVE_BYTES = 200 * 1024 * 1024
+private const val WORKING_BYTES_PER_PIXEL = 24
+private const val RESERVE_BYTES_PER_PIXEL = 16
 
 @Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod")
 suspend fun main(args: Array<String>) {
@@ -131,7 +131,7 @@ suspend fun main(args: Array<String>) {
         gcIfUsingLargeTiles(tileSize)
         withContext(Dispatchers.Default) {
             val ioJobs = ConcurrentHashMap.newKeySet<Job>()
-            val connectedComponents = if (tasks.size > maximumJobsNow()) {
+            val connectedComponents = if (tasks.size > maximumJobsNow(tileSize)) {
                 tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks))
                     .sortedByConnectedComponents()
             } else listOf(tasks.toMutableSet())
@@ -167,7 +167,8 @@ suspend fun main(args: Array<String>) {
             }
             val inProgressJobs = HashMap<PngOutputTask, Job>()
             val finishedJobsChannel = Channel<PngOutputTask>(
-                    capacity = CAPACITY_PADDING_FACTOR * maximumJobsNow())
+                    capacity = CAPACITY_PADDING_FACTOR * maximumJobsNow(tileSize)
+            )
             for (connectedComponent in connectedComponents) {
                 logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
                 while (connectedComponent.isNotEmpty()) {
@@ -181,7 +182,7 @@ suspend fun main(args: Array<String>) {
                             logger.warn("Hard-throttled new task for {} ns", box(delay))
                         }
                     } else {
-                        val maxOutputTaskJobs = maximumJobsNow()
+                        val maxOutputTaskJobs = maximumJobsNow(tileSize * tileSize)
                         if (currentInProgressJobs + connectedComponent.size <= maxOutputTaskJobs) {
                             logger.info(
                                 "{} tasks in progress; starting all {} currently eligible tasks: {}",
@@ -331,7 +332,7 @@ private fun startTask(
     }
 }
 
-fun maximumJobsNow(): Int {
-    return ((heapSizeBytes - memoryMxBean.heapMemoryUsage.used - HEAP_RESERVE_BYTES) / MIN_FREE_BYTES_PER_OUTPUT_TASK)
-            .toInt().coerceAtLeast(1)
-}
+fun maximumJobsNow(tileSize: Int): Int = ((heapSizeBytes - memoryMxBean.heapMemoryUsage.used
+                    - tileSize * tileSize * RESERVE_BYTES_PER_PIXEL)
+            / WORKING_BYTES_PER_PIXEL)
+        .toInt().coerceAtLeast(1)
