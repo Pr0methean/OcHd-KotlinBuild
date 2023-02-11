@@ -57,14 +57,12 @@ val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 
 private const val HARD_THROTTLING_THRESHOLD = 0.98
 private const val HARD_THROTTLING_AFTER_GC_THRESHOLD = 0.88
-private const val GC_BASED_THROTTLING_RULES_THRESHOLD = 0.70
-private val gcMxBean by lazy { ManagementFactory.getPlatformMXBeans(GarbageCollectorMXBean::class.java).first() }
-private val memoryMxBean by lazy(ManagementFactory::getMemoryMXBean)
-private val heapSizeBytes by lazy { memoryMxBean.heapMemoryUsage.max.toDouble() }
-private val hardThrottlingPointBytes by lazy { (heapSizeBytes * HARD_THROTTLING_THRESHOLD).toLong() }
-private val hardThrottlingPointBytesAfterGc by lazy { (heapSizeBytes * HARD_THROTTLING_AFTER_GC_THRESHOLD).toLong() }
-private val gcThrottlingRulesThresholdBytes by lazy { (heapSizeBytes * GC_BASED_THROTTLING_RULES_THRESHOLD).toLong() }
-private const val WORKING_BYTES_PER_PIXEL = 56
+private val gcMxBean = ManagementFactory.getPlatformMXBeans(GarbageCollectorMXBean::class.java).first()
+private val memoryMxBean = ManagementFactory.getMemoryMXBean()
+private val heapSizeBytes = memoryMxBean.heapMemoryUsage.max.toDouble()
+private val hardThrottlingPointBytes = (heapSizeBytes * HARD_THROTTLING_THRESHOLD).toLong()
+private val hardThrottlingPointBytesAfterGc = (heapSizeBytes * HARD_THROTTLING_AFTER_GC_THRESHOLD).toLong()
+private const val WORKING_BYTES_PER_PIXEL = 48
 private const val HEAP_RESERVE_FRACTION = 0.05
 private val heapReserveBytes by lazy { (heapSizeBytes * HEAP_RESERVE_FRACTION).toLong() }
 
@@ -176,43 +174,42 @@ suspend fun main(args: Array<String>) {
                 while (connectedComponent.isNotEmpty()) {
                     clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)
                     val currentInProgressJobs = inProgressJobs.size
-                    if (currentInProgressJobs >= MIN_OUTPUT_TASK_JOBS && heapLoadHeavy()) {
+                    val maxJobs = maximumJobsNow(bytesPerTile)
+                    if (currentInProgressJobs >= MIN_OUTPUT_TASK_JOBS && (maxJobs < 1 || heapLoadHeavyAfterLastGc())) {
+                        System.gc()
                         if (!clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)) {
                             val delay = measureNanoTime {
                                 inProgressJobs.remove(finishedJobsChannel.receive())
                             }
                             logger.warn("Hard-throttled new task for {} ns", box(delay))
                         }
+                    } else if (currentInProgressJobs + connectedComponent.size <= maxJobs) {
+                        logger.info(
+                            "{} tasks in progress; starting all {} currently eligible tasks: {}",
+                            box(currentInProgressJobs), box(connectedComponent.size), StringBuilderFormattable {
+                                it.appendCollection(connectedComponent, "; ")
+                            }
+                        )
+                        connectedComponent.forEach {
+                            inProgressJobs[it] = startTask(scope, it, finishedJobsChannel, ioJobs)
+                        }
+                        connectedComponent.clear()
+                    } else if (currentInProgressJobs >= maxJobs) {
+                        logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
+                        val delay = measureNanoTime {
+                            inProgressJobs.remove(finishedJobsChannel.receive())
+                        }
+                        logger.warn("Waited for tasks in progress to fall below limit for {} ns", box(delay))
                     } else {
-                        val maxOutputTaskJobs = maximumJobsNow(bytesPerTile)
-                        if (currentInProgressJobs + connectedComponent.size <= maxOutputTaskJobs) {
-                            logger.info(
-                                "{} tasks in progress; starting all {} currently eligible tasks: {}",
-                                box(currentInProgressJobs), box(connectedComponent.size), StringBuilderFormattable {
-                                    it.appendCollection(connectedComponent, "; ")
-                                }
-                            )
-                            connectedComponent.forEach {
-                                inProgressJobs[it] = startTask(scope, it, finishedJobsChannel, ioJobs)
-                            }
-                            connectedComponent.clear()
-                        } else if (currentInProgressJobs >= maxOutputTaskJobs) {
-                            logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
-                            val delay = measureNanoTime {
-                                inProgressJobs.remove(finishedJobsChannel.receive())
-                            }
-                            logger.warn("Waited for tasks in progress to fall below limit for {} ns", box(delay))
-                        } else {
-                            val task = connectedComponent.minWithOrNull(taskOrderComparator)
-                            checkNotNull(task) { "Error finding a new task to start" }
-                            logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
-                            inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs)
-                            check(connectedComponent.remove(task)) { "Attempted to remove task more than once: $task" }
+                        val task = connectedComponent.minWithOrNull(taskOrderComparator)
+                        checkNotNull(task) { "Error finding a new task to start" }
+                        logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
+                        inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs)
+                        check(connectedComponent.remove(task)) { "Attempted to remove task more than once: $task" }
 
-                            // Adjusted by 1 for just-launched job
-                            if (currentInProgressJobs >= softMaxOutputTaskJobs - 1) {
-                                yield() // Let this start its dependencies before reading task graph again
-                            }
+                        // Adjusted by 1 for just-launched job
+                        if (currentInProgressJobs >= softMaxOutputTaskJobs - 1) {
+                            yield() // Let this start its dependencies before reading task graph again
                         }
                     }
                 }
@@ -284,27 +281,16 @@ private fun clearFinishedJobs(
     return anyCleared
 }
 
-@Suppress("ExplicitGarbageCollectionCall")
-private fun heapLoadHeavy(): Boolean {
-    val bytesInUse = memoryMxBean.heapMemoryUsage.used
-    // Check both after last GC and current, because concurrent GC may have already cleared enough space
-    return if (bytesInUse > hardThrottlingPointBytes) {
-        logger.warn("Heap load too high: {} bytes in use", box(bytesInUse))
-        System.gc()
+private fun heapLoadHeavyAfterLastGc(): Boolean {
+    val heapUseAfterLastGc = gcMxBean.lastGcInfo ?: return false
+    val bytesUsedAfter = heapUseAfterLastGc.memoryUsageAfterGc.values.sumOf(MemoryUsage::used)
+    return if (bytesUsedAfter > hardThrottlingPointBytesAfterGc) {
+        logger.warn("Heap load too high after last GC: {} bytes in use", box(bytesUsedAfter))
         true
-    } else if (bytesInUse < gcThrottlingRulesThresholdBytes) {
-        false
-    } else {
-        val heapUseAfterLastGc = gcMxBean.lastGcInfo ?: return false
-        val bytesUsedAfter = heapUseAfterLastGc.memoryUsageAfterGc.values.sumOf(MemoryUsage::used)
-        if (bytesUsedAfter > hardThrottlingPointBytesAfterGc) {
-            logger.warn("Heap load too high after last GC: {} bytes in use", box(bytesUsedAfter))
-            true
-        } else if (bytesUsedAfter > heapUseAfterLastGc.memoryUsageBeforeGc.values.sumOf(MemoryUsage::used)) {
-            logger.warn("Heap load too high: GC falling behind allocation")
-            true
-        } else false
-    }
+    } else if (bytesUsedAfter > heapUseAfterLastGc.memoryUsageBeforeGc.values.sumOf(MemoryUsage::used)) {
+        logger.warn("Heap load too high: GC falling behind allocation")
+        true
+    } else false
 }
 
 private fun startTask(
@@ -335,6 +321,6 @@ private fun startTask(
 }
 
 fun maximumJobsNow(bytesPerTile: Long): Int {
-    return ((heapSizeBytes - memoryMxBean.heapMemoryUsage.used - heapReserveBytes) / bytesPerTile)
-            .toInt().coerceAtLeast(1)
+    return ((hardThrottlingPointBytes - memoryMxBean.heapMemoryUsage.used - heapReserveBytes) / bytesPerTile)
+            .toInt()
 }
