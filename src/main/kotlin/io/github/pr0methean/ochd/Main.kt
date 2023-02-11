@@ -48,7 +48,6 @@ private val taskOrderComparator = comparingInt<PngOutputTask> {
 
 private val logger = LogManager.getRootLogger()
 
-private const val HARD_MAX_OUTPUT_TASKS_PER_CPU = 2.0
 private const val SOFT_MAX_OUTPUT_TASKS_PER_CPU = 1.0
 
 private const val MIN_TILE_SIZE_FOR_EXPLICIT_GC = 2048
@@ -67,7 +66,7 @@ private val hardThrottlingPointBytesAfterGc by lazy { (heapSizeBytes * HARD_THRO
 private val gcThrottlingRulesThresholdBytes by lazy { (heapSizeBytes * GC_BASED_THROTTLING_RULES_THRESHOLD).toLong() }
 private const val WORKING_BYTES_PER_PIXEL = 64
 private const val HEAP_RESERVE_FRACTION = 0.05
-private val heapReserveBytes by lazy { heapSizeBytes * HEAP_RESERVE_FRACTION }
+private val heapReserveBytes by lazy { (heapSizeBytes * HEAP_RESERVE_FRACTION).toLong() }
 
 @Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod")
 suspend fun main(args: Array<String>) {
@@ -77,6 +76,9 @@ suspend fun main(args: Array<String>) {
     }
     val tileSize = args[0].toInt()
     require(tileSize > 0) { "tileSize shouldn't be zero or negative but was ${args[0]}" }
+    val workingBytesPerJob = WORKING_BYTES_PER_PIXEL * tileSize * tileSize
+    val bytesForJobs = heapSizeBytes - heapReserveBytes
+    val maxJobs = (bytesForJobs / workingBytesPerJob).toLong()
     val ioScope = CoroutineScope(Dispatchers.IO)
     val out = Paths.get("pngout").toAbsolutePath().toFile()
     val metadataDirectory = Paths.get("metadata").toAbsolutePath().toFile()
@@ -110,7 +112,7 @@ suspend fun main(args: Array<String>) {
         // SWPipeline is the software renderer, so its rendering thread needs one CPU
         com.sun.prism.GraphicsPipeline.getPipeline()::class.qualifiedName == "com.sun.prism.sw.SWPipeline"
     ) 1 else 0
-    val hardMaxOutputTaskJobs = (HARD_MAX_OUTPUT_TASKS_PER_CPU * nCpus).toInt()
+
     val softMaxOutputTaskJobs = (SOFT_MAX_OUTPUT_TASKS_PER_CPU * nNonRenderCpus).toInt()
     startMonitoring(scope)
     val time = measureNanoTime {
@@ -133,7 +135,7 @@ suspend fun main(args: Array<String>) {
         gcIfUsingLargeTiles(tileSize)
         withContext(Dispatchers.Default) {
             val ioJobs = ConcurrentHashMap.newKeySet<Job>()
-            val connectedComponents = if (tasks.size > maximumJobsNow(tileSize, hardMaxOutputTaskJobs)) {
+            val connectedComponents = if (tasks.size > maximumJobsNow(tileSize, maxJobs)) {
                 tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks))
                     .sortedByConnectedComponents()
             } else listOf(tasks.toMutableSet())
@@ -169,7 +171,7 @@ suspend fun main(args: Array<String>) {
             }
             val inProgressJobs = HashMap<PngOutputTask, Job>()
             val finishedJobsChannel = Channel<PngOutputTask>(
-                    capacity = CAPACITY_PADDING_FACTOR * maximumJobsNow(tileSize, hardMaxOutputTaskJobs)
+                    capacity = CAPACITY_PADDING_FACTOR * maximumJobsNow(tileSize, maxJobs)
             )
             for (connectedComponent in connectedComponents) {
                 logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
@@ -184,7 +186,7 @@ suspend fun main(args: Array<String>) {
                             logger.warn("Hard-throttled new task for {} ns", box(delay))
                         }
                     } else {
-                        val maxOutputTaskJobs = maximumJobsNow(tileSize * tileSize, hardMaxOutputTaskJobs)
+                        val maxOutputTaskJobs = maximumJobsNow(tileSize * tileSize, maxJobs)
                         if (currentInProgressJobs + connectedComponent.size <= maxOutputTaskJobs) {
                             logger.info(
                                 "{} tasks in progress; starting all {} currently eligible tasks: {}",
@@ -334,7 +336,8 @@ private fun startTask(
     }
 }
 
-fun maximumJobsNow(tileSize: Int, hardMaxOutputTaskJobs: Int): Int = ((heapSizeBytes - memoryMxBean.heapMemoryUsage.used
+fun maximumJobsNow(tileSize: Int, bytesPerJob: Long): Int =
+    ((heapSizeBytes - memoryMxBean.heapMemoryUsage.used
                     - heapReserveBytes)
-            / (tileSize * tileSize * WORKING_BYTES_PER_PIXEL))
-        .toInt().coerceAtLeast(1).coerceAtMost(hardMaxOutputTaskJobs)
+            / tileSize * tileSize * WORKING_BYTES_PER_PIXEL)
+        .coerceAtLeast(1.0).coerceAtMost((heapSizeBytes - heapReserveBytes) / bytesPerJob).toInt()
