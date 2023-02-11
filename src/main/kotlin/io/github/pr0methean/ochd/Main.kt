@@ -65,7 +65,7 @@ private val heapSizeBytes by lazy { memoryMxBean.heapMemoryUsage.max.toDouble() 
 private val hardThrottlingPointBytes by lazy { (heapSizeBytes * HARD_THROTTLING_THRESHOLD).toLong() }
 private val hardThrottlingPointBytesAfterGc by lazy { (heapSizeBytes * HARD_THROTTLING_AFTER_GC_THRESHOLD).toLong() }
 private val gcThrottlingRulesThresholdBytes by lazy { (heapSizeBytes * GC_BASED_THROTTLING_RULES_THRESHOLD).toLong() }
-private const val WORKING_BYTES_PER_PIXEL = 24
+private const val WORKING_BYTES_PER_PIXEL = 32
 private const val HEAP_RESERVE_FRACTION = 0.05
 private val heapReserveBytes by lazy { heapSizeBytes * HEAP_RESERVE_FRACTION }
 
