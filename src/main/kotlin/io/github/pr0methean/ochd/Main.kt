@@ -169,7 +169,7 @@ suspend fun main(args: Array<String>) {
             }
             val inProgressJobs = HashMap<PngOutputTask, Job>()
             val finishedJobsChannel = Channel<PngOutputTask>(
-                    capacity = CAPACITY_PADDING_FACTOR * maximumJobsNow(bytesPerTile)
+                    capacity = CAPACITY_PADDING_FACTOR * nCpus
             )
             for (connectedComponent in connectedComponents) {
                 logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
