@@ -65,6 +65,7 @@ private val hardThrottlingPointBytes by lazy { (heapSizeBytes * HARD_THROTTLING_
 private val hardThrottlingPointBytesAfterGc by lazy { (heapSizeBytes * HARD_THROTTLING_AFTER_GC_THRESHOLD).toLong() }
 private val gcThrottlingRulesThresholdBytes by lazy { (heapSizeBytes * GC_BASED_THROTTLING_RULES_THRESHOLD).toLong() }
 private const val MIN_FREE_BYTES_PER_OUTPUT_TASK = 400 * 1024 * 1024
+private const val HEAP_RESERVE_BYTES = 200 * 1024 * 1024
 
 @Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod")
 suspend fun main(args: Array<String>) {
@@ -331,6 +332,6 @@ private fun startTask(
 }
 
 fun maximumJobsNow(): Int {
-    return ((heapSizeBytes - memoryMxBean.heapMemoryUsage.used) / MIN_FREE_BYTES_PER_OUTPUT_TASK - 0.5)
+    return ((heapSizeBytes - memoryMxBean.heapMemoryUsage.used - HEAP_RESERVE_BYTES) / MIN_FREE_BYTES_PER_OUTPUT_TASK)
             .toInt().coerceAtLeast(1)
 }
