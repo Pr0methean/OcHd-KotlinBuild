@@ -151,7 +151,7 @@ object ImageProcessingStats {
             val efficiency = (unique.toDouble() / actual)
             val hitRate = 1.0 - (actual - unique).toDouble()/(worstCase - unique)
             logger.printf(Level.INFO, "%20s: %3.2f%% / %3.2f%%", className,
-                    box(100.0 * efficiency), box(100.0 * hitRate))
+                    100.0 * efficiency, 100.0 * hitRate)
             totalUnique += unique
             totalActual += actual
             totalWorstCase += worstCase
@@ -167,7 +167,7 @@ object ImageProcessingStats {
         val totalEfficiency = (totalUnique.toDouble() / totalActual)
         val totalHitRate = 1.0 - (totalActual - totalUnique).toDouble()/(totalWorstCase - totalUnique)
         logger.printf(Level.INFO, "Total               : %3.2f%% / %3.2f%%",
-            box(100.0 * totalEfficiency), box(100.0 * totalHitRate))
+            100.0 * totalEfficiency, 100.0 * totalHitRate)
     }
 
     fun onTaskLaunched(typeName: String, name: String) {
