@@ -158,6 +158,7 @@ suspend fun main(args: Array<String>) {
                     }
                 }
             }
+            var startedTaskSinceLastExplicitGc = false
             val inProgressJobs = HashMap<PngOutputTask, Job>()
             val finishedJobsChannel = Channel<PngOutputTask>(
                     capacity = CAPACITY_PADDING_FACTOR * nCpus
@@ -169,8 +170,9 @@ suspend fun main(args: Array<String>) {
                     val currentInProgressJobs = inProgressJobs.size
                     val maxJobs = maximumJobsNow(bytesPerTile)
                     if (currentInProgressJobs >= MIN_OUTPUT_TASK_JOBS && (maxJobs <= MIN_OUTPUT_TASK_JOBS)) {
-                        if (maxJobs < 1) {
+                        if (maxJobs < 1 && !startedTaskSinceLastExplicitGc) {
                             System.gc()
+                            startedTaskSinceLastExplicitGc = false
                         }
                         if (!clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)) {
                             val delay = measureNanoTime {
@@ -189,6 +191,7 @@ suspend fun main(args: Array<String>) {
                             inProgressJobs[it] = startTask(scope, it, finishedJobsChannel, ioJobs)
                         }
                         connectedComponent.clear()
+                        startedTaskSinceLastExplicitGc = true
                     } else if (currentInProgressJobs >= maxJobs.coerceAtLeast(1)) {
                         logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
                         val delay = measureNanoTime {
@@ -201,7 +204,7 @@ suspend fun main(args: Array<String>) {
                         logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
                         inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs)
                         check(connectedComponent.remove(task)) { "Attempted to remove task more than once: $task" }
-
+                        startedTaskSinceLastExplicitGc = true
                         // Adjusted by 1 for just-launched job
                         if (currentInProgressJobs >= softMaxOutputTaskJobs - 1) {
                             yield() // Let this start its dependencies before reading task graph again
