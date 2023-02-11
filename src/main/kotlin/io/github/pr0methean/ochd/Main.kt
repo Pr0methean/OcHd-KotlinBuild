@@ -48,6 +48,7 @@ private val taskOrderComparator = comparingInt<PngOutputTask> {
 
 private val logger = LogManager.getRootLogger()
 
+private const val HARD_MAX_OUTPUT_TASKS_PER_CPU = 4.0
 private const val SOFT_MAX_OUTPUT_TASKS_PER_CPU = 1.0
 
 private const val MIN_TILE_SIZE_FOR_EXPLICIT_GC = 2048
@@ -108,7 +109,7 @@ suspend fun main(args: Array<String>) {
         // SWPipeline is the software renderer, so its rendering thread needs one CPU
         com.sun.prism.GraphicsPipeline.getPipeline()::class.qualifiedName == "com.sun.prism.sw.SWPipeline"
     ) 1 else 0
-
+    val hardMaxOutputTaskJobs = (HARD_MAX_OUTPUT_TASKS_PER_CPU * nCpus).toInt()
     val softMaxOutputTaskJobs = (SOFT_MAX_OUTPUT_TASKS_PER_CPU * nNonRenderCpus).toInt()
     startMonitoring(scope)
     val time = measureNanoTime {
@@ -131,7 +132,7 @@ suspend fun main(args: Array<String>) {
         gcIfUsingLargeTiles(tileSize)
         withContext(Dispatchers.Default) {
             val ioJobs = ConcurrentHashMap.newKeySet<Job>()
-            val connectedComponents = if (tasks.size > maximumJobsNow(tileSize)) {
+            val connectedComponents = if (tasks.size > maximumJobsNow(tileSize, hardMaxOutputTaskJobs)) {
                 tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks))
                     .sortedByConnectedComponents()
             } else listOf(tasks.toMutableSet())
@@ -167,7 +168,7 @@ suspend fun main(args: Array<String>) {
             }
             val inProgressJobs = HashMap<PngOutputTask, Job>()
             val finishedJobsChannel = Channel<PngOutputTask>(
-                    capacity = CAPACITY_PADDING_FACTOR * maximumJobsNow(tileSize)
+                    capacity = CAPACITY_PADDING_FACTOR * maximumJobsNow(tileSize, hardMaxOutputTaskJobs)
             )
             for (connectedComponent in connectedComponents) {
                 logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
@@ -182,7 +183,7 @@ suspend fun main(args: Array<String>) {
                             logger.warn("Hard-throttled new task for {} ns", box(delay))
                         }
                     } else {
-                        val maxOutputTaskJobs = maximumJobsNow(tileSize * tileSize)
+                        val maxOutputTaskJobs = maximumJobsNow(tileSize * tileSize, hardMaxOutputTaskJobs)
                         if (currentInProgressJobs + connectedComponent.size <= maxOutputTaskJobs) {
                             logger.info(
                                 "{} tasks in progress; starting all {} currently eligible tasks: {}",
@@ -332,7 +333,7 @@ private fun startTask(
     }
 }
 
-fun maximumJobsNow(tileSize: Int): Int = ((heapSizeBytes - memoryMxBean.heapMemoryUsage.used
+fun maximumJobsNow(tileSize: Int, hardMaxOutputTaskJobs: Int): Int = ((heapSizeBytes - memoryMxBean.heapMemoryUsage.used
                     - tileSize * tileSize * RESERVE_BYTES_PER_PIXEL)
             / WORKING_BYTES_PER_PIXEL)
-        .toInt().coerceAtLeast(1)
+        .toInt().coerceAtLeast(1).coerceAtMost(hardMaxOutputTaskJobs)
