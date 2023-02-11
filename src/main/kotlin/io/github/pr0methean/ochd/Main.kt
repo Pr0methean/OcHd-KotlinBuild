@@ -55,7 +55,7 @@ private const val MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH = 32
 
 val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 
-private const val HARD_THROTTLING_THRESHOLD = 0.98
+private const val HARD_THROTTLING_THRESHOLD = 0.95
 private const val HARD_THROTTLING_AFTER_GC_THRESHOLD = 0.88
 private val gcMxBean = ManagementFactory.getPlatformMXBeans(GarbageCollectorMXBean::class.java).first()
 private val memoryMxBean = ManagementFactory.getMemoryMXBean()
@@ -63,8 +63,6 @@ private val heapSizeBytes = memoryMxBean.heapMemoryUsage.max.toDouble()
 private val hardThrottlingPointBytes = (heapSizeBytes * HARD_THROTTLING_THRESHOLD).toLong()
 private val hardThrottlingPointBytesAfterGc = (heapSizeBytes * HARD_THROTTLING_AFTER_GC_THRESHOLD).toLong()
 private const val WORKING_BYTES_PER_PIXEL = 48
-private const val HEAP_RESERVE_FRACTION = 0.05
-private val heapReserveBytes by lazy { (heapSizeBytes * HEAP_RESERVE_FRACTION).toLong() }
 
 @Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod")
 suspend fun main(args: Array<String>) {
@@ -321,6 +319,6 @@ private fun startTask(
 }
 
 fun maximumJobsNow(bytesPerTile: Long): Int {
-    return ((hardThrottlingPointBytes - memoryMxBean.heapMemoryUsage.used - heapReserveBytes) / bytesPerTile)
+    return ((hardThrottlingPointBytes - memoryMxBean.heapMemoryUsage.used) / bytesPerTile)
             .toInt()
 }
