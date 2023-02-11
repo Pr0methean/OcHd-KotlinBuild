@@ -50,7 +50,7 @@ val threadMxBean: ThreadMXBean = ManagementFactory.getThreadMXBean()
 var monitoringJob: Job? = null
 private val cacheLock = StampedLock()
 private val cacheStringBuilder = StringBuilder()
-private val cacheLoggingMinIntervalNanos = 0.5.seconds.inWholeNanoseconds
+private val cacheLoggingMinIntervalNanos = 2.seconds.inWholeNanoseconds
 @OptIn(ExperimentalCoroutinesApi::class)
 @Suppress("DeferredResultUnused")
 fun startMonitoring(scope: CoroutineScope) {
