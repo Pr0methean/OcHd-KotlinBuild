@@ -183,7 +183,7 @@ suspend fun main(args: Array<String>) {
                             }
                             logger.warn("Hard-throttled new task for {} ns", box(delay))
                         }
-                    } else if (currentInProgressJobs + connectedComponent.size <= maxJobs) {
+                    } else if (currentInProgressJobs + connectedComponent.size <= maxJobs.coerceAtLeast(1)) {
                         logger.info(
                             "{} tasks in progress; starting all {} currently eligible tasks: {}",
                             box(currentInProgressJobs), box(connectedComponent.size), StringBuilderFormattable {
@@ -194,7 +194,7 @@ suspend fun main(args: Array<String>) {
                             inProgressJobs[it] = startTask(scope, it, finishedJobsChannel, ioJobs)
                         }
                         connectedComponent.clear()
-                    } else if (currentInProgressJobs >= maxJobs) {
+                    } else if (currentInProgressJobs >= maxJobs.coerceAtLeast(1)) {
                         logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
                         val delay = measureNanoTime {
                             inProgressJobs.remove(finishedJobsChannel.receive())
