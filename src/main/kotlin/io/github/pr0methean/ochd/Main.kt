@@ -48,7 +48,6 @@ private val taskOrderComparator = comparingInt<PngOutputTask> {
 
 private val logger = LogManager.getRootLogger()
 
-private const val MAX_OUTPUT_TASKS_PER_CPU = 2.0
 private const val SOFT_MAX_OUTPUT_TASKS_PER_CPU = 1.0
 
 private const val MIN_TILE_SIZE_FOR_EXPLICIT_GC = 2048
@@ -65,6 +64,7 @@ private val heapSizeBytes by lazy { memoryMxBean.heapMemoryUsage.max.toDouble() 
 private val hardThrottlingPointBytes by lazy { (heapSizeBytes * HARD_THROTTLING_THRESHOLD).toLong() }
 private val hardThrottlingPointBytesAfterGc by lazy { (heapSizeBytes * HARD_THROTTLING_AFTER_GC_THRESHOLD).toLong() }
 private val gcThrottlingRulesThresholdBytes by lazy { (heapSizeBytes * GC_BASED_THROTTLING_RULES_THRESHOLD).toLong() }
+private const val MIN_FREE_BYTES_PER_OUTPUT_TASK = 400 * 1024 * 1024
 
 @Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod")
 suspend fun main(args: Array<String>) {
@@ -108,8 +108,6 @@ suspend fun main(args: Array<String>) {
         com.sun.prism.GraphicsPipeline.getPipeline()::class.qualifiedName == "com.sun.prism.sw.SWPipeline"
     ) 1 else 0
 
-    // subtract 1 for this thread or the render thread, whichever is the bottleneck
-    val maxOutputTaskJobs = (MAX_OUTPUT_TASKS_PER_CPU * nCpus).toInt() - 1
     val softMaxOutputTaskJobs = (SOFT_MAX_OUTPUT_TASKS_PER_CPU * nNonRenderCpus).toInt()
     startMonitoring(scope)
     val time = measureNanoTime {
@@ -132,7 +130,7 @@ suspend fun main(args: Array<String>) {
         gcIfUsingLargeTiles(tileSize)
         withContext(Dispatchers.Default) {
             val ioJobs = ConcurrentHashMap.newKeySet<Job>()
-            val connectedComponents = if (tasks.size > maxOutputTaskJobs) {
+            val connectedComponents = if (tasks.size > maximumJobsNow()) {
                 tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks))
                     .sortedByConnectedComponents()
             } else listOf(tasks.toMutableSet())
@@ -167,7 +165,8 @@ suspend fun main(args: Array<String>) {
                 }
             }
             val inProgressJobs = HashMap<PngOutputTask, Job>()
-            val finishedJobsChannel = Channel<PngOutputTask>(capacity = CAPACITY_PADDING_FACTOR * maxOutputTaskJobs)
+            val finishedJobsChannel = Channel<PngOutputTask>(
+                    capacity = (CAPACITY_PADDING_FACTOR * maximumJobsNow()).toInt())
             for (connectedComponent in connectedComponents) {
                 logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
                 while (connectedComponent.isNotEmpty()) {
@@ -180,33 +179,36 @@ suspend fun main(args: Array<String>) {
                             }
                             logger.warn("Hard-throttled new task for {} ns", box(delay))
                         }
-                    } else if (currentInProgressJobs + connectedComponent.size <= maxOutputTaskJobs) {
-                        logger.info(
-                            "{} tasks in progress; starting all {} currently eligible tasks: {}",
-                            box(currentInProgressJobs), box(connectedComponent.size), StringBuilderFormattable {
-                                it.appendCollection(connectedComponent, "; ")
-                            }
-                        )
-                        connectedComponent.forEach {
-                            inProgressJobs[it] = startTask(scope, it, finishedJobsChannel, ioJobs)
-                        }
-                        connectedComponent.clear()
-                    } else if (currentInProgressJobs >= maxOutputTaskJobs) {
-                        logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
-                        val delay = measureNanoTime {
-                            inProgressJobs.remove(finishedJobsChannel.receive())
-                        }
-                        logger.warn("Waited for tasks in progress to fall below limit for {} ns", box(delay))
                     } else {
-                        val task = connectedComponent.minWithOrNull(taskOrderComparator)
-                        checkNotNull(task) { "Error finding a new task to start" }
-                        logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
-                        inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs)
-                        check(connectedComponent.remove(task)) { "Attempted to remove task more than once: $task" }
+                        val maxOutputTaskJobs = maximumJobsNow()
+                        if (currentInProgressJobs + connectedComponent.size <= maxOutputTaskJobs) {
+                            logger.info(
+                                "{} tasks in progress; starting all {} currently eligible tasks: {}",
+                                box(currentInProgressJobs), box(connectedComponent.size), StringBuilderFormattable {
+                                    it.appendCollection(connectedComponent, "; ")
+                                }
+                            )
+                            connectedComponent.forEach {
+                                inProgressJobs[it] = startTask(scope, it, finishedJobsChannel, ioJobs)
+                            }
+                            connectedComponent.clear()
+                        } else if (currentInProgressJobs >= maxOutputTaskJobs) {
+                            logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
+                            val delay = measureNanoTime {
+                                inProgressJobs.remove(finishedJobsChannel.receive())
+                            }
+                            logger.warn("Waited for tasks in progress to fall below limit for {} ns", box(delay))
+                        } else {
+                            val task = connectedComponent.minWithOrNull(taskOrderComparator)
+                            checkNotNull(task) { "Error finding a new task to start" }
+                            logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
+                            inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs)
+                            check(connectedComponent.remove(task)) { "Attempted to remove task more than once: $task" }
 
-                        // Adjusted by 1 for just-launched job
-                        if (currentInProgressJobs >= softMaxOutputTaskJobs - 1) {
-                            yield() // Let this start its dependencies before reading task graph again
+                            // Adjusted by 1 for just-launched job
+                            if (currentInProgressJobs >= softMaxOutputTaskJobs - 1) {
+                                yield() // Let this start its dependencies before reading task graph again
+                            }
                         }
                     }
                 }
@@ -327,3 +329,5 @@ private fun startTask(
         exitProcess(1)
     }
 }
+
+fun maximumJobsNow() = (heapSizeBytes - memoryMxBean.heapMemoryUsage.used) / MIN_FREE_BYTES_PER_OUTPUT_TASK + 1
