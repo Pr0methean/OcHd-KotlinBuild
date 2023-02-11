@@ -215,7 +215,7 @@ object ImageProcessingStats {
                 cacheStringBuilder.clear()
                 val cachedTasks = cacheableTasks.filter { it.cache.isEnabled() && it.getNow() != null }
                 logger.info("Currently cached tasks: {}: {}", box(cachedTasks.size), StringBuilderFormattable {
-                    it.appendCollection(cachedTasks, "; ")
+                    it.appendCollection(cachedTasks.sortedBy(AbstractTask<*>::name), "; ")
                 })
             } finally {
                 cacheLock.unlock(stamp)
