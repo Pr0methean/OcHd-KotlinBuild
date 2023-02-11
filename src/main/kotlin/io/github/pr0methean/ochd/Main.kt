@@ -66,7 +66,7 @@ private val hardThrottlingPointBytes by lazy { (heapSizeBytes * HARD_THROTTLING_
 private val hardThrottlingPointBytesAfterGc by lazy { (heapSizeBytes * HARD_THROTTLING_AFTER_GC_THRESHOLD).toLong() }
 private val gcThrottlingRulesThresholdBytes by lazy { (heapSizeBytes * GC_BASED_THROTTLING_RULES_THRESHOLD).toLong() }
 private const val WORKING_BYTES_PER_PIXEL = 24
-private const val RESERVE_BYTES_PER_PIXEL = 24
+private const val RESERVE_BYTES_PER_PIXEL = 16
 
 @Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod")
 suspend fun main(args: Array<String>) {
@@ -335,5 +335,5 @@ private fun startTask(
 
 fun maximumJobsNow(tileSize: Int, hardMaxOutputTaskJobs: Int): Int = ((heapSizeBytes - memoryMxBean.heapMemoryUsage.used
                     - tileSize * tileSize * RESERVE_BYTES_PER_PIXEL)
-            / WORKING_BYTES_PER_PIXEL)
+            / (tileSize * tileSize * WORKING_BYTES_PER_PIXEL))
         .toInt().coerceAtLeast(1).coerceAtMost(hardMaxOutputTaskJobs)
