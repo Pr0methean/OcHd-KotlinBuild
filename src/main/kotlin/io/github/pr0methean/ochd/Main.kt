@@ -166,7 +166,7 @@ suspend fun main(args: Array<String>) {
             }
             val inProgressJobs = HashMap<PngOutputTask, Job>()
             val finishedJobsChannel = Channel<PngOutputTask>(
-                    capacity = (CAPACITY_PADDING_FACTOR * maximumJobsNow()).toInt())
+                    capacity = CAPACITY_PADDING_FACTOR * maximumJobsNow())
             for (connectedComponent in connectedComponents) {
                 logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
                 while (connectedComponent.isNotEmpty()) {
@@ -330,6 +330,7 @@ private fun startTask(
     }
 }
 
-fun maximumJobsNow(): Double {
-    return (heapSizeBytes - memoryMxBean.heapMemoryUsage.used) / MIN_FREE_BYTES_PER_OUTPUT_TASK + 1
+fun maximumJobsNow(): Int {
+    return ((heapSizeBytes - memoryMxBean.heapMemoryUsage.used) / MIN_FREE_BYTES_PER_OUTPUT_TASK)
+            .toInt().coerceAtLeast(1)
 }
