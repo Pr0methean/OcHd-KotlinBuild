@@ -292,11 +292,11 @@ private fun heapLoadHeavy(): Boolean {
         false
     } else {
         val heapUseAfterLastGc = gcMxBean.lastGcInfo ?: return false
-        val bytesAfter = heapUseAfterLastGc.memoryUsageAfterGc.values.sumOf(MemoryUsage::used)
-        if (bytesAfter > hardThrottlingPointBytesAfterGc) {
-            logger.warn("Heap load too high after last GC: {} bytes in use", box(bytesAfter))
+        val bytesUsedAfter = heapUseAfterLastGc.memoryUsageAfterGc.values.sumOf(MemoryUsage::used)
+        if (bytesUsedAfter > hardThrottlingPointBytesAfterGc) {
+            logger.warn("Heap load too high after last GC: {} bytes in use", box(bytesUsedAfter))
             true
-        } else if (bytesAfter > heapUseAfterLastGc.memoryUsageBeforeGc.values.sumOf(MemoryUsage::used)) {
+        } else if (bytesUsedAfter > heapUseAfterLastGc.memoryUsageBeforeGc.values.sumOf(MemoryUsage::used)) {
             logger.warn("Heap load too high: GC falling behind allocation")
             true
         } else false
@@ -330,4 +330,6 @@ private fun startTask(
     }
 }
 
-fun maximumJobsNow() = (heapSizeBytes - memoryMxBean.heapMemoryUsage.used) / MIN_FREE_BYTES_PER_OUTPUT_TASK + 1
+fun maximumJobsNow(): Double {
+    return (heapSizeBytes - memoryMxBean.heapMemoryUsage.used) / MIN_FREE_BYTES_PER_OUTPUT_TASK + 1
+}
