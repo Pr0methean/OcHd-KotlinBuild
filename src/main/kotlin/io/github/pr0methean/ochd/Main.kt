@@ -65,7 +65,7 @@ private val hardThrottlingPointBytes by lazy { (heapSizeBytes * HARD_THROTTLING_
 private val hardThrottlingPointBytesAfterGc by lazy { (heapSizeBytes * HARD_THROTTLING_AFTER_GC_THRESHOLD).toLong() }
 private val gcThrottlingRulesThresholdBytes by lazy { (heapSizeBytes * GC_BASED_THROTTLING_RULES_THRESHOLD).toLong() }
 private const val WORKING_BYTES_PER_PIXEL = 24
-private const val RESERVE_BYTES_PER_PIXEL = 16
+private const val RESERVE_BYTES_PER_PIXEL = 24
 
 @Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod")
 suspend fun main(args: Array<String>) {
