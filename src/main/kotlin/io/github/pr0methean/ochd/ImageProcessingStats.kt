@@ -49,7 +49,6 @@ private val REPORTING_INTERVAL: Duration = 1.minutes
 val threadMxBean: ThreadMXBean = ManagementFactory.getThreadMXBean()
 var monitoringJob: Job? = null
 private val cacheLock = StampedLock()
-private val cacheStringBuilder = StringBuilder()
 private val cacheLoggingMinIntervalNanos = 2.seconds.inWholeNanoseconds
 @OptIn(ExperimentalCoroutinesApi::class)
 @Suppress("DeferredResultUnused")
@@ -213,7 +212,6 @@ object ImageProcessingStats {
                     return
                 }
                 lastCacheLogNanoTime = now
-                cacheStringBuilder.clear()
                 val cachedTasks = cacheableTasks.filter { it.cache.isEnabled() && it.getNow() != null }
                         .sortedBy(AbstractTask<*>::name)
                 logger.info("Currently cached tasks: {}: {}", box(cachedTasks.size), StringBuilderFormattable {
