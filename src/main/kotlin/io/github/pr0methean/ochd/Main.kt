@@ -76,9 +76,7 @@ suspend fun main(args: Array<String>) {
     }
     val tileSize = args[0].toInt()
     require(tileSize > 0) { "tileSize shouldn't be zero or negative but was ${args[0]}" }
-    val workingBytesPerJob = WORKING_BYTES_PER_PIXEL * tileSize * tileSize
-    val bytesForJobs = heapSizeBytes - heapReserveBytes
-    val maxJobs = (bytesForJobs / workingBytesPerJob).toLong()
+    val bytesPerTile = tileSize.toLong() * tileSize * WORKING_BYTES_PER_PIXEL
     val ioScope = CoroutineScope(Dispatchers.IO)
     val out = Paths.get("pngout").toAbsolutePath().toFile()
     val metadataDirectory = Paths.get("metadata").toAbsolutePath().toFile()
@@ -135,7 +133,7 @@ suspend fun main(args: Array<String>) {
         gcIfUsingLargeTiles(tileSize)
         withContext(Dispatchers.Default) {
             val ioJobs = ConcurrentHashMap.newKeySet<Job>()
-            val connectedComponents = if (tasks.size > maximumJobsNow(tileSize, maxJobs)) {
+            val connectedComponents = if (tasks.size > maximumJobsNow(bytesPerTile)) {
                 tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks))
                     .sortedByConnectedComponents()
             } else listOf(tasks.toMutableSet())
@@ -171,7 +169,7 @@ suspend fun main(args: Array<String>) {
             }
             val inProgressJobs = HashMap<PngOutputTask, Job>()
             val finishedJobsChannel = Channel<PngOutputTask>(
-                    capacity = CAPACITY_PADDING_FACTOR * maximumJobsNow(tileSize, maxJobs)
+                    capacity = CAPACITY_PADDING_FACTOR * maximumJobsNow(bytesPerTile)
             )
             for (connectedComponent in connectedComponents) {
                 logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
@@ -186,7 +184,7 @@ suspend fun main(args: Array<String>) {
                             logger.warn("Hard-throttled new task for {} ns", box(delay))
                         }
                     } else {
-                        val maxOutputTaskJobs = maximumJobsNow(tileSize * tileSize, maxJobs)
+                        val maxOutputTaskJobs = maximumJobsNow(bytesPerTile)
                         if (currentInProgressJobs + connectedComponent.size <= maxOutputTaskJobs) {
                             logger.info(
                                 "{} tasks in progress; starting all {} currently eligible tasks: {}",
@@ -336,8 +334,7 @@ private fun startTask(
     }
 }
 
-fun maximumJobsNow(tileSize: Int, bytesPerJob: Long): Int =
-    ((heapSizeBytes - memoryMxBean.heapMemoryUsage.used
-                    - heapReserveBytes)
-            / tileSize * tileSize * WORKING_BYTES_PER_PIXEL)
-        .coerceAtLeast(1.0).coerceAtMost((heapSizeBytes - heapReserveBytes) / bytesPerJob).toInt()
+fun maximumJobsNow(bytesPerTile: Long): Int {
+    return ((heapSizeBytes - memoryMxBean.heapMemoryUsage.used - heapReserveBytes) / bytesPerTile)
+            .toInt().coerceAtLeast(1)
+}
