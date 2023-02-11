@@ -331,6 +331,6 @@ private fun startTask(
 }
 
 fun maximumJobsNow(): Int {
-    return ((heapSizeBytes - memoryMxBean.heapMemoryUsage.used) / MIN_FREE_BYTES_PER_OUTPUT_TASK)
+    return ((heapSizeBytes - memoryMxBean.heapMemoryUsage.used) / MIN_FREE_BYTES_PER_OUTPUT_TASK - 0.5)
             .toInt().coerceAtLeast(1)
 }
