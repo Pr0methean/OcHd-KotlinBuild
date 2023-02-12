@@ -192,9 +192,7 @@ suspend fun main(args: Array<String>) {
             )
             dotFormatOutputJob?.join()
             for (connectedComponent in connectedComponents) {
-                if (clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)) {
-                    gcIfNeeded()
-                }
+                clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)
                 logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
                 while (connectedComponent.isNotEmpty()) {
                     clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)
@@ -283,6 +281,9 @@ private fun clearFinishedJobs(
         }
         val finishedIoJobs = ioJobs.removeIf(Job::isCompleted)
     } while (maybeReceive != null || finishedIoJobs)
+    if (anyCleared) {
+        gcIfNeeded()
+    }
     return anyCleared
 }
 
