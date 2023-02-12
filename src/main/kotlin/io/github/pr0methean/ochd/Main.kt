@@ -126,9 +126,7 @@ suspend fun main(args: Array<String>) {
         val depsBuildTask = scope.launch { tasks.forEach { it.registerRecursiveDependencies() } }
         logger.debug("Launched deps build task")
         depsBuildTask.join()
-        mkdirs.join()
         onTaskCompleted("Build task graph", "Build task graph")
-        gcIfUsingLargeTiles(tileSize)
         withContext(Dispatchers.Default) {
             val ioJobs = ConcurrentHashMap.newKeySet<Job>()
             val connectedComponents = if (tasks.size > maximumJobsNow(bytesPerTile)) {
@@ -137,7 +135,7 @@ suspend fun main(args: Array<String>) {
             } else listOf(tasks.toMutableSet())
             if (tileSize <= MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH) {
                 // Output connected components in .dot format
-                withContext(Dispatchers.IO) {
+                ioJobs += ioScope.launch {
                     @Suppress("BlockingMethodInNonBlockingContext")
                     Paths.get("out").toFile().mkdirs()
                     Paths.get("out", "graph.dot").toFile().printWriter(UTF_8).use { writer ->
@@ -169,7 +167,9 @@ suspend fun main(args: Array<String>) {
             val finishedJobsChannel = Channel<PngOutputTask>(
                     capacity = CAPACITY_PADDING_FACTOR * nCpus
             )
+            mkdirs.join()
             for (connectedComponent in connectedComponents) {
+                gcIfUsingLargeTiles(tileSize)
                 logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
                 while (connectedComponent.isNotEmpty()) {
                     clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)
