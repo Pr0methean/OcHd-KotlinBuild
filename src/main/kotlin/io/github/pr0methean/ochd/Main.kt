@@ -70,7 +70,7 @@ val nNonRenderCpus: Int by lazy { nCpus - if (
     com.sun.prism.GraphicsPipeline.getPipeline()::class.qualifiedName == "com.sun.prism.sw.SWPipeline"
 ) 1 else 0 }
 
-val softMaxOutputTaskJobs: Int = (SOFT_MAX_OUTPUT_TASKS_PER_CPU * nNonRenderCpus).toInt()
+val softMaxOutputTaskJobs: Int by lazy { (SOFT_MAX_OUTPUT_TASKS_PER_CPU * nNonRenderCpus).toInt() }
 @Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod", "ComplexMethod")
 suspend fun main(args: Array<String>) {
     if (args.isEmpty()) {
