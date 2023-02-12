@@ -27,6 +27,7 @@ import org.apache.logging.log4j.util.Unbox.box
 import java.io.File
 import java.lang.management.ManagementFactory
 import java.lang.management.MemoryUsage
+import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.Comparator.comparingDouble
 import java.util.Comparator.comparingInt
@@ -86,7 +87,7 @@ suspend fun main(args: Array<String>) {
                 outputPath.mkdirs()
                 mkdirsedPaths.add(it)
             } else {
-                it.copyTo(outputPath)
+                Files.createLink(outputPath.toPath(), it.toPath())
             }
         }
     }
