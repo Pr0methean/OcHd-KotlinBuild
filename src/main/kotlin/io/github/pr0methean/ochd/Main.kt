@@ -66,7 +66,7 @@ private val minClearedPerGcBytes = (heapSizeBytes * FREED_PER_GC_TO_SUPPRESS_EXP
 private val explicitGcThresholdBytes = (heapSizeBytes * EXPLICIT_GC_THRESHOLD).toLong()
 private const val WORKING_BYTES_PER_PIXEL = 50
 
-@Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod")
+@Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod", "ComplexMethod")
 suspend fun main(args: Array<String>) {
     if (args.isEmpty()) {
         println("Usage: main <size>")
@@ -267,7 +267,7 @@ suspend fun main(args: Array<String>) {
 private fun gcIfUsingLargeTiles(tileSize: Int) {
     if (tileSize >= MIN_TILE_SIZE_FOR_EXPLICIT_GC) {
         System.gc()
-        scope.plus(Dispatchers.Main).launch {
+        scope.launch (Dispatchers.Main) {
             Disposer.cleanUp()
         }
     }
