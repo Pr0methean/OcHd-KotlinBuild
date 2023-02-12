@@ -125,6 +125,7 @@ suspend fun main(args: Array<String>) {
                 .filter(mkdirsedPaths::add)
                 .forEach(File::mkdirs)
         }
+        val prereqIoJobs = listOf(mkdirs, copyMetadata)
         logger.debug("Got deduplicated output tasks")
         val depsBuildTask = scope.launch { tasks.forEach { it.registerRecursiveDependencies() } }
         logger.debug("Launched deps build task")
@@ -132,7 +133,6 @@ suspend fun main(args: Array<String>) {
         onTaskCompleted("Build task graph", "Build task graph")
         withContext(Dispatchers.Default) {
             val ioJobs = ConcurrentHashMap.newKeySet<Job>()
-            ioJobs.add(copyMetadata)
             val connectedComponents = if (tasks.size > maximumJobsNow(bytesPerTile)) {
 
                 // Output tasks that are in different weakly-connected components don't share any dependencies, so we
@@ -193,7 +193,6 @@ suspend fun main(args: Array<String>) {
             val finishedJobsChannel = Channel<PngOutputTask>(
                     capacity = CAPACITY_PADDING_FACTOR * nCpus
             )
-            mkdirs.join()
             dotFormatOutputJob?.join()
             for (connectedComponent in connectedComponents) {
                 gcIfUsingLargeTiles(tileSize)
@@ -225,7 +224,7 @@ suspend fun main(args: Array<String>) {
                             }
                         )
                         connectedComponent.forEach {
-                            inProgressJobs[it] = startTask(scope, it, finishedJobsChannel, ioJobs)
+                            inProgressJobs[it] = startTask(scope, it, finishedJobsChannel, ioJobs, prereqIoJobs)
                         }
                         connectedComponent.clear()
                     } else if (currentInProgressJobs >= maxJobs.coerceAtLeast(1)) {
@@ -238,7 +237,7 @@ suspend fun main(args: Array<String>) {
                         val task = connectedComponent.minWithOrNull(taskOrderComparator)
                         checkNotNull(task) { "Error finding a new task to start" }
                         logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
-                        inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs)
+                        inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs, prereqIoJobs)
                         check(connectedComponent.remove(task)) { "Attempted to remove task more than once: $task" }
 
                         // Adjusted by 1 for just-launched job
@@ -298,7 +297,8 @@ private fun startTask(
     scope: CoroutineScope,
     task: PngOutputTask,
     finishedJobsChannel: Channel<PngOutputTask>,
-    ioJobs: MutableSet<in Job>
+    ioJobs: MutableSet<in Job>,
+    prereqIoJobs: Collection<Job>
 ) = scope.launch {
     try {
         onTaskLaunched("PngOutputTask", task.name)
@@ -311,6 +311,7 @@ private fun startTask(
         task.base.removeDirectDependentTask(task)
         finishedJobsChannel.send(task)
         ioJobs.add(scope.launch {
+            prereqIoJobs.joinAll()
             logger.info("Starting file write for {}", task.name)
             task.writeToFiles(awtImage).join()
             onTaskCompleted("PngOutputTask", task.name)
