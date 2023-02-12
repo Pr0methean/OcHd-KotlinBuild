@@ -2,6 +2,7 @@ package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.tasks.caching.noopDeferredTaskCache
 import javafx.scene.image.Image
+import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -61,7 +62,7 @@ class PngOutputTask(
             ImageIO.write(awtImage, "PNG", firstFile)
         }
         return if (files.size > 1) {
-            ioScope.launch {
+            ioScope.launch(CoroutineName("Copy $name to additional output files")) {
                 val remainingFiles = files.subList(1, files.size)
                 writeFirstFile.join()
                 for (file in remainingFiles) {

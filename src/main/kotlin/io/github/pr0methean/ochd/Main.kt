@@ -17,7 +17,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.plus
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
@@ -103,7 +102,7 @@ suspend fun main(args: Array<String>) {
         outTextureRoot = outTextureRoot,
         ctx = Dispatchers.Default
     )
-    scope.plus(Dispatchers.Main).launch {
+    withContext(Dispatchers.Main) {
         Thread.currentThread().priority = Thread.MAX_PRIORITY
     }
     val nCpus = Runtime.getRuntime().availableProcessors()
@@ -275,7 +274,7 @@ private fun gcIfUsingLargeTiles(tileSize: Int) {
 
 private fun reclaimMemory() {
     System.gc()
-    scope.launch(Dispatchers.Main) {
+    scope.launch(Dispatchers.Main.plus(CoroutineName("Disposer.cleanUp()"))) {
         Disposer.cleanUp()
     }
 }
