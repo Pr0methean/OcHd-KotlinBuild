@@ -192,7 +192,9 @@ suspend fun main(args: Array<String>) {
             )
             dotFormatOutputJob?.join()
             for (connectedComponent in connectedComponents) {
-                gcIfNeeded()
+                if (clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)) {
+                    gcIfNeeded()
+                }
                 logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
                 while (connectedComponent.isNotEmpty()) {
                     clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)
