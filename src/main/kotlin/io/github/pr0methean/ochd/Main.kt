@@ -169,7 +169,7 @@ suspend fun main(args: Array<String>) {
                     val currentInProgressJobs = inProgressJobs.size
                     val maxJobs = maximumJobsNow(bytesPerTile)
                     if (currentInProgressJobs >= MIN_OUTPUT_TASK_JOBS && (maxJobs <= MIN_OUTPUT_TASK_JOBS)) {
-                        if (maxJobs < 1) {
+                        if (maxJobs < 0) {
                             System.gc()
                         }
                         if (!clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)) {
