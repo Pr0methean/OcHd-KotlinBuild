@@ -273,9 +273,12 @@ private suspend fun clearFinishedJobs(
     do {
         val maybeReceive = finishedJobsChannel.tryReceive().getOrElse {
             if (inProgressJobs.size >= softMaxOutputTaskJobs) {
+                logger.info("clearFinishedJobs is calling yield()")
                 yield()
             }
-            finishedJobsChannel.tryReceive().getOrNull()
+            finishedJobsChannel.tryReceive().getOrNull()?.also {
+                logger.info("clearFinishedJobs collected {} on second try", it)
+            }
         }
         if (maybeReceive != null) {
             anyCleared = true
