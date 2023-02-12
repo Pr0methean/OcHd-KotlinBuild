@@ -133,19 +133,17 @@ suspend fun main(args: Array<String>) {
                 tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks))
                     .sortedByConnectedComponents()
             } else listOf(tasks.toMutableSet())
+            var dotFormatOutputJob: Job? = null
             if (tileSize <= MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH) {
-                // Make a deep copy so that tasks that have already launched are included
-                val connectedComponentsForOutput = connectedComponents.map(Collection<PngOutputTask>::toList)
-
                 // Output connected components in .dot format
-                ioJobs += ioScope.launch {
+                dotFormatOutputJob = ioScope.launch {
                     @Suppress("BlockingMethodInNonBlockingContext")
                     Paths.get("out").toFile().mkdirs()
                     Paths.get("out", "graph.dot").toFile().printWriter(UTF_8).use { writer ->
                         // Strict because multiedges are possible
                         writer.println("strict digraph {")
                         writer.println("\"OcHd\" [root=true]")
-                        connectedComponentsForOutput.forEachIndexed { index, connectedComponent ->
+                        connectedComponents.forEachIndexed { index, connectedComponent ->
                             writer.print("subgraph cluster_")
                             writer.print(index)
                             writer.println('{')
@@ -154,7 +152,7 @@ suspend fun main(args: Array<String>) {
                             }
                             writer.println('}')
                         }
-                        connectedComponentsForOutput.forEach { connectedComponent ->
+                        connectedComponents.forEach { connectedComponent ->
                             connectedComponent.forEach {
                                 writer.print("\"OcHd\" -> \"")
                                 it.appendForGraphPrinting(writer)
@@ -171,6 +169,7 @@ suspend fun main(args: Array<String>) {
                     capacity = CAPACITY_PADDING_FACTOR * nCpus
             )
             mkdirs.join()
+            dotFormatOutputJob?.join()
             for (connectedComponent in connectedComponents) {
                 gcIfUsingLargeTiles(tileSize)
                 logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
