@@ -192,6 +192,7 @@ suspend fun main(args: Array<String>) {
             )
             dotFormatOutputJob?.join()
             for (connectedComponent in connectedComponents) {
+                gcIfNeeded()
                 logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
                 while (connectedComponent.isNotEmpty()) {
                     clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)
@@ -202,16 +203,7 @@ suspend fun main(args: Array<String>) {
                             inProgressJobs.remove(finishedJobsChannel.receive())
                         }
                         logger.warn("Hard-throttled new task for {} ns", box(delay))
-
-                        // Check if automatic GC is performing poorly. If so, we launch an explicit GC since we know
-                        // that the last finished job is now unreachable.
-                        if (gcMxBean.lastGcInfo?.run {
-                                val bytesUsedAfter = totalBytesInUse(memoryUsageAfterGc)
-                                bytesUsedAfter >= explicitGcThresholdBytes &&
-                                        (totalBytesInUse(memoryUsageBeforeGc) - bytesUsedAfter) < minClearedPerGcBytes
-                            } == true) {
-                            System.gc()
-                        }
+                        gcIfNeeded()
                     } else if (currentInProgressJobs + connectedComponent.size <= maxJobs.coerceAtLeast(1)) {
                         logger.info(
                             "{} tasks in progress; starting all {} currently eligible tasks: {}",
@@ -260,6 +252,18 @@ suspend fun main(args: Array<String>) {
     logger.info("")
     logger.info("All tasks finished after {} ns", box(time))
     exitProcess(0)
+}
+
+private fun gcIfNeeded() {
+    // Check if automatic GC is performing poorly. If so, we launch an explicit GC since we know
+    // that the last finished job is now unreachable.
+    if (gcMxBean.lastGcInfo?.run {
+            val bytesUsedAfter = totalBytesInUse(memoryUsageAfterGc)
+            bytesUsedAfter >= explicitGcThresholdBytes &&
+                    (totalBytesInUse(memoryUsageBeforeGc) - bytesUsedAfter) < minClearedPerGcBytes
+        } == true) {
+        System.gc()
+    }
 }
 
 private fun clearFinishedJobs(
