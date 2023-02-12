@@ -130,8 +130,29 @@ suspend fun main(args: Array<String>) {
         withContext(Dispatchers.Default) {
             val ioJobs = ConcurrentHashMap.newKeySet<Job>()
             val connectedComponents = if (tasks.size > maximumJobsNow(bytesPerTile)) {
-                tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks))
-                    .sortedByConnectedComponents()
+
+                // Output tasks that are in different weakly-connected components don't share any dependencies, so we
+                // launch tasks from one component at a time. We start with the small ones so that they'll become
+                // unreachable by the time the largest component hits its peak cache size.
+                val components = mutableListOf<MutableSet<PngOutputTask>>()
+                sortTask@ for (task in tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks))
+                ) {
+                    val matchingComponents = components.filter { it.any(task::overlapsWith) }
+                    logger.debug("{} is connected to: {}", task, matchingComponents)
+                    if (matchingComponents.isEmpty()) {
+                        components.add(mutableSetOf(task))
+                    } else {
+                        matchingComponents.first().add(task)
+                        for (component in matchingComponents.drop(1)) {
+                            // More than one match = need to merge components
+                            matchingComponents.first().addAll(component)
+                            check(components.remove(component)) {
+                                "Failed to remove $component after merging into ${matchingComponents.first()}"
+                            }
+                        }
+                    }
+                }
+                components.sortedBy(MutableSet<PngOutputTask>::size)
             } else listOf(tasks.toMutableSet())
             var dotFormatOutputJob: Job? = null
             if (tileSize <= MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH) {
@@ -243,27 +264,6 @@ private fun gcIfUsingLargeTiles(tileSize: Int) {
             Disposer.cleanUp()
         }
     }
-}
-
-private fun List<PngOutputTask>.sortedByConnectedComponents(): List<MutableSet<PngOutputTask>> {
-    val components = mutableListOf<MutableSet<PngOutputTask>>()
-    sortTask@ for (task in this) {
-        val matchingComponents = components.filter {it.any(task::overlapsWith) }
-        logger.debug("{} is connected to: {}", task, matchingComponents)
-        if (matchingComponents.isEmpty()) {
-            components.add(mutableSetOf(task))
-        } else {
-            matchingComponents.first().add(task)
-            for (component in matchingComponents.drop(1)) {
-                // More than one match = need to merge components
-                matchingComponents.first().addAll(component)
-                check(components.remove(component)) {
-                    "Failed to remove $component after merging into ${matchingComponents.first()}"
-                }
-            }
-        }
-    }
-    return components.sortedBy(MutableSet<PngOutputTask>::size)
 }
 
 private fun clearFinishedJobs(
