@@ -46,7 +46,6 @@ private const val NEED_THREAD_MONITORING = false
 private const val MAX_STACK_DEPTH = 20
 private val needCoroutineDebug = logger.isDebugEnabled
 private val reportingInterval: Duration = 1.minutes
-val threadMxBean: ThreadMXBean = ManagementFactory.getThreadMXBean()
 var monitoringJob: Job? = null
 private val cacheLock = StampedLock()
 private val cacheLoggingMinIntervalNanos = 2.seconds.inWholeNanoseconds
@@ -63,6 +62,7 @@ fun startMonitoring(scope: CoroutineScope) {
             logger.info("Completed tasks:")
             ImageProcessingStats.taskCompletions.log()
             if (NEED_THREAD_MONITORING) {
+                val threadMxBean: ThreadMXBean = ManagementFactory.getThreadMXBean()
                 val deadlocks = threadMxBean.findDeadlockedThreads()
                 if (deadlocks == null) {
                     logger.info("No deadlocked threads found.")
