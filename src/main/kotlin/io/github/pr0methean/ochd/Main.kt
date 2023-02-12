@@ -176,18 +176,12 @@ suspend fun main(args: Array<String>) {
                     val currentInProgressJobs = inProgressJobs.size
                     val maxJobs = maximumJobsNow(bytesPerTile)
                     if (MIN_OUTPUT_TASK_JOBS in maxJobs..currentInProgressJobs) {
-                        var clearedJobs = false
+                        val delay = measureNanoTime {
+                            inProgressJobs.remove(finishedJobsChannel.receive())
+                        }
+                        logger.warn("Hard-throttled new task for {} ns", box(delay))
                         if (notMuchClearedByLastGc()) {
                             System.gc()
-                            if (clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)) {
-                                clearedJobs = true
-                            }
-                        }
-                        if (!clearedJobs) {
-                            val delay = measureNanoTime {
-                                inProgressJobs.remove(finishedJobsChannel.receive())
-                            }
-                            logger.warn("Hard-throttled new task for {} ns", box(delay))
                         }
                     } else if (currentInProgressJobs + connectedComponent.size <= maxJobs.coerceAtLeast(1)) {
                         logger.info(
