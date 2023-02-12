@@ -13,8 +13,10 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
 
     fun background(paint: Paint) {
         check(layers.isEmpty()) { "Background would overwrite layers: $layers" }
-        check(background == Color.TRANSPARENT) { "Background would overwrite another background: $background " }
-        background = paint
+        if (background != paint) {
+            check(background == Color.TRANSPARENT) { "Background would overwrite another background: $background " }
+            background = paint
+        }
     }
 
     fun background(red: Int, green: Int, blue: Int) {
@@ -43,7 +45,8 @@ class LayerListBuilder(val ctx: TaskPlanningContext) {
         if (source.background != Color.TRANSPARENT) {
             background(source.background) // For validation, even if we don't end up using it
         }
-        if (source.layers.size > 1) { // Don't flatten sub-stacks since we want to deduplicate them at build time
+        if (source.layers.size > 1) {
+            // Don't flatten ImageStackingTask subtasks, since we want to deduplicate them at build time
             layers.add(ctx.stack(source))
             if (source.background != Color.TRANSPARENT) {
                 background = Color.TRANSPARENT // let source draw the background
