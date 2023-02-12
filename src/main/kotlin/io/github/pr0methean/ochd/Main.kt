@@ -214,7 +214,7 @@ suspend fun main(args: Array<String>) {
                                 bytesUsedAfter >= explicitGcThresholdBytes &&
                                         (totalBytesInUse(memoryUsageBeforeGc) - bytesUsedAfter) < minClearedPerGcBytes
                             } == true) {
-                            System.gc()
+                            reclaimMemory()
                         }
                     } else if (currentInProgressJobs + connectedComponent.size <= maxJobs.coerceAtLeast(1)) {
                         logger.info(
@@ -269,10 +269,14 @@ suspend fun main(args: Array<String>) {
 @Suppress("ExplicitGarbageCollectionCall")
 private fun gcIfUsingLargeTiles(tileSize: Int) {
     if (tileSize >= MIN_TILE_SIZE_FOR_EXPLICIT_GC) {
-        System.gc()
-        scope.launch (Dispatchers.Main) {
-            Disposer.cleanUp()
-        }
+        reclaimMemory()
+    }
+}
+
+private fun reclaimMemory() {
+    System.gc()
+    scope.launch(Dispatchers.Main) {
+        Disposer.cleanUp()
     }
 }
 
@@ -299,7 +303,7 @@ private fun startTask(
     finishedJobsChannel: Channel<PngOutputTask>,
     ioJobs: MutableSet<in Job>,
     prereqIoJobs: Collection<Job>
-) = scope.launch {
+) = scope.launch(CoroutineName(task.name)) {
     try {
         onTaskLaunched("PngOutputTask", task.name)
         val awtImage = if (task.base is SvgToBitmapTask && !task.base.shouldRenderForCaching()) {
@@ -310,7 +314,7 @@ private fun startTask(
         }
         task.base.removeDirectDependentTask(task)
         finishedJobsChannel.send(task)
-        ioJobs.add(scope.launch {
+        ioJobs.add(scope.launch(CoroutineName("File write for ${task.name}")) {
             prereqIoJobs.joinAll()
             logger.info("Starting file write for {}", task.name)
             task.writeToFiles(awtImage).join()
