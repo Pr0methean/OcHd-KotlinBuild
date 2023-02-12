@@ -56,12 +56,12 @@ private const val MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH = 32
 val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 
 private const val HARD_THROTTLING_THRESHOLD = 0.93
-private const val HARD_THROTTLING_AFTER_GC_THRESHOLD = 0.7
+private const val CLEARED_PER_GC_TO_SUPPRESS_HARD_THROTTLING = 0.2
 private val gcMxBean = ManagementFactory.getPlatformMXBeans(GarbageCollectorMXBean::class.java).first()
 private val memoryMxBean = ManagementFactory.getMemoryMXBean()
 private val heapSizeBytes = memoryMxBean.heapMemoryUsage.max.toDouble()
 private val hardThrottlingPointBytes = (heapSizeBytes * HARD_THROTTLING_THRESHOLD).toLong()
-private val hardThrottlingPointAfterGcBytes = (heapSizeBytes * HARD_THROTTLING_AFTER_GC_THRESHOLD).toLong()
+private val minClearedPerGcBytes = (heapSizeBytes * CLEARED_PER_GC_TO_SUPPRESS_HARD_THROTTLING).toLong()
 private const val WORKING_BYTES_PER_PIXEL = 48
 
 @Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod")
@@ -175,7 +175,7 @@ suspend fun main(args: Array<String>) {
                     val maxJobs = maximumJobsNow(bytesPerTile)
                     if (MIN_OUTPUT_TASK_JOBS in maxJobs..currentInProgressJobs) {
                         var clearedJobs = false
-                        if (heapLoadHeavyAfterLastGc()) {
+                        if (notMuchClearedByLastGc()) {
                             System.gc()
                             if (clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)) {
                                 clearedJobs = true
@@ -285,10 +285,11 @@ private fun clearFinishedJobs(
     return anyCleared
 }
 
-private fun heapLoadHeavyAfterLastGc(): Boolean {
-    val heapUseAfterLastGc = gcMxBean.lastGcInfo ?: return false
-    val bytesUsedAfter = heapUseAfterLastGc.memoryUsageAfterGc.values.sumOf(MemoryUsage::used)
-    return bytesUsedAfter > hardThrottlingPointAfterGcBytes
+private fun notMuchClearedByLastGc(): Boolean {
+    val lastGc = gcMxBean.lastGcInfo ?: return false
+    val bytesUsedBefore = lastGc.memoryUsageBeforeGc.values.sumOf(MemoryUsage::used)
+    val bytesUsedAfter = lastGc.memoryUsageAfterGc.values.sumOf(MemoryUsage::used)
+    return (bytesUsedBefore - bytesUsedAfter) < minClearedPerGcBytes
 }
 
 private fun startTask(
