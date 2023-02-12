@@ -79,13 +79,15 @@ suspend fun main(args: Array<String>) {
     val ioScope = CoroutineScope(Dispatchers.IO)
     val out = Paths.get("pngout").toAbsolutePath().toFile()
     val metadataDirectory = Paths.get("metadata").toAbsolutePath().toFile()
-    val cleanupAndCopyMetadata = ioScope.launch(CoroutineName("Delete old outputs & copy metadata files")) {
+    val deleteOldOutputs = ioScope.launch(CoroutineName("Delete old outputs")) {
         out.deleteRecursively()
+    }
+    val copyMetadata = ioScope.launch(CoroutineName("Copy metadata files")) {
+        deleteOldOutputs.join()
         metadataDirectory.walkTopDown().forEach {
             val outputPath = out.resolve(it.relativeTo(metadataDirectory))
-            if (it.isDirectory) {
+            if (it.isDirectory && mkdirsedPaths.add(it)) {
                 outputPath.mkdirs()
-                mkdirsedPaths.add(it)
             } else {
                 Files.createLink(outputPath.toPath(), it.toPath())
             }
@@ -116,7 +118,7 @@ suspend fun main(args: Array<String>) {
         onTaskLaunched("Build task graph", "Build task graph")
         val tasks = ALL_MATERIALS.outputTasks(ctx).toSet()
         val mkdirs = ioScope.launch {
-            cleanupAndCopyMetadata.join()
+            deleteOldOutputs.join()
             tasks.flatMap(PngOutputTask::files)
                 .mapNotNull(File::parentFile)
                 .distinct()
@@ -130,6 +132,7 @@ suspend fun main(args: Array<String>) {
         onTaskCompleted("Build task graph", "Build task graph")
         withContext(Dispatchers.Default) {
             val ioJobs = ConcurrentHashMap.newKeySet<Job>()
+            ioJobs.add(copyMetadata)
             val connectedComponents = if (tasks.size > maximumJobsNow(bytesPerTile)) {
 
                 // Output tasks that are in different weakly-connected components don't share any dependencies, so we
