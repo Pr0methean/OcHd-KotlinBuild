@@ -173,8 +173,10 @@ suspend fun main(args: Array<String>) {
                     clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)
                     val currentInProgressJobs = inProgressJobs.size
                     val maxJobs = maximumJobsNow(bytesPerTile)
-                    if (currentInProgressJobs >= MIN_OUTPUT_TASK_JOBS && maxJobs <= 1 && heapLoadHeavyAfterLastGc()) {
-                        System.gc()
+                    if (MIN_OUTPUT_TASK_JOBS in maxJobs..currentInProgressJobs) {
+                        if (heapLoadHeavyAfterLastGc()) {
+                            System.gc()
+                        }
                         if (!clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)) {
                             val delay = measureNanoTime {
                                 inProgressJobs.remove(finishedJobsChannel.receive())
