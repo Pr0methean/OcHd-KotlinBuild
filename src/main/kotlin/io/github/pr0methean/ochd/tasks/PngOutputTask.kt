@@ -27,10 +27,10 @@ class PngOutputTask(
     val base: AbstractTask<Image>,
     val files: List<File>,
     ctx: CoroutineContext,
-): AbstractTask<Unit>(name, noopDeferredTaskCache(), ctx) {
+): AbstractTask<Nothing>(name, noopDeferredTaskCache(), ctx) {
     override val directDependencies: Iterable<AbstractTask<*>> = listOf(base)
     private val ioScope = coroutineScope.plus(Dispatchers.IO)
-    override fun mergeWithDuplicate(other: AbstractTask<*>): AbstractTask<Unit> {
+    override fun mergeWithDuplicate(other: AbstractTask<*>): AbstractTask<Nothing> {
         if (other is PngOutputTask && other !== this && other.base !== base) {
             logger.debug("Merging PngOutputTask {} with duplicate {}", name, other.name)
             val mergedBase = base.mergeWithDuplicate(other.base)
