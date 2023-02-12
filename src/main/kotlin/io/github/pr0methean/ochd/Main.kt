@@ -14,6 +14,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.channels.getOrElse
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -63,7 +64,13 @@ private val hardThrottlingPointBytes = (heapSizeBytes * HARD_THROTTLING_THRESHOL
 private val minClearedPerGcBytes = (heapSizeBytes * FREED_PER_GC_TO_SUPPRESS_EXPLICIT_GC).toLong()
 private val explicitGcThresholdBytes = (heapSizeBytes * EXPLICIT_GC_THRESHOLD).toLong()
 private const val WORKING_BYTES_PER_PIXEL = 50
+val nCpus = Runtime.getRuntime().availableProcessors()
+val nNonRenderCpus = nCpus - if (
+// SWPipeline is the software renderer, so its rendering thread needs one CPU
+    com.sun.prism.GraphicsPipeline.getPipeline()::class.qualifiedName == "com.sun.prism.sw.SWPipeline"
+) 1 else 0
 
+val softMaxOutputTaskJobs = (SOFT_MAX_OUTPUT_TASKS_PER_CPU * nNonRenderCpus).toInt()
 @Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod", "ComplexMethod")
 suspend fun main(args: Array<String>) {
     if (args.isEmpty()) {
@@ -103,13 +110,6 @@ suspend fun main(args: Array<String>) {
     withContext(Dispatchers.Main) {
         Thread.currentThread().priority = Thread.MAX_PRIORITY
     }
-    val nCpus = Runtime.getRuntime().availableProcessors()
-    val nNonRenderCpus = nCpus - if (
-        // SWPipeline is the software renderer, so its rendering thread needs one CPU
-        com.sun.prism.GraphicsPipeline.getPipeline()::class.qualifiedName == "com.sun.prism.sw.SWPipeline"
-    ) 1 else 0
-
-    val softMaxOutputTaskJobs = (SOFT_MAX_OUTPUT_TASKS_PER_CPU * nNonRenderCpus).toInt()
     startMonitoring(scope)
     val time = measureNanoTime {
         onTaskLaunched("Build task graph", "Build task graph")
@@ -227,11 +227,6 @@ suspend fun main(args: Array<String>) {
                         logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
                         inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs, prereqIoJobs)
                         check(connectedComponent.remove(task)) { "Attempted to remove task more than once: $task" }
-
-                        // Adjusted by 1 for just-launched job
-                        if (currentInProgressJobs >= softMaxOutputTaskJobs - 1) {
-                            yield() // Let this start its dependencies before reading task graph again
-                        }
                     }
                 }
             }
@@ -267,14 +262,19 @@ private fun gcIfNeeded() {
     }
 }
 
-private fun clearFinishedJobs(
+private suspend fun clearFinishedJobs(
     finishedJobsChannel: Channel<PngOutputTask>,
     inProgressJobs: HashMap<PngOutputTask, Job>,
     ioJobs: KeySetView<Job, Boolean>
 ): Boolean {
     var anyCleared = false
     do {
-        val maybeReceive = finishedJobsChannel.tryReceive().getOrNull()
+        val maybeReceive = finishedJobsChannel.tryReceive().getOrElse {
+            if (inProgressJobs.size >= softMaxOutputTaskJobs) {
+                yield()
+            }
+            finishedJobsChannel.tryReceive().getOrNull()
+        }
         if (maybeReceive != null) {
             anyCleared = true
             inProgressJobs.remove(maybeReceive)
