@@ -203,7 +203,14 @@ suspend fun main(args: Array<String>) {
                             inProgressJobs.remove(finishedJobsChannel.receive())
                         }
                         logger.warn("Hard-throttled new task for {} ns", box(delay))
-                        if (notMuchClearedByLastGc()) {
+
+                        // Check if automatic GC is performing poorly. If so, we launch an explicit GC since we know
+                        // that the last finished job is now unreachable.
+                        if (gcMxBean.lastGcInfo?.let {
+                                val bytesUsedAfter = totalBytesInUse(it.memoryUsageAfterGc)
+                                bytesUsedAfter >= explicitGcThresholdBytes &&
+                                        (totalBytesInUse(it.memoryUsageBeforeGc) - bytesUsedAfter) < minClearedPerGcBytes
+                            } == true) {
                             System.gc()
                         }
                     } else if (currentInProgressJobs + connectedComponent.size <= maxJobs.coerceAtLeast(1)) {
@@ -283,16 +290,6 @@ private fun clearFinishedJobs(
     return anyCleared
 }
 
-private fun notMuchClearedByLastGc(): Boolean {
-    val lastGc = gcMxBean.lastGcInfo ?: return false
-    val bytesUsedAfter = lastGc.memoryUsageAfterGc.values.sumOf(MemoryUsage::used)
-    if (bytesUsedAfter < explicitGcThresholdBytes) {
-        return false
-    }
-    val bytesUsedBefore = lastGc.memoryUsageBeforeGc.values.sumOf(MemoryUsage::used)
-    return (bytesUsedBefore - bytesUsedAfter) < minClearedPerGcBytes
-}
-
 private fun startTask(
     scope: CoroutineScope,
     task: PngOutputTask,
@@ -324,3 +321,5 @@ fun maximumJobsNow(bytesPerTile: Long): Int {
     return ((hardThrottlingPointBytes - memoryMxBean.heapMemoryUsage.used) / bytesPerTile)
             .toInt()
 }
+
+private fun totalBytesInUse(memoryUsage: Map<*, MemoryUsage>): Long = memoryUsage.values.sumOf(MemoryUsage::used)
