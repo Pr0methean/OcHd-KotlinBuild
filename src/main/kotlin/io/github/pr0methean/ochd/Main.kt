@@ -254,6 +254,7 @@ suspend fun main(args: Array<String>) {
     exitProcess(0)
 }
 
+@Suppress("ExplicitGarbageCollectionCall")
 private fun gcIfNeeded() {
     // Check if automatic GC is performing poorly. If so, we launch an explicit GC since we know
     // that the last finished job is now unreachable.
