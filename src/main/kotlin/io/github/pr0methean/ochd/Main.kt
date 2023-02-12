@@ -1,7 +1,6 @@
 package io.github.pr0methean.ochd
 
 import com.sun.management.GarbageCollectorMXBean
-import com.sun.prism.impl.Disposer
 import io.github.pr0methean.ochd.ImageProcessingStats.onTaskCompleted
 import io.github.pr0methean.ochd.ImageProcessingStats.onTaskLaunched
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
@@ -213,7 +212,7 @@ suspend fun main(args: Array<String>) {
                                 bytesUsedAfter >= explicitGcThresholdBytes &&
                                         (totalBytesInUse(memoryUsageBeforeGc) - bytesUsedAfter) < minClearedPerGcBytes
                             } == true) {
-                            reclaimMemory()
+                            System.gc()
                         }
                     } else if (currentInProgressJobs + connectedComponent.size <= maxJobs.coerceAtLeast(1)) {
                         logger.info(
@@ -265,17 +264,10 @@ suspend fun main(args: Array<String>) {
     exitProcess(0)
 }
 
+@Suppress("ExplicitGarbageCollectionCall")
 private fun gcIfUsingLargeTiles(tileSize: Int) {
     if (tileSize >= MIN_TILE_SIZE_FOR_EXPLICIT_GC) {
-        reclaimMemory()
-    }
-}
-
-@Suppress("ExplicitGarbageCollectionCall")
-private fun reclaimMemory() {
-    System.gc()
-    scope.launch(Dispatchers.Main.plus(CoroutineName("Disposer.cleanUp()"))) {
-        Disposer.cleanUp()
+        System.gc()
     }
 }
 
