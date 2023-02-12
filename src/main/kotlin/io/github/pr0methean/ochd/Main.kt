@@ -14,12 +14,10 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.getOrElse
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.yield
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.StringBuilderFormattable
 import org.apache.logging.log4j.util.Unbox.box
@@ -48,8 +46,6 @@ private val taskOrderComparator = comparingInt<PngOutputTask> {
 
 private val logger = LogManager.getRootLogger()
 
-private const val SOFT_MAX_OUTPUT_TASKS_PER_CPU = 1.0
-
 private const val MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH = 32
 
 val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
@@ -65,13 +61,6 @@ private val minClearedPerGcBytes = (heapSizeBytes * FREED_PER_GC_TO_SUPPRESS_EXP
 private val explicitGcThresholdBytes = (heapSizeBytes * EXPLICIT_GC_THRESHOLD).toLong()
 private const val WORKING_BYTES_PER_PIXEL = 50
 val nCpus: Int = Runtime.getRuntime().availableProcessors()
-val softMaxOutputTaskJobs: Int by lazy {
-    // SWPipeline is the software renderer, so allow one extra CPU for the rendering thread
-    val nNonRenderCpus: Int = nCpus - if (
-        com.sun.prism.GraphicsPipeline.getPipeline()::class.qualifiedName == "com.sun.prism.sw.SWPipeline"
-    ) 1 else 0
-    return@lazy (SOFT_MAX_OUTPUT_TASKS_PER_CPU * nNonRenderCpus).toInt()
-}
 
 @Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod", "ComplexMethod")
 suspend fun main(args: Array<String>) {
@@ -264,22 +253,14 @@ private fun gcIfNeeded() {
     }
 }
 
-private suspend fun clearFinishedJobs(
+private fun clearFinishedJobs(
     finishedJobsChannel: Channel<PngOutputTask>,
     inProgressJobs: HashMap<PngOutputTask, Job>,
     ioJobs: KeySetView<Job, Boolean>
 ): Boolean {
     var anyCleared = false
     do {
-        val maybeReceive = finishedJobsChannel.tryReceive().getOrElse {
-            if (inProgressJobs.size >= softMaxOutputTaskJobs) {
-                logger.info("clearFinishedJobs is calling yield()")
-                yield()
-            }
-            finishedJobsChannel.tryReceive().getOrNull()?.also {
-                logger.info("clearFinishedJobs collected {} on second try", it)
-            }
-        }
+        val maybeReceive = finishedJobsChannel.tryReceive().getOrNull()
         if (maybeReceive != null) {
             anyCleared = true
             inProgressJobs.remove(maybeReceive)
