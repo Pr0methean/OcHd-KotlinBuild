@@ -66,8 +66,8 @@ private val explicitGcThresholdBytes = (heapSizeBytes * EXPLICIT_GC_THRESHOLD).t
 private const val WORKING_BYTES_PER_PIXEL = 50
 val nCpus: Int = Runtime.getRuntime().availableProcessors()
 val softMaxOutputTaskJobs: Int by lazy {
+    // SWPipeline is the software renderer, so allow one extra CPU for the rendering thread
     val nNonRenderCpus: Int = nCpus - if (
-// SWPipeline is the software renderer, so its rendering thread needs one CPU
         com.sun.prism.GraphicsPipeline.getPipeline()::class.qualifiedName == "com.sun.prism.sw.SWPipeline"
     ) 1 else 0
     return@lazy (SOFT_MAX_OUTPUT_TASKS_PER_CPU * nNonRenderCpus).toInt()
