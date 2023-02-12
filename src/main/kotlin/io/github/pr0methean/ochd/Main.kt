@@ -56,12 +56,14 @@ private const val MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH = 32
 val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 
 private const val HARD_THROTTLING_THRESHOLD = 0.93
-private const val CLEARED_PER_GC_TO_SUPPRESS_HARD_THROTTLING = 0.2
+private const val EXPLICIT_GC_THRESHOLD = 0.5
+private const val FREED_PER_GC_TO_SUPPRESS_EXPLICIT_GC = 0.2
 private val gcMxBean = ManagementFactory.getPlatformMXBeans(GarbageCollectorMXBean::class.java).first()
 private val memoryMxBean = ManagementFactory.getMemoryMXBean()
 private val heapSizeBytes = memoryMxBean.heapMemoryUsage.max.toDouble()
 private val hardThrottlingPointBytes = (heapSizeBytes * HARD_THROTTLING_THRESHOLD).toLong()
-private val minClearedPerGcBytes = (heapSizeBytes * CLEARED_PER_GC_TO_SUPPRESS_HARD_THROTTLING).toLong()
+private val minClearedPerGcBytes = (heapSizeBytes * FREED_PER_GC_TO_SUPPRESS_EXPLICIT_GC).toLong()
+private val explicitGcThresholdBytes = (heapSizeBytes * EXPLICIT_GC_THRESHOLD).toLong()
 private const val WORKING_BYTES_PER_PIXEL = 48
 
 @Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod")
@@ -287,8 +289,11 @@ private fun clearFinishedJobs(
 
 private fun notMuchClearedByLastGc(): Boolean {
     val lastGc = gcMxBean.lastGcInfo ?: return false
-    val bytesUsedBefore = lastGc.memoryUsageBeforeGc.values.sumOf(MemoryUsage::used)
     val bytesUsedAfter = lastGc.memoryUsageAfterGc.values.sumOf(MemoryUsage::used)
+    if (bytesUsedAfter < explicitGcThresholdBytes) {
+        return false
+    }
+    val bytesUsedBefore = lastGc.memoryUsageBeforeGc.values.sumOf(MemoryUsage::used)
     return (bytesUsedBefore - bytesUsedAfter) < minClearedPerGcBytes
 }
 
