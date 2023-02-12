@@ -15,7 +15,7 @@ import javax.imageio.ImageIO
 import kotlin.coroutines.CoroutineContext
 
 private val logger = LogManager.getLogger("PngOutputTask")
-val mkdirsedPaths = ConcurrentHashMap.newKeySet<File>()
+val mkdirsedPaths: MutableSet<File> = ConcurrentHashMap.newKeySet()
 
 /**
  * Task that saves an image to one or more PNG files.

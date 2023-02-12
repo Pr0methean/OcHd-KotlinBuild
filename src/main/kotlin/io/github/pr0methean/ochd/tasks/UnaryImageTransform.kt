@@ -60,7 +60,7 @@ abstract class UnaryImageTransform<TCanvasTeardownContext>(
 
     override fun computeHashCode(): Int = Objects.hash(base, javaClass)
 
-    override fun equals(other: Any?) = (this === other) || (other is UnaryImageTransform<*>
+    override fun equals(other: Any?): Boolean = (this === other) || (other is UnaryImageTransform<*>
             && javaClass == other.javaClass
             && base == other.base)
 }

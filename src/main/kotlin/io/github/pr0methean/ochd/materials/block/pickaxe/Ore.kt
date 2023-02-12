@@ -12,16 +12,16 @@ import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Color
 import java.util.*
 
-private val OVERWORLD = EnumSet.of(STONE, DEEPSLATE)
-private val NETHER = EnumSet.of(NETHERRACK)
-private val BOTH = EnumSet.allOf(OreBase::class.java)
+private val overworldOreBases = EnumSet.of(STONE, DEEPSLATE)
+private val netherOreBases = EnumSet.of(NETHERRACK)
+private val allOreBases = EnumSet.allOf(OreBase::class.java)
 
 @Suppress("unused")
 enum class Ore(
     override val color: Color,
     override val shadow: Color,
     override val highlight: Color,
-    val substrates: EnumSet<OreBase> = OVERWORLD,
+    val substrates: EnumSet<OreBase> = overworldOreBases,
     val needsRefining: Boolean = false,
     val itemNameOverride: String? = null,
     val refinedColor: Color = color,
@@ -94,13 +94,13 @@ enum class Ore(
         shadow = c(0xeb9d00),
         highlight = c(0xffffb5),
         needsRefining = true,
-        substrates = BOTH
+        substrates = allOreBases
     ),
     QUARTZ(
         color = c(0xe8e8de),
         shadow = c(0xb6a48e),
         highlight = Color.WHITE,
-        substrates = NETHER
+        substrates = netherOreBases
     ) {
         override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
             yield(ctx.out({ ingot() }, "item/quartz"))

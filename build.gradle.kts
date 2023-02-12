@@ -10,7 +10,7 @@ plugins {
 group = "org.example"
 version = "1.0-SNAPSHOT"
 
-val jdkVersion = "19"
+val jdkVersion: String = "19"
 val myMainClassName: String = "io.github.pr0methean.ochd.MainKt"
 
 application {

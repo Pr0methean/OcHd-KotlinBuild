@@ -453,7 +453,7 @@ enum class Fungus(
             leavesShadow = c(0x5a0000),
             leavesHighlight = c(0xac2020),
         ) {
-            override fun LayerListBuilder.doorCommonLayers() = copy(InvalidTask)
+            override fun LayerListBuilder.doorCommonLayers(): Unit = copy(InvalidTask)
 
             override fun LayerListBuilder.trapdoor(commonLayers: AbstractImageTask) {
                 layer("borderSolidThick", color)
@@ -497,7 +497,7 @@ enum class Fungus(
             leavesHighlight = c(0x00b485),
             leavesShadow = c(0x006565),
         ) {
-        override fun LayerListBuilder.doorCommonLayers() = copy(InvalidTask)
+        override fun LayerListBuilder.doorCommonLayers(): Unit = copy(InvalidTask)
 
         override fun LayerListBuilder.trapdoor(commonLayers: AbstractImageTask) {
             layer("trapdoor1", highlight)

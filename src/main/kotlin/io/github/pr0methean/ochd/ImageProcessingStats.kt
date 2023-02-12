@@ -44,8 +44,8 @@ private fun Multiset<*>.log() {
 private val logger = LogManager.getLogger("ImageProcessingStats")
 private const val NEED_THREAD_MONITORING = false
 private const val MAX_STACK_DEPTH = 20
-private val NEED_COROUTINE_DEBUG = logger.isDebugEnabled
-private val REPORTING_INTERVAL: Duration = 1.minutes
+private val needCoroutineDebug = logger.isDebugEnabled
+private val reportingInterval: Duration = 1.minutes
 val threadMxBean: ThreadMXBean = ManagementFactory.getThreadMXBean()
 var monitoringJob: Job? = null
 private val cacheLock = StampedLock()
@@ -53,13 +53,13 @@ private val cacheLoggingMinIntervalNanos = 2.seconds.inWholeNanoseconds
 @OptIn(ExperimentalCoroutinesApi::class)
 @Suppress("DeferredResultUnused")
 fun startMonitoring(scope: CoroutineScope) {
-    if (NEED_COROUTINE_DEBUG) {
+    if (needCoroutineDebug) {
         DebugProbes.install()
     }
     val loggerStream = IoBuilder.forLogger(logger).setLevel(Level.DEBUG).buildPrintStream()
     monitoringJob = scope.launch(CoroutineName("Stats monitoring job")) {
         while (true) {
-            delay(REPORTING_INTERVAL)
+            delay(reportingInterval)
             logger.info("Completed tasks:")
             ImageProcessingStats.taskCompletions.log()
             if (NEED_THREAD_MONITORING) {
@@ -79,7 +79,7 @@ fun startMonitoring(scope: CoroutineScope) {
                     }
                 }
             }
-            if (NEED_COROUTINE_DEBUG) {
+            if (needCoroutineDebug) {
                 DebugProbes.dumpCoroutines(loggerStream)
             }
         }
