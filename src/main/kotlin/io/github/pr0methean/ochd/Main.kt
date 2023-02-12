@@ -134,6 +134,9 @@ suspend fun main(args: Array<String>) {
                     .sortedByConnectedComponents()
             } else listOf(tasks.toMutableSet())
             if (tileSize <= MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH) {
+                // Make a deep copy so that tasks that have already launched are included
+                val connectedComponentsForOutput = connectedComponents.map(Collection<PngOutputTask>::toSet)
+
                 // Output connected components in .dot format
                 ioJobs += ioScope.launch {
                     @Suppress("BlockingMethodInNonBlockingContext")
@@ -142,7 +145,7 @@ suspend fun main(args: Array<String>) {
                         // Strict because multiedges are possible
                         writer.println("strict digraph {")
                         writer.println("\"OcHd\" [root=true]")
-                        connectedComponents.forEachIndexed { index, connectedComponent ->
+                        connectedComponentsForOutput.forEachIndexed { index, connectedComponent ->
                             writer.print("subgraph cluster_")
                             writer.print(index)
                             writer.println('{')
@@ -151,7 +154,7 @@ suspend fun main(args: Array<String>) {
                             }
                             writer.println('}')
                         }
-                        connectedComponents.forEach { connectedComponent ->
+                        connectedComponentsForOutput.forEach { connectedComponent ->
                             connectedComponent.forEach {
                                 writer.print("\"OcHd\" -> \"")
                                 it.appendForGraphPrinting(writer)
