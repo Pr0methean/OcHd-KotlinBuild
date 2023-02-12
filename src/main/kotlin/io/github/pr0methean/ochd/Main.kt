@@ -135,7 +135,7 @@ suspend fun main(args: Array<String>) {
             } else listOf(tasks.toMutableSet())
             if (tileSize <= MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH) {
                 // Make a deep copy so that tasks that have already launched are included
-                val connectedComponentsForOutput = connectedComponents.map(Collection<PngOutputTask>::toSet)
+                val connectedComponentsForOutput = connectedComponents.map(Collection<PngOutputTask>::toList)
 
                 // Output connected components in .dot format
                 ioJobs += ioScope.launch {
