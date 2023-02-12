@@ -64,13 +64,13 @@ private val hardThrottlingPointBytes = (heapSizeBytes * HARD_THROTTLING_THRESHOL
 private val minClearedPerGcBytes = (heapSizeBytes * FREED_PER_GC_TO_SUPPRESS_EXPLICIT_GC).toLong()
 private val explicitGcThresholdBytes = (heapSizeBytes * EXPLICIT_GC_THRESHOLD).toLong()
 private const val WORKING_BYTES_PER_PIXEL = 50
-val nCpus = Runtime.getRuntime().availableProcessors()
-val nNonRenderCpus = nCpus - if (
+val nCpus: Int = Runtime.getRuntime().availableProcessors()
+val nNonRenderCpus: Int by lazy { nCpus - if (
 // SWPipeline is the software renderer, so its rendering thread needs one CPU
     com.sun.prism.GraphicsPipeline.getPipeline()::class.qualifiedName == "com.sun.prism.sw.SWPipeline"
-) 1 else 0
+) 1 else 0 }
 
-val softMaxOutputTaskJobs = (SOFT_MAX_OUTPUT_TASKS_PER_CPU * nNonRenderCpus).toInt()
+val softMaxOutputTaskJobs: Int = (SOFT_MAX_OUTPUT_TASKS_PER_CPU * nNonRenderCpus).toInt()
 @Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod", "ComplexMethod")
 suspend fun main(args: Array<String>) {
     if (args.isEmpty()) {
