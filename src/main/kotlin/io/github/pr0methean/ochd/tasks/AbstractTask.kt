@@ -34,6 +34,7 @@ abstract class AbstractTask<out T>(
     val coroutineScope: CoroutineScope by lazy {
         CoroutineScope(ctx.plus(CoroutineName(name)))
     }
+    @Volatile var dependenciesRegistered: Boolean = false
 
     open fun appendForGraphPrinting(appendable: Appendable) {
         appendable.append(name)
@@ -126,10 +127,17 @@ abstract class AbstractTask<out T>(
             || (cache.isEnabled() && mutex.withLock { directDependentTasks.size } > 1)
             || isStartedOrAvailable()
 
-    suspend fun registerRecursiveDependencies(): Unit = mutex.withLock {
-        directDependencies.forEach {
-            it.addDirectDependentTask(this@AbstractTask)
-            it.registerRecursiveDependencies()
+    suspend fun registerRecursiveDependencies() {
+        if (!dependenciesRegistered) {
+            mutex.withLock {
+                if (!dependenciesRegistered) {
+                    directDependencies.forEach {
+                        it.addDirectDependentTask(this@AbstractTask)
+                        it.registerRecursiveDependencies()
+                    }
+                    dependenciesRegistered = true
+                }
+            }
         }
     }
 
