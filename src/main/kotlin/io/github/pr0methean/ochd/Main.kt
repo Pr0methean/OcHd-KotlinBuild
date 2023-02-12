@@ -49,7 +49,6 @@ private val logger = LogManager.getRootLogger()
 
 private const val SOFT_MAX_OUTPUT_TASKS_PER_CPU = 1.0
 
-private const val MIN_TILE_SIZE_FOR_EXPLICIT_GC = 2048
 private const val MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH = 32
 
 val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
@@ -193,7 +192,6 @@ suspend fun main(args: Array<String>) {
             )
             dotFormatOutputJob?.join()
             for (connectedComponent in connectedComponents) {
-                gcIfUsingLargeTiles(tileSize)
                 logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
                 while (connectedComponent.isNotEmpty()) {
                     clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)
@@ -262,13 +260,6 @@ suspend fun main(args: Array<String>) {
     logger.info("")
     logger.info("All tasks finished after {} ns", box(time))
     exitProcess(0)
-}
-
-@Suppress("ExplicitGarbageCollectionCall")
-private fun gcIfUsingLargeTiles(tileSize: Int) {
-    if (tileSize >= MIN_TILE_SIZE_FOR_EXPLICIT_GC) {
-        System.gc()
-    }
 }
 
 private fun clearFinishedJobs(
