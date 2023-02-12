@@ -206,10 +206,10 @@ suspend fun main(args: Array<String>) {
 
                         // Check if automatic GC is performing poorly. If so, we launch an explicit GC since we know
                         // that the last finished job is now unreachable.
-                        if (gcMxBean.lastGcInfo?.let {
-                                val bytesUsedAfter = totalBytesInUse(it.memoryUsageAfterGc)
+                        if (gcMxBean.lastGcInfo?.run {
+                                val bytesUsedAfter = totalBytesInUse(memoryUsageAfterGc)
                                 bytesUsedAfter >= explicitGcThresholdBytes &&
-                                        (totalBytesInUse(it.memoryUsageBeforeGc) - bytesUsedAfter) < minClearedPerGcBytes
+                                        (totalBytesInUse(memoryUsageBeforeGc) - bytesUsedAfter) < minClearedPerGcBytes
                             } == true) {
                             System.gc()
                         }
