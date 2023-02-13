@@ -119,9 +119,10 @@ suspend fun main(args: Array<String>) {
         logger.debug("Launched deps build task")
         depsBuildTask.join()
         onTaskCompleted("Build task graph", "Build task graph")
+        val dotOutputEnabled = tileSize <= MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH
         withContext(Dispatchers.Default) {
             val ioJobs = ConcurrentHashMap.newKeySet<Job>()
-            val connectedComponents = if (tasks.size > maximumJobsNow(bytesPerTile)) {
+            val connectedComponents = if (tasks.size > maximumJobsNow(bytesPerTile) || dotOutputEnabled) {
 
                 // Output tasks that are in different weakly-connected components don't share any dependencies, so we
                 // launch tasks from one component at a time. We start with the small ones so that they'll become
@@ -147,7 +148,7 @@ suspend fun main(args: Array<String>) {
                 components.sortedBy(MutableSet<PngOutputTask>::size)
             } else listOf(tasks.toMutableSet())
             var dotFormatOutputJob: Job? = null
-            if (tileSize <= MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH) {
+            if (dotOutputEnabled) {
                 // Output connected components in .dot format
                 dotFormatOutputJob = ioScope.launch {
                     @Suppress("BlockingMethodInNonBlockingContext")
