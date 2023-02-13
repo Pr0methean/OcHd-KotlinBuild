@@ -274,9 +274,9 @@ suspend fun main(args: Array<String>) {
 }
 
 /**
- * Checks whether the most recent automatic garbage collection was unsatisfactory and, if so, launches another GC.
- * Should only be called after a task just finished and became unreachable, because that's the only relevant
- * information that the garbage collector's scheduling heuristics don't know.
+ * Checks whether the most recent garbage collection was unsatisfactory and, if so, launches another GC.
+ * Should only be called after a task has finished and become unreachable, because that's the only relevant
+ * information that the garbage collector's scheduling heuristics don't know and use.
  */
 @Suppress("ExplicitGarbageCollectionCall")
 private fun gcIfNeeded() {
