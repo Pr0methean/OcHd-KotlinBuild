@@ -218,7 +218,7 @@ suspend fun main(args: Array<String>) {
                         inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs, prereqIoJobs)
                         check(connectedComponent.remove(task)) { "Attempted to remove task more than once: $task" }
                     }
-                    if (currentInProgressJobs > 0) {
+                    if (currentInProgressJobs > 0) { // intentionally excludes any jobs started in this iteration
                         // Check for finished tasks before reevaluating the task graph or memory limit
                         var cleared = 0
                         do {
