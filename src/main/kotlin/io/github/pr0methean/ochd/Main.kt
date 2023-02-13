@@ -265,8 +265,9 @@ private fun gcIfNeeded() {
     // that the last finished job is now unreachable.
     if (gcMxBean.lastGcInfo?.run {
             val bytesUsedAfter = totalBytesInUse(memoryUsageAfterGc)
-            bytesUsedAfter >= explicitGcThresholdBytes &&
-                    (totalBytesInUse(memoryUsageBeforeGc) - bytesUsedAfter) < minClearedPerGcBytes
+            bytesUsedAfter >= explicitGcThresholdBytes
+                    && memoryMxBean.heapMemoryUsage.used >= explicitGcThresholdBytes
+                    && (totalBytesInUse(memoryUsageBeforeGc) - bytesUsedAfter) < minClearedPerGcBytes
         } == true) {
         System.gc()
     }
