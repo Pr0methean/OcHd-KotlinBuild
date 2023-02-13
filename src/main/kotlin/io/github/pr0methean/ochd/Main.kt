@@ -289,13 +289,13 @@ private fun startTask(
             SwingFXUtils.fromFXImage(task.base.await(), null)
         }
         task.base.removeDirectDependentTask(task)
-        finishedJobsChannel.send(task)
         ioJobs.add(scope.launch(CoroutineName("File write for ${task.name}")) {
             prereqIoJobs.joinAll()
             logger.info("Starting file write for {}", task.name)
             task.writeToFiles(awtImage).join()
             onTaskCompleted("PngOutputTask", task.name)
         })
+        finishedJobsChannel.send(task)
     } catch (t: Throwable) {
         // Fail fast
         logger.fatal("{} failed", task, t)
