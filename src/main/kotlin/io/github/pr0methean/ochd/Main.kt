@@ -218,20 +218,21 @@ suspend fun main(args: Array<String>) {
                         inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs, prereqIoJobs)
                         check(connectedComponent.remove(task)) { "Attempted to remove task more than once: $task" }
                     }
-
-                    // Check for finished tasks before reevaluating the task graph or memory limit
-                    var cleared = 0
-                    do {
-                        val maybeReceive = finishedJobsChannel.tryReceive().getOrNull()
-                        if (maybeReceive != null) {
-                            cleared++
-                            inProgressJobs.remove(maybeReceive)
+                    if (currentInProgressJobs > 0) {
+                        // Check for finished tasks before reevaluating the task graph or memory limit
+                        var cleared = 0
+                        do {
+                            val maybeReceive = finishedJobsChannel.tryReceive().getOrNull()
+                            if (maybeReceive != null) {
+                                cleared++
+                                inProgressJobs.remove(maybeReceive)
+                            }
+                            val finishedIoJobs = ioJobs.removeIf(Job::isCompleted)
+                        } while (maybeReceive != null || finishedIoJobs)
+                        logger.info("Collected {} finished jobs non-blockingly", box(cleared))
+                        if (cleared > 0) {
+                            gcIfNeeded()
                         }
-                        val finishedIoJobs = ioJobs.removeIf(Job::isCompleted)
-                    } while (maybeReceive != null || finishedIoJobs)
-                    logger.info("Collected {} finished jobs non-blockingly", box(cleared))
-                    if (cleared > 0) {
-                        gcIfNeeded()
                     }
                 }
             }
