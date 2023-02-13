@@ -246,10 +246,11 @@ suspend fun main(args: Array<String>) {
         logger.info("All jobs started; waiting for {} running jobs to finish", box(inProgressJobs.size))
         while (inProgressJobs.isNotEmpty()) {
             inProgressJobs.remove(finishedJobsChannel.receive())
+            ioJobs.removeIf(Job::isCompleted)
         }
         logger.info("All jobs done; closing channel")
         finishedJobsChannel.close()
-        logger.info("Waiting for remaining IO jobs to finish")
+        logger.info("Waiting for {} remaining IO jobs to finish", box(ioJobs.size))
         ioJobs.joinAll()
         logger.info("All IO jobs are finished")
     }
