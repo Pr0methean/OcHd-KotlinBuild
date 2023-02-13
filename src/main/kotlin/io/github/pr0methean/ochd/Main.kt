@@ -29,7 +29,6 @@ import java.nio.file.Paths
 import java.util.Comparator.comparingDouble
 import java.util.Comparator.comparingInt
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ConcurrentHashMap.KeySetView
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 import kotlin.text.Charsets.UTF_8
@@ -184,10 +183,8 @@ suspend fun main(args: Array<String>) {
             )
             dotFormatOutputJob?.join()
             for (connectedComponent in connectedComponents) {
-                clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)
                 logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
                 while (connectedComponent.isNotEmpty()) {
-                    clearFinishedJobs(finishedJobsChannel, inProgressJobs, ioJobs)
                     val currentInProgressJobs = inProgressJobs.size
                     val maxJobs = maximumJobsNow(bytesPerTile)
                     if (MIN_OUTPUT_TASK_JOBS in maxJobs..currentInProgressJobs) {
@@ -196,6 +193,7 @@ suspend fun main(args: Array<String>) {
                         }
                         logger.warn("Hard-throttled new task for {} ns", box(delay))
                         gcIfNeeded()
+                        continue
                     } else if (currentInProgressJobs + connectedComponent.size <= maxJobs.coerceAtLeast(1)) {
                         logger.info(
                             "{} tasks in progress; starting all {} currently eligible tasks: {}",
@@ -219,6 +217,21 @@ suspend fun main(args: Array<String>) {
                         logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
                         inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs, prereqIoJobs)
                         check(connectedComponent.remove(task)) { "Attempted to remove task more than once: $task" }
+                    }
+
+                    // Check for finished tasks before reevaluating the task graph or memory limit
+                    var cleared = 0
+                    do {
+                        val maybeReceive = finishedJobsChannel.tryReceive().getOrNull()
+                        if (maybeReceive != null) {
+                            cleared++
+                            inProgressJobs.remove(maybeReceive)
+                        }
+                        val finishedIoJobs = ioJobs.removeIf(Job::isCompleted)
+                    } while (maybeReceive != null || finishedIoJobs)
+                    logger.info("Collected {} finished jobs non-blockingly", box(cleared))
+                    if (cleared > 0) {
+                        gcIfNeeded()
                     }
                 }
             }
@@ -252,38 +265,6 @@ private fun gcIfNeeded() {
         } == true) {
         System.gc()
     }
-}
-
-private fun clearFinishedJobs(
-    finishedJobsChannel: Channel<PngOutputTask>,
-    inProgressJobs: HashMap<PngOutputTask, Job>,
-    ioJobs: KeySetView<Job, Boolean>
-): Boolean {
-    val clearedFirstTry = clearFinishedJobsIteration(finishedJobsChannel, inProgressJobs, ioJobs)
-    logger.info("clearFinishedJobs collected {} finished jobs on first try", box(clearedFirstTry))
-    if (clearedFirstTry > 0) {
-        gcIfNeeded()
-        logger.info("clearFinishedJobs collected {} finished jobs on second try",
-                clearFinishedJobsIteration(finishedJobsChannel, inProgressJobs, ioJobs))
-    }
-    return clearedFirstTry > 0
-}
-
-private fun clearFinishedJobsIteration(
-    finishedJobsChannel: Channel<PngOutputTask>,
-    inProgressJobs: HashMap<PngOutputTask, Job>,
-    ioJobs: KeySetView<Job, Boolean>
-): Int {
-    var cleared = 0
-    do {
-        val maybeReceive = finishedJobsChannel.tryReceive().getOrNull()
-        if (maybeReceive != null) {
-            cleared++
-            inProgressJobs.remove(maybeReceive)
-        }
-        val finishedIoJobs = ioJobs.removeIf(Job::isCompleted)
-    } while (maybeReceive != null || finishedIoJobs)
-    return cleared
 }
 
 private fun startTask(
