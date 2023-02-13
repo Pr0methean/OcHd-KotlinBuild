@@ -273,6 +273,11 @@ suspend fun main(args: Array<String>) {
     exitProcess(0)
 }
 
+/**
+ * Checks whether the most recent automatic garbage collection was unsatisfactory and, if so, launches another GC.
+ * Should only be called after a task just finished and became unreachable, because that's the only relevant
+ * information that the garbage collector's scheduling heuristics don't know.
+ */
 @Suppress("ExplicitGarbageCollectionCall")
 private fun gcIfNeeded() {
     // Check if automatic GC is performing poorly. If so, we launch an explicit GC since we know
