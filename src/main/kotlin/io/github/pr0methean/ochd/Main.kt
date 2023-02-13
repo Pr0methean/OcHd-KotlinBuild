@@ -101,21 +101,7 @@ suspend fun main(args: Array<String>) {
         Thread.currentThread().priority = Thread.MAX_PRIORITY
     }
     startMonitoring(scope)
-    val start = System.nanoTime()// intentionally excludes any jobs started in this iteration
-    // Check for finished tasks before reevaluating the task graph or memory limit
-// Strict because multiedges are possible
-    // Output connected components in .dot format
-    // More than one match = need to merge components
-    // Output tasks that are in different weakly-connected components don't share any dependencies, so we
-    // launch tasks from one component at a time. We start with the small ones so that they'll become
-    // unreachable by the time the largest component hits its peak cache size.// intentionally excludes any jobs started in this iteration
-    // Check for finished tasks before reevaluating the task graph or memory limit
-// Strict because multiedges are possible
-    // Output connected components in .dot format
-    // More than one match = need to merge components
-    // Output tasks that are in different weakly-connected components don't share any dependencies, so we
-    // launch tasks from one component at a time. We start with the small ones so that they'll become
-    // unreachable by the time the largest component hits its peak cache size.
+    val startTime = System.nanoTime()
     onTaskLaunched("Build task graph", "Build task graph")
     val tasks = ALL_MATERIALS.outputTasks(ctx).toSet()
     val mkdirs = ioScope.launch {
@@ -264,12 +250,12 @@ suspend fun main(args: Array<String>) {
         ioJobs.joinAll()
         logger.info("All IO jobs are finished")
     }
-    val time = System.nanoTime() - start
+    val runningTime = System.nanoTime() - startTime
     stopMonitoring()
     Platform.exit()
     ImageProcessingStats.log()
     logger.info("")
-    logger.info("All tasks finished after {} ns", box(time))
+    logger.info("All tasks finished after {} ns", box(runningTime))
     exitProcess(0)
 }
 
