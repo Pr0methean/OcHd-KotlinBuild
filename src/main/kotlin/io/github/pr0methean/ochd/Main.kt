@@ -49,6 +49,7 @@ private const val MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH = 32
 
 val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 
+private const val FORCE_GC_THRESHOLD = 0.98
 private const val HARD_THROTTLING_THRESHOLD = 0.93
 private const val EXPLICIT_GC_THRESHOLD = 0.6
 private const val FREED_PER_GC_TO_SUPPRESS_EXPLICIT_GC = 0.03
@@ -56,6 +57,7 @@ private val gcMxBean = ManagementFactory.getPlatformMXBeans(GarbageCollectorMXBe
 private val memoryMxBean = ManagementFactory.getMemoryMXBean()
 private val heapSizeBytes = memoryMxBean.heapMemoryUsage.max.toDouble()
 private val hardThrottlingPointBytes = (heapSizeBytes * HARD_THROTTLING_THRESHOLD).toLong()
+private val forceGcThresholdBytes = (heapSizeBytes * FORCE_GC_THRESHOLD).toLong()
 private val minClearedPerGcBytes = (heapSizeBytes * FREED_PER_GC_TO_SUPPRESS_EXPLICIT_GC).toLong()
 private val explicitGcThresholdBytes = (heapSizeBytes * EXPLICIT_GC_THRESHOLD).toLong()
 private const val WORKING_BYTES_PER_PIXEL = 50
@@ -267,12 +269,14 @@ suspend fun main(args: Array<String>) {
  */
 @Suppress("ExplicitGarbageCollectionCall")
 private fun gcIfNeeded() {
-    // Check if automatic GC is performing poorly. If so, we launch an explicit GC since we know
+    val heapUsageNow = memoryMxBean.heapMemoryUsage.used
+    // Check if automatic GC is performing poorly or heap is nearly full. If so, we launch an explicit GC since we know
     // that the last finished job is now unreachable.
-    if (gcMxBean.lastGcInfo?.run {
+    if (heapUsageNow > forceGcThresholdBytes) {
+        System.gc()
+    } else if (heapUsageNow >= explicitGcThresholdBytes && gcMxBean.lastGcInfo?.run {
             val bytesUsedAfter = totalBytesInUse(memoryUsageAfterGc)
             bytesUsedAfter >= explicitGcThresholdBytes
-                    && memoryMxBean.heapMemoryUsage.used >= explicitGcThresholdBytes
                     && (totalBytesInUse(memoryUsageBeforeGc) - bytesUsedAfter) < minClearedPerGcBytes
         } == true) {
         System.gc()
