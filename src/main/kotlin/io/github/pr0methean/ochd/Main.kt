@@ -192,6 +192,7 @@ suspend fun main(args: Array<String>) {
                         inProgressJobs.remove(finishedJobsChannel.receive())
                     }
                     logger.warn("Hard-throttled new task for {} ns", box(delay))
+                    ioJobs.removeIf(Job::isCompleted)
                     gcIfNeeded()
                     continue
                 } else if (currentInProgressJobs + connectedComponent.size <= maxJobs.coerceAtLeast(1)) {
