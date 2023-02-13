@@ -221,20 +221,20 @@ suspend fun main(args: Array<String>) {
                 if (currentInProgressJobs > 0) { // intentionally excludes any jobs started in this iteration
                     // Check for finished tasks before reevaluating the task graph or memory limit
                     var cleared = 0
-                    var ioCleared = false
+                    var ioCleared = 0
                     do {
                         val maybeReceive = finishedJobsChannel.tryReceive().getOrNull()
                         if (maybeReceive != null) {
                             cleared++
                             inProgressJobs.remove(maybeReceive)
                         }
-                        val finishedIoJobs = ioJobs.removeIf(Job::isCompleted)
-                        if (finishedIoJobs) {
-                            ioCleared = true
-                        }
-                    } while (maybeReceive != null || finishedIoJobs)
-                    logger.info("Collected {} finished jobs non-blockingly", box(cleared))
-                    if (cleared > 0 || ioCleared) {
+                        val finishedIoJobs = ioJobs.filter(Job::isCompleted).toSet()
+                        ioJobs.removeAll(finishedIoJobs)
+                        ioCleared += finishedIoJobs.size
+                    } while (maybeReceive != null || finishedIoJobs.isNotEmpty())
+                    logger.info("Collected {} finished tasks and {} finished IO jobs non-blockingly",
+                            box(cleared), box(ioCleared))
+                    if (cleared > 0 || ioCleared > 0) {
                         gcIfNeeded()
                     }
                 }
