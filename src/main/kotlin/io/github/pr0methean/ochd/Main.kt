@@ -258,6 +258,19 @@ private fun clearFinishedJobs(
     inProgressJobs: HashMap<PngOutputTask, Job>,
     ioJobs: KeySetView<Job, Boolean>
 ): Boolean {
+    val anyCleared = clearFinishedJobsIteration(finishedJobsChannel, inProgressJobs, ioJobs)
+    if (anyCleared) {
+        gcIfNeeded()
+        clearFinishedJobsIteration(finishedJobsChannel, inProgressJobs, ioJobs)
+    }
+    return anyCleared
+}
+
+private fun clearFinishedJobsIteration(
+    finishedJobsChannel: Channel<PngOutputTask>,
+    inProgressJobs: HashMap<PngOutputTask, Job>,
+    ioJobs: KeySetView<Job, Boolean>
+): Boolean {
     var anyCleared = false
     do {
         val maybeReceive = finishedJobsChannel.tryReceive().getOrNull()
@@ -267,9 +280,6 @@ private fun clearFinishedJobs(
         }
         val finishedIoJobs = ioJobs.removeIf(Job::isCompleted)
     } while (maybeReceive != null || finishedIoJobs)
-    if (anyCleared) {
-        gcIfNeeded()
-    }
     return anyCleared
 }
 
