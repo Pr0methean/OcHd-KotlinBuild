@@ -101,156 +101,170 @@ suspend fun main(args: Array<String>) {
         Thread.currentThread().priority = Thread.MAX_PRIORITY
     }
     startMonitoring(scope)
-    val time = measureNanoTime {
-        onTaskLaunched("Build task graph", "Build task graph")
-        val tasks = ALL_MATERIALS.outputTasks(ctx).toSet()
-        val mkdirs = ioScope.launch {
-            deleteOldOutputs.join()
-            tasks.flatMap(PngOutputTask::files)
-                .mapNotNull(File::parentFile)
-                .distinct()
-                .filter(mkdirsedPaths::add)
-                .forEach(File::mkdirs)
-        }
-        val prereqIoJobs = listOf(mkdirs, copyMetadata)
-        logger.debug("Got deduplicated output tasks")
-        val depsBuildTask = scope.launch { tasks.forEach { it.registerRecursiveDependencies() } }
-        logger.debug("Launched deps build task")
-        depsBuildTask.join()
-        onTaskCompleted("Build task graph", "Build task graph")
-        val dotOutputEnabled = tileSize <= MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH
-        withContext(Dispatchers.Default) {
-            val ioJobs = ConcurrentHashMap.newKeySet<Job>()
-            val connectedComponents = if (tasks.size > maximumJobsNow(bytesPerTile) || dotOutputEnabled) {
+    val start = System.nanoTime()// intentionally excludes any jobs started in this iteration
+    // Check for finished tasks before reevaluating the task graph or memory limit
+// Strict because multiedges are possible
+    // Output connected components in .dot format
+    // More than one match = need to merge components
+    // Output tasks that are in different weakly-connected components don't share any dependencies, so we
+    // launch tasks from one component at a time. We start with the small ones so that they'll become
+    // unreachable by the time the largest component hits its peak cache size.// intentionally excludes any jobs started in this iteration
+    // Check for finished tasks before reevaluating the task graph or memory limit
+// Strict because multiedges are possible
+    // Output connected components in .dot format
+    // More than one match = need to merge components
+    // Output tasks that are in different weakly-connected components don't share any dependencies, so we
+    // launch tasks from one component at a time. We start with the small ones so that they'll become
+    // unreachable by the time the largest component hits its peak cache size.
+    onTaskLaunched("Build task graph", "Build task graph")
+    val tasks = ALL_MATERIALS.outputTasks(ctx).toSet()
+    val mkdirs = ioScope.launch {
+        deleteOldOutputs.join()
+        tasks.flatMap(PngOutputTask::files)
+            .mapNotNull(File::parentFile)
+            .distinct()
+            .filter(mkdirsedPaths::add)
+            .forEach(File::mkdirs)
+    }
+    val prereqIoJobs = listOf(mkdirs, copyMetadata)
+    logger.debug("Got deduplicated output tasks")
+    val depsBuildTask = scope.launch { tasks.forEach { it.registerRecursiveDependencies() } }
+    logger.debug("Launched deps build task")
+    depsBuildTask.join()
+    onTaskCompleted("Build task graph", "Build task graph")
+    val dotOutputEnabled = tileSize <= MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH
+    withContext<Unit>(Dispatchers.Default) {
+        val ioJobs = ConcurrentHashMap.newKeySet<Job>()
+        val connectedComponents = if (tasks.size > maximumJobsNow(bytesPerTile) || dotOutputEnabled) {
 
-                // Output tasks that are in different weakly-connected components don't share any dependencies, so we
-                // launch tasks from one component at a time. We start with the small ones so that they'll become
-                // unreachable by the time the largest component hits its peak cache size.
-                val components = mutableListOf<MutableSet<PngOutputTask>>()
-                sortTask@ for (task in tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks))
-                ) {
-                    val matchingComponents = components.filter { it.any(task::overlapsWith) }
-                    logger.debug("{} is connected to: {}", task, matchingComponents)
-                    if (matchingComponents.isEmpty()) {
-                        components.add(mutableSetOf(task))
-                    } else {
-                        matchingComponents.first().add(task)
-                        for (component in matchingComponents.drop(1)) {
-                            // More than one match = need to merge components
-                            matchingComponents.first().addAll(component)
-                            check(components.remove(component)) {
-                                "Failed to remove $component after merging into ${matchingComponents.first()}"
-                            }
+            // Output tasks that are in different weakly-connected components don't share any dependencies, so we
+            // launch tasks from one component at a time. We start with the small ones so that they'll become
+            // unreachable by the time the largest component hits its peak cache size.
+            val components = mutableListOf<MutableSet<PngOutputTask>>()
+            sortTask@ for (task in tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks))
+            ) {
+                val matchingComponents = components.filter { it.any(task::overlapsWith) }
+                logger.debug("{} is connected to: {}", task, matchingComponents)
+                if (matchingComponents.isEmpty()) {
+                    components.add(mutableSetOf(task))
+                } else {
+                    matchingComponents.first().add(task)
+                    for (component in matchingComponents.drop(1)) {
+                        // More than one match = need to merge components
+                        matchingComponents.first().addAll(component)
+                        check(components.remove(component)) {
+                            "Failed to remove $component after merging into ${matchingComponents.first()}"
                         }
                     }
                 }
-                components.sortedBy(MutableSet<PngOutputTask>::size)
-            } else listOf(tasks.toMutableSet())
-            var dotFormatOutputJob: Job? = null
-            if (dotOutputEnabled) {
-                // Output connected components in .dot format
-                dotFormatOutputJob = ioScope.launch {
-                    @Suppress("BlockingMethodInNonBlockingContext")
-                    Paths.get("out").toFile().mkdirs()
-                    Paths.get("out", "graph.dot").toFile().printWriter(UTF_8).use { writer ->
-                        // Strict because multiedges are possible
-                        writer.println("strict digraph {")
-                        writer.println("\"OcHd\" [root=true]")
-                        connectedComponents.forEachIndexed { index, connectedComponent ->
-                            writer.print("subgraph cluster_")
-                            writer.print(index)
-                            writer.println('{')
-                            connectedComponent.forEach {
-                                it.printDependencies(writer)
-                            }
-                            writer.println('}')
-                        }
-                        connectedComponents.forEach { connectedComponent ->
-                            connectedComponent.forEach {
-                                writer.print("\"OcHd\" -> \"")
-                                it.appendForGraphPrinting(writer)
-                                writer.println("\"")
-                                it.printDependencies(writer)
-                            }
+            }
+            components.sortedBy(MutableSet<PngOutputTask>::size)
+        } else listOf(tasks.toMutableSet())
+        var dotFormatOutputJob: Job? = null
+        if (dotOutputEnabled) {
+            // Output connected components in .dot format
+            dotFormatOutputJob = ioScope.launch {
+                @Suppress("BlockingMethodInNonBlockingContext")
+                Paths.get("out").toFile().mkdirs()
+                Paths.get("out", "graph.dot").toFile().printWriter(UTF_8).use { writer ->
+                    // Strict because multiedges are possible
+                    writer.println("strict digraph {")
+                    writer.println("\"OcHd\" [root=true]")
+                    connectedComponents.forEachIndexed { index, connectedComponent ->
+                        writer.print("subgraph cluster_")
+                        writer.print(index)
+                        writer.println('{')
+                        connectedComponent.forEach {
+                            it.printDependencies(writer)
                         }
                         writer.println('}')
                     }
-                }
-            }
-            val inProgressJobs = HashMap<PngOutputTask, Job>()
-            val finishedJobsChannel = Channel<PngOutputTask>(
-                    capacity = CAPACITY_PADDING_FACTOR * nCpus
-            )
-            dotFormatOutputJob?.join()
-            for (connectedComponent in connectedComponents) {
-                logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
-                while (connectedComponent.isNotEmpty()) {
-                    val currentInProgressJobs = inProgressJobs.size
-                    val maxJobs = maximumJobsNow(bytesPerTile)
-                    if (MIN_OUTPUT_TASK_JOBS in maxJobs..currentInProgressJobs) {
-                        val delay = measureNanoTime {
-                            inProgressJobs.remove(finishedJobsChannel.receive())
-                        }
-                        logger.warn("Hard-throttled new task for {} ns", box(delay))
-                        gcIfNeeded()
-                        continue
-                    } else if (currentInProgressJobs + connectedComponent.size <= maxJobs.coerceAtLeast(1)) {
-                        logger.info(
-                            "{} tasks in progress; starting all {} currently eligible tasks: {}",
-                            box(currentInProgressJobs), box(connectedComponent.size), StringBuilderFormattable {
-                                it.appendCollection(connectedComponent, "; ")
-                            }
-                        )
+                    connectedComponents.forEach { connectedComponent ->
                         connectedComponent.forEach {
-                            inProgressJobs[it] = startTask(scope, it, finishedJobsChannel, ioJobs, prereqIoJobs)
+                            writer.print("\"OcHd\" -> \"")
+                            it.appendForGraphPrinting(writer)
+                            writer.println("\"")
+                            it.printDependencies(writer)
                         }
-                        connectedComponent.clear()
-                    } else if (currentInProgressJobs >= maxJobs.coerceAtLeast(1)) {
-                        logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
-                        val delay = measureNanoTime {
-                            inProgressJobs.remove(finishedJobsChannel.receive())
-                        }
-                        logger.warn("Waited for tasks in progress to fall below limit for {} ns", box(delay))
-                    } else {
-                        val task = connectedComponent.minWithOrNull(taskOrderComparator)
-                        checkNotNull(task) { "Error finding a new task to start" }
-                        logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
-                        inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs, prereqIoJobs)
-                        check(connectedComponent.remove(task)) { "Attempted to remove task more than once: $task" }
                     }
-                    if (currentInProgressJobs > 0) { // intentionally excludes any jobs started in this iteration
-                        // Check for finished tasks before reevaluating the task graph or memory limit
-                        var cleared = 0
-                        var ioCleared = false
-                        do {
-                            val maybeReceive = finishedJobsChannel.tryReceive().getOrNull()
-                            if (maybeReceive != null) {
-                                cleared++
-                                inProgressJobs.remove(maybeReceive)
-                            }
-                            val finishedIoJobs = ioJobs.removeIf(Job::isCompleted)
-                            if (finishedIoJobs) {
-                                ioCleared = true
-                            }
-                        } while (maybeReceive != null || finishedIoJobs)
-                        logger.info("Collected {} finished jobs non-blockingly", box(cleared))
-                        if (cleared > 0 || ioCleared) {
-                            gcIfNeeded()
+                    writer.println('}')
+                }
+            }
+        }
+        val inProgressJobs = HashMap<PngOutputTask, Job>()
+        val finishedJobsChannel = Channel<PngOutputTask>(
+            capacity = CAPACITY_PADDING_FACTOR * nCpus
+        )
+        dotFormatOutputJob?.join()
+        for (connectedComponent in connectedComponents) {
+            logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
+            while (connectedComponent.isNotEmpty()) {
+                val currentInProgressJobs = inProgressJobs.size
+                val maxJobs = maximumJobsNow(bytesPerTile)
+                if (MIN_OUTPUT_TASK_JOBS in maxJobs..currentInProgressJobs) {
+                    val delay = measureNanoTime {
+                        inProgressJobs.remove(finishedJobsChannel.receive())
+                    }
+                    logger.warn("Hard-throttled new task for {} ns", box(delay))
+                    gcIfNeeded()
+                    continue
+                } else if (currentInProgressJobs + connectedComponent.size <= maxJobs.coerceAtLeast(1)) {
+                    logger.info(
+                        "{} tasks in progress; starting all {} currently eligible tasks: {}",
+                        box(currentInProgressJobs), box(connectedComponent.size), StringBuilderFormattable {
+                            it.appendCollection(connectedComponent, "; ")
                         }
+                    )
+                    connectedComponent.forEach {
+                        inProgressJobs[it] = startTask(scope, it, finishedJobsChannel, ioJobs, prereqIoJobs)
+                    }
+                    connectedComponent.clear()
+                } else if (currentInProgressJobs >= maxJobs.coerceAtLeast(1)) {
+                    logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
+                    val delay = measureNanoTime {
+                        inProgressJobs.remove(finishedJobsChannel.receive())
+                    }
+                    logger.warn("Waited for tasks in progress to fall below limit for {} ns", box(delay))
+                } else {
+                    val task = connectedComponent.minWithOrNull(taskOrderComparator)
+                    checkNotNull(task) { "Error finding a new task to start" }
+                    logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
+                    inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs, prereqIoJobs)
+                    check(connectedComponent.remove(task)) { "Attempted to remove task more than once: $task" }
+                }
+                if (currentInProgressJobs > 0) { // intentionally excludes any jobs started in this iteration
+                    // Check for finished tasks before reevaluating the task graph or memory limit
+                    var cleared = 0
+                    var ioCleared = false
+                    do {
+                        val maybeReceive = finishedJobsChannel.tryReceive().getOrNull()
+                        if (maybeReceive != null) {
+                            cleared++
+                            inProgressJobs.remove(maybeReceive)
+                        }
+                        val finishedIoJobs = ioJobs.removeIf(Job::isCompleted)
+                        if (finishedIoJobs) {
+                            ioCleared = true
+                        }
+                    } while (maybeReceive != null || finishedIoJobs)
+                    logger.info("Collected {} finished jobs non-blockingly", box(cleared))
+                    if (cleared > 0 || ioCleared) {
+                        gcIfNeeded()
                     }
                 }
             }
-            logger.info("All jobs started; waiting for {} running jobs to finish", box(inProgressJobs.size))
-            while (inProgressJobs.isNotEmpty()) {
-                inProgressJobs.remove(finishedJobsChannel.receive())
-            }
-            logger.info("All jobs done; closing channel")
-            finishedJobsChannel.close()
-            logger.info("Waiting for remaining IO jobs to finish")
-            ioJobs.joinAll()
-            logger.info("All IO jobs are finished")
         }
+        logger.info("All jobs started; waiting for {} running jobs to finish", box(inProgressJobs.size))
+        while (inProgressJobs.isNotEmpty()) {
+            inProgressJobs.remove(finishedJobsChannel.receive())
+        }
+        logger.info("All jobs done; closing channel")
+        finishedJobsChannel.close()
+        logger.info("Waiting for remaining IO jobs to finish")
+        ioJobs.joinAll()
+        logger.info("All IO jobs are finished")
     }
+    val time = System.nanoTime() - start
     stopMonitoring()
     Platform.exit()
     ImageProcessingStats.log()
