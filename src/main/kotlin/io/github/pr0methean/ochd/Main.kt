@@ -226,14 +226,14 @@ suspend fun main(args: Array<String>) {
                     var cleared = 0
                     var ioCleared = 0
                     do {
+                        val finishedIoJobs = ioJobs.filter(Job::isCompleted).toSet()
+                        ioJobs.removeAll(finishedIoJobs)
+                        ioCleared += finishedIoJobs.size
                         val maybeReceive = finishedJobsChannel.tryReceive().getOrNull()
                         if (maybeReceive != null) {
                             cleared++
                             inProgressJobs.remove(maybeReceive)
                         }
-                        val finishedIoJobs = ioJobs.filter(Job::isCompleted).toSet()
-                        ioJobs.removeAll(finishedIoJobs)
-                        ioCleared += finishedIoJobs.size
                     } while (maybeReceive != null || finishedIoJobs.isNotEmpty())
                     logger.info("Collected {} finished tasks and {} finished IO jobs non-blockingly",
                             box(cleared), box(ioCleared))
@@ -245,8 +245,8 @@ suspend fun main(args: Array<String>) {
         }
         logger.info("All jobs started; waiting for {} running jobs to finish", box(inProgressJobs.size))
         while (inProgressJobs.isNotEmpty()) {
-            inProgressJobs.remove(finishedJobsChannel.receive())
             ioJobs.removeIf(Job::isCompleted)
+            inProgressJobs.remove(finishedJobsChannel.receive())
         }
         logger.info("All jobs done; closing channel")
         finishedJobsChannel.close()
