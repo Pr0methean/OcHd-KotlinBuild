@@ -44,7 +44,7 @@ jobs:
       - attach_workspace:
           at: build/libs
       - run: >
-          java -Dprism.maxvram=2560m -Dglass.platform=Monocle -Dmonocle.platform=Headless
+          java -Dprism.maxvram=2560m -Dglass.platform=Monocle -Dmonocle.platform=Headless -Xcomp
           -XX:+UseStringDeduplication -Xms7840m -Xmx7840m -XX:MaxMetaspaceSize=64m
           -XX:+UnlockExperimentalVMOptions -XX:+UseZGC -XX:ZFragmentationLimit=1
           '-Xlog:gc*=debug,gc+stats=trace,gc+heap=trace,gc+heap+exit=trace,gc+metaspace=trace,gc+nmethod=info,safepoint+stats=info' 
