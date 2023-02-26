@@ -1,5 +1,6 @@
 package io.github.pr0methean.ochd.tasks
 
+import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import javafx.scene.canvas.GraphicsContext
@@ -57,6 +58,7 @@ class RepaintTask(
     @Suppress("DeferredResultUnused", "ComplexCondition", "MagicNumber")
     override suspend fun perform(): Image {
         val snapshot = if (base.cache.isEnabled() && paint is Color) {
+            ImageProcessingStats.onTaskLaunched("RepaintTask", name)
             // Avoid waiting for the JavaFX renderer thread by doing pixel-by-pixel transform
             val baseImage = base.await()
             val width = baseImage.width.toInt()
@@ -76,6 +78,7 @@ class RepaintTask(
                     writer.setArgb(x, y, repaintedForInputAlpha[inputAlpha])
                 }
             }
+            ImageProcessingStats.onTaskCompleted("RepaintTask", name)
             output
         } else {
             super.perform()
