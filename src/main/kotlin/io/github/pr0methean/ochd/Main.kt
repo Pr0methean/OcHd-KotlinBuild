@@ -31,7 +31,6 @@ import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 import kotlin.text.Charsets.UTF_8
 
-const val MIN_OUTPUT_TASK_JOBS: Int = 1
 const val CAPACITY_PADDING_FACTOR: Int = 2
 private val taskOrderComparator = comparingInt<PngOutputTask> {
     if (it.isCacheAllocationFreeOnMargin()) 0 else 1
@@ -179,12 +178,13 @@ suspend fun main(args: Array<String>) {
             logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
             while (connectedComponent.isNotEmpty()) {
                 val currentInProgressJobs = inProgressJobs.size
-                val maxJobs = maximumJobsNow(bytesPerTile).coerceAtLeast(1)
-                if (MIN_OUTPUT_TASK_JOBS in maxJobs..currentInProgressJobs) {
+                val maxJobs = maximumJobsNow(bytesPerTile)
+                if (currentInProgressJobs >= maxJobs) {
+                    logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
                     val delay = measureNanoTime {
                         inProgressJobs.remove(finishedJobsChannel.receive())
                     }
-                    logger.warn("Hard-throttled new task for {} ns", box(delay))
+                    logger.warn("Waited for tasks in progress to fall below limit for {} ns", box(delay))
                     ioJobs.removeIf(Job::isCompleted)
                     continue
                 } else if (currentInProgressJobs + connectedComponent.size <= maxJobs) {
@@ -198,12 +198,6 @@ suspend fun main(args: Array<String>) {
                         inProgressJobs[it] = startTask(scope, it, finishedJobsChannel, ioJobs, prereqIoJobs)
                     }
                     connectedComponent.clear()
-                } else if (currentInProgressJobs >= maxJobs) {
-                    logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
-                    val delay = measureNanoTime {
-                        inProgressJobs.remove(finishedJobsChannel.receive())
-                    }
-                    logger.warn("Waited for tasks in progress to fall below limit for {} ns", box(delay))
                 } else {
                     val task = connectedComponent.minWithOrNull(taskOrderComparator)
                     checkNotNull(task) { "Error finding a new task to start" }
@@ -282,6 +276,6 @@ private fun startTask(
 
 fun maximumJobsNow(bytesPerTile: Long): Int {
     return ((hardThrottlingPointBytes - memoryMxBean.heapMemoryUsage.used) / bytesPerTile)
-            .toInt()
+            .toInt().coerceAtLeast(1)
 }
 
