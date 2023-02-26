@@ -8,15 +8,12 @@ import kotlinx.coroutines.CoroutineStart.LAZY
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import org.apache.logging.log4j.util.StringBuilderFormattable
 import java.io.PrintWriter
-import java.util.Collections.newSetFromMap
-import java.util.WeakHashMap
-import javax.annotation.concurrent.GuardedBy
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.CoroutineContext
 
 val abstractTaskLogger: Logger = LogManager.getLogger("AbstractTask")
@@ -34,20 +31,26 @@ abstract class AbstractTask<out T>(
     val coroutineScope: CoroutineScope by lazy {
         CoroutineScope(ctx.plus(CoroutineName(name)))
     }
-    @Volatile var dependenciesRegistered: Boolean = false
+    private val directlyConsumingRepaintTasks = AtomicInteger(0)
+    private val directlyConsumingNonRepaintTasks: AtomicInteger = AtomicInteger(0)
+
+    fun isUsedOnlyForRepaints(): Boolean = directlyConsumingNonRepaintTasks.get() == 0
+
+    private fun directConsumers(): Int = directlyConsumingRepaintTasks.get() + directlyConsumingNonRepaintTasks.get()
+
+    private val dependenciesRegistered = AtomicBoolean(false)
 
     open fun appendForGraphPrinting(appendable: Appendable) {
         appendable.append(name)
     }
 
-    val mutex: Mutex = Mutex()
-
-    @GuardedBy("mutex")
-    val directDependentTasks: MutableSet<AbstractTask<*>> = newSetFromMap(WeakHashMap())
-    private suspend fun addDirectDependentTask(task: AbstractTask<*>) {
-        if (mutex.withLock {
-                directDependentTasks.add(task) && directDependentTasks.size >= 2 && cache.enable()
-            }) {
+    private fun addDirectDependentTask(task: AbstractTask<*>) {
+        if (task is RepaintTask) {
+            directlyConsumingRepaintTasks.getAndIncrement()
+        } else {
+            directlyConsumingNonRepaintTasks.getAndIncrement()
+        }
+        if (directConsumers() >= 2 && cache.enable()) {
             ImageProcessingStats.onCachingEnabled(this)
         }
     }
@@ -57,16 +60,16 @@ abstract class AbstractTask<out T>(
      * all dependents have done so.
      */
     suspend fun removeDirectDependentTask(task: AbstractTask<*>) {
-        mutex.withLock {
-            if (directDependentTasks.remove(task)) {
-                abstractTaskLogger.info("Removed dependency of {} on {}", task.name, name)
+        val counter = if (task is RepaintTask) directlyConsumingRepaintTasks else directlyConsumingNonRepaintTasks
+        check (counter.decrementAndGet() >= 0) {
+            "Tried to remove more dependent tasks from $this than were added"
+        }
+        abstractTaskLogger.info("Removed dependency of {} on {}", task.name, name)
+        if (directConsumers() == 0) {
+            if (cache.disable()) {
+                ImageProcessingStats.onCachingDisabled(this)
             }
-            if (directDependentTasks.isEmpty()) {
-                directDependencies.forEach { it.removeDirectDependentTask(this) }
-                if (cache.disable()) {
-                    ImageProcessingStats.onCachingDisabled(this)
-                }
-            }
+            directDependencies.forEach { it.removeDirectDependentTask(this) }
         }
     }
 
@@ -107,8 +110,8 @@ abstract class AbstractTask<out T>(
         var coefficient = if (!cache.isEnabled()) {
             0.0
         } else {
-            val unstartedDirectDependents = mutex.withLock { directDependentTasks.count { !it.isStartedOrAvailable() } }
-            val clearingScore = (1.0 / unstartedDirectDependents).coerceAtLeast(java.lang.Double.MIN_NORMAL)
+            val unstartedDirectConsumers = directConsumers()
+            val clearingScore = (1.0 / unstartedDirectConsumers).coerceAtLeast(java.lang.Double.MIN_NORMAL)
             if (isStartedOrAvailable()) {
                 clearingScore
             } else -1.0 + clearingScore
@@ -123,20 +126,15 @@ abstract class AbstractTask<out T>(
      * True when this task should prepare to output an Image so that that Image can be cached, rather than rendering
      * onto a consuming task's canvas.
      */
-    suspend fun shouldRenderForCaching(): Boolean = isStartedOrAvailable()
-            || (cache.isEnabled() && mutex.withLock { directDependentTasks.size } > 1)
+    fun shouldRenderForCaching(): Boolean = isStartedOrAvailable()
+            || (cache.isEnabled() && directConsumers() >= 2)
             || isStartedOrAvailable()
 
     suspend fun registerRecursiveDependencies() {
-        if (!dependenciesRegistered) {
-            mutex.withLock {
-                if (!dependenciesRegistered) {
-                    directDependencies.forEach {
-                        it.addDirectDependentTask(this@AbstractTask)
-                        it.registerRecursiveDependencies()
-                    }
-                    dependenciesRegistered = true
-                }
+        if (dependenciesRegistered.compareAndSet(false, true)) {
+            directDependencies.forEach {
+                it.addDirectDependentTask(this@AbstractTask)
+                it.registerRecursiveDependencies()
             }
         }
     }
