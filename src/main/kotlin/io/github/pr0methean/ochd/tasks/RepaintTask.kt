@@ -57,6 +57,7 @@ class RepaintTask(
     @Suppress("DeferredResultUnused", "ComplexCondition", "MagicNumber")
     override suspend fun perform(): Image {
         val snapshot = if (base.cache.isEnabled() && paint is Color) {
+            // Avoid waiting for the JavaFX renderer thread by doing pixel-by-pixel transform
             val baseImage = base.await()
             val width = baseImage.width.toInt()
             val height = baseImage.height.toInt()
