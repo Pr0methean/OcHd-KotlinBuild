@@ -7,6 +7,7 @@ import javafx.scene.effect.Blend
 import javafx.scene.effect.BlendMode.SRC_ATOP
 import javafx.scene.effect.ColorInput
 import javafx.scene.image.Image
+import javafx.scene.image.WritableImage
 import javafx.scene.paint.Color
 import javafx.scene.paint.Color.BLACK
 import javafx.scene.paint.Paint
@@ -53,9 +54,31 @@ class RepaintTask(
         appendable.append("}@").append(this.paint.toString())
     }
 
-    @Suppress("DeferredResultUnused", "ComplexCondition")
+    @Suppress("DeferredResultUnused", "ComplexCondition", "MagicNumber")
     override suspend fun perform(): Image {
-        val snapshot = super.perform()
+        val snapshot = if (base.cache.isEnabled() && paint is Color) {
+            val baseImage = base.await()
+            val width = baseImage.width.toInt()
+            val height = baseImage.height.toInt()
+            val reader = baseImage.pixelReader
+            val output = WritableImage(width, height)
+            val writer = output.pixelWriter
+            val rgb = (paint.red * 255).toInt().shl(16)
+                .or((paint.green * 255).toInt().shl(8))
+                .or((paint.blue * 255).toInt())
+            val repaintedForInputAlpha = IntArray(256) {
+                (it * paint.opacity()).toInt().shl(24).or(rgb)
+            }
+            for (y in 0 until height) {
+                for (x in 0 until width) {
+                    val inputAlpha = reader.getArgb(x, y).shr(24)
+                    writer.setArgb(x, y, repaintedForInputAlpha[inputAlpha])
+                }
+            }
+            output
+        } else {
+            super.perform()
+        }
         if (paint is Color && paint.opacity == 1.0 && cache.isEnabled() && base.cache.isEnabled()
                 && base.mutex.withLock { base.directDependentTasks.all { it is RepaintTask } }) {
             /*
