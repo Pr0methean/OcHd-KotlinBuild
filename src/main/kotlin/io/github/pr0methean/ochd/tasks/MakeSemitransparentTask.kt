@@ -45,6 +45,7 @@ class MakeSemitransparentTask(
         val reader = input.pixelReader
         logger.info("Allocating a WritableImage for Canvas-free transform of {} for {}", base.name, name)
 
+        // Updating the image in place is sometimes possible, but for some reason it's slower
         val output = WritableImage(width, height)
         val writer = output.pixelWriter
 
