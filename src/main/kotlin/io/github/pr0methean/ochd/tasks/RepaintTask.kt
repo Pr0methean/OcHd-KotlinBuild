@@ -58,14 +58,26 @@ class RepaintTask(
 
     @Suppress("DeferredResultUnused", "ComplexCondition", "MagicNumber")
     override suspend fun perform(): Image {
-        val snapshot = if (base.cache.isEnabled() && paint is Color) {
+        var transformedInPlace = false
+        val snapshot = if (paint is Color) {
             ImageProcessingStats.onTaskLaunched("RepaintTask", name)
-            // Avoid waiting for the JavaFX renderer thread by doing pixel-by-pixel transform
+            /*
+             * By doing the transformation ourselves rather than using JavaFX, we avoid allocating a Canvas and
+             * waiting for the JavaFX renderer thread.
+             */
             val baseImage = base.await()
+            base.removeDirectDependentTask(this)
             val width = baseImage.width.toInt()
             val height = baseImage.height.toInt()
             val reader = baseImage.pixelReader
-            val output = WritableImage(width, height)
+            val output = if (baseImage is WritableImage && (!base.cache.isEnabled() || canReplaceBaseWithThis())) {
+                logger.info("Transforming {} in place for {}", base.name, name)
+                transformedInPlace = true
+                baseImage
+            } else {
+                logger.info("Allocating a WritableImage for Canvas-free transform of {} for {}", base.name, name)
+                WritableImage(width, height)
+            }
             val writer = output.pixelWriter
             val rgb = (paint.red * 255).toInt().shl(16)
                 .or((paint.green * 255).toInt().shl(8))
@@ -84,18 +96,20 @@ class RepaintTask(
         } else {
             super.perform()
         }
-        if (paint is Color && paint.opacity == 1.0 && cache.isEnabled() && base.cache.isEnabled()
-                && base.mutex.withLock { base.directDependentTasks.all { it is RepaintTask } }) {
-            /*
-             * Painting a black X blue or green has the same result as painting a red X blue or green.
-             * Therefore, if the only impending uses of a black X are to repaint it blue and green, we can replace the
-             * black X with a red one in cache, if the red one was going to be cached as a pre-painted layer anyway.
-             */
+        if (!transformedInPlace && cache.isEnabled() && base.cache.isEnabled() && canReplaceBaseWithThis()) {
             logger.info("Using repaint {} to replace base image {}", name, base.name)
             base.cache.setValue(snapshot)
         }
         return snapshot
     }
+
+    /**
+     * Painting a black X blue or green has the same result as painting a red X blue or green.
+     * Therefore, if the only remaining uses of a black X are to repaint it blue and green, we can replace the
+     * black X with a red one in cache, if the red one was going to be cached as a pre-painted layer anyway.
+     */
+    private suspend fun canReplaceBaseWithThis() = paint is Color && paint.opacity == 1.0
+            && base.mutex.withLock { base.directDependentTasks.all { it is RepaintTask } }
 
     override fun hasColor(): Boolean = paint is Color && paint.toOpaque() == BLACK
     override fun prepareContext(ctx: GraphicsContext): Double {
