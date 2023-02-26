@@ -39,19 +39,19 @@ class MakeSemitransparentTask(
          * By doing the transformation ourselves rather than using JavaFX, we avoid allocating a Canvas and
          * waiting for the JavaFX renderer thread.
          */
-        val baseImage = base.await()
+        val input = base.await()
         base.removeDirectDependentTask(this)
-        val width = baseImage.width.toInt()
-        val height = baseImage.height.toInt()
-        val reader = baseImage.pixelReader
+        val width = input.width.toInt()
+        val height = input.height.toInt()
+        val reader = input.pixelReader
         logger.info("Allocating a WritableImage for Canvas-free transform of {} for {}", base.name, name)
 
         val output = WritableImage(width, height)
         val writer = output.pixelWriter
 
-        // output pixel = input pixel * opacity
         for (y in 0 until height) {
             for (x in 0 until width) {
+                // output pixel = input pixel * opacity
                 val inputPixel = reader.getArgb(x, y)
                 val inputAlpha = inputPixel.toUInt().shr(24).toInt()
                 val inputRgb = inputPixel.and(ARGB_RGB_MASK)

@@ -19,7 +19,7 @@ import kotlin.math.roundToInt
 
 private val logger = LogManager.getLogger("RepaintTask")
 
-private const val CHANNEL_MAX = 1.shl(Byte.SIZE_BITS) - 1
+private const val CHANNEL_MAX = 1.shl(ARGB_BITS_PER_CHANNEL) - 1
 
 /**
  * Task that recolors the input [Image] and/or makes it semitransparent. Has one special optimization:
@@ -63,12 +63,12 @@ class RepaintTask(
             ImageProcessingStats.onTaskLaunched("RepaintTask", name)
 
             // paint's RGB channels as part of an ARGB int
-            val rgb = (paint.red * CHANNEL_MAX).toInt().shl(16)
-                .or((paint.green * CHANNEL_MAX).toInt().shl(8))
+            val rgb = (paint.red * CHANNEL_MAX).toInt().shl(ARGB_BITS_PER_CHANNEL * 2)
+                .or((paint.green * CHANNEL_MAX).toInt().shl(ARGB_BITS_PER_CHANNEL))
                 .or((paint.blue * CHANNEL_MAX).toInt())
 
-            // repaintedForInputAlpha[it] = paint * (it / 255)
-            val repaintedForInputAlpha = IntArray(1.shl(Byte.SIZE_BITS)) {
+            // repaintedForInputAlpha[it] = paint * (it / CHANNEL_MAX)
+            val repaintedForInputAlpha = IntArray(1.shl(ARGB_BITS_PER_CHANNEL)) {
                 (it * paint.opacity()).roundToInt().shl(ARGB_ALPHA_BIT_SHIFT).or(rgb)
             }
 
@@ -76,20 +76,20 @@ class RepaintTask(
              * By doing the transformation ourselves rather than using JavaFX, we avoid allocating a Canvas and
              * waiting for the JavaFX renderer thread.
              */
-            val baseImage = base.await()
+            val input = base.await()
             base.removeDirectDependentTask(this)
-            val width = baseImage.width.toInt()
-            val height = baseImage.height.toInt()
-            val reader = baseImage.pixelReader
+            val width = input.width.toInt()
+            val height = input.height.toInt()
+            val reader = input.pixelReader
             logger.info("Allocating a WritableImage for Canvas-free transform of {} for {}", base.name, name)
 
             // Updating the image in place is sometimes possible, but for some reason it's slower
             val output = WritableImage(width, height)
             val writer = output.pixelWriter
 
-            // output pixel = repaintedForInputAlpha[255 * input pixel opacity] = paint * input pixel opacity
             for (y in 0 until height) {
                 for (x in 0 until width) {
+                    // output pixel = paint * input pixel opacity
                     val inputAlpha = reader.getArgb(x, y).toUInt().shr(ARGB_ALPHA_BIT_SHIFT).toInt()
                     writer.setArgb(x, y, repaintedForInputAlpha[inputAlpha])
                 }
