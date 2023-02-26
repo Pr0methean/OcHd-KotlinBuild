@@ -59,7 +59,7 @@ abstract class AbstractTask<out T>(
      * Called once a dependent task has retrieved the output, so that we can disable caching and free up heap space once
      * all dependents have done so.
      */
-    suspend fun removeDirectDependentTask(task: AbstractTask<*>) {
+    fun removeDirectDependentTask(task: AbstractTask<*>) {
         val counter = if (task is RepaintTask) directlyConsumingRepaintTasks else directlyConsumingNonRepaintTasks
         check (counter.decrementAndGet() >= 0) {
             "Tried to remove more dependent tasks from $this than were added"
@@ -69,7 +69,6 @@ abstract class AbstractTask<out T>(
             if (cache.disable()) {
                 ImageProcessingStats.onCachingDisabled(this)
             }
-            directDependencies.forEach { it.removeDirectDependentTask(this) }
         }
     }
 
