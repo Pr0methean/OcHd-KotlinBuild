@@ -16,6 +16,7 @@ import kotlinx.coroutines.sync.withLock
 import org.apache.logging.log4j.LogManager
 import java.util.Objects
 import kotlin.coroutines.CoroutineContext
+import kotlin.math.roundToInt
 
 private val logger = LogManager.getLogger("RepaintTask")
 
@@ -70,7 +71,7 @@ class RepaintTask(
                 .or((paint.green * 255).toInt().shl(8))
                 .or((paint.blue * 255).toInt())
             val repaintedForInputAlpha = IntArray(256) {
-                (it * paint.opacity()).toInt().shl(24).or(rgb)
+                (it * paint.opacity()).roundToInt().shl(24).or(rgb)
             }
             for (y in 0 until height) {
                 for (x in 0 until width) {
