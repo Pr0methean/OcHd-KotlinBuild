@@ -51,7 +51,7 @@ private const val HARD_THROTTLING_THRESHOLD = 0.93
 private val memoryMxBean = ManagementFactory.getMemoryMXBean()
 private val heapSizeBytes = memoryMxBean.heapMemoryUsage.max.toDouble()
 private val hardThrottlingPointBytes = (heapSizeBytes * HARD_THROTTLING_THRESHOLD).toLong()
-private const val WORKING_BYTES_PER_PIXEL = 40
+private const val WORKING_BYTES_PER_PIXEL = 44
 val nCpus: Int = Runtime.getRuntime().availableProcessors()
 
 @Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod", "ComplexMethod")
