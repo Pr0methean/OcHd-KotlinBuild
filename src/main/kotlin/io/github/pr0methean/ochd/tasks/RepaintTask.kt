@@ -59,7 +59,7 @@ class RepaintTask(
     @Suppress("DeferredResultUnused", "ComplexCondition", "MagicNumber")
     override suspend fun perform(): Image {
         var transformedInPlace = false
-        val snapshot = if (paint is Color) {
+        val snapshot = if (base.cache.isEnabled() && paint is Color) {
             ImageProcessingStats.onTaskLaunched("RepaintTask", name)
             /*
              * By doing the transformation ourselves rather than using JavaFX, we avoid allocating a Canvas and
