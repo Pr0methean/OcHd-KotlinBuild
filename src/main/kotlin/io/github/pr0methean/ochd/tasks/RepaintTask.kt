@@ -73,14 +73,19 @@ class RepaintTask(
 
             // Updating the image in place is sometimes possible, but for some reason it's slower
             val output = WritableImage(width, height)
-
             val writer = output.pixelWriter
+
+            // paint's RGB channels as part of an ARGB int
             val rgb = (paint.red * 255).toInt().shl(16)
                 .or((paint.green * 255).toInt().shl(8))
                 .or((paint.blue * 255).toInt())
+
+            // repaintedForInputAlpha[it] = paint * (it / 255)
             val repaintedForInputAlpha = IntArray(256) {
                 (it * paint.opacity()).roundToInt().shl(24).or(rgb)
             }
+
+            // output pixel = repaintedForInputAlpha[255 * input pixel opacity] = paint * input pixel opacity
             for (y in 0 until height) {
                 for (x in 0 until width) {
                     val inputAlpha = reader.getArgb(x, y).toUInt().shr(24).toInt()
@@ -92,14 +97,13 @@ class RepaintTask(
         } else {
             super.perform()
         }
-        /*
-         * Painting a black X blue or green has the same result as painting a red X blue or green.
-         * Therefore, if the only remaining uses of a black X are to repaint it blue and green, we can replace the
-         * black X with a red one in cache, if the red one was going to be cached as a pre-painted layer anyway.
-         */
-        if (cache.isEnabled() && base.cache.isEnabled() && (paint is Color && paint.opacity == 1.0
-                    && base.mutex.withLock { base.directDependentTasks.all { it is RepaintTask } })
-        ) {
+        if (paint is Color && paint.opacity == 1.0 && cache.isEnabled() && base.cache.isEnabled()
+                && base.mutex.withLock { base.directDependentTasks.all { it is RepaintTask } }) {
+            /*
+             * Painting a black X blue or green has the same result as painting a red X blue or green.
+             * Therefore, if the only impending uses of a black X are to repaint it blue and green, we can replace the
+             * black X with a red one in cache, if the red one was going to be cached as a pre-painted layer anyway.
+             */
             logger.info("Using repaint {} to replace base image {}", name, base.name)
             base.cache.setValue(snapshot)
         }
