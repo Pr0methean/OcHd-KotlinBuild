@@ -84,7 +84,12 @@ class RepaintTask(
             logger.info("Allocating a WritableImage for Canvas-free transform of {} for {}", base.name, name)
 
             // Updating the image in place is sometimes possible, but for some reason it's slower
-            val output = WritableImage(width, height)
+            val output = if (input is WritableImage &&
+                    (!base.cache.isEnabled() || (paint.opacity == 1.0 && base.isUsedOnlyForRepaints()))) {
+                input
+            } else {
+                WritableImage(width, height)
+            }
             val writer = output.pixelWriter
 
             for (y in 0 until height) {
