@@ -57,7 +57,7 @@ class RepaintTask(
         appendable.append("}@").append(this.paint.toString())
     }
 
-    @Suppress("DeferredResultUnused", "ComplexCondition", "MagicNumber")
+    @Suppress("DeferredResultUnused", "ComplexCondition")
     override suspend fun perform(): Image {
         val snapshot = if (paint is Color) {
             ImageProcessingStats.onTaskLaunched("RepaintTask", name)
