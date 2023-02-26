@@ -72,7 +72,7 @@ class RepaintTask(
             }
             for (y in 0 until height) {
                 for (x in 0 until width) {
-                    val inputAlpha = reader.getArgb(x, y).shr(24)
+                    val inputAlpha = reader.getArgb(x, y).toUInt().shr(24).toInt()
                     writer.setArgb(x, y, repaintedForInputAlpha[inputAlpha])
                 }
             }
