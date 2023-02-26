@@ -12,6 +12,8 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.math.roundToInt
 
 private val logger = LogManager.getLogger("UnaryImageTransform")
+private const val ARGB_RGB_MASK = 1.shl(ARGB_ALPHA_BIT_SHIFT) - 1
+
 @Suppress("EqualsWithHashCodeExist", "EqualsOrHashCode")
 class MakeSemitransparentTask(
     base: AbstractImageTask,
@@ -29,8 +31,8 @@ class MakeSemitransparentTask(
         ImageProcessingStats.onTaskLaunched("MakeSemitransparentTask", name)
 
         // repaintedForInputAlpha[it] = it * opacity
-        val repaintedForInputAlpha = IntArray(256) {
-            (it * opacity).roundToInt().shl(24)
+        val repaintedForInputAlpha = IntArray(1.shl(Byte.SIZE_BITS)) {
+            (it * opacity).roundToInt().shl(ARGB_ALPHA_BIT_SHIFT)
         }
 
         /*
@@ -50,9 +52,9 @@ class MakeSemitransparentTask(
         // output pixel = input pixel * opacity
         for (y in 0 until height) {
             for (x in 0 until width) {
-                val inputPixel = reader.getArgb(x, y).toUInt()
-                val inputAlpha = inputPixel.shr(24).toInt()
-                val inputRgb = inputPixel.and(0xFFFFFF.toUInt()).toInt()
+                val inputPixel = reader.getArgb(x, y)
+                val inputAlpha = inputPixel.toUInt().shr(24).toInt()
+                val inputRgb = inputPixel.and(ARGB_RGB_MASK)
                 writer.setArgb(x, y, repaintedForInputAlpha[inputAlpha].or(inputRgb))
             }
         }

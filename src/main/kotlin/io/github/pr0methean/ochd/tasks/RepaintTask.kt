@@ -19,6 +19,8 @@ import kotlin.math.roundToInt
 
 private val logger = LogManager.getLogger("RepaintTask")
 
+private const val CHANNEL_MAX = 1.shl(Byte.SIZE_BITS) - 1
+
 /**
  * Task that recolors the input [Image] and/or makes it semitransparent. Has one special optimization:
  * <ul>
@@ -61,13 +63,13 @@ class RepaintTask(
             ImageProcessingStats.onTaskLaunched("RepaintTask", name)
 
             // paint's RGB channels as part of an ARGB int
-            val rgb = (paint.red * 255).toInt().shl(16)
-                .or((paint.green * 255).toInt().shl(8))
-                .or((paint.blue * 255).toInt())
+            val rgb = (paint.red * CHANNEL_MAX).toInt().shl(16)
+                .or((paint.green * CHANNEL_MAX).toInt().shl(8))
+                .or((paint.blue * CHANNEL_MAX).toInt())
 
             // repaintedForInputAlpha[it] = paint * (it / 255)
-            val repaintedForInputAlpha = IntArray(256) {
-                (it * paint.opacity()).roundToInt().shl(24).or(rgb)
+            val repaintedForInputAlpha = IntArray(1.shl(Byte.SIZE_BITS)) {
+                (it * paint.opacity()).roundToInt().shl(ARGB_ALPHA_BIT_SHIFT).or(rgb)
             }
 
             /*
@@ -88,7 +90,7 @@ class RepaintTask(
             // output pixel = repaintedForInputAlpha[255 * input pixel opacity] = paint * input pixel opacity
             for (y in 0 until height) {
                 for (x in 0 until width) {
-                    val inputAlpha = reader.getArgb(x, y).toUInt().shr(24).toInt()
+                    val inputAlpha = reader.getArgb(x, y).toUInt().shr(ARGB_ALPHA_BIT_SHIFT).toInt()
                     writer.setArgb(x, y, repaintedForInputAlpha[inputAlpha])
                 }
             }

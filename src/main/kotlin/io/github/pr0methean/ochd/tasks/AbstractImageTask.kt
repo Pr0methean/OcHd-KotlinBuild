@@ -24,6 +24,8 @@ import java.util.concurrent.atomic.AtomicReference
 import kotlin.coroutines.CoroutineContext
 import kotlin.system.measureNanoTime
 
+const val ARGB_ALPHA_BIT_SHIFT: Int = 3 * Byte.SIZE_BITS
+
 private val logger = LogManager.getLogger("AbstractImageTask")
 
 private val defaultErr: PrintStream = System.err
