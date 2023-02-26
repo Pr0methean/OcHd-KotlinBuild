@@ -179,7 +179,7 @@ suspend fun main(args: Array<String>) {
             logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
             while (connectedComponent.isNotEmpty()) {
                 val currentInProgressJobs = inProgressJobs.size
-                val maxJobs = maximumJobsNow(bytesPerTile)
+                val maxJobs = maximumJobsNow(bytesPerTile).coerceAtLeast(1)
                 if (MIN_OUTPUT_TASK_JOBS in maxJobs..currentInProgressJobs) {
                     val delay = measureNanoTime {
                         inProgressJobs.remove(finishedJobsChannel.receive())
@@ -187,7 +187,7 @@ suspend fun main(args: Array<String>) {
                     logger.warn("Hard-throttled new task for {} ns", box(delay))
                     ioJobs.removeIf(Job::isCompleted)
                     continue
-                } else if (currentInProgressJobs + connectedComponent.size <= maxJobs.coerceAtLeast(1)) {
+                } else if (currentInProgressJobs + connectedComponent.size <= maxJobs) {
                     logger.info(
                         "{} tasks in progress; starting all {} currently eligible tasks: {}",
                         box(currentInProgressJobs), box(connectedComponent.size), StringBuilderFormattable {
@@ -198,7 +198,7 @@ suspend fun main(args: Array<String>) {
                         inProgressJobs[it] = startTask(scope, it, finishedJobsChannel, ioJobs, prereqIoJobs)
                     }
                     connectedComponent.clear()
-                } else if (currentInProgressJobs >= maxJobs.coerceAtLeast(1)) {
+                } else if (currentInProgressJobs >= maxJobs) {
                     logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
                     val delay = measureNanoTime {
                         inProgressJobs.remove(finishedJobsChannel.receive())
