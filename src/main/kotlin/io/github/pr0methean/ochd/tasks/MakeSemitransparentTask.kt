@@ -24,6 +24,7 @@ class MakeSemitransparentTask(
                 ctx: CoroutineContext):
             this(base, opacity, cache("$base@$opacity"), ctx)
 
+    @Suppress("MagicNumber")
     override suspend fun perform(): Image {
         ImageProcessingStats.onTaskLaunched("MakeSemitransparentTask", name)
 
