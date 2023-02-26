@@ -59,6 +59,17 @@ class RepaintTask(
     override suspend fun perform(): Image {
         val snapshot = if (paint is Color) {
             ImageProcessingStats.onTaskLaunched("RepaintTask", name)
+
+            // paint's RGB channels as part of an ARGB int
+            val rgb = (paint.red * 255).toInt().shl(16)
+                .or((paint.green * 255).toInt().shl(8))
+                .or((paint.blue * 255).toInt())
+
+            // repaintedForInputAlpha[it] = paint * (it / 255)
+            val repaintedForInputAlpha = IntArray(256) {
+                (it * paint.opacity()).roundToInt().shl(24).or(rgb)
+            }
+
             /*
              * By doing the transformation ourselves rather than using JavaFX, we avoid allocating a Canvas and
              * waiting for the JavaFX renderer thread.
@@ -73,16 +84,6 @@ class RepaintTask(
             // Updating the image in place is sometimes possible, but for some reason it's slower
             val output = WritableImage(width, height)
             val writer = output.pixelWriter
-
-            // paint's RGB channels as part of an ARGB int
-            val rgb = (paint.red * 255).toInt().shl(16)
-                .or((paint.green * 255).toInt().shl(8))
-                .or((paint.blue * 255).toInt())
-
-            // repaintedForInputAlpha[it] = paint * (it / 255)
-            val repaintedForInputAlpha = IntArray(256) {
-                (it * paint.opacity()).roundToInt().shl(24).or(rgb)
-            }
 
             // output pixel = repaintedForInputAlpha[255 * input pixel opacity] = paint * input pixel opacity
             for (y in 0 until height) {
