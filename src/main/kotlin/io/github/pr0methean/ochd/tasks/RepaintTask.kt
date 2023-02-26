@@ -65,7 +65,7 @@ class RepaintTask(
              * waiting for the JavaFX renderer thread.
              */
             val baseImage = base.await()
-            base.removeDirectDependentTask(this)
+            // base.removeDirectDependentTask(this)
             val width = baseImage.width.toInt()
             val height = baseImage.height.toInt()
             val reader = baseImage.pixelReader
