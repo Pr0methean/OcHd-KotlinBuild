@@ -62,7 +62,7 @@ class ImageStackingTask(
 
     override val directDependencies: List<AbstractImageTask> = layers.layers
 
-    @Suppress("DeferredResultUnused", "NestedBlockDepth")
+    @Suppress("DeferredResultUnused")
     override suspend fun perform(): Image {
         if (layers.background is Color && layers.background.isOpaque) {
             var prevLayerColorGetter: (Int, Int) -> Color = { _, _ -> layers.background }
