@@ -46,11 +46,11 @@ private const val MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH = 32
 
 val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 
-private const val HARD_THROTTLING_THRESHOLD = 0.93
+private const val HARD_THROTTLING_THRESHOLD = 0.90
 private val memoryMxBean = ManagementFactory.getMemoryMXBean()
 private val heapSizeBytes = memoryMxBean.heapMemoryUsage.max.toDouble()
 private val hardThrottlingPointBytes = (heapSizeBytes * HARD_THROTTLING_THRESHOLD).toLong()
-private const val WORKING_BYTES_PER_PIXEL = 43
+private const val WORKING_BYTES_PER_PIXEL = 40
 val nCpus: Int = Runtime.getRuntime().availableProcessors()
 
 @Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod", "ComplexMethod")
