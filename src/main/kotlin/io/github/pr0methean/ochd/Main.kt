@@ -52,7 +52,7 @@ private val heapSizeBytes = memoryMxBean.heapMemoryUsage.max.toDouble()
 private val hardThrottlingPointBytes = (heapSizeBytes * HARD_THROTTLING_THRESHOLD).toLong()
 private const val WORKING_BYTES_PER_PIXEL = 43
 val nCpus: Int = Runtime.getRuntime().availableProcessors()
-private val minTasksToAllow = nCpus - 1
+private val minTasksToAllow = (nCpus - 1).coerceAtLeast(1)
 
     @Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod", "ComplexMethod")
 suspend fun main(args: Array<String>) {
