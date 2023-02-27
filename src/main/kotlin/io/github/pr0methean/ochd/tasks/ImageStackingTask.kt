@@ -7,8 +7,6 @@ import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import javafx.scene.SnapshotParameters
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.image.Image
-import javafx.scene.image.WritableImage
-import javafx.scene.paint.Color
 import javafx.scene.paint.Color.BLACK
 import javafx.scene.paint.Color.TRANSPARENT
 import org.apache.logging.log4j.LogManager
@@ -64,31 +62,12 @@ class ImageStackingTask(
 
     @Suppress("DeferredResultUnused")
     override suspend fun perform(): Image {
-        if (layers.background is Color && layers.background.isOpaque) {
-            var prevLayerColorGetter: (Int, Int) -> Color = { _, _ -> layers.background }
-            var output: WritableImage? = null
-            for (layer in layers.layers) {
-                val layerImage = layer.await()
-                val reader = layerImage.pixelReader
-                val newOutput = WritableImage(width, height)
-                val writer = newOutput.pixelWriter
-                for (y in 0 until height) {
-                    for (x in 0 until width) {
-                        writer.setColor(x, y, reader.getColor(x,y).over(prevLayerColorGetter(x,y)))
-                    }
-                }
-                output = newOutput
-                prevLayerColorGetter = output.pixelReader::getColor
-            }
-            return output!!
-        } else {
-            val canvas = createCanvas()
-            renderOntoInternal({ canvas.graphicsContext2D }, 0.0, 0.0, layers.layers)
-            logger.debug("Taking snapshot of {}", name)
-            val params = SnapshotParameters()
-            params.fill = layers.background
-            return snapshotCanvas(canvas, params)
-        }
+        val canvas = createCanvas()
+        renderOntoInternal({ canvas.graphicsContext2D }, 0.0, 0.0, layers.layers)
+        logger.debug("Taking snapshot of {}", name)
+        val params = SnapshotParameters()
+        params.fill = layers.background
+        return snapshotCanvas(canvas, params)
     }
 
     private suspend fun renderOntoInternal(
@@ -123,20 +102,4 @@ class ImageStackingTask(
         }
     }
 
-}
-
-fun Color.over(background: Color): Color {
-    if (isOpaque) {
-        return this
-    }
-    if (opacity <= 0.0) {
-        return background
-    }
-    val transparency = 1.0 - opacity
-    val bgOpacityTimesFgTransparency = background.opacity * transparency
-    val outOpacity = opacity + bgOpacityTimesFgTransparency
-    val outRed = red * opacity + background.red * bgOpacityTimesFgTransparency
-    val outGreen = green * opacity + background.green * bgOpacityTimesFgTransparency
-    val outBlue = blue * opacity + background.blue * bgOpacityTimesFgTransparency
-    return Color(outRed, outGreen, outBlue, outOpacity)
 }

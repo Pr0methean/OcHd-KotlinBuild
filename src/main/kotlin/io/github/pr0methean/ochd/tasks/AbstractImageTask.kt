@@ -35,11 +35,6 @@ private val errCatcher: ByteArrayOutputStream = ByteArrayOutputStream()
 private val errCatcherStream: PrintStream = PrintStream(errCatcher, true, defaultErrCharset)
 private val systemErrSwitched: AtomicBoolean = AtomicBoolean(false)
 private val pendingSnapshotTasks: AtomicLong = AtomicLong(0)
-const val CHANNEL_MAX: Int = 1.shl(ARGB_BITS_PER_CHANNEL) - 1
-
-fun rgbAsInt(paint: Color): Int = (paint.red * CHANNEL_MAX).toInt().shl(ARGB_BITS_PER_CHANNEL * 2)
-    .or((paint.green * CHANNEL_MAX).toInt().shl(ARGB_BITS_PER_CHANNEL))
-    .or((paint.blue * CHANNEL_MAX).toInt())
 
 /** Specialization of [AbstractTask]&lt;[Image]&gt;. */
 abstract class AbstractImageTask(
