@@ -29,6 +29,7 @@ private val logger = LogManager.getLogger("TaskPlanningContext")
 /**
  * Holds info needed to build and deduplicate the task graph. Needs to become unreachable once the graph is built.
  */
+@Suppress("TooManyFunctions") // This class needs lots of overloads of out()
 class TaskPlanningContext(
     val name: String,
     val tileSize: Int,
