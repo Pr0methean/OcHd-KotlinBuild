@@ -182,7 +182,7 @@ class TaskPlanningContext(
     }
 
     fun out(name: String, source: AbstractImageTask): PngOutputTask
-            = out(name, source = source)
+            = out(names = arrayOf(name), source = source)
 
     fun out(vararg names: String, sourceSvgName: String): PngOutputTask
             = out(*names, source = findSvgTask(sourceSvgName))
