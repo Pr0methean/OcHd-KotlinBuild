@@ -23,8 +23,9 @@ enum class SimpleAxeBlock: SingleTextureMaterial, ShadowHighlightMaterial, Block
         }
 
         override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
-            val layers = ctx.stack {createTextureLayers()}
-            yield(ctx.out(layers, arrayOf("block/crafting_table_side", "block/crafting_table_front")))
+            yield(ctx.out("block/crafting_table_side", "block/crafting_table_front") {
+                createTextureLayers()
+            })
         }
     },
     CRAFTING_TABLE_TOP {

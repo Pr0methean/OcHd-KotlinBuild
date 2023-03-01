@@ -62,7 +62,7 @@ object StructureAndJigsaw: ShadowHighlightMaterial {
             layer("borderDotted", color)
         }
         StructureOrJigsaw.values().forEach {
-            yield(ctx.out(ctx.stack { it.run { createTextureLayers(backgroundAndBorder) }}, "block/${it.name}"))
+            yield(ctx.out("block/${it.name}") { it.run { createTextureLayers(backgroundAndBorder) }})
         }
     }
 }

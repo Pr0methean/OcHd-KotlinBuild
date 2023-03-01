@@ -12,7 +12,7 @@ interface DoubleTallBlock: Material {
     val name: String
 
     override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
-        yield(ctx.out(ctx.stack { createBottomLayers() }, "block/${name}_bottom"))
-        yield(ctx.out(ctx.stack { createTopLayers() }, "block/${name}_top"))
+        yield(ctx.out("block/${name}_bottom") { createBottomLayers() })
+        yield(ctx.out("block/${name}_top") { createTopLayers() })
     }
 }

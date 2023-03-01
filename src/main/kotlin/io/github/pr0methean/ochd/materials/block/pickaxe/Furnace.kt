@@ -12,37 +12,39 @@ object Furnace: Material {
             layer("bottomHalf", OreBase.STONE.highlight)
             layer("borderSolid", OreBase.stoneExtremeShadow)
         }
-        yield(ctx.out(furnaceSide, "block/furnace_side"))
-        yield(ctx.out({
+        yield(ctx.out("block/furnace_side", furnaceSide))
+        yield(ctx.out("block/furnace_front") {
             copy(furnaceSide)
             layer("furnaceFrontLit", Color.BLACK)
-        }, "block/furnace_front"))
-        yield(ctx.out({
+        })
+        yield(ctx.out("block/furnace_front_on") {
             copy(furnaceSide)
             layer("furnaceFrontLit")
-        }, "block/furnace_front_on"))
+        })
         val blastFurnaceTop = ctx.stack {
             background(OreBase.STONE.shadow)
             layer("cornerCrosshairs", OreBase.stoneExtremeHighlight)
         }
-        yield(ctx.out(blastFurnaceTop, "block/blast_furnace_top"))
+        yield(ctx.out("block/blast_furnace_top", blastFurnaceTop))
         val blastFurnaceSide = ctx.stack {
             background(OreBase.STONE.shadow)
             layer("bottomHalf", OreBase.STONE.color)
             layer("cornerCrosshairs", OreBase.stoneExtremeHighlight)
         }
-        yield(ctx.out(blastFurnaceSide, "block/blast_furnace"))
+        yield(ctx.out("block/blast_furnace", blastFurnaceSide))
         val blastFurnaceFrontBase = ctx.stack {
             copy(blastFurnaceSide)
             layer("craftingGridSquare", OreBase.stoneExtremeHighlight)
         }
-        yield(ctx.out({
+        yield(ctx.out("block/blast_furnace_front") {
             copy(blastFurnaceFrontBase)
             layer("blastFurnaceHoles")
-        }, "block/blast_furnace_front"))
-        yield(ctx.out(ctx.animate(blastFurnaceFrontBase, listOf(
-            ctx.layer("blastFurnaceHolesLit"),
-            ctx.layer("blastFurnaceHolesLit1")
-        )), "block/blast_furnace_front_on"))
+        })
+        yield(ctx.out("block/blast_furnace_front_on",
+            ctx.animate(blastFurnaceFrontBase, listOf(
+                ctx.layer("blastFurnaceHolesLit"),
+                ctx.layer("blastFurnaceHolesLit1")
+            ))
+        ))
     }
 }

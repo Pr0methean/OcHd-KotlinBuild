@@ -20,13 +20,13 @@ object MiscRedstone: Material {
             copy(repeaterComparatorCommonBase)
             layer("comparator", stateColor)
         }
-        yield(ctx.out({
+        yield(ctx.out("block/redstone_lamp") {
             background(Ore.REDSTONE.shadow)
             layer("lamp", Ore.REDSTONE.highlight)
             layer("borderSolid")
             layer("borderSolidTopLeft", Ore.REDSTONE.highlight)
-        }, "block/redstone_lamp"))
-        yield(ctx.out({
+        })
+        yield(ctx.out("block/redstone_lamp_on") {
             val color = c(0xe6994a)
             val shadow = c(0x946931)
             val highlight = c(0xFFCDB2)
@@ -34,6 +34,6 @@ object MiscRedstone: Material {
             layer("lampOn", highlight)
             layer("borderSolid", shadow)
             layer("borderSolidTopLeft", highlight)
-        }, "block/redstone_lamp_on"))
+        })
     }
 }

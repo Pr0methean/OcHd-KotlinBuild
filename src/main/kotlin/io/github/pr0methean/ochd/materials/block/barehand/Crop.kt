@@ -46,7 +46,7 @@ enum class Crop(private val numStages: Int, val color: Paint): Material {
 
     override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
         for (stage in 0 until numStages) {
-            yield(ctx.out(ctx.stack {createTextureForStage(stage)}, "block/${name}_stage${stage}"))
+            yield(ctx.out("block/${name}_stage${stage}") {createTextureForStage(stage)})
         }
     }
 

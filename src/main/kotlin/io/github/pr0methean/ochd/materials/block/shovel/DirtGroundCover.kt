@@ -39,10 +39,10 @@ enum class DirtGroundCover(
         }
 
         override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask>
-                = super.outputTasks(ctx).plus(ctx.out(ctx.stack {
+                = super.outputTasks(ctx).plus(ctx.out("block/grass_block_side_overlay") {
             layer("topPart", color)
             layer("veesTop", shadow)
-        }, "block/grass_block_side_overlay"))
+        })
     },
     PODZOL(c(0x6a4418),c(0x4a3018),c(0x8b5920)) {
         override fun LayerListBuilder.createCoverSideLayers() {
@@ -58,15 +58,15 @@ enum class DirtGroundCover(
 
         override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
             val top = ctx.stack { createTopLayers() }
-            yield(ctx.out(top, arrayOf("block/podzol_top", "block/composter_compost")))
-            yield(ctx.out(ctx.stack {
+            yield(ctx.out("block/podzol_top", "block/composter_compost", source = top))
+            yield(ctx.out("block/composter_ready") {
                 copy(top)
                 layer("bonemealSmallNoBorder")
-            }, "block/composter_ready"))
-            yield(ctx.out(ctx.stack {
+            })
+            yield(ctx.out("block/podzol_side") {
                 copy(base)
                 createCoverSideLayers()
-            }, "block/podzol_side"))
+            })
         }
     },
     MYCELIUM(c(0x6a656a),c(0x5a5a52),c(0x7b6d73)) {
@@ -85,18 +85,18 @@ enum class DirtGroundCover(
             layer("diagonalChecksFillTopRight", shadow)
         }
     },
-    SNOW(POWDER_SNOW.color,  POWDER_SNOW.shadow, POWDER_SNOW.highlight) {
+    SNOW(POWDER_SNOW.color, POWDER_SNOW.shadow, POWDER_SNOW.highlight) {
         override fun LayerListBuilder.createCoverSideLayers() {
             layer("topPart", color)
             layer("snowTopPart", shadow)
         }
 
         override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
-            yield(ctx.out(ctx.stack { createTopLayers() }, "block/snow"))
-            yield(ctx.out(ctx.stack {
+            yield(ctx.out("block/snow") { createTopLayers() })
+            yield(ctx.out("block/grass_block_snow") {
                 copy(base)
                 createCoverSideLayers()
-            }, "block/grass_block_snow"))
+            })
         }
 
         override fun LayerListBuilder.createTopLayers() {

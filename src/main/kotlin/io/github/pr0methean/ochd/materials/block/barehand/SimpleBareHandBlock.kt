@@ -48,8 +48,9 @@ enum class SimpleBareHandBlock(
         }
 
         override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> {
-            val layers = ctx.stack {createTextureLayers()}
-            return sequenceOf(ctx.out(layers, arrayOf("block/redstone_dust_line0", "block/redstone_dust_line1")))
+            return sequenceOf(ctx.out("block/redstone_dust_line0", "block/redstone_dust_line1") {
+                createTextureLayers()
+            })
         }
     },
     TWISTING_VINES_PLANT(c(0x008383), c(0x00b485), c(0x005e5e)) {

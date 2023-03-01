@@ -31,18 +31,18 @@ enum class OreBase(
 
         override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
             val baseTexture = ctx.stack {createTextureLayers()}
-            yield(ctx.out(baseTexture, "block/deepslate"))
-            yield(ctx.out(ctx.stack {
+            yield(ctx.out("block/deepslate", baseTexture))
+            yield(ctx.out("block/deepslate_bricks") {
                 copy(baseTexture)
                 layer("bricksSmall", shadow)
                 layer("borderDotted", highlight)
                 layer("borderDottedBottomRight", shadow)
-            }, "block/deepslate_bricks"))
-            yield(ctx.out(ctx.stack {
+            })
+            yield(ctx.out("block/deepslate_top") {
                 copy(baseTexture)
                 layer("cross", shadow)
                 layer("borderSolid", highlight)
-            }, "block/deepslate_top"))
+            })
         }
     },
     NETHERRACK(c(0x723232), c(0x411616), c(0x854242), "nether_") {

@@ -27,10 +27,10 @@ enum class DoubleTallFlower: DoubleTallBlock {
         }
 
         override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = super.outputTasks(ctx)
-                .plus(ctx.out(ctx.layer("sunflowerPetals"), "block/sunflower_back"))
-                .plus(ctx.out(ctx.stack {
+                .plus(ctx.out("block/sunflower_back", "sunflowerPetals"))
+                .plus(ctx.out("block/sunflower_front") {
                         layer("sunflowerPetals", Color.YELLOW)
                         layer("sunflowerPistil")
-                    }, "block/sunflower_front"))
+                    })
     };
 }

@@ -11,18 +11,18 @@ object BoneBlock: Material {
     val shadow: Color = c(0xc3bfa1)
     val highlight: Color = c(0xEaEaD0)
     override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
-        yield(ctx.out({
+        yield(ctx.out("block/bone_block_top") {
             background(shadow)
             layer("borderSolid", highlight)
             layer("boneBottomLeftTopRightNoCross", highlight)
             layer("boneTopLeftBottomRightNoCross", color)
-        }, "block/bone_block_top"))
-        yield(ctx.out({
+        })
+        yield(ctx.out("block/bone_block_side") {
             background(color)
             layer("borderSolid", shadow)
             layer("borderDotted", highlight)
             layer("boneBottomLeftTopRightNoCross", shadow)
             layer("boneTopLeftBottomRightNoCross", highlight)
-        }, "block/bone_block_side"))
+        })
     }
 }

@@ -26,15 +26,15 @@ object CaveVines: ShadowHighlightMaterial {
             layer("vineBerries", berryColor)
             layer("vineBerriesHighlight", berryHighlight)
         }
-        yield(ctx.out(vinePlantTask, "block/cave_vines_plant"))
-        yield(ctx.out(ctx.stack {
+        yield(ctx.out("block/cave_vines_plant", vinePlantTask))
+        yield(ctx.out("block/cave_vines_plant_lit") {
             copy(vinePlantTask)
             copy(berryTask)
-        }, "block/cave_vines_plant_lit"))
-        yield(ctx.out(vineTask, "block/cave_vines"))
-        yield(ctx.out(ctx.stack {
+        })
+        yield(ctx.out("block/cave_vines", vineTask))
+        yield(ctx.out("block/cave_vines_lit") {
             copy(vineTask)
             copy(berryTask)
-        }, "block/cave_vines_lit"))
+        })
     }
 }

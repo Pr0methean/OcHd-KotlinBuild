@@ -12,10 +12,10 @@ interface GroundCoverBlock: Material {
     fun LayerListBuilder.createTopLayers()
 
     override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
-        yield(ctx.out(ctx.stack { createTopLayers() }, "block/${name}_top"))
-        yield(ctx.out(ctx.stack {
+        yield(ctx.out("block/${name}_top") { createTopLayers() })
+        yield(ctx.out("block/${name}_side") {
             copy(base)
             createCoverSideLayers()
-        }, "block/${name}_side"))
+        })
     }
 }

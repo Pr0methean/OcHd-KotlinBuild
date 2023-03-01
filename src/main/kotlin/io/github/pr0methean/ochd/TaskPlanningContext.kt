@@ -143,6 +143,12 @@ class TaskPlanningContext(
         return deduplicate(source)
     }
 
+    fun layer(
+        source: LayerListBuilder.() -> Unit,
+        paint: Paint? = null,
+        alpha: Double = 1.0
+    ): AbstractImageTask = layer(stack {source()}, paint, alpha)
+
     inline fun stack(init: LayerListBuilder.() -> Unit): AbstractImageTask {
         val layerTasksBuilder = LayerListBuilder(this)
         layerTasksBuilder.init()
@@ -163,7 +169,7 @@ class TaskPlanningContext(
         ))
     }
 
-    fun out(source: AbstractImageTask, names: Array<String>): PngOutputTask {
+    fun out(vararg names: String, source: AbstractImageTask): PngOutputTask {
         logger.debug("out({}, {})", source, names)
         val lowercaseNames = names.map { it.lowercase(Locale.ENGLISH) }
         return deduplicate(PngOutputTask(
@@ -174,10 +180,19 @@ class TaskPlanningContext(
         )).also { logger.debug("Done creating output task: {}", it) } as PngOutputTask
     }
 
-    fun out(source: AbstractImageTask, name: String): PngOutputTask = out(source, arrayOf(name))
+    fun out(name: String, source: AbstractImageTask): PngOutputTask
+            = out(name, source = source)
 
-    inline fun out(source: LayerListBuilder.() -> Unit, name: String): PngOutputTask
-            = out(stack {source()}, arrayOf(name))
+    fun out(vararg names: String, sourceSvgName: String): PngOutputTask
+            = out(*names, source = findSvgTask(sourceSvgName))
+
+    fun out(name: String, sourceSvgName: String): PngOutputTask
+            = out(name, sourceSvgName = sourceSvgName)
+
+    fun out(vararg names: String, source: LayerListBuilder.() -> Unit): PngOutputTask
+            = out(*names, source = stack {source()})
+    fun out(name: String, source: LayerListBuilder.() -> Unit): PngOutputTask
+            = out(name, source = source)
 
     fun stack(layers: LayerList): AbstractImageTask {
         logger.debug("stack({})", layers)

@@ -43,16 +43,16 @@ sealed interface Wood: ShadowHighlightMaterial {
         val doorBottom = ctx.stack { doorBottom(doorCommonLayers) }
         val strippedLogSide = ctx.stack { strippedLogSide() }
         val strippedLogTop = ctx.stack { strippedLogTop(strippedLogSide) }
-        yield(ctx.out(ctx.stack { bark() }, "block/${name}_${logSynonym}"))
-        yield(ctx.out(strippedLogSide, "block/stripped_${name}_${logSynonym}"))
-        yield(ctx.out(strippedLogTop, "block/stripped_${name}_${logSynonym}_top"))
-        yield(ctx.out(ctx.stack { logTop(strippedLogTop) }, "block/${name}_${logSynonym}_top"))
-        yield(ctx.out(ctx.stack { trapdoor(doorCommonLayers) }, "block/${name}_trapdoor"))
-        yield(ctx.out(ctx.stack { doorTop(doorBottom, doorCommonLayers) }, "block/${name}_door_top"))
-        yield(ctx.out(doorBottom, "block/${name}_door_bottom"))
-        yield(ctx.out(ctx.stack { leaves() }, "block/${name}_${leavesSynonym}"))
-        yield(ctx.out(ctx.stack { sapling() }, "block/${name}_${saplingSynonym}"))
-        yield(ctx.out(ctx.stack { planks() }, "block/${name}_planks"))
+        yield(ctx.out("block/${name}_${logSynonym}") { bark() })
+        yield(ctx.out("block/stripped_${name}_${logSynonym}", strippedLogSide))
+        yield(ctx.out("block/stripped_${name}_${logSynonym}_top", strippedLogTop))
+        yield(ctx.out("block/${name}_${logSynonym}_top") { logTop(strippedLogTop) })
+        yield(ctx.out("block/${name}_trapdoor") { trapdoor(doorCommonLayers) })
+        yield(ctx.out("block/${name}_door_top") { doorTop(doorBottom, doorCommonLayers) })
+        yield(ctx.out("block/${name}_door_bottom", doorBottom))
+        yield(ctx.out("block/${name}_${leavesSynonym}") { leaves() })
+        yield(ctx.out("block/${name}_${saplingSynonym}") { sapling() })
+        yield(ctx.out("block/${name}_planks") { planks() })
     }
 
     fun LayerListBuilder.planks() {

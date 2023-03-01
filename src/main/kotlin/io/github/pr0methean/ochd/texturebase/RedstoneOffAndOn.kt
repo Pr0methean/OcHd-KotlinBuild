@@ -9,6 +9,6 @@ import javafx.scene.paint.Color
 suspend fun SequenceScope<PngOutputTask>.redstoneOffAndOn(ctx: TaskPlanningContext, baseName: String,
                                                           layers:
                                                        LayerListBuilder.(redstoneStateColor: Color) -> Unit) {
-    yield(ctx.out({layers(Color.BLACK)}, baseName))
-    yield(ctx.out({layers(Ore.REDSTONE.highlight)}, baseName + "_on"))
+    yield(ctx.out(baseName) { layers(Color.BLACK) })
+    yield(ctx.out(baseName + "_on") { layers(Ore.REDSTONE.highlight) })
 }

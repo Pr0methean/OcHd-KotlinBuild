@@ -12,22 +12,22 @@ object Torch: Material {
             layer("torchBase", OverworldWood.OAK.highlight)
             layer("torchShadow", OverworldWood.OAK.shadow)
         }
-        yield(ctx.out(ctx.stack {
+        yield(ctx.out("block/torch") {
             copy(torchBase)
             layer("torchFlameSmall")
-        }, "block/torch"))
-        yield(ctx.out(ctx.stack {
+        })
+        yield(ctx.out("block/soul_torch") {
             copy(torchBase)
             layer("soulTorchFlameSmall")
-        }, "block/soul_torch"))
-        yield(ctx.out(ctx.stack {
+        })
+        yield(ctx.out("block/redstone_torch_off") {
             copy(torchBase)
             layer("torchRedstoneHead")
-        }, "block/redstone_torch_off"))
-        yield(ctx.out(ctx.stack {
+        })
+        yield(ctx.out("block/redstone_torch") {
             copy(torchBase)
             layer("torchRedstoneHead", Ore.REDSTONE.highlight)
             layer("torchRedstoneHeadShadow", Ore.REDSTONE.shadow)
-        }, "block/redstone_torch"))
+        })
     }
 }

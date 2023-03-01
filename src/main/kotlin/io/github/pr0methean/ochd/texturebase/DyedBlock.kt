@@ -18,7 +18,7 @@ abstract class DyedBlock(val name: String): Material {
     override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
         val sharedLayersTask = createSharedLayersTask(ctx)
         DYES.forEach { (dyeName, color) ->
-            yield(ctx.out(ctx.stack {createTextureLayers(color, sharedLayersTask)}, "block/${dyeName}_$name"))
+            yield(ctx.out("block/${dyeName}_$name") {createTextureLayers(color, sharedLayersTask)})
         }
     }
 }

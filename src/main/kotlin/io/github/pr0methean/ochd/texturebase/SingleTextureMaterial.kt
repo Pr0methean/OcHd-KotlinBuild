@@ -15,6 +15,6 @@ interface SingleTextureMaterial: Material {
         dest.apply {createTextureLayers()}
     }
     override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequenceOf(
-        ctx.out(ctx.stack { createTextureLayers() }, "$directory/$name")
+        ctx.out("$directory/$name") { createTextureLayers() }
     )
 }

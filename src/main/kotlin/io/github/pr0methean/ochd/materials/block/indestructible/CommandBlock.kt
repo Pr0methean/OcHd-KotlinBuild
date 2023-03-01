@@ -68,10 +68,10 @@ enum class CommandBlock(
     override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
         val background = ctx.stack {createBackground()}
         for (sideType in enumValues<SideType>()) {
-            yield(ctx.out(ctx.stack {sideType.run {
+            yield(ctx.out("block/${name}_${sideType}") {sideType.run {
                 copy(background)
                 createGrid(shadow)
-            }}, "block/${name}_${sideType}"))
+            }})
         }
     }
 }

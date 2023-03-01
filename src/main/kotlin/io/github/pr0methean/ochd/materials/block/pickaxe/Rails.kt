@@ -8,14 +8,14 @@ import io.github.pr0methean.ochd.texturebase.redstoneOffAndOn
 
 object Rails: Material {
     override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
-        yield(ctx.out({
+        yield(ctx.out("block/rail") {
             layer("railTies", OverworldWood.OAK.color)
             layer("rail", Ore.IRON.refinedShadow)
-        }, "block/rail"))
-        yield(ctx.out({
+        })
+        yield(ctx.out("block/rail_corner") {
             layer("railTieCorner", OverworldWood.OAK.color)
             layer("railCorner", Ore.IRON.refinedShadow)
-        }, "block/rail_corner"))
+        })
         redstoneOffAndOn(ctx, "block/powered_rail") { stateColor ->
             layer("railTies", OverworldWood.OAK.shadow)
             layer("thirdRail", stateColor)

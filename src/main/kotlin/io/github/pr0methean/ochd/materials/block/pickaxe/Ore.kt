@@ -103,19 +103,19 @@ enum class Ore(
         substrates = netherOreBases
     ) {
         override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
-            yield(ctx.out({ ingot() }, "item/quartz"))
-            yield(ctx.out(ctx.stack {
+            yield(ctx.out("item/quartz") { ingot() })
+            yield(ctx.out("block/nether_quartz_ore") {
                 copy(NETHERRACK)
-                item() // don't need to copy since it's not used as the item form
-            }, "block/nether_quartz_ore"))
-            yield(ctx.out({
+                item() // don't need to copy since it's not used to create the item form or any other texture
+            })
+            yield(ctx.out("block/quartz_block_top") {
                 background(color)
                 layer("streaks", highlight)
                 layer("borderSolid", shadow)
                 layer("borderSolidTopLeft", highlight)
-            }, "block/quartz_block_top"))
-            yield(ctx.out({ rawBlock() }, "block/quartz_block_bottom"))
-            yield(ctx.out({ block() }, "block/quartz_block_side"))
+            })
+            yield(ctx.out("block/quartz_block_bottom") { rawBlock() })
+            yield(ctx.out("block/quartz_block_side") { block() })
         }
 
     },
@@ -209,21 +209,19 @@ enum class Ore(
         layer(svgName, shadow)
     }
 
-    open fun LayerListBuilder.itemForOutput() {
-        item()
-    }
+    open fun LayerListBuilder.itemForOutput() = item()
 
     override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
         substrates.forEach { oreBase ->
-            yield(ctx.out(oreBlock(ctx, oreBase), "block/${oreBase.orePrefix}${name}_ore"))
+            yield(ctx.out("block/${oreBase.orePrefix}${name}_ore", oreBlock(ctx, oreBase)))
         }
-        yield(ctx.out(ctx.stack { block() }, "block/${name}_block"))
+        yield(ctx.out("block/${name}_block") { block() })
         if (needsRefining) {
-            yield(ctx.out(ctx.stack { rawBlock() }, "block/raw_${name}_block"))
-            yield(ctx.out(ctx.stack { rawOre() }, "item/raw_${name}"))
-            yield(ctx.out(ctx.stack { ingot() }, "item/${name}_ingot"))
+            yield(ctx.out("block/raw_${name}_block") { rawBlock() })
+            yield(ctx.out("item/raw_${name}") { rawOre() })
+            yield(ctx.out("item/${name}_ingot") { ingot() })
         } else {
-            yield(ctx.out(ctx.stack { itemForOutput() }, "item/${itemNameOverride ?: name}"))
+            yield(ctx.out("item/${itemNameOverride ?: name}") { itemForOutput() })
         }
     }
 

@@ -45,7 +45,7 @@ enum class CopperOxide(
     }
     override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
         val commonLayers = ctx.stack { commonLayers() }
-        yield(ctx.out({ uncut(commonLayers) }, "block/${name}_copper"))
-        yield(ctx.out({ cut(commonLayers) }, "block/cut_${name}_copper"))
+        yield(ctx.out("block/${name}_copper") { uncut(commonLayers) })
+        yield(ctx.out("block/cut_${name}_copper") { cut(commonLayers) })
     }
 }

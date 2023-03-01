@@ -44,10 +44,10 @@ enum class Nylium(
     };
     override val base: OreBase = OreBase.NETHERRACK
     override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
-        yield(ctx.out(ctx.stack { createTopLayers() }, "block/${name}")) // no "_top" at end
-        yield(ctx.out(ctx.stack {
+        yield(ctx.out("block/${name}") { createTopLayers() }) // no "_top" at end
+        yield(ctx.out("block/${name}_side") {
             copy(base)
             createCoverSideLayers()
-        }, "block/${name}_side"))
+        })
     }
 }
