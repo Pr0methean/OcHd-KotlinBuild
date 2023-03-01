@@ -191,7 +191,7 @@ class TaskPlanningContext(
             = out(names = arrayOf(name), sourceSvgName = sourceSvgName)
 
     fun out(vararg names: String, source: LayerListBuilder.() -> Unit): PngOutputTask
-            = out(*names, source = stack {source()})
+            = out(*names, source = stack(source))
 
     fun out(name: String, source: LayerListBuilder.() -> Unit): PngOutputTask
             = out(names = arrayOf(name), source = source)
