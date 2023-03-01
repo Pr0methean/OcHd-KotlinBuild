@@ -171,7 +171,7 @@ class TaskPlanningContext(
     }
 
     fun out(vararg names: String, source: AbstractImageTask): PngOutputTask {
-        logger.debug("out({}, {})", source, names)
+        logger.debug("out({}, {})", names.toList(), source)
         val lowercaseNames = names.map { it.lowercase(Locale.ENGLISH) }
         return deduplicate(PngOutputTask(
                 lowercaseNames[0],
@@ -192,6 +192,7 @@ class TaskPlanningContext(
 
     fun out(vararg names: String, source: LayerListBuilder.() -> Unit): PngOutputTask
             = out(*names, source = stack {source()})
+
     fun out(name: String, source: LayerListBuilder.() -> Unit): PngOutputTask
             = out(names = arrayOf(name), source = source)
 
