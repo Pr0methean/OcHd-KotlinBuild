@@ -188,12 +188,12 @@ class TaskPlanningContext(
             = out(*names, source = findSvgTask(sourceSvgName))
 
     fun out(name: String, sourceSvgName: String): PngOutputTask
-            = out(name, sourceSvgName = sourceSvgName)
+            = out(names = arrayOf(name), sourceSvgName = sourceSvgName)
 
     fun out(vararg names: String, source: LayerListBuilder.() -> Unit): PngOutputTask
             = out(*names, source = stack {source()})
     fun out(name: String, source: LayerListBuilder.() -> Unit): PngOutputTask
-            = out(name, source = source)
+            = out(names = arrayOf(name), source = source)
 
     fun stack(layers: LayerList): AbstractImageTask {
         logger.debug("stack({})", layers)
