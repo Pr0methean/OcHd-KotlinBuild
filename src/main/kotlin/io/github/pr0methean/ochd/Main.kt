@@ -128,7 +128,7 @@ suspend fun main(args: Array<String>) {
             sortTask@ for (task in tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks))
             ) {
                 val matchingComponents = components.filter { it.any(task::overlapsWith) }
-                logger.debug("{} is connected to: {}", task, matchingComponents.flatFlatFormattable())
+                logger.debug("{} is connected to: {}", task, matchingComponents.asFormattable())
                 if (matchingComponents.isEmpty()) {
                     components.add(mutableSetOf(task))
                 } else {
@@ -196,7 +196,7 @@ suspend fun main(args: Array<String>) {
                 } else if (currentInProgressJobs + connectedComponent.size <= maxJobs) {
                     logger.info(
                         "{} tasks in progress; starting all {} currently eligible tasks: {}",
-                        box(currentInProgressJobs), box(connectedComponent.size), connectedComponent.flatFormattable()
+                        box(currentInProgressJobs), box(connectedComponent.size), connectedComponent.asFormattable()
                     )
                     connectedComponent.forEach {
                         inProgressJobs[it] = startTask(scope, it, finishedJobsChannel, ioJobs, prereqIoJobs)

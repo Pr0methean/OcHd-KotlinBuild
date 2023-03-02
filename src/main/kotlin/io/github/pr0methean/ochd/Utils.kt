@@ -54,13 +54,14 @@ fun StringBuilder.appendStrings(
     return this
 }
 
+@JvmName("flattenedAsFormattable")
+fun Collection<StringBuilderFormattable>.asFormattable(): StringBuilderFormattable =
+    StringBuilderFormattable { buffer -> buffer.appendFormattables(this@asFormattable) }
 
-fun Collection<StringBuilderFormattable>.flatFormattable(): StringBuilderFormattable =
-    StringBuilderFormattable { buffer -> buffer.appendFormattables(this@flatFormattable) }
-
-fun Collection<Collection<StringBuilderFormattable>>.flatFlatFormattable(): StringBuilderFormattable =
+@JvmName("flattenedTwiceAsFormattable")
+fun Collection<Collection<StringBuilderFormattable>>.asFormattable(): StringBuilderFormattable =
     StringBuilderFormattable { buffer -> buffer.appendFormattables(
-        this@flatFlatFormattable.map(Collection<StringBuilderFormattable>::flatFormattable)) }
+        this@asFormattable.map(Collection<StringBuilderFormattable>::asFormattable)) }
 
 fun Array<out CharSequence>.asFormattable(): StringBuilderFormattable =
     StringBuilderFormattable { buffer -> buffer.appendStrings(this@asFormattable.toList()) }

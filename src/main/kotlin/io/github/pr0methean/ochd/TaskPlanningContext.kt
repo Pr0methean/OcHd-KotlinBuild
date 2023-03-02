@@ -167,7 +167,7 @@ class TaskPlanningContext(
     }
 
     fun animate(background: AbstractImageTask, frames: List<AbstractImageTask>): AbstractImageTask {
-        logger.debug("animate({}, {})", background, frames.flatFormattable())
+        logger.debug("animate({}, {})", background, frames.asFormattable())
         return deduplicate(AnimationTask(
             deduplicate(background),
             frames.map(::deduplicate),
