@@ -1,9 +1,8 @@
 package io.github.pr0methean.ochd.materials.block.pickaxe
 
 import io.github.pr0methean.ochd.LayerListBuilder
-import io.github.pr0methean.ochd.TaskPlanningContext
+import io.github.pr0methean.ochd.OutputTaskBuilder
 import io.github.pr0methean.ochd.c
-import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.texturebase.Block
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Color
@@ -12,7 +11,8 @@ enum class OreBase(
     override val color: Color,
     override val shadow: Color,
     override val highlight: Color,
-    val orePrefix: String
+    val orePrefix: String,
+    override val hasOutput: Boolean = true
 ) : Block, ShadowHighlightMaterial {
     STONE(c(0x888888), c(0x737373), c(0xaaaaaa), "") {
         override fun LayerListBuilder.createTextureLayers() {
@@ -29,20 +29,20 @@ enum class OreBase(
             layer("diagonalChecksTopLeftBottomRight", DEEPSLATE.shadow)
         }
 
-        override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
-            val baseTexture = ctx.stack {createTextureLayers()}
-            yield(ctx.out("block/deepslate", baseTexture))
-            yield(ctx.out("block/deepslate_bricks") {
+        override suspend fun OutputTaskBuilder.outputTasks() {
+            val baseTexture = stack { createTextureLayers() }
+            out("block/deepslate", baseTexture)
+            out("block/deepslate_bricks") {
                 copy(baseTexture)
                 layer("bricksSmall", shadow)
                 layer("borderDotted", highlight)
                 layer("borderDottedBottomRight", shadow)
-            })
-            yield(ctx.out("block/deepslate_top") {
+            }
+            out("block/deepslate_top") {
                 copy(baseTexture)
                 layer("cross", shadow)
                 layer("borderSolid", highlight)
-            })
+            }
         }
     },
     NETHERRACK(c(0x723232), c(0x411616), c(0x854242), "nether_") {

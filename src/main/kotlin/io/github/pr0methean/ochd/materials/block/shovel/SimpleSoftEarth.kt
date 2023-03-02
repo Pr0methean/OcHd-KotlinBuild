@@ -13,6 +13,7 @@ enum class SimpleSoftEarth(
     override val color: Paint,
     override val shadow: Paint,
     override val highlight: Paint,
+    override val hasOutput: Boolean = true
 ) : ShadowHighlightMaterial, Block {
     SAND(c(0xdfd5aa), c(0xd1ba8a), c(0xEaEaD0)) {
         override fun LayerListBuilder.createTextureLayers() {

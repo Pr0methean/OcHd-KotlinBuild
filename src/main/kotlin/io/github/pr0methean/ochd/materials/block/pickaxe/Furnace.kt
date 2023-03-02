@@ -1,50 +1,50 @@
 package io.github.pr0methean.ochd.materials.block.pickaxe
 
-import io.github.pr0methean.ochd.TaskPlanningContext
-import io.github.pr0methean.ochd.tasks.PngOutputTask
+import io.github.pr0methean.ochd.OutputTaskBuilder
+import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.STONE
 import io.github.pr0methean.ochd.texturebase.Material
 import javafx.scene.paint.Color
 
 object Furnace: Material {
-    override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
-        val furnaceSide = ctx.stack {
-            background(OreBase.STONE.color)
-            layer("bottomHalf", OreBase.STONE.highlight)
+    override suspend fun OutputTaskBuilder.outputTasks() {
+        val furnaceSide = stack {
+            background(STONE.color)
+            layer("bottomHalf", STONE.highlight)
             layer("borderSolid", OreBase.stoneExtremeShadow)
         }
-        yield(ctx.out("block/furnace_side", furnaceSide))
-        yield(ctx.out("block/furnace_front") {
+        out("block/furnace_side", furnaceSide)
+        out("block/furnace_front") {
             copy(furnaceSide)
             layer("furnaceFrontLit", Color.BLACK)
-        })
-        yield(ctx.out("block/furnace_front_on") {
+        }
+        out("block/furnace_front_on") {
             copy(furnaceSide)
             layer("furnaceFrontLit")
-        })
-        val blastFurnaceTop = ctx.stack {
-            background(OreBase.STONE.shadow)
+        }
+        val blastFurnaceTop = stack {
+            background(STONE.shadow)
             layer("cornerCrosshairs", OreBase.stoneExtremeHighlight)
         }
-        yield(ctx.out("block/blast_furnace_top", blastFurnaceTop))
-        val blastFurnaceSide = ctx.stack {
-            background(OreBase.STONE.shadow)
-            layer("bottomHalf", OreBase.STONE.color)
+        out("block/blast_furnace_top", blastFurnaceTop)
+        val blastFurnaceSide = stack {
+            background(STONE.shadow)
+            layer("bottomHalf", STONE.color)
             layer("cornerCrosshairs", OreBase.stoneExtremeHighlight)
         }
-        yield(ctx.out("block/blast_furnace", blastFurnaceSide))
-        val blastFurnaceFrontBase = ctx.stack {
+        out("block/blast_furnace", blastFurnaceSide)
+        val blastFurnaceFrontBase = stack {
             copy(blastFurnaceSide)
             layer("craftingGridSquare", OreBase.stoneExtremeHighlight)
         }
-        yield(ctx.out("block/blast_furnace_front") {
+        out("block/blast_furnace_front") {
             copy(blastFurnaceFrontBase)
             layer("blastFurnaceHoles")
-        })
-        yield(ctx.out("block/blast_furnace_front_on",
-            ctx.animate(blastFurnaceFrontBase, listOf(
-                ctx.layer("blastFurnaceHolesLit"),
-                ctx.layer("blastFurnaceHolesLit1")
+        }
+        out("block/blast_furnace_front_on",
+            animate(blastFurnaceFrontBase, listOf(
+                layer("blastFurnaceHolesLit"),
+                layer("blastFurnaceHolesLit1")
             ))
-        ))
+        )
     }
 }

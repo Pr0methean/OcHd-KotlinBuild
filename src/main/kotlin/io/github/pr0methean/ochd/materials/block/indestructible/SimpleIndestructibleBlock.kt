@@ -14,7 +14,8 @@ import javafx.scene.paint.Paint
 enum class SimpleIndestructibleBlock(
     override val color: Paint,
     override val shadow: Paint,
-    override val highlight: Paint
+    override val highlight: Paint,
+    override val hasOutput: Boolean = true
 ): SingleTextureMaterial, ShadowHighlightMaterial, Block {
     BEDROCK(c(0x515151), c(0x222222), c(0xaaaaaa)) {
         override fun LayerListBuilder.createTextureLayers() {

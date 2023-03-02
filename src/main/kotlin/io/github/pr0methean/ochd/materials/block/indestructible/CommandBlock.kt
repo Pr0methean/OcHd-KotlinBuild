@@ -1,9 +1,8 @@
 package io.github.pr0methean.ochd.materials.block.indestructible
 
 import io.github.pr0methean.ochd.LayerListBuilder
-import io.github.pr0methean.ochd.TaskPlanningContext
+import io.github.pr0methean.ochd.OutputTaskBuilder
 import io.github.pr0methean.ochd.c
-import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Paint
 
@@ -65,13 +64,13 @@ enum class CommandBlock(
 
     open fun LayerListBuilder.decorateBackground() {}
 
-    override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
-        val background = ctx.stack {createBackground()}
+    override suspend fun OutputTaskBuilder.outputTasks() {
+        val background = stack { createBackground() }
         for (sideType in enumValues<SideType>()) {
-            yield(ctx.out("block/${name}_${sideType}") {sideType.run {
-                copy(background)
-                createGrid(shadow)
-            }})
+            out("block/${this@CommandBlock.name}_${sideType}") { sideType.run {
+                this@out.copy(background)
+                this@out.createGrid(shadow)
+            }}
         }
     }
 }

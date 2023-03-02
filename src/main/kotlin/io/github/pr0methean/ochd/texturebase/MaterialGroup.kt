@@ -1,17 +1,12 @@
 package io.github.pr0methean.ochd.texturebase
 
-import io.github.pr0methean.ochd.TaskPlanningContext
-import io.github.pr0methean.ochd.tasks.PngOutputTask
-import org.apache.logging.log4j.LogManager
+import io.github.pr0methean.ochd.OutputTaskBuilder
 
-private val logger = LogManager.getLogger("MaterialGroup")
 open class MaterialGroup(private val elements: Sequence<Material>): Material {
     constructor(vararg elements: Material): this(elements.asSequence())
 
-    override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask>
-            = elements.flatMap {
-        logger.debug("Emitting output tasks for material: {}", it)
-        it.outputTasks(ctx)
+    override suspend fun OutputTaskBuilder.outputTasks(): Unit = elements.forEach {
+        it.run { outputTasks() }
     }
 }
 

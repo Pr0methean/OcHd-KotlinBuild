@@ -1,13 +1,12 @@
 package io.github.pr0methean.ochd.materials.block.pickaxe
 
 import io.github.pr0methean.ochd.LayerListBuilder
-import io.github.pr0methean.ochd.TaskPlanningContext
+import io.github.pr0methean.ochd.OutputTaskBuilder
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.DEEPSLATE
 import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.NETHERRACK
 import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.STONE
 import io.github.pr0methean.ochd.tasks.AbstractImageTask
-import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Color
 import java.util.*
@@ -34,7 +33,7 @@ enum class Ore(
         highlight = c(0x515151)
     ) {
         override fun oreBlock(
-            ctx: TaskPlanningContext,
+            ctx: OutputTaskBuilder,
             oreBase: OreBase
         ): AbstractImageTask {
             if (oreBase == DEEPSLATE) {
@@ -80,7 +79,7 @@ enum class Ore(
             rawOre()
         }
 
-        override fun oreBlock(ctx: TaskPlanningContext, oreBase: OreBase): AbstractImageTask {
+        override fun oreBlock(ctx: OutputTaskBuilder, oreBase: OreBase): AbstractImageTask {
             return if (oreBase == STONE) {
                 ctx.stack {
                     copy(STONE)
@@ -102,20 +101,20 @@ enum class Ore(
         highlight = Color.WHITE,
         substrates = netherOreBases
     ) {
-        override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
-            yield(ctx.out("item/quartz") { ingot() })
-            yield(ctx.out("block/nether_quartz_ore") {
+        override suspend fun OutputTaskBuilder.outputTasks() {
+            out("item/quartz") { ingot() }
+            out("block/nether_quartz_ore") {
                 copy(NETHERRACK)
                 item() // don't need to copy since it's not used to create the item form or any other texture
-            })
-            yield(ctx.out("block/quartz_block_top") {
+            }
+            out("block/quartz_block_top") {
                 background(color)
                 layer("streaks", highlight)
                 layer("borderSolid", shadow)
                 layer("borderSolidTopLeft", highlight)
-            })
-            yield(ctx.out("block/quartz_block_bottom") { rawBlock() })
-            yield(ctx.out("block/quartz_block_side") { block() })
+            }
+            out("block/quartz_block_bottom") { rawBlock() }
+            out("block/quartz_block_side") { block() }
         }
 
     },
@@ -209,24 +208,24 @@ enum class Ore(
         layer(svgName, shadow)
     }
 
-    open fun LayerListBuilder.itemForOutput() = item()
+    open fun LayerListBuilder.itemForOutput(): Unit = item()
 
-    override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
+    override suspend fun OutputTaskBuilder.outputTasks() {
         substrates.forEach { oreBase ->
-            yield(ctx.out("block/${oreBase.orePrefix}${name}_ore", oreBlock(ctx, oreBase)))
+            out("block/${oreBase.orePrefix}${this@Ore.name}_ore", oreBlock(this@outputTasks, oreBase))
         }
-        yield(ctx.out("block/${name}_block") { block() })
+        out("block/${this@Ore.name}_block") { block() }
         if (needsRefining) {
-            yield(ctx.out("block/raw_${name}_block") { rawBlock() })
-            yield(ctx.out("item/raw_${name}") { rawOre() })
-            yield(ctx.out("item/${name}_ingot") { ingot() })
+            out("block/raw_${this@Ore.name}_block") { rawBlock() }
+            out("item/raw_${this@Ore.name}") { rawOre() }
+            out("item/${this@Ore.name}_ingot") { ingot() }
         } else {
-            yield(ctx.out("item/${itemNameOverride ?: name}") { itemForOutput() })
+            out("item/${itemNameOverride ?: this@Ore.name}") { itemForOutput() }
         }
     }
 
     protected open fun oreBlock(
-        ctx: TaskPlanningContext,
+        ctx: OutputTaskBuilder,
         oreBase: OreBase
     ): AbstractImageTask = ctx.stack {
         copy(oreBase)

@@ -1,9 +1,8 @@
 package io.github.pr0methean.ochd.materials.block.pickaxe
 
 import io.github.pr0methean.ochd.LayerListBuilder
-import io.github.pr0methean.ochd.TaskPlanningContext
+import io.github.pr0methean.ochd.OutputTaskBuilder
 import io.github.pr0methean.ochd.c
-import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.texturebase.GroundCoverBlock
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Paint
@@ -43,11 +42,11 @@ enum class Nylium(
         }
     };
     override val base: OreBase = OreBase.NETHERRACK
-    override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
-        yield(ctx.out("block/${name}") { createTopLayers() }) // no "_top" at end
-        yield(ctx.out("block/${name}_side") {
+    override suspend fun OutputTaskBuilder.outputTasks() {
+        out("block/${this@Nylium.name}") { createTopLayers() } // no "_top" at end
+        out("block/${this@Nylium.name}_side") {
             copy(base)
             createCoverSideLayers()
-        })
+        }
     }
 }

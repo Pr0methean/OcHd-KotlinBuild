@@ -30,7 +30,7 @@ operator fun Paint.times(alpha: Double): Paint = if (alpha == 1.0) {
     Color(red, green, blue, opacity * alpha)
 } else error("Alpha multiplier not implemented for non-Color paints")
 
-fun StringBuilder.appendCollection(
+fun StringBuilder.appendFormattables(
         collection: Collection<StringBuilderFormattable>, delim: String = ", "): StringBuilder {
     if (collection.isNotEmpty()) {
         for (item in collection) {
@@ -41,4 +41,27 @@ fun StringBuilder.appendCollection(
     }
     return this
 }
+
+fun StringBuilder.appendStrings(
+    collection: Collection<CharSequence>, delim: String = ", "): StringBuilder {
+    if (collection.isNotEmpty()) {
+        for (item in collection) {
+            append(item)
+            append(delim)
+        }
+        delete(length - delim.length, length)
+    }
+    return this
+}
+
+
+fun Collection<StringBuilderFormattable>.flatFormattable(): StringBuilderFormattable =
+    StringBuilderFormattable { buffer -> buffer.appendFormattables(this@flatFormattable) }
+
+fun Collection<Collection<StringBuilderFormattable>>.flatFlatFormattable(): StringBuilderFormattable =
+    StringBuilderFormattable { buffer -> buffer.appendFormattables(
+        this@flatFlatFormattable.map(Collection<StringBuilderFormattable>::flatFormattable)) }
+
+fun Array<out CharSequence>.asFormattable(): StringBuilderFormattable =
+    StringBuilderFormattable { buffer -> buffer.appendStrings(this@asFormattable.toList()) }
 

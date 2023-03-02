@@ -1,10 +1,9 @@
 package io.github.pr0methean.ochd.materials.block.barehand
 
 import io.github.pr0methean.ochd.LayerListBuilder
-import io.github.pr0methean.ochd.TaskPlanningContext
+import io.github.pr0methean.ochd.OutputTaskBuilder
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.materials.block.axe.Fungus
-import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.texturebase.Material
 import javafx.scene.paint.Paint
 import java.util.*
@@ -44,9 +43,9 @@ enum class Crop(private val numStages: Int, val color: Paint): Material {
         }
     };
 
-    override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
+    override suspend fun OutputTaskBuilder.outputTasks() {
         for (stage in 0 until numStages) {
-            yield(ctx.out("block/${name}_stage${stage}") {createTextureForStage(stage)})
+            out("block/${this@Crop.name}_stage${stage}") { createTextureForStage(stage) }
         }
     }
 

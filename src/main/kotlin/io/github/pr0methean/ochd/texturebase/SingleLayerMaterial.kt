@@ -9,7 +9,8 @@ abstract class SingleLayerMaterial(
     override val directory: String,
     private val sourceFileName: String,
     val color: Paint? = null,
-    private val alpha: Double = 1.0
+    private val alpha: Double = 1.0,
+    override val hasOutput: Boolean = true
 ) : SingleTextureMaterial {
     init {
         if (color !is Color) {

@@ -150,6 +150,15 @@ class TaskPlanningContext(
         alpha: Double = 1.0
     ): AbstractImageTask = layer(stack {source()}, paint, alpha)
 
+    fun stack(layers: LayerList): AbstractImageTask {
+        logger.debug("stack({})", layers)
+        return deduplicate(
+            ImageStackingTask(
+                layers, HardTaskCache(layers.toString()), ctx
+            )
+        )
+    }
+
     inline fun stack(init: LayerListBuilder.() -> Unit): AbstractImageTask {
         val layerTasksBuilder = LayerListBuilder(this)
         layerTasksBuilder.init()
@@ -158,7 +167,7 @@ class TaskPlanningContext(
     }
 
     fun animate(background: AbstractImageTask, frames: List<AbstractImageTask>): AbstractImageTask {
-        logger.debug("animate({}, {})", background, frames)
+        logger.debug("animate({}, {})", background, frames.flatFormattable())
         return deduplicate(AnimationTask(
             deduplicate(background),
             frames.map(::deduplicate),
@@ -171,7 +180,7 @@ class TaskPlanningContext(
     }
 
     fun out(vararg names: String, source: AbstractImageTask): PngOutputTask {
-        logger.debug("out({}, {})", names::toList) {source}
+        logger.debug("out({}, {})", names.asFormattable(), source)
         val lowercaseNames = names.map { it.lowercase(Locale.ENGLISH) }
         return deduplicate(PngOutputTask(
                 lowercaseNames[0],
@@ -195,14 +204,4 @@ class TaskPlanningContext(
 
     fun out(name: String, source: LayerListBuilder.() -> Unit): PngOutputTask
             = out(names = arrayOf(name), source = source)
-
-    fun stack(layers: LayerList): AbstractImageTask {
-        logger.debug("stack({})", layers)
-        return deduplicate(
-            ImageStackingTask(
-                layers, HardTaskCache(layers.toString()), ctx
-            )
-        )
-    }
-
 }

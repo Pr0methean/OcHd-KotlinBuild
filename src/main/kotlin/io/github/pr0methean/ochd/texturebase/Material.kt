@@ -1,8 +1,7 @@
 package io.github.pr0methean.ochd.texturebase
 
-import io.github.pr0methean.ochd.TaskPlanningContext
-import io.github.pr0methean.ochd.tasks.PngOutputTask
+import io.github.pr0methean.ochd.OutputTaskBuilder
 
 interface Material {
-    fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask>
+    suspend fun OutputTaskBuilder.outputTasks()
 }

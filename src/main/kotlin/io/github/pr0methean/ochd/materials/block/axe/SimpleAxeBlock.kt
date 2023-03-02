@@ -1,15 +1,14 @@
 package io.github.pr0methean.ochd.materials.block.axe
 
 import io.github.pr0methean.ochd.LayerListBuilder
-import io.github.pr0methean.ochd.TaskPlanningContext
-import io.github.pr0methean.ochd.tasks.PngOutputTask
+import io.github.pr0methean.ochd.OutputTaskBuilder
 import io.github.pr0methean.ochd.texturebase.Block
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
 import javafx.scene.paint.Paint
 
 @Suppress("unused")
-enum class SimpleAxeBlock: SingleTextureMaterial, ShadowHighlightMaterial, Block {
+enum class SimpleAxeBlock(override val hasOutput: Boolean = true): SingleTextureMaterial, ShadowHighlightMaterial, Block {
     CRAFTING_TABLE_SIDE {
         override fun LayerListBuilder.createTextureLayers() {
             copy {
@@ -22,10 +21,10 @@ enum class SimpleAxeBlock: SingleTextureMaterial, ShadowHighlightMaterial, Block
             layer("craftingSide", OverworldWood.DARK_OAK.color)
         }
 
-        override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
-            yield(ctx.out("block/crafting_table_side", "block/crafting_table_front") {
+        override suspend fun OutputTaskBuilder.outputTasks() {
+            out("block/crafting_table_side", "block/crafting_table_front") {
                 createTextureLayers()
-            })
+            }
         }
     },
     CRAFTING_TABLE_TOP {

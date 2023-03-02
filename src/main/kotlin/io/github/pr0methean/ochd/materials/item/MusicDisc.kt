@@ -12,7 +12,8 @@ val musicDiscShadow: Color = c(0x212121)
 val musicDiscHighlight: Color = c(0x515151)
 
 @Suppress("unused", "EnumEntryName")
-enum class MusicDisc(private val labelDyeName: String): SingleTextureMaterial, Item {
+enum class MusicDisc(private val labelDyeName: String, override val hasOutput: Boolean = true)
+        : SingleTextureMaterial, Item {
     MUSIC_DISC_FAR("red"),
     MUSIC_DISC_WAIT("green"),
     MUSIC_DISC_STRAD("brown"),

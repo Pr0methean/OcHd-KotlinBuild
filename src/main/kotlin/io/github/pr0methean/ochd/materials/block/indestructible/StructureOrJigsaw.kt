@@ -1,10 +1,9 @@
 package io.github.pr0methean.ochd.materials.block.indestructible
 
 import io.github.pr0methean.ochd.LayerListBuilder
-import io.github.pr0methean.ochd.TaskPlanningContext
+import io.github.pr0methean.ochd.OutputTaskBuilder
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.tasks.AbstractImageTask
-import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Color
 
@@ -56,13 +55,13 @@ object StructureAndJigsaw: ShadowHighlightMaterial {
     override val color: Color = c(0xb493b4)
     override val shadow: Color = c(0x26002a)
     override val highlight: Color = c(0xd7c2d7)
-    override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
-        val backgroundAndBorder = ctx.stack {
+    override suspend fun OutputTaskBuilder.outputTasks() {
+        val backgroundAndBorder = stack {
             background(shadow)
             layer("borderDotted", color)
         }
         StructureOrJigsaw.values().forEach {
-            yield(ctx.out("block/${it.name}") { it.run { createTextureLayers(backgroundAndBorder) }})
+            out("block/${it.name}") { it.run { this@out.createTextureLayers(backgroundAndBorder) }}
         }
     }
 }

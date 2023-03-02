@@ -17,7 +17,6 @@ import kotlinx.coroutines.launch
 import org.apache.logging.log4j.Level
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.io.IoBuilder
-import org.apache.logging.log4j.util.StringBuilderFormattable
 import org.apache.logging.log4j.util.Unbox.box
 import java.lang.management.ManagementFactory
 import java.lang.management.ThreadInfo
@@ -214,9 +213,8 @@ object ImageProcessingStats {
                 lastCacheLogNanoTime = now
                 val cachedTasks = cacheableTasks.filter { it.cache.isEnabled() && it.getNow() != null }
                         .sortedBy(AbstractTask<*>::name)
-                logger.info("Currently cached tasks: {}: {}", box(cachedTasks.size), StringBuilderFormattable {
-                    it.appendCollection(cachedTasks, "; ")
-                })
+                logger.info("Currently cached tasks: {}: {}", box(cachedTasks.size),
+                        cachedTasks.flatFormattable())
             } finally {
                 cacheLock.unlock(stamp)
             }

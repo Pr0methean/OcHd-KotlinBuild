@@ -1,10 +1,9 @@
 package io.github.pr0methean.ochd.materials.block.pickaxe
 
 import io.github.pr0methean.ochd.LayerListBuilder
-import io.github.pr0methean.ochd.TaskPlanningContext
+import io.github.pr0methean.ochd.OutputTaskBuilder
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.materials.block.pickaxe.Ore.GOLD
-import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
@@ -44,23 +43,23 @@ enum class Polishable(
             layer("bigDotsBottomLeftTopRight", highlight)
             layer("bigDotsTopLeftBottomRight", color)
         }
-        override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
-            val base = ctx.stack { createTextureLayersBase() }
-            yield(ctx.out("block/blackstone", base))
-            val polishedTextureTask = ctx.stack {
+        override suspend fun OutputTaskBuilder.outputTasks() {
+            val base = stack { createTextureLayersBase() }
+            out("block/blackstone", base)
+            val polishedTextureTask = stack {
                 copy(base)
                 createBorderPolished()
             }
-            yield(ctx.out("block/polished_blackstone", polishedTextureTask))
-            yield(ctx.out("block/gilded_blackstone") {
+            out("block/polished_blackstone", polishedTextureTask)
+            out("block/gilded_blackstone") {
                 copy(polishedTextureTask)
                 layer("bigRingsBottomLeftTopRight", GOLD.color)
-            })
-            yield(ctx.out("block/blackstone_top") {
+            }
+            out("block/blackstone_top") {
                 background(shadow)
                 layer("bigRingsBottomLeftTopRight", color)
                 layer("bigRingsTopLeftBottomRight", highlight)
-            })
+            }
         }
     };
 
@@ -70,12 +69,12 @@ enum class Polishable(
         layer("borderSolidTopLeft", highlight)
     }
 
-    override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
-        val base = ctx.stack { createTextureLayersBase() }
-        yield(ctx.out("block/$name", base))
-        yield(ctx.out("block/polished_$name") {
+    override suspend fun OutputTaskBuilder.outputTasks() {
+        val base = stack { createTextureLayersBase() }
+        out("block/${this@Polishable.name}", base)
+        out("block/polished_${this@Polishable.name}") {
             copy(base)
             createBorderPolished()
-        })
+        }
     }
 }

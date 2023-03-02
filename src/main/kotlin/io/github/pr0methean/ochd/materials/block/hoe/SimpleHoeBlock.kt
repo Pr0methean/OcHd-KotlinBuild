@@ -13,7 +13,8 @@ import javafx.scene.paint.Paint
 enum class SimpleHoeBlock(
     override val color: Paint,
     override val shadow: Paint,
-    override val highlight: Paint
+    override val highlight: Paint,
+    override val hasOutput: Boolean = true
 ): SingleTextureMaterial, ShadowHighlightMaterial, Block {
     SHROOMLIGHT(c(0xffac6d), c(0xd75100), c(0xffffb4)) {
         override fun LayerListBuilder.createTextureLayers() {

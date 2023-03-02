@@ -7,7 +7,7 @@ import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
 import javafx.scene.paint.Color
 
 @Suppress("unused")
-enum class SimpleShearBlock: SingleTextureMaterial, Block {
+enum class SimpleShearBlock(override val hasOutput: Boolean = true): SingleTextureMaterial, Block {
     COBWEB {
         override fun LayerListBuilder.createTextureLayers() {
             layer("ringsCentralBullseye", Color.WHITE, 0.75)

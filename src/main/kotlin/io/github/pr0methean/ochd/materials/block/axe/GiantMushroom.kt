@@ -13,7 +13,8 @@ enum class GiantMushroom(
     override val color: Paint,
     override val shadow: Paint,
     override val highlight: Paint,
-    ) : SingleTextureMaterial, ShadowHighlightMaterial, Block {
+    override val hasOutput: Boolean = true
+) : SingleTextureMaterial, ShadowHighlightMaterial, Block {
     RED_MUSHROOM_BLOCK(Color.RED, Color.BLACK, Color.WHITE) {
         override fun LayerListBuilder.createTextureLayers() {
             background(color)

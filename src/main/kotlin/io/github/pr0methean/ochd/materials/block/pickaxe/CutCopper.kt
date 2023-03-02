@@ -8,7 +8,7 @@ import io.github.pr0methean.ochd.texturebase.Block
 
 object CutCopper: Block {
     override val name: String = "cut_copper"
-
+    override val hasOutput: Boolean = true
     override fun LayerListBuilder.createTextureLayers() {
         background(COPPER.color)
         layer("streaks", COPPER.highlight)

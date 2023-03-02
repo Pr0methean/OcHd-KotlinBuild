@@ -1,10 +1,9 @@
 package io.github.pr0methean.ochd.materials.block.barehand
 
 import io.github.pr0methean.ochd.LayerListBuilder
-import io.github.pr0methean.ochd.TaskPlanningContext
+import io.github.pr0methean.ochd.OutputTaskBuilder
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.materials.block.axe.GiantMushroom
-import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.texturebase.Block
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
@@ -15,7 +14,8 @@ import javafx.scene.paint.Paint
 enum class SimpleBareHandBlock(
     override val color: Paint,
     override val shadow: Paint,
-    override val highlight: Paint
+    override val highlight: Paint,
+    override val hasOutput: Boolean = true
 ): SingleTextureMaterial, ShadowHighlightMaterial, Block {
     SUGARCANE(c(0xaadb74), c(0x82a859), c(0x91ff32)) {
         override fun LayerListBuilder.createTextureLayers() {
@@ -47,10 +47,10 @@ enum class SimpleBareHandBlock(
             layer("redstoneLine", color)
         }
 
-        override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> {
-            return sequenceOf(ctx.out("block/redstone_dust_line0", "block/redstone_dust_line1") {
+        override suspend fun OutputTaskBuilder.outputTasks() {
+            out("block/redstone_dust_line0", "block/redstone_dust_line1") {
                 createTextureLayers()
-            })
+            }
         }
     },
     TWISTING_VINES_PLANT(c(0x008383), c(0x00b485), c(0x005e5e)) {

@@ -10,7 +10,7 @@ import javafx.scene.paint.Paint
  * Plants whose textures are stored in gray and colorized in real time.
  */
 @Suppress("unused")
-enum class BiomeColorizedPlant: Block, ShadowHighlightMaterial {
+enum class BiomeColorizedPlant(override val hasOutput: Boolean = true): Block, ShadowHighlightMaterial {
     LILY_PAD {
         override fun LayerListBuilder.createTextureLayers() {
             layer("lilyPad", shadow)

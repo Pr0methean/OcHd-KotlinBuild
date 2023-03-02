@@ -13,7 +13,7 @@ data class LayerList(val layers: List<AbstractImageTask>, val background: Paint,
         if (background != TRANSPARENT) {
             buffer.append(background).append(", ")
         }
-        buffer.appendCollection(layers)
+        buffer.appendFormattables(layers)
     }
 
     fun mergeWithDuplicate(other: LayerList): LayerList {

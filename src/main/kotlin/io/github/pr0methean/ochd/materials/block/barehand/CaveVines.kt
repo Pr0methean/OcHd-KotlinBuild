@@ -1,8 +1,7 @@
 package io.github.pr0methean.ochd.materials.block.barehand
 
-import io.github.pr0methean.ochd.TaskPlanningContext
+import io.github.pr0methean.ochd.OutputTaskBuilder
 import io.github.pr0methean.ochd.c
-import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Color
 import javafx.scene.paint.Paint
@@ -13,28 +12,28 @@ object CaveVines: ShadowHighlightMaterial {
     override val color: Paint = c(0x507233)
     override val shadow: Paint = c(0x4f3200)
     override val highlight: Paint = c(0x70922d)
-    override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
-        val vinePlantTask = ctx.stack {
+    override suspend fun OutputTaskBuilder.outputTasks() {
+        val vinePlantTask = stack {
             layer("wavyVines", shadow)
             layer("waves", highlight)
         }
-        val vineTask = ctx.stack {
+        val vineTask = stack {
             layer("wavyVinesBottom", shadow)
             layer("wavesBottom", highlight)
         }
-        val berryTask = ctx.stack {
+        val berryTask = stack {
             layer("vineBerries", berryColor)
             layer("vineBerriesHighlight", berryHighlight)
         }
-        yield(ctx.out("block/cave_vines_plant", vinePlantTask))
-        yield(ctx.out("block/cave_vines_plant_lit") {
+        out("block/cave_vines_plant", vinePlantTask)
+        out("block/cave_vines_plant_lit") {
             copy(vinePlantTask)
             copy(berryTask)
-        })
-        yield(ctx.out("block/cave_vines", vineTask))
-        yield(ctx.out("block/cave_vines_lit") {
+        }
+        out("block/cave_vines", vineTask)
+        out("block/cave_vines_lit") {
             copy(vineTask)
             copy(berryTask)
-        })
+        }
     }
 }

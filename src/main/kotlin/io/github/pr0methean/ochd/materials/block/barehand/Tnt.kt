@@ -1,8 +1,7 @@
 package io.github.pr0methean.ochd.materials.block.barehand
 
-import io.github.pr0methean.ochd.TaskPlanningContext
+import io.github.pr0methean.ochd.OutputTaskBuilder
 import io.github.pr0methean.ochd.c
-import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Color
 
@@ -24,22 +23,22 @@ object Tnt: ShadowHighlightMaterial {
     override val shadow: Color = c(0x912d00)
     override val highlight: Color = c(0xff4300)
 
-    override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
-        val tntBottom = ctx.stack {
+    override suspend fun OutputTaskBuilder.outputTasks() {
+        val tntBottom = stack {
             background(Color.BLACK)
             layer("tntSticksEnd", color)
         }
-        yield(ctx.out("block/tnt_side") {
+        out("block/tnt_side") {
             background(shadow)
             layer("tntSticksSide", color)
             layer("borderDotted", highlight)
             layer("tntStripe", Color.WHITE)
             layer("tntSign")
-        })
-        yield(ctx.out("block/tnt_bottom", tntBottom))
-        yield(ctx.out("block/tnt_top") {
+        }
+        out("block/tnt_bottom", tntBottom)
+        out("block/tnt_top") {
             copy(tntBottom)
             layer("tntFuzes")
-        })
+        }
     }
 }

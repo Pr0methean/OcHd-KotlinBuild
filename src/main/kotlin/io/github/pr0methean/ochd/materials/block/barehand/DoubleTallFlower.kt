@@ -1,9 +1,8 @@
 package io.github.pr0methean.ochd.materials.block.barehand
 
 import io.github.pr0methean.ochd.LayerListBuilder
-import io.github.pr0methean.ochd.TaskPlanningContext
+import io.github.pr0methean.ochd.OutputTaskBuilder
 import io.github.pr0methean.ochd.c
-import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.texturebase.DoubleTallBlock
 import javafx.scene.paint.Color
 
@@ -26,11 +25,12 @@ enum class DoubleTallFlower: DoubleTallBlock {
             layer("flowerStemBottomBorder", stemShadow)
         }
 
-        override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = super.outputTasks(ctx)
-                .plus(ctx.out("block/sunflower_back", "sunflowerPetals"))
-                .plus(ctx.out("block/sunflower_front") {
-                        layer("sunflowerPetals", Color.YELLOW)
-                        layer("sunflowerPistil")
-                    })
+        override suspend fun OutputTaskBuilder.extraOutputTasks() {
+            out("block/sunflower_back", "sunflowerPetals")
+            out("block/sunflower_front") {
+                layer("sunflowerPetals", Color.YELLOW)
+                layer("sunflowerPistil")
+            }
+        }
     };
 }

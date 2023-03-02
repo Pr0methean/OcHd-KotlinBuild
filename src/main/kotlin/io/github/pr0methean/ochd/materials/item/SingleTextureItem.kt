@@ -11,7 +11,8 @@ import javafx.scene.paint.Paint
 enum class SingleTextureItem(
     override val color: Paint,
     override val shadow: Paint,
-    override val highlight: Paint
+    override val highlight: Paint,
+    override val hasOutput: Boolean = true
 ): SingleTextureMaterial, ShadowHighlightMaterial, Item {
     AMETHYST_SHARD(SimplePickaxeBlock.AMETHYST_BLOCK) {
         override fun LayerListBuilder.createTextureLayers() {

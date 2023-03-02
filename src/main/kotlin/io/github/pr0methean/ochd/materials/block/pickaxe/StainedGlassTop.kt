@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd.materials.block.pickaxe
 
 import io.github.pr0methean.ochd.LayerListBuilder
-import io.github.pr0methean.ochd.TaskPlanningContext
+import io.github.pr0methean.ochd.OutputTaskBuilder
 import io.github.pr0methean.ochd.tasks.AbstractImageTask
 import io.github.pr0methean.ochd.tasks.InvalidTask
 import io.github.pr0methean.ochd.texturebase.DyedBlock
@@ -15,5 +15,5 @@ object StainedGlassTop : DyedBlock("stained_glass_pane_top") {
         layer("paneTop", color)
     }
 
-    override fun createSharedLayersTask(ctx: TaskPlanningContext): AbstractImageTask = InvalidTask
+    override fun createSharedLayersTask(ctx: OutputTaskBuilder): AbstractImageTask = InvalidTask
 }

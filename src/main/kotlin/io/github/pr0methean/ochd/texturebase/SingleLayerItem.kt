@@ -6,5 +6,6 @@ open class SingleLayerItem(
     sourceFileName: String,
     name: String,
     color: Paint? = null,
-    alpha: Double = 1.0
-) : SingleLayerMaterial(name, "item", sourceFileName, color, alpha)
+    alpha: Double = 1.0,
+    hasOutput: Boolean = true
+) : SingleLayerMaterial(name, "item", sourceFileName, color, alpha, hasOutput)

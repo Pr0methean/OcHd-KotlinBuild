@@ -1,14 +1,12 @@
 package io.github.pr0methean.ochd.materials.block.pickaxe
 
 import io.github.pr0methean.ochd.LayerListBuilder
-import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.Companion.stoneExtremeHighlight
 import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.Companion.stoneExtremeShadow
 import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.DEEPSLATE
 import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.STONE
 import io.github.pr0methean.ochd.materials.block.shovel.SimpleSoftEarth
-import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.texturebase.Block
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
@@ -22,7 +20,7 @@ enum class SimplePickaxeBlock(
     override val color: Paint,
     override val shadow: Paint,
     override val highlight: Paint,
-    private val hasOutput: Boolean = true
+    override val hasOutput: Boolean = true
 ): SingleTextureMaterial, ShadowHighlightMaterial, Block {
     SMOOTH_STONE(STONE) {
         override fun LayerListBuilder.createTextureLayers() {
@@ -461,9 +459,6 @@ enum class SimplePickaxeBlock(
         }
     },
     ;
-
-    override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> =
-        if (hasOutput) super<SingleTextureMaterial>.outputTasks(ctx) else emptySequence()
 
     constructor(base: ShadowHighlightMaterial, hasOutput: Boolean = true):
             this(base.color, base.shadow, base.highlight, hasOutput)

@@ -1,32 +1,34 @@
 package io.github.pr0methean.ochd.materials.block.pickaxe
 
-import io.github.pr0methean.ochd.TaskPlanningContext
+import io.github.pr0methean.ochd.OutputTaskBuilder
 import io.github.pr0methean.ochd.c
-import io.github.pr0methean.ochd.tasks.PngOutputTask
+import io.github.pr0methean.ochd.materials.block.pickaxe.Ore.REDSTONE
+import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.STONE
+import io.github.pr0methean.ochd.materials.block.pickaxe.SimplePickaxeBlock.SMOOTH_STONE
 import io.github.pr0methean.ochd.texturebase.Material
 import io.github.pr0methean.ochd.texturebase.redstoneOffAndOn
 
 object MiscRedstone: Material {
-    override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
-        val repeaterComparatorCommonBase = ctx.stack {
-            copy(SimplePickaxeBlock.SMOOTH_STONE)
-            layer("repeaterSideInputs", OreBase.STONE.shadow)
+    override suspend fun OutputTaskBuilder.outputTasks() {
+        val repeaterComparatorCommonBase = stack {
+            copy(SMOOTH_STONE)
+            layer("repeaterSideInputs", STONE.shadow)
         }
-        redstoneOffAndOn(ctx, "block/repeater") { stateColor ->
+        redstoneOffAndOn("block/repeater") { stateColor ->
             copy(repeaterComparatorCommonBase)
             layer("repeater", stateColor)
         }
-        redstoneOffAndOn(ctx, "block/comparator") {stateColor ->
+        redstoneOffAndOn("block/comparator") { stateColor ->
             copy(repeaterComparatorCommonBase)
             layer("comparator", stateColor)
         }
-        yield(ctx.out("block/redstone_lamp") {
-            background(Ore.REDSTONE.shadow)
-            layer("lamp", Ore.REDSTONE.highlight)
+        out("block/redstone_lamp") {
+            background(REDSTONE.shadow)
+            layer("lamp", REDSTONE.highlight)
             layer("borderSolid")
-            layer("borderSolidTopLeft", Ore.REDSTONE.highlight)
-        })
-        yield(ctx.out("block/redstone_lamp_on") {
+            layer("borderSolidTopLeft", REDSTONE.highlight)
+        }
+        out("block/redstone_lamp_on") {
             val color = c(0xe6994a)
             val shadow = c(0x946931)
             val highlight = c(0xFFCDB2)
@@ -34,6 +36,6 @@ object MiscRedstone: Material {
             layer("lampOn", highlight)
             layer("borderSolid", shadow)
             layer("borderSolidTopLeft", highlight)
-        })
+        }
     }
 }

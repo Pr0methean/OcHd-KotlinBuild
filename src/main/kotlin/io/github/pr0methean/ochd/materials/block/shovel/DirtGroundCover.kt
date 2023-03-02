@@ -1,10 +1,9 @@
 package io.github.pr0methean.ochd.materials.block.shovel
 
 import io.github.pr0methean.ochd.LayerListBuilder
-import io.github.pr0methean.ochd.TaskPlanningContext
+import io.github.pr0methean.ochd.OutputTaskBuilder
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.materials.block.shovel.SimpleSoftEarth.POWDER_SNOW
-import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.texturebase.GroundCoverBlock
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import javafx.scene.paint.Color
@@ -38,11 +37,12 @@ enum class DirtGroundCover(
             layer("veesTop", grassItemShadow)
         }
 
-        override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask>
-                = super.outputTasks(ctx).plus(ctx.out("block/grass_block_side_overlay") {
-            layer("topPart", color)
-            layer("veesTop", shadow)
-        })
+        override suspend fun OutputTaskBuilder.extraOutputTasks() {
+            out("block/grass_block_side_overlay") {
+                layer("topPart", color)
+                layer("veesTop", shadow)
+            }
+        }
     },
     PODZOL(c(0x6a4418),c(0x4a3018),c(0x8b5920)) {
         override fun LayerListBuilder.createCoverSideLayers() {
@@ -56,17 +56,17 @@ enum class DirtGroundCover(
             layer("borderDotted", shadow)
         }
 
-        override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
-            val top = ctx.stack { createTopLayers() }
-            yield(ctx.out("block/podzol_top", "block/composter_compost", source = top))
-            yield(ctx.out("block/composter_ready") {
+        override suspend fun OutputTaskBuilder.outputTasks() {
+            val top = stack { createTopLayers() }
+            out("block/podzol_top", "block/composter_compost", source = top)
+            out("block/composter_ready") {
                 copy(top)
                 layer("bonemealSmallNoBorder")
-            })
-            yield(ctx.out("block/podzol_side") {
+            }
+            out("block/podzol_side") {
                 copy(base)
                 createCoverSideLayers()
-            })
+            }
         }
     },
     MYCELIUM(c(0x6a656a),c(0x5a5a52),c(0x7b6d73)) {
@@ -91,12 +91,12 @@ enum class DirtGroundCover(
             layer("snowTopPart", shadow)
         }
 
-        override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
-            yield(ctx.out("block/snow") { createTopLayers() })
-            yield(ctx.out("block/grass_block_snow") {
+        override suspend fun OutputTaskBuilder.outputTasks() {
+            out("block/snow") { createTopLayers() }
+            out("block/grass_block_snow") {
                 copy(base)
                 createCoverSideLayers()
-            })
+            }
         }
 
         override fun LayerListBuilder.createTopLayers() {

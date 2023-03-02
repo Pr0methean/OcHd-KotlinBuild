@@ -1,8 +1,7 @@
 package io.github.pr0methean.ochd.texturebase
 
 import io.github.pr0methean.ochd.LayerListBuilder
-import io.github.pr0methean.ochd.TaskPlanningContext
-import io.github.pr0methean.ochd.tasks.PngOutputTask
+import io.github.pr0methean.ochd.OutputTaskBuilder
 
 interface DoubleTallBlock: Material {
     fun LayerListBuilder.createBottomLayers()
@@ -11,8 +10,11 @@ interface DoubleTallBlock: Material {
 
     val name: String
 
-    override fun outputTasks(ctx: TaskPlanningContext): Sequence<PngOutputTask> = sequence {
-        yield(ctx.out("block/${name}_bottom") { createBottomLayers() })
-        yield(ctx.out("block/${name}_top") { createTopLayers() })
+    suspend fun OutputTaskBuilder.extraOutputTasks() {}
+
+    override suspend fun OutputTaskBuilder.outputTasks() {
+        out("block/${this@DoubleTallBlock.name}_bottom") { createBottomLayers() }
+        out("block/${this@DoubleTallBlock.name}_top") { createTopLayers() }
+        extraOutputTasks()
     }
 }

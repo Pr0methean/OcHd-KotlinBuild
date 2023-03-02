@@ -13,12 +13,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.toSet
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import org.apache.logging.log4j.LogManager
-import org.apache.logging.log4j.util.StringBuilderFormattable
 import org.apache.logging.log4j.util.Unbox.box
 import java.io.File
 import java.lang.management.ManagementFactory
@@ -95,13 +96,18 @@ suspend fun main(args: Array<String>) {
     startMonitoring(scope)
     val startTime = System.nanoTime()
     onTaskLaunched("Build task graph", "Build task graph")
-    val tasks = ALL_MATERIALS.outputTasks(ctx).toSet()
+    val dirs = mutableSetOf<File>()
+    val tasks = flow {
+        val outputTaskBuilder = OutputTaskBuilder(ctx) {
+            logger.debug("Emitting output task: {}", it)
+            emit(it)
+            dirs.addAll(it.files.mapNotNull(File::parentFile))
+        }
+        ALL_MATERIALS.run { outputTaskBuilder.outputTasks() }
+    }.toSet()
     val mkdirs = ioScope.launch {
         deleteOldOutputs.join()
-        tasks.flatMap(PngOutputTask::files)
-            .mapNotNull(File::parentFile)
-            .distinct()
-            .filter(mkdirsedPaths::add)
+        dirs.filter(mkdirsedPaths::add)
             .forEach(File::mkdirs)
     }
     val prereqIoJobs = listOf(mkdirs, copyMetadata)
@@ -122,7 +128,7 @@ suspend fun main(args: Array<String>) {
             sortTask@ for (task in tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks))
             ) {
                 val matchingComponents = components.filter { it.any(task::overlapsWith) }
-                logger.debug("{} is connected to: {}", task, matchingComponents)
+                logger.debug("{} is connected to: {}", task, matchingComponents.flatFlatFormattable())
                 if (matchingComponents.isEmpty()) {
                     components.add(mutableSetOf(task))
                 } else {
@@ -190,9 +196,7 @@ suspend fun main(args: Array<String>) {
                 } else if (currentInProgressJobs + connectedComponent.size <= maxJobs) {
                     logger.info(
                         "{} tasks in progress; starting all {} currently eligible tasks: {}",
-                        box(currentInProgressJobs), box(connectedComponent.size), StringBuilderFormattable {
-                            it.appendCollection(connectedComponent, "; ")
-                        }
+                        box(currentInProgressJobs), box(connectedComponent.size), connectedComponent.flatFormattable()
                     )
                     connectedComponent.forEach {
                         inProgressJobs[it] = startTask(scope, it, finishedJobsChannel, ioJobs, prereqIoJobs)
