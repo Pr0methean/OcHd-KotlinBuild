@@ -235,6 +235,7 @@ suspend fun main(args: Array<String>) {
         }
         logger.info("All jobs done; closing channel")
         finishedJobsChannel.close()
+        ioJobs.removeIf(Job::isCompleted)
         logger.info("Waiting for {} remaining IO jobs to finish", box(ioJobs.size))
         ioJobs.joinAll()
         logger.info("All IO jobs are finished")
