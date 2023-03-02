@@ -8,7 +8,8 @@ import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
 import javafx.scene.paint.Paint
 
 @Suppress("unused")
-enum class SimpleAxeBlock(override val hasOutput: Boolean = true): SingleTextureMaterial, ShadowHighlightMaterial, Block {
+enum class SimpleAxeBlock(override val hasOutput: Boolean = true)
+        : SingleTextureMaterial, ShadowHighlightMaterial, Block {
     CRAFTING_TABLE_SIDE {
         override fun LayerListBuilder.createTextureLayers() {
             copy {
