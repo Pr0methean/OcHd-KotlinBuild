@@ -192,6 +192,7 @@ suspend fun main(args: Array<String>) {
                     }
                     logger.warn("Waited for tasks in progress to fall below limit for {} ns", box(delay))
                     ioJobs.removeIf(Job::isCompleted)
+                    System.gc()
                     continue
                 } else if (currentInProgressJobs + connectedComponent.size <= maxJobs) {
                     logger.info(
