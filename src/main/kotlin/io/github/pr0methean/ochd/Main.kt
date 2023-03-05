@@ -60,7 +60,7 @@ private val minClearedPerGcBytes = (heapSizeBytes * FREED_PER_GC_TO_SUPPRESS_EXP
 private val explicitGcThresholdBytes = (heapSizeBytes * EXPLICIT_GC_THRESHOLD).toLong()
 private const val WORKING_BYTES_PER_PIXEL = 48
 val nCpus: Int = Runtime.getRuntime().availableProcessors()
-private const val MIN_OUTPUT_TASKS = 1
+private const val MIN_OUTPUT_TASKS = 2
 
 @Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod", "ComplexMethod")
 suspend fun main(args: Array<String>) {
