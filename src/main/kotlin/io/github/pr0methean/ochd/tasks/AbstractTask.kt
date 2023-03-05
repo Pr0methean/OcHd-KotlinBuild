@@ -111,9 +111,7 @@ abstract class AbstractTask<out T>(
         } else {
             val unstartedDirectConsumers = directConsumers()
             val clearingScore = (1.0 / unstartedDirectConsumers).coerceAtLeast(java.lang.Double.MIN_NORMAL)
-            if (isStartedOrAvailable()) {
-                clearingScore
-            } else -1.0 + clearingScore
+            clearingScore - if (isStartedOrAvailable()) { 0.0 } else { 1.0 }
         }
         for (task in directDependencies) {
             coefficient += task.cacheClearingCoefficient()
