@@ -104,14 +104,13 @@ suspend fun main(args: Array<String>) {
     val startTime = System.nanoTime()
     onTaskLaunched("Build task graph", "Build task graph")
     val dirs = mutableSetOf<File>()
-    val tasks = buildSet {
-        val outputTaskBuilder = OutputTaskBuilder(ctx) {
-            logger.debug("Emitting output task: {}", it)
-            add(it)
-            dirs.addAll(it.files.mapNotNull(File::parentFile))
-        }
-        ALL_MATERIALS.run { outputTaskBuilder.outputTasks() }
+    val tasks = mutableSetOf<PngOutputTask>()
+    val outputTaskBuilder = OutputTaskBuilder(ctx) {
+        logger.debug("Emitting output task: {}", it)
+        tasks.add(it)
+        dirs.addAll(it.files.mapNotNull(File::parentFile))
     }
+    ALL_MATERIALS.run { outputTaskBuilder.outputTasks() }
     val mkdirs = ioScope.launch {
         deleteOldOutputs.join()
         dirs.filter(mkdirsedPaths::add)
@@ -150,7 +149,7 @@ suspend fun main(args: Array<String>) {
                 }
             }
             components.sortedBy(MutableSet<PngOutputTask>::size)
-        } else listOf(tasks.toMutableSet())
+        } else listOf(tasks)
         var dotFormatOutputJob: Job? = null
         if (dotOutputEnabled) {
             // Output connected components in .dot format
