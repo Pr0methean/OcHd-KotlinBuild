@@ -47,8 +47,8 @@ private const val MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH = 32
 
 val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 
-private const val FORCE_GC_THRESHOLD = 0.95
-private const val HARD_THROTTLING_THRESHOLD = 0.95
+private const val FORCE_GC_THRESHOLD = 0.94
+private const val HARD_THROTTLING_THRESHOLD = 0.94
 private const val EXPLICIT_GC_THRESHOLD = 0.75
 private const val FREED_PER_GC_TO_SUPPRESS_EXPLICIT_GC = 0.03
 private val gcMxBean = ManagementFactory.getPlatformMXBeans(GarbageCollectorMXBean::class.java).first()
