@@ -37,7 +37,7 @@ enum class DirtGroundCover(
             layer("veesTop", grassItemShadow)
         }
 
-        override suspend fun OutputTaskBuilder.extraOutputTasks() {
+        override fun OutputTaskBuilder.extraOutputTasks() {
             out("block/grass_block_side_overlay") {
                 layer("topPart", color)
                 layer("veesTop", shadow)
@@ -56,7 +56,7 @@ enum class DirtGroundCover(
             layer("borderDotted", shadow)
         }
 
-        override suspend fun OutputTaskBuilder.outputTasks() {
+        override fun OutputTaskBuilder.outputTasks() {
             val top = stack { createTopLayers() }
             out("block/podzol_top", "block/composter_compost", source = top)
             out("block/composter_ready") {
@@ -91,7 +91,7 @@ enum class DirtGroundCover(
             layer("snowTopPart", shadow)
         }
 
-        override suspend fun OutputTaskBuilder.outputTasks() {
+        override fun OutputTaskBuilder.outputTasks() {
             out("block/snow") { createTopLayers() }
             out("block/grass_block_snow") {
                 copy(base)

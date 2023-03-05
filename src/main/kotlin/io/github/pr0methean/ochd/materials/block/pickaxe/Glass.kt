@@ -6,7 +6,7 @@ import io.github.pr0methean.ochd.texturebase.Material
 import javafx.scene.paint.Color
 
 object Glass: Material {
-    override suspend fun OutputTaskBuilder.outputTasks() {
+    override fun OutputTaskBuilder.outputTasks() {
         out("block/glass_pane_top", layer("paneTop", c(0xa8d5d5)))
         out("block/glass") {
             layer("borderSolid", c(0x515151))

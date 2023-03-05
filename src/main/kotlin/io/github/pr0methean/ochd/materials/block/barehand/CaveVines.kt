@@ -12,7 +12,7 @@ object CaveVines: ShadowHighlightMaterial {
     override val color: Paint = c(0x507233)
     override val shadow: Paint = c(0x4f3200)
     override val highlight: Paint = c(0x70922d)
-    override suspend fun OutputTaskBuilder.outputTasks() {
+    override fun OutputTaskBuilder.outputTasks() {
         val vinePlantTask = stack {
             layer("wavyVines", shadow)
             layer("waves", highlight)

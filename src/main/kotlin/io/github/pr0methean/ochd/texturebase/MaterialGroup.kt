@@ -5,7 +5,7 @@ import io.github.pr0methean.ochd.OutputTaskBuilder
 open class MaterialGroup(private val elements: Sequence<Material>): Material {
     constructor(vararg elements: Material): this(elements.asSequence())
 
-    override suspend fun OutputTaskBuilder.outputTasks(): Unit = elements.forEach {
+    override fun OutputTaskBuilder.outputTasks(): Unit = elements.forEach {
         it.run { outputTasks() }
     }
 }

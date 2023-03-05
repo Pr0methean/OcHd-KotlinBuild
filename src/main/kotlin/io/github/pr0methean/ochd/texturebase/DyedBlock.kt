@@ -14,7 +14,7 @@ abstract class DyedBlock(val name: String): Material {
 
     abstract fun createSharedLayersTask(ctx: OutputTaskBuilder): AbstractImageTask
 
-    override suspend fun OutputTaskBuilder.outputTasks() {
+    override fun OutputTaskBuilder.outputTasks() {
         val sharedLayersTask = createSharedLayersTask(this@outputTasks)
         DYES.forEach { (dyeName, color) ->
             out("block/${dyeName}_${this@DyedBlock.name}") { createTextureLayers(color, sharedLayersTask) }

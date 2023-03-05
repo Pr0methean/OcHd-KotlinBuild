@@ -23,7 +23,7 @@ object Tnt: ShadowHighlightMaterial {
     override val shadow: Color = c(0x912d00)
     override val highlight: Color = c(0xff4300)
 
-    override suspend fun OutputTaskBuilder.outputTasks() {
+    override fun OutputTaskBuilder.outputTasks() {
         val tntBottom = stack {
             background(Color.BLACK)
             layer("tntSticksEnd", color)

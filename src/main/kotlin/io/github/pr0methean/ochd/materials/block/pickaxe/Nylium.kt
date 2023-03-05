@@ -42,7 +42,7 @@ enum class Nylium(
         }
     };
     override val base: OreBase = OreBase.NETHERRACK
-    override suspend fun OutputTaskBuilder.outputTasks() {
+    override fun OutputTaskBuilder.outputTasks() {
         out("block/${this@Nylium.name}") { createTopLayers() } // no "_top" at end
         out("block/${this@Nylium.name}_side") {
             copy(base)

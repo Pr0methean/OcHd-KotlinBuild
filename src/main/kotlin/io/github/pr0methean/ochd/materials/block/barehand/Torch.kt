@@ -6,7 +6,7 @@ import io.github.pr0methean.ochd.materials.block.pickaxe.Ore.REDSTONE
 import io.github.pr0methean.ochd.texturebase.Material
 
 object Torch: Material {
-    override suspend fun OutputTaskBuilder.outputTasks() {
+    override fun OutputTaskBuilder.outputTasks() {
         val torchBase = stack {
             layer("torchBase", OAK.highlight)
             layer("torchShadow", OAK.shadow)

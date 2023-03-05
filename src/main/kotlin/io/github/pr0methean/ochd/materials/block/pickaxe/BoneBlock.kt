@@ -9,7 +9,7 @@ object BoneBlock: Material {
     val color: Color = c(0xe1ddca)
     val shadow: Color = c(0xc3bfa1)
     val highlight: Color = c(0xEaEaD0)
-    override suspend fun OutputTaskBuilder.outputTasks() {
+    override fun OutputTaskBuilder.outputTasks() {
         out("block/bone_block_top") {
             background(shadow)
             layer("borderSolid", highlight)

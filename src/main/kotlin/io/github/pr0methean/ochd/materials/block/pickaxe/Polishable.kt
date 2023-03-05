@@ -43,7 +43,7 @@ enum class Polishable(
             layer("bigDotsBottomLeftTopRight", highlight)
             layer("bigDotsTopLeftBottomRight", color)
         }
-        override suspend fun OutputTaskBuilder.outputTasks() {
+        override fun OutputTaskBuilder.outputTasks() {
             val base = stack { createTextureLayersBase() }
             out("block/blackstone", base)
             val polishedTextureTask = stack {
@@ -69,7 +69,7 @@ enum class Polishable(
         layer("borderSolidTopLeft", highlight)
     }
 
-    override suspend fun OutputTaskBuilder.outputTasks() {
+    override fun OutputTaskBuilder.outputTasks() {
         val base = stack { createTextureLayersBase() }
         out("block/${this@Polishable.name}", base)
         out("block/polished_${this@Polishable.name}") {

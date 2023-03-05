@@ -55,7 +55,7 @@ object StructureAndJigsaw: ShadowHighlightMaterial {
     override val color: Color = c(0xb493b4)
     override val shadow: Color = c(0x26002a)
     override val highlight: Color = c(0xd7c2d7)
-    override suspend fun OutputTaskBuilder.outputTasks() {
+    override fun OutputTaskBuilder.outputTasks() {
         val backgroundAndBorder = stack {
             background(shadow)
             layer("borderDotted", color)

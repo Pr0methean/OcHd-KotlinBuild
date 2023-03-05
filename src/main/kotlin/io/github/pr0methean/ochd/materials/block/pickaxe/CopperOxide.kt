@@ -42,7 +42,7 @@ enum class CopperOxide(
         layer("cutInQuarters1", shadow)
         layer("cutInQuarters2", highlight)
     }
-    override suspend fun OutputTaskBuilder.outputTasks() {
+    override fun OutputTaskBuilder.outputTasks() {
         val commonLayers = stack { commonLayers() }
         out("block/${this@CopperOxide.name}_copper") { uncut(commonLayers) }
         out("block/cut_${this@CopperOxide.name}_copper") { cut(commonLayers) }

@@ -5,28 +5,28 @@ import io.github.pr0methean.ochd.tasks.PngOutputTask
 import javafx.scene.paint.Paint
 
 @OcHdDslMarker
-class OutputTaskBuilder(private val ctx: TaskPlanningContext, private val emit: suspend (PngOutputTask) -> Unit) {
-    suspend fun out(name: String, source: AbstractImageTask) {
+class OutputTaskBuilder(private val ctx: TaskPlanningContext, private val emit: (PngOutputTask) -> Unit) {
+    fun out(name: String, source: AbstractImageTask) {
         emit(ctx.out(name, source))
     }
 
-    suspend fun out(vararg names: String, source: AbstractImageTask) {
+    fun out(vararg names: String, source: AbstractImageTask) {
         emit(ctx.out(*names, source = source))
     }
 
-    suspend fun out(vararg names: String, sourceSvgName: String) {
+    fun out(vararg names: String, sourceSvgName: String) {
         emit(ctx.out(*names, sourceSvgName = sourceSvgName))
     }
 
-    suspend fun out(name: String, sourceSvgName: String) {
+    fun out(name: String, sourceSvgName: String) {
         out(names = arrayOf(name), sourceSvgName = sourceSvgName)
     }
 
-    suspend fun out(vararg names: String, source: LayerListBuilder.() -> Unit) {
+    fun out(vararg names: String, source: LayerListBuilder.() -> Unit) {
         emit(ctx.out(*names, source = ctx.stack(source)))
     }
 
-    suspend fun out(name: String, source: LayerListBuilder.() -> Unit) {
+    fun out(name: String, source: LayerListBuilder.() -> Unit) {
         out(names = arrayOf(name), source = source)
     }
 

@@ -37,7 +37,7 @@ sealed interface Wood: ShadowHighlightMaterial {
     fun LayerListBuilder.sapling()
     fun LayerListBuilder.doorCommonLayers()
 
-    override suspend fun OutputTaskBuilder.outputTasks() {
+    override fun OutputTaskBuilder.outputTasks() {
         val doorCommonLayers = stack { doorCommonLayers() }
         val doorBottom = stack { doorBottom(doorCommonLayers) }
         val strippedLogSide = stack { strippedLogSide() }

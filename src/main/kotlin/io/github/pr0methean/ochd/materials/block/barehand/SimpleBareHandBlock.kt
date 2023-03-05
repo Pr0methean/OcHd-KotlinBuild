@@ -47,7 +47,7 @@ enum class SimpleBareHandBlock(
             layer("redstoneLine", color)
         }
 
-        override suspend fun OutputTaskBuilder.outputTasks() {
+        override fun OutputTaskBuilder.outputTasks() {
             out("block/redstone_dust_line0", "block/redstone_dust_line1") {
                 createTextureLayers()
             }

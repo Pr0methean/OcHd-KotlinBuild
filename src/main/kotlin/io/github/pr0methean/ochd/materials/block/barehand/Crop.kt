@@ -43,7 +43,7 @@ enum class Crop(private val numStages: Int, val color: Paint): Material {
         }
     };
 
-    override suspend fun OutputTaskBuilder.outputTasks() {
+    override fun OutputTaskBuilder.outputTasks() {
         for (stage in 0 until numStages) {
             out("block/${this@Crop.name}_stage${stage}") { createTextureForStage(stage) }
         }

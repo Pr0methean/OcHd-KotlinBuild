@@ -8,7 +8,7 @@ import io.github.pr0methean.ochd.texturebase.Material
 import io.github.pr0methean.ochd.texturebase.redstoneOffAndOn
 
 object Rails: Material {
-    override suspend fun OutputTaskBuilder.outputTasks() {
+    override fun OutputTaskBuilder.outputTasks() {
         out("block/rail") {
             layer("railTies", OAK.color)
             layer("rail", IRON.refinedShadow)

@@ -10,9 +10,9 @@ interface GroundCoverBlock: Material {
     fun LayerListBuilder.createCoverSideLayers()
     fun LayerListBuilder.createTopLayers()
 
-    suspend fun OutputTaskBuilder.extraOutputTasks() {}
+    fun OutputTaskBuilder.extraOutputTasks() {}
 
-    override suspend fun OutputTaskBuilder.outputTasks() {
+    override fun OutputTaskBuilder.outputTasks() {
         out("block/${this@GroundCoverBlock.name}_top") { createTopLayers() }
         out("block/${this@GroundCoverBlock.name}_side") {
             copy(base)

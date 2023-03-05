@@ -22,7 +22,7 @@ enum class SimpleAxeBlock(override val hasOutput: Boolean = true)
             layer("craftingSide", OverworldWood.DARK_OAK.color)
         }
 
-        override suspend fun OutputTaskBuilder.outputTasks() {
+        override fun OutputTaskBuilder.outputTasks() {
             out("block/crafting_table_side", "block/crafting_table_front") {
                 createTextureLayers()
             }

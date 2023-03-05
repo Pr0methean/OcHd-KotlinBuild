@@ -14,8 +14,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.toSet
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
@@ -106,14 +104,14 @@ suspend fun main(args: Array<String>) {
     val startTime = System.nanoTime()
     onTaskLaunched("Build task graph", "Build task graph")
     val dirs = mutableSetOf<File>()
-    val tasks = flow {
+    val tasks = buildSet {
         val outputTaskBuilder = OutputTaskBuilder(ctx) {
             logger.debug("Emitting output task: {}", it)
-            emit(it)
+            add(it)
             dirs.addAll(it.files.mapNotNull(File::parentFile))
         }
         ALL_MATERIALS.run { outputTaskBuilder.outputTasks() }
-    }.toSet()
+    }
     val mkdirs = ioScope.launch {
         deleteOldOutputs.join()
         dirs.filter(mkdirsedPaths::add)

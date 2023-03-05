@@ -101,7 +101,7 @@ enum class Ore(
         highlight = Color.WHITE,
         substrates = netherOreBases
     ) {
-        override suspend fun OutputTaskBuilder.outputTasks() {
+        override fun OutputTaskBuilder.outputTasks() {
             out("item/quartz") { ingot() }
             out("block/nether_quartz_ore") {
                 copy(NETHERRACK)
@@ -210,7 +210,7 @@ enum class Ore(
 
     open fun LayerListBuilder.itemForOutput(): Unit = item()
 
-    override suspend fun OutputTaskBuilder.outputTasks() {
+    override fun OutputTaskBuilder.outputTasks() {
         substrates.forEach { oreBase ->
             out("block/${oreBase.orePrefix}${this@Ore.name}_ore", oreBlock(this@outputTasks, oreBase))
         }

@@ -10,9 +10,9 @@ interface DoubleTallBlock: Material {
 
     val name: String
 
-    suspend fun OutputTaskBuilder.extraOutputTasks() {}
+    fun OutputTaskBuilder.extraOutputTasks() {}
 
-    override suspend fun OutputTaskBuilder.outputTasks() {
+    override fun OutputTaskBuilder.outputTasks() {
         out("block/${this@DoubleTallBlock.name}_bottom") { createBottomLayers() }
         out("block/${this@DoubleTallBlock.name}_top") { createTopLayers() }
         extraOutputTasks()

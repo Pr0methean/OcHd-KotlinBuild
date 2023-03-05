@@ -29,7 +29,7 @@ enum class OreBase(
             layer("diagonalChecksTopLeftBottomRight", DEEPSLATE.shadow)
         }
 
-        override suspend fun OutputTaskBuilder.outputTasks() {
+        override fun OutputTaskBuilder.outputTasks() {
             val baseTexture = stack { createTextureLayers() }
             out("block/deepslate", baseTexture)
             out("block/deepslate_bricks") {

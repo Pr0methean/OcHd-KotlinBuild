@@ -25,7 +25,7 @@ enum class DoubleTallFlower: DoubleTallBlock {
             layer("flowerStemBottomBorder", stemShadow)
         }
 
-        override suspend fun OutputTaskBuilder.extraOutputTasks() {
+        override fun OutputTaskBuilder.extraOutputTasks() {
             out("block/sunflower_back", "sunflowerPetals")
             out("block/sunflower_front") {
                 layer("sunflowerPetals", Color.YELLOW)

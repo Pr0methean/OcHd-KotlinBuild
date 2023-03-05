@@ -13,7 +13,7 @@ interface SingleTextureMaterial: Material {
     fun copyTo(dest: LayerListBuilder) {
         dest.apply {createTextureLayers()}
     }
-    override suspend fun OutputTaskBuilder.outputTasks() {
+    override fun OutputTaskBuilder.outputTasks() {
         if (hasOutput) {
             out("$directory/${this@SingleTextureMaterial.name}") { createTextureLayers() }
         }

@@ -6,7 +6,7 @@ import io.github.pr0methean.ochd.texturebase.Material
 import javafx.scene.paint.Color
 
 object Furnace: Material {
-    override suspend fun OutputTaskBuilder.outputTasks() {
+    override fun OutputTaskBuilder.outputTasks() {
         val furnaceSide = stack {
             background(STONE.color)
             layer("bottomHalf", STONE.highlight)

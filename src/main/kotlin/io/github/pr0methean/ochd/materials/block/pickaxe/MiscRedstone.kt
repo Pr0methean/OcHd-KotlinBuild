@@ -9,7 +9,7 @@ import io.github.pr0methean.ochd.texturebase.Material
 import io.github.pr0methean.ochd.texturebase.redstoneOffAndOn
 
 object MiscRedstone: Material {
-    override suspend fun OutputTaskBuilder.outputTasks() {
+    override fun OutputTaskBuilder.outputTasks() {
         val repeaterComparatorCommonBase = stack {
             copy(SMOOTH_STONE)
             layer("repeaterSideInputs", STONE.shadow)

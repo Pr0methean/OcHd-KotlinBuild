@@ -64,7 +64,7 @@ enum class CommandBlock(
 
     open fun LayerListBuilder.decorateBackground() {}
 
-    override suspend fun OutputTaskBuilder.outputTasks() {
+    override fun OutputTaskBuilder.outputTasks() {
         val background = stack { createBackground() }
         for (sideType in enumValues<SideType>()) {
             out("block/${this@CommandBlock.name}_${sideType}") { sideType.run {
