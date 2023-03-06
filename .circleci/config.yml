@@ -48,7 +48,7 @@ jobs:
           -XX:+UseStringDeduplication -Xms7840m -Xmx7840m -XX:MetaspaceSize=128m -XX:MaxMetaspaceSize=128m
           -XX:+UnlockExperimentalVMOptions -XX:+UseZGC -XX:ZFragmentationLimit=1
           '-Xlog:gc*=debug,gc+stats=trace,gc+heap=trace,gc+heap+exit=trace,gc+metaspace=trace,gc+nmethod=info,safepoint+stats=info' 
-          -XX:+UseNUMA -XX:ConcGCThreads=4 -XX:+AlwaysPreTouch -XX:+UseTransparentHugePages
+          -XX:+UseNUMA -XX:ConcGCThreads=3 -XX:+AlwaysPreTouch -XX:+UseTransparentHugePages
           -XX:+HeapDumpOnOutOfMemoryError -XX:HeapDumpPath=HeapDump-${CIRCLE_BUILD_NUM}.hprof
           -XX:+PrintFlagsFinal -XX:StringDeduplicationAgeThreshold=1
           -Dlog4j2.contextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector --enable-preview
