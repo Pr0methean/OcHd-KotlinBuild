@@ -18,7 +18,6 @@ import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
-import kotlinx.coroutines.yield
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox.box
 import java.io.File
@@ -236,8 +235,6 @@ suspend fun main(args: Array<String>) {
                             box(cleared), box(ioCleared))
                     if (cleared > 0 || ioCleared > 0) {
                         gcIfNeeded()
-                    } else if (maxJobs - currentInProgressJobs <= 1) {
-                        yield()
                     }
                 }
             }
