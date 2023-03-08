@@ -238,6 +238,7 @@ suspend fun main(args: Array<String>) {
                         gcIfNeeded()
                     } else if (maxJobs - currentInProgressJobs <= 1) {
                         yield()
+                        logger.info("Yielded from main thread since max of {} jobs were running", box(maxJobs))
                     }
                 }
             }
