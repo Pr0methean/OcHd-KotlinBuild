@@ -58,7 +58,7 @@ private val hardThrottlingPointBytes = (heapSizeBytes * HARD_THROTTLING_THRESHOL
 private val forceGcThresholdBytes = (heapSizeBytes * FORCE_GC_THRESHOLD).toLong()
 private val minClearedPerGcBytes = (heapSizeBytes * FREED_PER_GC_TO_SUPPRESS_EXPLICIT_GC).toLong()
 private val explicitGcThresholdBytes = (heapSizeBytes * EXPLICIT_GC_THRESHOLD).toLong()
-private const val WORKING_BYTES_PER_PIXEL = 52
+private const val WORKING_BYTES_PER_PIXEL = 56
 val nCpus: Int = Runtime.getRuntime().availableProcessors()
 private const val MIN_OUTPUT_TASKS = 2
 
