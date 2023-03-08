@@ -60,8 +60,7 @@ private val minClearedPerGcBytes = (heapSizeBytes * FREED_PER_GC_TO_SUPPRESS_EXP
 private val explicitGcThresholdBytes = (heapSizeBytes * EXPLICIT_GC_THRESHOLD).toLong()
 private const val WORKING_BYTES_PER_PIXEL = 54
 val nCpus: Int = Runtime.getRuntime().availableProcessors()
-private const val MIN_OUTPUT_TASKS = 1
-private const val MIN_OUTPUT_TASKS_CACHE_FREE = 2
+private const val MIN_OUTPUT_TASKS = 2
 
 @Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod", "ComplexMethod")
 suspend fun main(args: Array<String>) {
@@ -193,8 +192,7 @@ suspend fun main(args: Array<String>) {
             while (connectedComponent.isNotEmpty()) {
                 val currentInProgressJobs = inProgressJobs.size
                 val maxJobs = maximumJobsNow(bytesPerTile)
-                val maxJobsCacheFree = maxJobs.coerceAtLeast(MIN_OUTPUT_TASKS_CACHE_FREE)
-                if (currentInProgressJobs >= maxJobsCacheFree) {
+                if (currentInProgressJobs >= maxJobs) {
                     logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
                     val delay = measureNanoTime {
                         inProgressJobs.remove(finishedJobsChannel.receive())
@@ -215,20 +213,9 @@ suspend fun main(args: Array<String>) {
                 } else {
                     val task = connectedComponent.minWithOrNull(taskOrderComparator)
                     checkNotNull(task) { "Error finding a new task to start" }
-                    if (currentInProgressJobs > maxJobs && !task.isCacheAllocationFreeOnMargin()) {
-                        val delay = measureNanoTime {
-                            inProgressJobs.remove(finishedJobsChannel.receive())
-                        }
-                        logger.warn(
-                                "Waited for a task in progress for {} ns because no available tasks are cache-free",
-                                box(delay))
-                        ioJobs.removeIf(Job::isCompleted)
-                        gcIfNeeded()
-                    } else {
-                        logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
-                        inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs, prereqIoJobs)
-                        check(connectedComponent.remove(task)) { "Attempted to remove task more than once: $task" }
-                    }
+                    logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
+                    inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs, prereqIoJobs)
+                    check(connectedComponent.remove(task)) { "Attempted to remove task more than once: $task" }
                 }
                 if (currentInProgressJobs > 0) { // intentionally excludes any jobs started in this iteration
                     // Check for finished tasks before reevaluating the task graph or memory limit
