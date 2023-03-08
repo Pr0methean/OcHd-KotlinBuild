@@ -61,7 +61,7 @@ private val explicitGcThresholdBytes = (heapSizeBytes * EXPLICIT_GC_THRESHOLD).t
 private const val WORKING_BYTES_PER_PIXEL = 50
 val nCpus: Int = Runtime.getRuntime().availableProcessors()
 private const val MIN_OUTPUT_TASKS = 1
-private const val MIN_OUTPUT_TASKS_CACHE_FREE = 2
+private const val MIN_OUTPUT_TASKS_CACHE_FREE = 3
 
 @Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod", "ComplexMethod")
 suspend fun main(args: Array<String>) {
