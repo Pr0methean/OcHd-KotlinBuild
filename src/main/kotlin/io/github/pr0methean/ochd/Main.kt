@@ -193,15 +193,8 @@ suspend fun main(args: Array<String>) {
             while (connectedComponent.isNotEmpty()) {
                 val currentInProgressJobs = inProgressJobs.size
                 val maxJobs = maximumJobsNow(bytesPerTile)
-                if (currentInProgressJobs >= maxJobs) {
-                    if (currentInProgressJobs < MIN_OUTPUT_TASKS_CACHE_FREE) {
-                        val task = connectedComponent.minWith(taskOrderComparator)
-                        if (task.isCacheAllocationFreeOnMargin()) {
-                            logger.info("Starting {} since it is cache-allocation-free", task)
-                            inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs, prereqIoJobs)
-                            continue
-                        }
-                    }
+                val maxJobsCacheFree = maxJobs.coerceAtLeast(MIN_OUTPUT_TASKS_CACHE_FREE)
+                if (currentInProgressJobs >= maxJobsCacheFree) {
                     logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
                     val delay = measureNanoTime {
                         inProgressJobs.remove(finishedJobsChannel.receive())
@@ -222,9 +215,20 @@ suspend fun main(args: Array<String>) {
                 } else {
                     val task = connectedComponent.minWithOrNull(taskOrderComparator)
                     checkNotNull(task) { "Error finding a new task to start" }
-                    logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
-                    inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs, prereqIoJobs)
-                    check(connectedComponent.remove(task)) { "Attempted to remove task more than once: $task" }
+                    if (currentInProgressJobs > maxJobs && !task.isCacheAllocationFreeOnMargin()) {
+                        val delay = measureNanoTime {
+                            inProgressJobs.remove(finishedJobsChannel.receive())
+                        }
+                        logger.warn(
+                                "Waited for a task in progress for {} ns because no available tasks are cache-free",
+                                box(delay))
+                        ioJobs.removeIf(Job::isCompleted)
+                        gcIfNeeded()
+                    } else {
+                        logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
+                        inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs, prereqIoJobs)
+                        check(connectedComponent.remove(task)) { "Attempted to remove task more than once: $task" }
+                    }
                 }
                 if (currentInProgressJobs > 0) { // intentionally excludes any jobs started in this iteration
                     // Check for finished tasks before reevaluating the task graph or memory limit
