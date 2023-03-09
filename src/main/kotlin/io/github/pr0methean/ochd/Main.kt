@@ -191,7 +191,7 @@ suspend fun main(args: Array<String>) {
         for (connectedComponent in connectedComponents) {
             logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
             while (connectedComponent.isNotEmpty()) {
-                val currentInProgressJobs = inProgressJobs.size
+                var currentInProgressJobs = inProgressJobs.size
                 if (currentInProgressJobs > 0 || ioJobs.isNotEmpty()) {
                     // Check for finished tasks before reevaluating the task graph or memory limit
                     var cleared = 0
@@ -216,6 +216,7 @@ suspend fun main(args: Array<String>) {
                     if (cleared > 0 || ioCleared > 0) {
                         gcIfNeeded()
                     }
+                    currentInProgressJobs -= cleared
                 }
                 val maxJobs = maximumJobsNow(bytesPerTile)
                 if (currentInProgressJobs >= maxJobs) {
