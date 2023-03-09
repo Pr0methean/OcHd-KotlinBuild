@@ -277,6 +277,7 @@ private suspend fun gcIfNeeded() {
     // Check if automatic GC is performing poorly or heap is nearly full. If so, we launch an explicit GC since we know
     // that the last finished job is now unreachable.
     if (heapUsageNow > forceGcThresholdBytes) {
+        // Yield *after* calling System.gc(), because tasks already in progress are likely to need the space
         System.gc()
         yield()
     } else if (heapUsageNow >= explicitGcThresholdBytes && gcMxBean.lastGcInfo?.run {
@@ -284,6 +285,7 @@ private suspend fun gcIfNeeded() {
             bytesUsedAfter >= explicitGcThresholdBytes
                     && (totalBytesInUse(memoryUsageBeforeGc) - bytesUsedAfter) < minClearedPerGcBytes
         } == true) {
+        // Yield *before* calling System.gc(), because more space will be free once tasks already in progress finish
         yield()
         System.gc()
     }
