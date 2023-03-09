@@ -209,9 +209,9 @@ suspend fun main(args: Array<String>) {
                             inProgressJobs.remove(maybeReceive)
                         }
                     } while (maybeReceive != null || ioClearedThisIteration > 0)
-                    logger.info("Collected {} finished tasks and {} finished IO jobs non-blockingly",
-                        box(cleared), box(ioCleared))
-                    if (taskRemovedOutsideLoop) {
+                    if (taskRemovedOutsideLoop || cleared > 0 || ioCleared > 0) {
+                        logger.info("Collected {} finished tasks and {} finished IO jobs non-blockingly",
+                            box(cleared), box(ioCleared))
                         gcIfNeeded()
                         taskRemovedOutsideLoop = false
                     }
