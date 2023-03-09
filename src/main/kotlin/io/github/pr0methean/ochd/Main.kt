@@ -210,9 +210,9 @@ suspend fun main(args: Array<String>) {
                             inProgressJobs.remove(maybeReceive)
                         }
                     } while (maybeReceive != null || ioClearedThisIteration > 0)
-                    logger.info("Collected {} finished tasks and {} finished IO jobs non-blockingly",
-                        box(cleared), box(ioCleared))
                     if (cleared > 0 || ioCleared > 0) {
+                        logger.info("Collected {} finished tasks and {} finished IO jobs non-blockingly",
+                            box(cleared), box(ioCleared))
                         gcIfNeeded()
                     }
                     currentInProgressJobs -= cleared
@@ -224,6 +224,7 @@ suspend fun main(args: Array<String>) {
                         inProgressJobs.remove(finishedJobsChannel.receive())
                     }
                     logger.warn("Waited for tasks in progress to fall below limit for {} ns", box(delay))
+                    ioJobs.removeIf(Job::isCompleted)
                     gcIfNeeded()
                     continue
                 } else if (currentInProgressJobs + connectedComponent.size <= maxJobs) {
