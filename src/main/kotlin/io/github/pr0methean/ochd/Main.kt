@@ -284,8 +284,8 @@ private suspend fun gcIfNeeded() {
             bytesUsedAfter >= explicitGcThresholdBytes
                     && (totalBytesInUse(memoryUsageBeforeGc) - bytesUsedAfter) < minClearedPerGcBytes
         } == true) {
-        System.gc()
         yield()
+        System.gc()
     }
 }
 
