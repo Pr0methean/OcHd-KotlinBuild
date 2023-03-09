@@ -192,7 +192,7 @@ suspend fun main(args: Array<String>) {
             logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
             while (connectedComponent.isNotEmpty()) {
                 var currentInProgressJobs = inProgressJobs.size
-                if (currentInProgressJobs > 0 || ioJobs.isNotEmpty() || forceGcThisIteration) {
+                if (forceGcThisIteration || currentInProgressJobs > 0 || ioJobs.isNotEmpty()) {
                     // Check for finished tasks before reevaluating the task graph or memory limit
                     var cleared = 0
                     var ioCleared = 0
@@ -209,7 +209,7 @@ suspend fun main(args: Array<String>) {
                             inProgressJobs.remove(maybeReceive)
                         }
                     } while (maybeReceive != null || ioClearedThisIteration > 0)
-                    if (cleared > 0 || ioCleared > 0 || forceGcThisIteration) {
+                    if (forceGcThisIteration || cleared > 0 || ioCleared > 0) {
                         logger.info("Collected {} finished tasks and {} finished IO jobs non-blockingly",
                             box(cleared), box(ioCleared))
                         gcIfNeeded()
