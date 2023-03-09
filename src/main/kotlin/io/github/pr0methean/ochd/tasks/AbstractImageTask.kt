@@ -32,7 +32,7 @@ private val logger = LogManager.getLogger("AbstractImageTask")
 private val defaultErr: PrintStream = System.err
 private val defaultErrCharset: Charset = defaultErr.charset()
 private val errCatcher: ByteArrayOutputStream = ByteArrayOutputStream()
-private val errCatcherStream: PrintStream = PrintStream(errCatcher, true, defaultErrCharset)
+private val errCatcherStream: PrintStream = PrintStream(errCatcher, false, defaultErrCharset)
 private val systemErrSwitched: AtomicBoolean = AtomicBoolean(false)
 private val pendingSnapshotTasks: AtomicLong = AtomicLong(0)
 
