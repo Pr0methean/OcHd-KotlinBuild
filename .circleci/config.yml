@@ -46,7 +46,7 @@ jobs:
       - run: >
           java -Dprism.maxvram=2560m -Dglass.platform=Monocle -Dmonocle.platform=Headless 
           -XX:+UseStringDeduplication -XX:StringDeduplicationAgeThreshold=1
-          -XX:MetaspaceSize=64m -XX:MaxMetaspaceSize=64m
+          -XX:MetaspaceSize=96m -XX:MaxMetaspaceSize=96m
           -Xms7840m -Xmx7840m 
           -XX:+UseZGC -XX:ZFragmentationLimit=1 -XX:ConcGCThreads=3
           '-Xlog:gc*=debug,gc+stats=trace,gc+heap=trace,gc+heap+exit=trace,gc+metaspace=trace,gc+nmethod=info,safepoint+stats=info' 
