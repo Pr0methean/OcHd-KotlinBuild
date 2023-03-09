@@ -187,6 +187,7 @@ suspend fun main(args: Array<String>) {
             capacity = CAPACITY_PADDING_FACTOR * nCpus
         )
         dotFormatOutputJob?.join()
+        val finishedIoJobs = mutableSetOf<Job>()
         for (connectedComponent in connectedComponents) {
             logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
             while (connectedComponent.isNotEmpty()) {
@@ -196,15 +197,20 @@ suspend fun main(args: Array<String>) {
                     var cleared = 0
                     var ioCleared = 0
                     do {
+                        var ioClearedThisIteration = false
+                        if (ioJobs.isNotEmpty()) {
+                            ioJobs.filterTo(finishedIoJobs, Job::isCompleted)
+                            ioJobs.removeAll(finishedIoJobs)
+                            ioCleared += finishedIoJobs.size
+                            finishedIoJobs.clear()
+                            ioClearedThisIteration = true
+                        }
                         val maybeReceive = finishedJobsChannel.tryReceive().getOrNull()
                         if (maybeReceive != null) {
                             cleared++
                             inProgressJobs.remove(maybeReceive)
                         }
-                        val finishedIoJobs = ioJobs.filter(Job::isCompleted).toSet()
-                        ioJobs.removeAll(finishedIoJobs)
-                        ioCleared += finishedIoJobs.size
-                    } while (maybeReceive != null || finishedIoJobs.isNotEmpty())
+                    } while (maybeReceive != null || ioClearedThisIteration)
                     logger.info("Collected {} finished tasks and {} finished IO jobs non-blockingly",
                         box(cleared), box(ioCleared))
                     if (cleared > 0 || ioCleared > 0) {
