@@ -191,6 +191,26 @@ suspend fun main(args: Array<String>) {
             logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
             while (connectedComponent.isNotEmpty()) {
                 val currentInProgressJobs = inProgressJobs.size
+                if (currentInProgressJobs > 0 || ioJobs.isNotEmpty()) {
+                    // Check for finished tasks before reevaluating the task graph or memory limit
+                    var cleared = 0
+                    var ioCleared = 0
+                    do {
+                        val maybeReceive = finishedJobsChannel.tryReceive().getOrNull()
+                        if (maybeReceive != null) {
+                            cleared++
+                            inProgressJobs.remove(maybeReceive)
+                        }
+                        val finishedIoJobs = ioJobs.filter(Job::isCompleted).toSet()
+                        ioJobs.removeAll(finishedIoJobs)
+                        ioCleared += finishedIoJobs.size
+                    } while (maybeReceive != null || finishedIoJobs.isNotEmpty())
+                    logger.info("Collected {} finished tasks and {} finished IO jobs non-blockingly",
+                        box(cleared), box(ioCleared))
+                    if (cleared > 0 || ioCleared > 0) {
+                        gcIfNeeded()
+                    }
+                }
                 val maxJobs = maximumJobsNow(bytesPerTile)
                 if (currentInProgressJobs >= maxJobs) {
                     logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
@@ -198,8 +218,6 @@ suspend fun main(args: Array<String>) {
                         inProgressJobs.remove(finishedJobsChannel.receive())
                     }
                     logger.warn("Waited for tasks in progress to fall below limit for {} ns", box(delay))
-                    ioJobs.removeIf(Job::isCompleted)
-                    gcIfNeeded()
                     continue
                 } else if (currentInProgressJobs + connectedComponent.size <= maxJobs) {
                     logger.info(
@@ -216,26 +234,6 @@ suspend fun main(args: Array<String>) {
                     logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
                     inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs, prereqIoJobs)
                     check(connectedComponent.remove(task)) { "Attempted to remove task more than once: $task" }
-                }
-                if (inProgressJobs.size >= maxJobs) { // including the job(s) started in this iteration
-                    // Check for finished tasks before reevaluating the task graph or memory limit
-                    var cleared = 0
-                    var ioCleared = 0
-                    do {
-                        val maybeReceive = finishedJobsChannel.tryReceive().getOrNull()
-                        if (maybeReceive != null) {
-                            cleared++
-                            inProgressJobs.remove(maybeReceive)
-                        }
-                        val finishedIoJobs = ioJobs.filter(Job::isCompleted).toSet()
-                        ioJobs.removeAll(finishedIoJobs)
-                        ioCleared += finishedIoJobs.size
-                    } while (maybeReceive != null || finishedIoJobs.isNotEmpty())
-                    logger.info("Collected {} finished tasks and {} finished IO jobs non-blockingly",
-                            box(cleared), box(ioCleared))
-                    if (cleared > 0 || ioCleared > 0) {
-                        gcIfNeeded()
-                    }
                 }
             }
         }
