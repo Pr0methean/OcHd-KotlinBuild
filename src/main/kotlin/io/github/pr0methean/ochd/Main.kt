@@ -277,8 +277,8 @@ private suspend fun gcIfNeeded() {
     // Check if automatic GC is performing poorly or heap is nearly full. If so, we launch an explicit GC since we know
     // that the last finished job is now unreachable.
     if (heapUsageNow > forceGcThresholdBytes) {
-        System.gc()
         yield()
+        System.gc()
     } else if (heapUsageNow >= explicitGcThresholdBytes && gcMxBean.lastGcInfo?.run {
             val bytesUsedAfter = totalBytesInUse(memoryUsageAfterGc)
             bytesUsedAfter >= explicitGcThresholdBytes
