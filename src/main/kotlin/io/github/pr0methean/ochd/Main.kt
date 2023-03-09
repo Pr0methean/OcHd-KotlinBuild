@@ -18,6 +18,7 @@ import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox.box
 import java.io.File
@@ -271,18 +272,20 @@ suspend fun main(args: Array<String>) {
  * information that the garbage collector's scheduling heuristics don't know and use.
  */
 @Suppress("ExplicitGarbageCollectionCall")
-private fun gcIfNeeded() {
+private suspend fun gcIfNeeded() {
     val heapUsageNow = memoryMxBean.heapMemoryUsage.used
     // Check if automatic GC is performing poorly or heap is nearly full. If so, we launch an explicit GC since we know
     // that the last finished job is now unreachable.
     if (heapUsageNow > forceGcThresholdBytes) {
         System.gc()
+        yield()
     } else if (heapUsageNow >= explicitGcThresholdBytes && gcMxBean.lastGcInfo?.run {
             val bytesUsedAfter = totalBytesInUse(memoryUsageAfterGc)
             bytesUsedAfter >= explicitGcThresholdBytes
                     && (totalBytesInUse(memoryUsageBeforeGc) - bytesUsedAfter) < minClearedPerGcBytes
         } == true) {
         System.gc()
+        yield()
     }
 }
 
