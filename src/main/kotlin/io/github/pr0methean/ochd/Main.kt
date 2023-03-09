@@ -225,6 +225,7 @@ suspend fun main(args: Array<String>) {
                         inProgressJobs.remove(finishedJobsChannel.receive())
                     }
                     logger.warn("Waited for tasks in progress to fall below limit for {} ns", box(delay))
+                    gcIfNeeded()
                     continue
                 } else if (currentInProgressJobs + connectedComponent.size <= maxJobs) {
                     logger.info(
