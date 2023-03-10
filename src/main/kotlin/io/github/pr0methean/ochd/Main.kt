@@ -45,12 +45,10 @@ private const val MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH = 32
 val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 
 private const val FORCE_GC_THRESHOLD = 0.85
-private const val HARD_THROTTLING_THRESHOLD = 0.85
 private const val GOAL_CACHE_FRACTION_OF_HEAP = 0.4
 private val memoryMxBean = ManagementFactory.getMemoryMXBean()
 private val heapSizeBytes = memoryMxBean.heapMemoryUsage.max.toDouble()
 private val goalCacheSizeBytes = heapSizeBytes * GOAL_CACHE_FRACTION_OF_HEAP
-private val hardThrottlingPointBytes = (heapSizeBytes * HARD_THROTTLING_THRESHOLD).toLong()
 private val forceGcThresholdBytes = (heapSizeBytes * FORCE_GC_THRESHOLD).toLong()
 private const val BYTES_PER_PIXEL = 4
 val nCpus: Int = Runtime.getRuntime().availableProcessors()
@@ -124,7 +122,7 @@ suspend fun main(args: Array<String>) {
     val dotOutputEnabled = tileSize <= MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH
     withContext<Unit>(Dispatchers.Default) {
         val ioJobs = ConcurrentHashMap.newKeySet<Job>()
-        val connectedComponents = if (tasks.size > maximumJobsNow(bytesPerTile) || dotOutputEnabled) {
+        val connectedComponents = if (tasks.size > maxOutputTasks || dotOutputEnabled) {
 
             // Output tasks that are in different weakly-connected components don't share any dependencies, so we
             // launch tasks from one component at a time. We start with the small ones so that they'll become
@@ -317,9 +315,4 @@ private fun startTask(
         logger.fatal("{} failed", task, t)
         exitProcess(1)
     }
-}
-
-fun maximumJobsNow(bytesPerTile: Long): Int {
-    return ((hardThrottlingPointBytes - memoryMxBean.heapMemoryUsage.used) / bytesPerTile)
-            .toInt().coerceAtLeast(MIN_OUTPUT_TASKS)
 }
