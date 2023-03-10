@@ -17,6 +17,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.yield
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox.box
 import java.io.File
@@ -42,10 +43,12 @@ private const val MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH = 32
 
 val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 
+private const val FORCE_GC_THRESHOLD = 0.85
 private const val GOAL_CACHE_FRACTION_OF_HEAP = 0.4
 private val memoryMxBean = ManagementFactory.getMemoryMXBean()
 private val heapSizeBytes = memoryMxBean.heapMemoryUsage.max.toDouble()
 private val goalCacheSizeBytes = heapSizeBytes * GOAL_CACHE_FRACTION_OF_HEAP
+private val forceGcThresholdBytes = (heapSizeBytes * FORCE_GC_THRESHOLD).toLong()
 private const val BYTES_PER_PIXEL = 4
 val nCpus: Int = Runtime.getRuntime().availableProcessors()
 private const val MIN_OUTPUT_TASKS = 1
@@ -205,6 +208,7 @@ suspend fun main(args: Array<String>) {
                     logger.info("Collected {} finished tasks and {} finished IO jobs non-blockingly",
                         box(cleared), box(ioCleared))
                     if (taskRemovedOutsideLoop) {
+                        gcIfNeeded()
                         taskRemovedOutsideLoop = false
                     }
                     currentInProgressJobs -= cleared
@@ -271,6 +275,23 @@ suspend fun main(args: Array<String>) {
     logger.info("")
     logger.info("All tasks finished after {} ns", box(runningTime))
     exitProcess(0)
+}
+
+/**
+ * Checks whether the most recent garbage collection was unsatisfactory and, if so, launches another GC.
+ * Should only be called after a task has finished and become unreachable, because that's the only relevant
+ * information that the garbage collector's scheduling heuristics don't know and use.
+ */
+@Suppress("ExplicitGarbageCollectionCall")
+private suspend fun gcIfNeeded() {
+    val heapUsageNow = memoryMxBean.heapMemoryUsage.used
+    // Check if automatic GC is performing poorly or heap is nearly full. If so, we launch an explicit GC since we know
+    // that the last finished job is now unreachable.
+    if (heapUsageNow > forceGcThresholdBytes) {
+        // Yield *after* calling System.gc(), because tasks already in progress are likely to need the space
+        System.gc()
+        yield()
+    }
 }
 
 private fun startTask(
