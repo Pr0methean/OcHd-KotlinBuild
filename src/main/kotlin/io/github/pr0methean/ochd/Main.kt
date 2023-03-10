@@ -242,6 +242,7 @@ suspend fun main(args: Array<String>) {
                             }
                             logger.warn("Waited for a task to finish for {} ns", box(delay))
                             taskRemovedOutsideLoop = true
+                            continue
                         }
                     }
                     logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
