@@ -43,7 +43,7 @@ private const val MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH = 32
 
 val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 
-private const val FORCE_GC_THRESHOLD = 0.85
+private const val FORCE_GC_THRESHOLD = 0.9
 private const val GOAL_CACHE_FRACTION_OF_HEAP = 0.4
 private val memoryMxBean = ManagementFactory.getMemoryMXBean()
 private val heapSizeBytes = memoryMxBean.heapMemoryUsage.max.toDouble()
@@ -284,10 +284,7 @@ suspend fun main(args: Array<String>) {
  */
 @Suppress("ExplicitGarbageCollectionCall")
 private suspend fun gcIfNeeded() {
-    val heapUsageNow = memoryMxBean.heapMemoryUsage.used
-    // Check if automatic GC is performing poorly or heap is nearly full. If so, we launch an explicit GC since we know
-    // that the last finished job is now unreachable.
-    if (heapUsageNow > forceGcThresholdBytes) {
+    if (memoryMxBean.heapMemoryUsage.used > forceGcThresholdBytes) {
         // Yield *after* calling System.gc(), because tasks already in progress are likely to need the space
         System.gc()
         yield()
