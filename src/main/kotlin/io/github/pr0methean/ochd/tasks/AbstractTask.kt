@@ -105,7 +105,7 @@ abstract class AbstractTask<out T>(
      * and so on. Tasks with the highest cache-clearing coefficient are launched first when we're not immediately low
      * on memory.
      */
-    suspend fun cacheClearingCoefficient(): Double {
+    fun cacheClearingCoefficient(): Double {
         var coefficient = if (!cache.isEnabled()) {
             0.0
         } else {
