@@ -32,8 +32,8 @@ import kotlin.system.measureNanoTime
 import kotlin.text.Charsets.UTF_8
 
 const val CAPACITY_PADDING_FACTOR: Int = 8
-private val taskOrderComparator = comparingInt(PngOutputTask::newCacheEntries)
-    .then(comparingDouble(PngOutputTask::cacheClearingCoefficient).reversed())
+private val taskOrderComparator = comparingInt<PngOutputTask> { if (it.newCacheEntries() > 0) 1 else 0 }
+.then(comparingDouble(PngOutputTask::cacheClearingCoefficient).reversed())
 .then(comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed())
 .then(comparingInt(PngOutputTask::totalSubtasks))
 
