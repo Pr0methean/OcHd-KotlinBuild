@@ -125,7 +125,7 @@ class SvgToBitmapTask(
     override suspend fun perform(): Image {
         ImageProcessingStats.onTaskLaunched("SvgToBitmapTask", name)
         val awtImage = getAwtImage()
-        val image = SwingFXUtils.toFXImage(awtImage, null)
+        val image = SwingFXUtils.toFXImage(awtImage, createWritableImage())
         awtImage.flush()
         ImageProcessingStats.onTaskCompleted("SvgToBitmapTask", name)
         return image

@@ -8,7 +8,6 @@ import javafx.scene.effect.Blend
 import javafx.scene.effect.BlendMode.SRC_ATOP
 import javafx.scene.effect.ColorInput
 import javafx.scene.image.Image
-import javafx.scene.image.WritableImage
 import javafx.scene.paint.Color
 import javafx.scene.paint.Color.BLACK
 import javafx.scene.paint.Paint
@@ -78,13 +77,11 @@ class RepaintTask(
              */
             val input = base.await()
             base.removeDirectDependentTask(this)
-            val width = input.width.toInt()
-            val height = input.height.toInt()
             val reader = input.pixelReader
             logger.info("Allocating a WritableImage for Canvas-free transform of {} for {}", base.name, name)
 
             // Updating the image in place is sometimes possible, but for some reason it's slower
-            val output = WritableImage(width, height)
+            val output = createWritableImage()
             val writer = output.pixelWriter
 
             for (y in 0 until height) {

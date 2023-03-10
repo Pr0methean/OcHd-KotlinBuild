@@ -54,8 +54,13 @@ abstract class AbstractImageTask(
     }
 
     protected fun createCanvas(): Canvas {
-        logger.info("Allocating a canvas for {}", name)
+        logger.info("Allocating a Canvas for {}", name)
         return Canvas(width.toDouble(), height.toDouble())
+    }
+
+    protected fun createWritableImage(): WritableImage {
+        logger.info("Allocating a WritableImage for {}", name)
+        return WritableImage(width, height)
     }
 
     protected suspend fun snapshotCanvas(canvas: Canvas, params: SnapshotParameters = DEFAULT_SNAPSHOT_PARAMS): Image {
@@ -64,7 +69,7 @@ abstract class AbstractImageTask(
             System.setErr(errCatcherStream)
         }
         val caughtStderr = AtomicReference<String?>(null)
-        val output = WritableImage(canvas.width.toInt(), canvas.height.toInt())
+        val output = createWritableImage()
         logger.info("Waiting to snapshot canvas for {}. Pending snapshot tasks: {}",
                 name, box(pendingSnapshotTasks.incrementAndGet()))
         val startWaitingTime = System.nanoTime()
