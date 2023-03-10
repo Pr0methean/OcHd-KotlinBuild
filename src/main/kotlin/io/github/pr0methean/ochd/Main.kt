@@ -51,7 +51,7 @@ private val goalCacheSizeBytes = heapSizeBytes * GOAL_CACHE_FRACTION_OF_HEAP
 private val forceGcThresholdBytes = (heapSizeBytes * FORCE_GC_THRESHOLD).toLong()
 private const val BYTES_PER_PIXEL = 4
 val nCpus: Int = Runtime.getRuntime().availableProcessors()
-private const val MIN_OUTPUT_TASKS = 2
+private const val MIN_OUTPUT_TASKS = 1
 private const val MAX_OUTPUT_TASKS_PER_CPU = 2
 private val maxOutputTasks = nCpus * MAX_OUTPUT_TASKS_PER_CPU
 
