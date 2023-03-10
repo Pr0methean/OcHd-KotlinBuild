@@ -55,7 +55,8 @@ private const val MIN_OUTPUT_TASKS = 1
 private const val MAX_OUTPUT_TASKS_PER_CPU = 2
 private val maxOutputTasks = nCpus * MAX_OUTPUT_TASKS_PER_CPU
 
-@Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod", "ComplexMethod")
+@Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod", "ComplexMethod",
+    "LoopWithTooManyJumpStatements")
 suspend fun main(args: Array<String>) {
     if (args.isEmpty()) {
         println("Usage: main <size>")
