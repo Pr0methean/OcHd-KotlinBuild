@@ -100,22 +100,6 @@ abstract class AbstractTask<out T>(
     }
 
     /**
-     * If this task has only one direct-dependent task that's yet to start, we're worth 1 point to our direct and
-     * transitive dependencies of that task because finishing that task will cause us to disable our cache.
-     * If it has 2 direct-dependent tasks left to start, it's worth 1/2 point; if it has 3, it's worth 1/3 point,
-     * and so on. Tasks with the highest cache-clearing coefficient are launched first when we're not immediately low
-     * on memory.
-     */
-    fun cacheClearingCoefficient(): Double {
-        val unstartedDirectConsumers = directConsumers()
-        var clearingScore = (1.0 / unstartedDirectConsumers).coerceAtLeast(java.lang.Double.MIN_NORMAL)
-        for (task in directDependencies) {
-            clearingScore += task.cacheClearingCoefficient()
-        }
-        return clearingScore
-    }
-
-    /**
      * True when this task should prepare to output an Image so that that Image can be cached, rather than rendering
      * onto a consuming task's canvas.
      */
@@ -191,6 +175,11 @@ abstract class AbstractTask<out T>(
             return 0
         }
         return directDependencies.sumOf(AbstractTask<*>::newCacheEntries) + if (cache.isEnabled()) 1 else 0
+    }
+
+    fun removedCacheEntries(): Int {
+        return directDependencies.sumOf(AbstractTask<*>::removedCacheEntries) +
+                if (cache.isEnabled() && directConsumers() <= 1) 1 else 0
     }
 
     fun impendingCacheEntries(): Int {

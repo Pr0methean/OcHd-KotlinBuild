@@ -24,7 +24,6 @@ import java.io.File
 import java.lang.management.ManagementFactory
 import java.nio.file.Files
 import java.nio.file.Paths
-import java.util.Comparator.comparingDouble
 import java.util.Comparator.comparingInt
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.system.exitProcess
@@ -33,7 +32,7 @@ import kotlin.text.Charsets.UTF_8
 
 const val CAPACITY_PADDING_FACTOR: Int = 2
 private val taskOrderComparator = comparingInt<PngOutputTask> { if (it.newCacheEntries() > 0) 1 else 0 }
-.then(comparingDouble(PngOutputTask::cacheClearingCoefficient).reversed())
+.then(comparingInt(PngOutputTask::removedCacheEntries).reversed())
 .then(comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed())
 .then(comparingInt(PngOutputTask::totalSubtasks))
 
