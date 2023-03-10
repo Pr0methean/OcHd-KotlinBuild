@@ -1,6 +1,5 @@
 package io.github.pr0methean.ochd
 
-import com.sun.management.GarbageCollectorMXBean
 import io.github.pr0methean.ochd.ImageProcessingStats.onTaskCompleted
 import io.github.pr0methean.ochd.ImageProcessingStats.onTaskLaunched
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
@@ -23,7 +22,6 @@ import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox.box
 import java.io.File
 import java.lang.management.ManagementFactory
-import java.lang.management.MemoryUsage
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.Comparator.comparingDouble
@@ -50,13 +48,10 @@ val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 
 private const val FORCE_GC_THRESHOLD = 0.85
 private const val HARD_THROTTLING_THRESHOLD = 0.85
-private const val EXPLICIT_GC_THRESHOLD = 0.75
-private val gcMxBean = ManagementFactory.getPlatformMXBeans(GarbageCollectorMXBean::class.java).first()
 private val memoryMxBean = ManagementFactory.getMemoryMXBean()
 private val heapSizeBytes = memoryMxBean.heapMemoryUsage.max.toDouble()
 private val hardThrottlingPointBytes = (heapSizeBytes * HARD_THROTTLING_THRESHOLD).toLong()
 private val forceGcThresholdBytes = (heapSizeBytes * FORCE_GC_THRESHOLD).toLong()
-private val explicitGcThresholdBytes = (heapSizeBytes * EXPLICIT_GC_THRESHOLD).toLong()
 private const val WORKING_BYTES_PER_PIXEL = 56
 val nCpus: Int = Runtime.getRuntime().availableProcessors()
 private const val MIN_OUTPUT_TASKS = 2
@@ -278,12 +273,6 @@ private suspend fun gcIfNeeded() {
         // Yield *after* calling System.gc(), because tasks already in progress are likely to need the space
         System.gc()
         yield()
-    } else if (heapUsageNow >= explicitGcThresholdBytes && gcMxBean.lastGcInfo?.run {
-            val bytesUsedAfter = totalBytesInUse(memoryUsageAfterGc)
-            bytesUsedAfter >= explicitGcThresholdBytes } == true) {
-        // Yield *before* calling System.gc(), because more space will be free once tasks already in progress finish
-        yield()
-        System.gc()
     }
 }
 
@@ -321,5 +310,3 @@ fun maximumJobsNow(bytesPerTile: Long): Int {
     return ((hardThrottlingPointBytes - memoryMxBean.heapMemoryUsage.used) / bytesPerTile)
             .toInt().coerceAtLeast(MIN_OUTPUT_TASKS)
 }
-
-private fun totalBytesInUse(memoryUsage: Map<*, MemoryUsage>): Long = memoryUsage.values.sumOf(MemoryUsage::used)
