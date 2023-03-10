@@ -233,15 +233,18 @@ suspend fun main(args: Array<String>) {
                 } else {
                     val task = connectedComponent.minWithOrNull(taskOrderComparator)
                     checkNotNull(task) { "Error finding a new task to start" }
-                    if (currentInProgressJobs >= MIN_OUTPUT_TASKS
-                            && cachedTasks() >= goalCachedImages
-                            && !task.isCacheAllocationFreeOnMargin()) {
-                        logger.warn("Too many cached tasks; waiting for a task to finish")
-                        val delay = measureNanoTime {
-                            inProgressJobs.remove(finishedJobsChannel.receive())
+                    if (currentInProgressJobs >= MIN_OUTPUT_TASKS) {
+                        val cachedTasks = cachedTasks()
+                        if (cachedTasks() >= goalCachedImages - currentInProgressJobs
+                            && !task.isCacheAllocationFreeOnMargin()
+                        ) {
+                            logger.warn("Too many cached tasks ({}); waiting for a task to finish", box(cachedTasks))
+                            val delay = measureNanoTime {
+                                inProgressJobs.remove(finishedJobsChannel.receive())
+                            }
+                            logger.warn("Waited for a task to finish for {} ns", box(delay))
+                            taskRemovedOutsideLoop = true
                         }
-                        logger.warn("Waited for a task to finish for {} ns", box(delay))
-                        taskRemovedOutsideLoop = true
                     }
                     logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
                     inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs, prereqIoJobs)
