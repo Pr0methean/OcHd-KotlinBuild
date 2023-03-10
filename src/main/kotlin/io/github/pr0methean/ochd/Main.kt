@@ -44,7 +44,7 @@ private const val MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH = 32
 val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 
 private const val FORCE_GC_THRESHOLD = 0.85
-private const val GOAL_CACHE_FRACTION_OF_HEAP = 0.3
+private const val GOAL_CACHE_FRACTION_OF_HEAP = 0.4
 private val memoryMxBean = ManagementFactory.getMemoryMXBean()
 private val heapSizeBytes = memoryMxBean.heapMemoryUsage.max.toDouble()
 private val goalCacheSizeBytes = heapSizeBytes * GOAL_CACHE_FRACTION_OF_HEAP
@@ -52,7 +52,7 @@ private val forceGcThresholdBytes = (heapSizeBytes * FORCE_GC_THRESHOLD).toLong(
 private const val BYTES_PER_PIXEL = 4
 val nCpus: Int = Runtime.getRuntime().availableProcessors()
 private const val MIN_OUTPUT_TASKS = 1
-private const val MAX_OUTPUT_TASKS_PER_CPU = 2
+private const val MAX_OUTPUT_TASKS_PER_CPU = 3
 private val maxOutputTasks = nCpus * MAX_OUTPUT_TASKS_PER_CPU
 
 @Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod", "ComplexMethod",
