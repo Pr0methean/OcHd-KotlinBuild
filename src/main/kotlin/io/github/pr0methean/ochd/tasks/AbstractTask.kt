@@ -109,9 +109,6 @@ abstract class AbstractTask<out T>(
     fun cacheClearingCoefficient(): Double {
         val unstartedDirectConsumers = directConsumers()
         var clearingScore = (1.0 / unstartedDirectConsumers).coerceAtLeast(java.lang.Double.MIN_NORMAL)
-        if (!isStartedOrAvailable() && cache.isEnabled()) {
-            clearingScore -= 1.0
-        }
         for (task in directDependencies) {
             clearingScore += task.cacheClearingCoefficient()
         }
