@@ -22,11 +22,8 @@ import java.lang.management.ManagementFactory
 import java.lang.management.ThreadInfo
 import java.lang.management.ThreadMXBean
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.locks.StampedLock
-import javax.annotation.concurrent.GuardedBy
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
-import kotlin.time.Duration.Companion.seconds
 
 private fun Multiset<*>.log() {
     var total = 0L
@@ -46,8 +43,6 @@ private const val MAX_STACK_DEPTH = 20
 private val needCoroutineDebug = logger.isDebugEnabled
 private val reportingInterval: Duration = 1.minutes
 var monitoringJob: Job? = null
-private val cacheLock = StampedLock()
-private val cacheLoggingMinIntervalNanos = 2.seconds.inWholeNanoseconds
 @OptIn(ExperimentalCoroutinesApi::class)
 @Suppress("DeferredResultUnused")
 fun startMonitoring(scope: CoroutineScope) {
@@ -102,10 +97,7 @@ object ImageProcessingStats {
     private val dedupeFailures: HashMultiset<String> = HashMultiset.create()
     private val dedupeFailuresByName = HashMultiset.create<Pair<String, String>>()
     private val tasksByRunCount = ConcurrentHashMultiset.create<Pair<String, String>>()
-    private val cacheableTasks = ConcurrentHashMap.newKeySet<AbstractTask<*>>()
-
-    @GuardedBy("cacheLock")
-    var lastCacheLogNanoTime: Long = System.nanoTime()
+    private val cacheableTasks = ConcurrentHashMap.newKeySet<String>()
 
     init {
         dedupeFailures.add("Build task graph")
@@ -178,9 +170,6 @@ object ImageProcessingStats {
     fun onTaskCompleted(typeName: String, name: String) {
         logger.info("Completed: {}: {}", typeName, name)
         taskCompletions.add(typeName)
-        if (typeName != "PngOutputTask") {
-            logCurrentlyCachedTasks()
-        }
     }
 
     fun onDedupeFailed(typename: String, name: String) {
@@ -190,34 +179,13 @@ object ImageProcessingStats {
 
     fun onCachingEnabled(task: AbstractTask<*>) {
         logger.info("Enabled caching for: {}: {}", task::class.simpleName, task.name)
-        cacheableTasks.add(task)
+        cacheableTasks.add(task.name)
         logger.info("Currently cacheable tasks: {}", box(cacheableTasks.size))
     }
 
     fun onCachingDisabled(task: AbstractTask<*>) {
         logger.info("Disabled caching for: {}: {}", task::class.simpleName, task.name)
-        cacheableTasks.remove(task)
+        cacheableTasks.remove(task.name)
         logger.info("Currently cacheable tasks: {}", box(cacheableTasks.size))
-        logCurrentlyCachedTasks()
-    }
-
-    private fun logCurrentlyCachedTasks() {
-        // This is a read operation, but we don't want threads redundantly running it in parallel.
-        val stamp = cacheLock.tryWriteLock()
-        if (stamp != 0L) {
-            try {
-                val now = System.nanoTime()
-                if (now - lastCacheLogNanoTime < cacheLoggingMinIntervalNanos) {
-                    return
-                }
-                lastCacheLogNanoTime = now
-                val cachedTasks = cacheableTasks.filter { it.cache.isEnabled() && it.getNow() != null }
-                        .sortedBy(AbstractTask<*>::name)
-                logger.info("Currently cached tasks: {}: {}", box(cachedTasks.size),
-                        cachedTasks.asFormattable())
-            } finally {
-                cacheLock.unlock(stamp)
-            }
-        }
     }
 }
