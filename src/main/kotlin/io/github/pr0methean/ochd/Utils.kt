@@ -55,17 +55,18 @@ fun StringBuilder.appendStrings(
 }
 
 @JvmName("flattenedAsFormattable")
-fun Collection<StringBuilderFormattable>.asFormattable(): StringBuilderFormattable =
-    StringBuilderFormattable { buffer -> buffer.appendFormattables(this@asFormattable) }
+fun Collection<StringBuilderFormattable>.asFormattable(delim: String = ", "): StringBuilderFormattable
+    = StringBuilderFormattable { buffer -> buffer.appendFormattables(this@asFormattable, delim) }
 
 @JvmName("flattenedTwiceAsFormattable")
-fun Collection<Collection<StringBuilderFormattable>>.asFormattable(): StringBuilderFormattable =
-    StringBuilderFormattable { buffer -> buffer.appendFormattables(
-        this@asFormattable.map(Collection<StringBuilderFormattable>::asFormattable)) }
+fun Collection<Collection<StringBuilderFormattable>>.asFormattable(delim: String = ", "): StringBuilderFormattable
+    = StringBuilderFormattable { buffer -> buffer.appendFormattables(
+        this@asFormattable.map(Collection<StringBuilderFormattable>::asFormattable), delim) }
 
-fun Array<out CharSequence>.asFormattable(): StringBuilderFormattable = toList().asFormattable()
+fun Array<out CharSequence>.asFormattable(delim: String = ", "): StringBuilderFormattable
+    = toList().asFormattable(delim)
 
 @JvmName("charSequencesAsFormattable")
-fun Collection<CharSequence>.asFormattable(): StringBuilderFormattable =
-    StringBuilderFormattable { buffer -> buffer.appendStrings(this@asFormattable) }
+fun Collection<CharSequence>.asFormattable(delim: String = ", "): StringBuilderFormattable =
+    StringBuilderFormattable { buffer -> buffer.appendStrings(this@asFormattable, delim) }
 
