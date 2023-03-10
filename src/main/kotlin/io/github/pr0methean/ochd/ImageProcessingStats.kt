@@ -98,6 +98,7 @@ object ImageProcessingStats {
     private val dedupeFailuresByName = HashMultiset.create<Pair<String, String>>()
     private val tasksByRunCount = ConcurrentHashMultiset.create<Pair<String, String>>()
     private val cacheableTasks = ConcurrentHashMap.newKeySet<String>()
+    private val cachedTasks = ConcurrentHashMap.newKeySet<String>()
 
     init {
         dedupeFailures.add("Build task graph")
@@ -186,6 +187,15 @@ object ImageProcessingStats {
     fun onCachingDisabled(task: AbstractTask<*>) {
         logger.info("Disabled caching for: {}: {}", task::class.simpleName, task.name)
         cacheableTasks.remove(task.name)
+        cachedTasks.remove(task.name)
         logger.info("Currently cacheable tasks: {}", box(cacheableTasks.size))
+        logger.info("Currently cached tasks: {}:\n{}",
+            box(cachedTasks.size), cachedTasks.asFormattable())
+    }
+
+    fun onCache(task: AbstractTask<*>) {
+        cachedTasks.add(task.name)
+        logger.info("Added {} to cache. Currently cached tasks: {}:\n{}",
+            task.name, box(cachedTasks.size), cachedTasks.asFormattable())
     }
 }

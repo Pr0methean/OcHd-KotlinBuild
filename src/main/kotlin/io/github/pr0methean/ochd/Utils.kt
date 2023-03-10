@@ -63,6 +63,9 @@ fun Collection<Collection<StringBuilderFormattable>>.asFormattable(): StringBuil
     StringBuilderFormattable { buffer -> buffer.appendFormattables(
         this@asFormattable.map(Collection<StringBuilderFormattable>::asFormattable)) }
 
-fun Array<out CharSequence>.asFormattable(): StringBuilderFormattable =
-    StringBuilderFormattable { buffer -> buffer.appendStrings(this@asFormattable.toList()) }
+fun Array<out CharSequence>.asFormattable(): StringBuilderFormattable = toList().asFormattable()
+
+@JvmName("charSequencesAsFormattable")
+fun Collection<CharSequence>.asFormattable(): StringBuilderFormattable =
+    StringBuilderFormattable { buffer -> buffer.appendStrings(this@asFormattable) }
 

@@ -1,6 +1,7 @@
 package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.ImageProcessingStats
+import io.github.pr0methean.ochd.ImageProcessingStats.onCache
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -151,7 +152,13 @@ abstract class AbstractTask<out T>(
     @Suppress("DeferredIsResult")
     fun start(): Deferred<T> = cache.computeIfAbsent {
         abstractTaskLogger.debug("Creating a new coroutine for {}", name)
-        coroutineScope.async(start = LAZY) { perform() }
+        coroutineScope.async(start = LAZY) {
+            perform().also {
+                if (cache.isEnabled()) {
+                    onCache(this@AbstractTask)
+                }
+            }
+        }
     }.apply(Deferred<T>::start)
 
     abstract suspend fun perform(): T
