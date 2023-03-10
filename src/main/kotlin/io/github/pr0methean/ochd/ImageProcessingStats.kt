@@ -198,4 +198,6 @@ object ImageProcessingStats {
         logger.info("Added {} to cache. Currently cached tasks: {}:\n{}",
             task.name, box(cachedTasks.size), cachedTasks.asFormattable())
     }
+
+    fun cachedTasks(): Int = cachedTasks.size
 }

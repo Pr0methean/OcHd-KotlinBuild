@@ -1,5 +1,6 @@
 package io.github.pr0methean.ochd
 
+import io.github.pr0methean.ochd.ImageProcessingStats.cachedTasks
 import io.github.pr0methean.ochd.ImageProcessingStats.onTaskCompleted
 import io.github.pr0methean.ochd.ImageProcessingStats.onTaskLaunched
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
@@ -45,13 +46,17 @@ val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 
 private const val FORCE_GC_THRESHOLD = 0.85
 private const val HARD_THROTTLING_THRESHOLD = 0.85
+private const val GOAL_CACHE_FRACTION_OF_HEAP = 0.5
 private val memoryMxBean = ManagementFactory.getMemoryMXBean()
 private val heapSizeBytes = memoryMxBean.heapMemoryUsage.max.toDouble()
+private val goalCacheSizeBytes = heapSizeBytes * GOAL_CACHE_FRACTION_OF_HEAP
 private val hardThrottlingPointBytes = (heapSizeBytes * HARD_THROTTLING_THRESHOLD).toLong()
 private val forceGcThresholdBytes = (heapSizeBytes * FORCE_GC_THRESHOLD).toLong()
-private const val WORKING_BYTES_PER_PIXEL = 64
+private const val BYTES_PER_PIXEL = 4
 val nCpus: Int = Runtime.getRuntime().availableProcessors()
 private const val MIN_OUTPUT_TASKS = 2
+private const val MAX_OUTPUT_TASKS_PER_CPU = 3
+private val maxOutputTasks = nCpus * MAX_OUTPUT_TASKS_PER_CPU
 
 @Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod", "ComplexMethod")
 suspend fun main(args: Array<String>) {
@@ -61,7 +66,9 @@ suspend fun main(args: Array<String>) {
     }
     val tileSize = args[0].toInt()
     require(tileSize > 0) { "tileSize shouldn't be zero or negative but was ${args[0]}" }
-    val bytesPerTile = tileSize.toLong() * tileSize * WORKING_BYTES_PER_PIXEL
+    val bytesPerTile = tileSize.toLong() * tileSize * BYTES_PER_PIXEL
+    val goalCachedImages = goalCacheSizeBytes / bytesPerTile
+    logger.info("Will attempt to keep a maximum of {} images in cache", box(goalCachedImages))
     val ioScope = CoroutineScope(Dispatchers.IO)
     val out = Paths.get("pngout").toAbsolutePath().toFile()
     val metadataDirectory = Paths.get("metadata").toAbsolutePath().toFile()
@@ -208,8 +215,7 @@ suspend fun main(args: Array<String>) {
                     }
                     currentInProgressJobs -= cleared
                 }
-                val maxJobs = maximumJobsNow(bytesPerTile)
-                if (currentInProgressJobs >= maxJobs) {
+                if (currentInProgressJobs >= maxOutputTasks) {
                     logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
                     val delay = measureNanoTime {
                         inProgressJobs.remove(finishedJobsChannel.receive())
@@ -217,7 +223,7 @@ suspend fun main(args: Array<String>) {
                     logger.warn("Waited for tasks in progress to fall below limit for {} ns", box(delay))
                     taskRemovedOutsideLoop = true
                     continue
-                } else if (currentInProgressJobs + connectedComponent.size <= maxJobs) {
+                } else if (currentInProgressJobs + connectedComponent.size <= maxOutputTasks) {
                     logger.info(
                         "{} tasks in progress; starting all {} currently eligible tasks: {}",
                         box(currentInProgressJobs), box(connectedComponent.size), connectedComponent.asFormattable()
@@ -229,6 +235,16 @@ suspend fun main(args: Array<String>) {
                 } else {
                     val task = connectedComponent.minWithOrNull(taskOrderComparator)
                     checkNotNull(task) { "Error finding a new task to start" }
+                    if (currentInProgressJobs >= MIN_OUTPUT_TASKS
+                            && cachedTasks() >= goalCachedImages
+                            && !task.isCacheAllocationFreeOnMargin()) {
+                        logger.warn("Too many cached tasks; waiting for a task to finish")
+                        val delay = measureNanoTime {
+                            inProgressJobs.remove(finishedJobsChannel.receive())
+                        }
+                        logger.warn("Waited for a task to finish for {} ns", box(delay))
+                        taskRemovedOutsideLoop = true
+                    }
                     logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
                     inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs, prereqIoJobs)
                     check(connectedComponent.remove(task)) { "Attempted to remove task more than once: $task" }
