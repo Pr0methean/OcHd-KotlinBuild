@@ -237,10 +237,11 @@ suspend fun main(args: Array<String>) {
                         val cachedTasks = cachedTasks()
                         val newEntries = task.newCacheEntries()
                         val impendingEntries = inProgressJobs.keys.sumOf(PngOutputTask::impendingCacheEntries)
+                        logger.info("Cached tasks: {} current, {} impending, {} when next task starts",
+                            box(cachedTasks), box(impendingEntries), box(newEntries))
                         val totalCacheWithThisTask = cachedTasks + impendingEntries + newEntries
                         if (totalCacheWithThisTask >= goalCachedImages) {
-                            logger.warn("Too many cached tasks ({}+{}+{}); waiting for a task to finish",
-                                box(cachedTasks), box(impendingEntries), box(newEntries))
+                            logger.warn("Too many cached tasks; waiting for a task to finish")
                             val delay = measureNanoTime {
                                 inProgressJobs.remove(finishedJobsChannel.receive())
                             }
