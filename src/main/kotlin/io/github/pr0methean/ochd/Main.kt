@@ -44,7 +44,7 @@ private const val MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH = 32
 val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 
 private const val FORCE_GC_THRESHOLD = 0.85
-private const val GOAL_CACHE_FRACTION_OF_HEAP = 0.2
+private const val GOAL_CACHE_FRACTION_OF_HEAP = 0.4
 private val memoryMxBean = ManagementFactory.getMemoryMXBean()
 private val heapSizeBytes = memoryMxBean.heapMemoryUsage.max.toDouble()
 private val goalCacheSizeBytes = heapSizeBytes * GOAL_CACHE_FRACTION_OF_HEAP
@@ -236,8 +236,11 @@ suspend fun main(args: Array<String>) {
                     if (currentInProgressJobs >= MIN_OUTPUT_TASKS) {
                         val cachedTasks = cachedTasks()
                         val newEntries = task.newCacheEntries()
-                        if (cachedTasks() >= goalCachedImages - currentInProgressJobs - newEntries) {
-                            logger.warn("Too many cached tasks ({}); waiting for a task to finish", box(cachedTasks))
+                        val impendingEntries = inProgressJobs.keys.sumOf(PngOutputTask::impendingCacheEntries)
+                        val totalCacheWithThisTask = cachedTasks + impendingEntries + newEntries
+                        if (totalCacheWithThisTask >= goalCachedImages) {
+                            logger.warn("Too many cached tasks ({}+{}+{}); waiting for a task to finish",
+                                box(cachedTasks), box(impendingEntries), box(newEntries))
                             val delay = measureNanoTime {
                                 inProgressJobs.remove(finishedJobsChannel.receive())
                             }

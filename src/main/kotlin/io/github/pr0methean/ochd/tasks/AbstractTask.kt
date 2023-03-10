@@ -196,6 +196,13 @@ abstract class AbstractTask<out T>(
         return directDependencies.sumOf(AbstractTask<*>::newCacheEntries) + if (cache.isEnabled()) 1 else 0
     }
 
+    fun impendingCacheEntries(): Int {
+        if (getNow() != null) {
+            return 0
+        }
+        return directDependencies.sumOf(AbstractTask<*>::impendingCacheEntries) + if (cache.isEnabled()) 1 else 0
+    }
+
     /**
      * Prints the dependency edges originating from this task in graphviz format.
      */
