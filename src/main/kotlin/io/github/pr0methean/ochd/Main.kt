@@ -31,7 +31,7 @@ import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 import kotlin.text.Charsets.UTF_8
 
-const val CAPACITY_PADDING_FACTOR: Int = 8
+const val CAPACITY_PADDING_FACTOR: Int = 2
 private val taskOrderComparator = comparingInt<PngOutputTask> { if (it.newCacheEntries() > 0) 1 else 0 }
 .then(comparingDouble(PngOutputTask::cacheClearingCoefficient).reversed())
 .then(comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed())
@@ -180,7 +180,7 @@ suspend fun main(args: Array<String>) {
         }
         val inProgressJobs = HashMap<PngOutputTask, Job>()
         val finishedJobsChannel = Channel<PngOutputTask>(
-            capacity = CAPACITY_PADDING_FACTOR * nCpus
+            capacity = CAPACITY_PADDING_FACTOR * maxOutputTasks
         )
         dotFormatOutputJob?.join()
         for (connectedComponent in connectedComponents) {
