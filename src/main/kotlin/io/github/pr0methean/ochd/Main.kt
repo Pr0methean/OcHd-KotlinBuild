@@ -32,9 +32,8 @@ import kotlin.system.measureNanoTime
 import kotlin.text.Charsets.UTF_8
 
 const val CAPACITY_PADDING_FACTOR: Int = 8
-private val taskOrderComparator = comparingInt<PngOutputTask> {
-    if (it.isCacheAllocationFreeOnMargin()) 0 else 1
-}.then(comparingDouble(PngOutputTask::cacheClearingCoefficient).reversed())
+private val taskOrderComparator = comparingInt(PngOutputTask::newCacheEntries)
+    .then(comparingDouble(PngOutputTask::cacheClearingCoefficient).reversed())
 .then(comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed())
 .then(comparingInt(PngOutputTask::totalSubtasks))
 
@@ -235,9 +234,8 @@ suspend fun main(args: Array<String>) {
                     checkNotNull(task) { "Error finding a new task to start" }
                     if (currentInProgressJobs >= MIN_OUTPUT_TASKS) {
                         val cachedTasks = cachedTasks()
-                        if (cachedTasks() >= goalCachedImages - currentInProgressJobs
-                            && !task.isCacheAllocationFreeOnMargin()
-                        ) {
+                        val newEntries = task.newCacheEntries()
+                        if (cachedTasks() >= goalCachedImages - currentInProgressJobs - newEntries) {
                             logger.warn("Too many cached tasks ({}); waiting for a task to finish", box(cachedTasks))
                             val delay = measureNanoTime {
                                 inProgressJobs.remove(finishedJobsChannel.receive())

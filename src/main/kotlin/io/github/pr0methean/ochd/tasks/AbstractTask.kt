@@ -187,17 +187,13 @@ abstract class AbstractTask<out T>(
     }
 
     /**
-     * True if starting this task will not cause new entries to be added to the cache, other
-     * than those that tasks already started are going to cache anyway. Tasks for which this
-     * is true are prioritized when memory is low.
+     * How many new entries this task will cause to be added to the cache.
      */
-    fun isCacheAllocationFreeOnMargin(): Boolean {
+    fun newCacheEntries(): Int {
         if (isStartedOrAvailable()) {
-            return true
-        } else if (cache.isEnabled()) {
-            return false
+            return 0
         }
-        return directDependencies.all(AbstractTask<*>::isCacheAllocationFreeOnMargin)
+        return directDependencies.sumOf(AbstractTask<*>::newCacheEntries) + if (cache.isEnabled()) 1 else 0
     }
 
     /**
