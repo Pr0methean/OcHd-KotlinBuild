@@ -101,7 +101,7 @@ abstract class AbstractTask<out T>(
     /**
      * If this task has only one direct-dependent task that's yet to start, we're worth 1 point to our direct and
      * transitive dependencies of that task because finishing that task will cause us to disable our cache.
-     * If it has 2 direct-dependent tasks left to start, it's worth 1/4 point; if it has 3, it's worth 1/16 point,
+     * If it has 2 direct-dependent tasks left to start, it's worth 1/2 point; if it has 3, it's worth 1/3 point,
      * and so on. Tasks with the highest cache-clearing coefficient are launched first when we're not immediately low
      * on memory.
      */
