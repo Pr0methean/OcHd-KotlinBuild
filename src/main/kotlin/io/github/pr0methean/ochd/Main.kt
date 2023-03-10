@@ -15,7 +15,6 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import org.apache.logging.log4j.LogManager
@@ -34,9 +33,7 @@ import kotlin.text.Charsets.UTF_8
 const val CAPACITY_PADDING_FACTOR: Int = 8
 private val taskOrderComparator = comparingInt<PngOutputTask> {
     if (it.isCacheAllocationFreeOnMargin()) 0 else 1
-}.then(comparingDouble {
-    - runBlocking { it.cacheClearingCoefficient() }
-})
+}.then(comparingDouble(PngOutputTask::cacheClearingCoefficient).reversed())
 .then(comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed())
 .then(comparingInt(PngOutputTask::totalSubtasks))
 
