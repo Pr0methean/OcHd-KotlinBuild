@@ -48,10 +48,11 @@ private val heapSizeBytes = memoryMxBean.heapMemoryUsage.max.toDouble()
 private val goalImageBytes = heapSizeBytes * GOAL_IMAGES_FRACTION_OF_HEAP
 private const val BYTES_PER_PIXEL = 4
 val nCpus: Int = Runtime.getRuntime().availableProcessors()
-private const val MIN_OUTPUT_TASKS_PER_CPU = 1
+private const val MIN_OUTPUT_TASKS_PER_CPU = 2
+private const val MIN_OUTPUT_TASKS_SET_ASIDE = 1
 private const val MAX_OUTPUT_TASKS_PER_CPU = 2
 private val maxOutputTasks = nCpus * MAX_OUTPUT_TASKS_PER_CPU
-private val minOutputTasks = nCpus * MIN_OUTPUT_TASKS_PER_CPU
+private val minOutputTasks = nCpus * MIN_OUTPUT_TASKS_PER_CPU - MIN_OUTPUT_TASKS_SET_ASIDE
 
 @Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod", "ComplexMethod",
     "LoopWithTooManyJumpStatements")
