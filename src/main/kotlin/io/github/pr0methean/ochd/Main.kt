@@ -213,7 +213,7 @@ suspend fun main(args: Array<String>) {
                             inProgressJobs.remove(maybeReceive)
                         }
                     } while (ioClearedThisIteration > 0 || maybeReceive != null)
-                    if (cleared > 0 || ioCleared > 0) {
+                    if (ioCleared > 0 || cleared > 0) {
                         logger.info(
                             "Collected {} finished tasks and {} finished IO jobs non-blockingly",
                             box(cleared), box(ioCleared)
