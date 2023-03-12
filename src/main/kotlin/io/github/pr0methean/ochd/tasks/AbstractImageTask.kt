@@ -122,6 +122,8 @@ abstract class AbstractImageTask(
             = listOf(previousLayer, this)
 }
 
+fun pendingSnapshotTasks(): Long = pendingSnapshotTasks.get()
+
 fun Paint.toOpaque(): Paint {
     if (this.isOpaque) {
         return this

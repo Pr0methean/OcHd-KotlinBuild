@@ -7,6 +7,7 @@ import io.github.pr0methean.ochd.materials.ALL_MATERIALS
 import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.tasks.SvgToBitmapTask
 import io.github.pr0methean.ochd.tasks.mkdirsedPaths
+import io.github.pr0methean.ochd.tasks.pendingSnapshotTasks
 import javafx.application.Platform
 import javafx.embed.swing.SwingFXUtils
 import kotlinx.coroutines.CoroutineName
@@ -41,7 +42,7 @@ private const val MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH = 32
 
 val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 
-private const val GOAL_CACHE_FRACTION_OF_HEAP = 0.4
+private const val GOAL_CACHE_FRACTION_OF_HEAP = 0.45
 private val memoryMxBean = ManagementFactory.getMemoryMXBean()
 private val heapSizeBytes = memoryMxBean.heapMemoryUsage.max.toDouble()
 private val goalCacheSizeBytes = heapSizeBytes * GOAL_CACHE_FRACTION_OF_HEAP
@@ -233,8 +234,9 @@ suspend fun main(args: Array<String>) {
                         val cachedTasks = cachedTasks()
                         val newEntries = task.newCacheEntries()
                         val impendingEntries = inProgressJobs.keys.sumOf(PngOutputTask::impendingCacheEntries)
-                        logger.info("Cached tasks: {} current, {} impending, {} when next task starts",
-                            box(cachedTasks), box(impendingEntries), box(newEntries))
+                        logger.info(
+                            "Cached tasks: {} current, {} impending, {} snapshots, {} when next task starts",
+                            box(cachedTasks), box(impendingEntries), box(pendingSnapshotTasks()), box(newEntries))
                         val totalCacheWithThisTask = cachedTasks + impendingEntries + newEntries
                         if (totalCacheWithThisTask >= goalCachedImages && newEntries > 0) {
                             logger.warn("{} tasks in progress and too many cached; waiting for one to finish",
