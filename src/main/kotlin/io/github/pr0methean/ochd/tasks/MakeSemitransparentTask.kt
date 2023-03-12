@@ -55,7 +55,7 @@ class MakeSemitransparentTask(
                 writer.setArgb(x, y, repaintedForInputAlpha[inputAlpha].or(inputRgb))
             }
         }
-        ImageProcessingStats.onTaskCompleted("RepaintTask", name)
+        ImageProcessingStats.onTaskCompleted("MakeSemitransparentTask", name)
         return output
     }
 
