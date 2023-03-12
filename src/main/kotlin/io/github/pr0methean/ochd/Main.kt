@@ -35,6 +35,10 @@ private val taskOrderComparator = comparingInt(PngOutputTask::newCacheEntries)
 .then(comparingInt(PngOutputTask::removedCacheEntries).reversed())
 .then(comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed())
 .then(comparingInt(PngOutputTask::totalSubtasks))
+private val memoryConstrainedTaskOrderComparator = comparingInt(PngOutputTask::removedCacheEntries).reversed()
+.then(comparingInt(PngOutputTask::newCacheEntries))
+.then(comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed())
+.then(comparingInt(PngOutputTask::totalSubtasks))
 
 private val logger = LogManager.getRootLogger()
 
@@ -239,14 +243,20 @@ suspend fun main(args: Array<String>) {
                             box(cachedTasks), box(impendingEntries), box(pendingSnapshotTasks()), box(newEntries))
                         val totalCacheWithThisTask = cachedTasks + impendingEntries + newEntries
                         if (totalCacheWithThisTask >= goalCachedImages && newEntries > 0) {
-                            logger.warn("{} tasks in progress and too many cached; waiting for one to finish",
-                                    currentInProgressJobs)
-                            val delay = measureNanoTime {
-                                inProgressJobs.remove(finishedJobsChannel.receive())
+                            val alternateTask = connectedComponent.minWithOrNull(memoryConstrainedTaskOrderComparator)
+                            checkNotNull(alternateTask) { "Error finding a new task to start" }
+                            if (alternateTask != task) {
+                                val altNewEntries = alternateTask.newCacheEntries()
+                                val totalCacheWithAltTask = cachedTasks + impendingEntries + altNewEntries
+                                if (totalCacheWithAltTask >= goalCachedImages && altNewEntries > 0) {
+                                    val delay = measureNanoTime {
+                                        inProgressJobs.remove(finishedJobsChannel.receive())
+                                    }
+                                    logger.warn("Waited for a task to finish for {} ns", box(delay))
+                                    taskRemovedOutsideLoop = true
+                                }
+                                continue
                             }
-                            logger.warn("Waited for a task to finish for {} ns", box(delay))
-                            taskRemovedOutsideLoop = true
-                            continue
                         }
                     }
                     logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
