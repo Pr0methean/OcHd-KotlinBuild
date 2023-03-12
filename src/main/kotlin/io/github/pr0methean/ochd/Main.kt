@@ -48,10 +48,10 @@ private val heapSizeBytes = memoryMxBean.heapMemoryUsage.max.toDouble()
 private val goalImageBytes = heapSizeBytes * GOAL_IMAGES_FRACTION_OF_HEAP
 private const val BYTES_PER_PIXEL = 4
 val nCpus: Int = Runtime.getRuntime().availableProcessors()
-private const val MIN_OUTPUT_TASKS_SET_ASIDE = 3
+private const val MIN_OUTPUT_TASKS_PER_CPU = 1.25
 private const val MAX_OUTPUT_TASKS_PER_CPU = 2
-private val maxOutputTasks = nCpus * MAX_OUTPUT_TASKS_PER_CPU
-private val minOutputTasks = nCpus * MAX_OUTPUT_TASKS_PER_CPU - MIN_OUTPUT_TASKS_SET_ASIDE
+private val maxOutputTasks = (nCpus * MAX_OUTPUT_TASKS_PER_CPU).toLong()
+private val minOutputTasks = (nCpus * MIN_OUTPUT_TASKS_PER_CPU).toLong()
 
 @Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod", "ComplexMethod",
     "LoopWithTooManyJumpStatements")
@@ -178,7 +178,7 @@ suspend fun main(args: Array<String>) {
         }
         val inProgressJobs = HashMap<PngOutputTask, Job>()
         val finishedJobsChannel = Channel<PngOutputTask>(
-            capacity = CAPACITY_PADDING_FACTOR * maxOutputTasks
+            capacity = (CAPACITY_PADDING_FACTOR * maxOutputTasks).toInt()
         )
         dotFormatOutputJob?.join()
         for (connectedComponent in connectedComponents) {
