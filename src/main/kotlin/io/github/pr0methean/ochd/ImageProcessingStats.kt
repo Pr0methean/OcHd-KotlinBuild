@@ -22,6 +22,7 @@ import java.lang.management.ManagementFactory
 import java.lang.management.ThreadInfo
 import java.lang.management.ThreadMXBean
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.system.exitProcess
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 
@@ -96,7 +97,7 @@ object ImageProcessingStats {
     val dedupeSuccesses: HashMultiset<String> = HashMultiset.create()
     private val dedupeFailures: HashMultiset<String> = HashMultiset.create()
     private val dedupeFailuresByName = HashMultiset.create<Pair<String, String>>()
-    private val tasksByRunCount = ConcurrentHashMultiset.create<Pair<String, String>>()
+    private val tasksByRunCount = ConcurrentHashMultiset.create<String>()
     private val cacheableTasks = ConcurrentHashMap.newKeySet<String>()
     private val cachedTasks = ConcurrentHashMap.newKeySet<String>()
 
@@ -105,15 +106,22 @@ object ImageProcessingStats {
     }
 
     @Suppress("UnstableApiUsage")
-    fun log() {
+    fun finalChecks() {
+        if (taskLaunches != taskCompletions || dedupeFailures != taskCompletions) {
+            logger.error("A task has failed to run or run more than once!")
+            logger.info("")
+            logger.info("Task launches:")
+            taskLaunches.log()
+            logger.info("")
+            logger.info("Task completions:")
+            taskCompletions.log()
+            logger.info("")
+            logger.info("Necessary tasks:")
+            dedupeFailures.log()
+            exitProcess(1)
+        }
         logger.info("")
-        logger.info("Task launches:")
-        taskLaunches.log()
-        logger.info("")
-        logger.info("Task completions:")
-        taskCompletions.log()
-        logger.info("")
-        logger.info("Necessary tasks:")
+        logger.info("Total task counts:")
         dedupeFailures.log()
         logger.info("")
         logger.info("Deduplicated tasks:")
@@ -121,50 +129,14 @@ object ImageProcessingStats {
         logger.info("")
         logger.info("Tasks that would run with unlimited cache but no deduplication:")
         Multisets.sum(dedupeFailures, dedupeSuccesses).log()
-        logger.info("")
-        logger.info("Tasks repeated due to cache misses:")
-        val repeatedTasks = Multisets.copyHighestCountFirst(tasksByRunCount)
-        repeatedTasks.toSet().forEach {
-            val count = repeatedTasks.count(it)
-            if (count >= 2) {
-                val (typeName, name) = it
-                logger.info("{}: {}: {}", typeName, name, box(count))
-            }
-        }
-        logger.info("")
-        logger.info("Task efficiency / hit rate")
-        var totalUnique = 0L
-        var totalActual = 0L
-        var totalWorstCase = 0L
-        dedupeSuccesses.toSet().forEach { className ->
-            val unique = dedupeFailures.count(className)
-            val actual = taskLaunches.count(className)
-            val worstCase = unique + dedupeSuccesses.count(className)
-            val efficiency = (unique.toDouble() / actual)
-            val hitRate = 1.0 - (actual - unique).toDouble()/(worstCase - unique)
-            logger.printf(Level.INFO, "%20s: %3.2f%% / %3.2f%%", className,
-                    100.0 * efficiency, 100.0 * hitRate)
-            totalUnique += unique
-            totalActual += actual
-            totalWorstCase += worstCase
-        }
-        dedupeFailuresByName.toSet().forEach {
-            if (!tasksByRunCount.contains(it)) {
-                val (typeName, name) = it
-                if (typeName != InvalidTask::class.simpleName) {
-                    logger.warn("Task in graph not launched: {}: {}", typeName, name)
-                }
-            }
-        }
-        val totalEfficiency = (totalUnique.toDouble() / totalActual)
-        val totalHitRate = 1.0 - (totalActual - totalUnique).toDouble()/(totalWorstCase - totalUnique)
-        logger.printf(Level.INFO, "Total               : %3.2f%% / %3.2f%%",
-            100.0 * totalEfficiency, 100.0 * totalHitRate)
     }
 
     fun onTaskLaunched(typeName: String, name: String) {
         logger.info("Launched: {}: {}", typeName, name)
-        tasksByRunCount.add(typeName to name)
+        if (!tasksByRunCount.add(name)) {
+            logger.fatal("Task {} launched twice!", name)
+            exitProcess(1)
+        }
         taskLaunches.add(typeName)
     }
 

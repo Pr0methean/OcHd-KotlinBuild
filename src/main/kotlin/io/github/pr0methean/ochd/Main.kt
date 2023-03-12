@@ -266,7 +266,7 @@ suspend fun main(args: Array<String>) {
     val runningTime = System.nanoTime() - startTime
     stopMonitoring()
     Platform.exit()
-    ImageProcessingStats.log()
+    ImageProcessingStats.finalChecks()
     logger.info("")
     logger.info("All tasks finished after {} ns", box(runningTime))
     exitProcess(0)
