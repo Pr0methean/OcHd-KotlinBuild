@@ -47,9 +47,10 @@ private val heapSizeBytes = memoryMxBean.heapMemoryUsage.max.toDouble()
 private val goalCacheSizeBytes = heapSizeBytes * GOAL_CACHE_FRACTION_OF_HEAP
 private const val BYTES_PER_PIXEL = 4
 val nCpus: Int = Runtime.getRuntime().availableProcessors()
-private const val MIN_OUTPUT_TASKS = 4
+private const val MIN_OUTPUT_TASKS_PER_CPU = 1
 private const val MAX_OUTPUT_TASKS_PER_CPU = 2
 private val maxOutputTasks = nCpus * MAX_OUTPUT_TASKS_PER_CPU
+private val minOutputTasks = nCpus * MIN_OUTPUT_TASKS_PER_CPU
 
 @Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod", "ComplexMethod",
     "LoopWithTooManyJumpStatements")
@@ -228,7 +229,7 @@ suspend fun main(args: Array<String>) {
                 } else {
                     val task = connectedComponent.minWithOrNull(taskOrderComparator)
                     checkNotNull(task) { "Error finding a new task to start" }
-                    if (currentInProgressJobs >= MIN_OUTPUT_TASKS) {
+                    if (currentInProgressJobs >= minOutputTasks) {
                         val cachedTasks = cachedTasks()
                         val newEntries = task.newCacheEntries()
                         val impendingEntries = inProgressJobs.keys.sumOf(PngOutputTask::impendingCacheEntries)
