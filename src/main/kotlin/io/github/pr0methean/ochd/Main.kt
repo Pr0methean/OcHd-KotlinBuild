@@ -42,13 +42,23 @@ private const val MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH = 32
 
 val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 
+/**
+ * If the pixel arrays for (images being generated + images in cache) exceed this % of heap, we throttle starting new
+ * output tasks.
+ */
 private const val GOAL_IMAGES_FRACTION_OF_HEAP = 0.43
 private val memoryMxBean = ManagementFactory.getMemoryMXBean()
 private val heapSizeBytes = memoryMxBean.heapMemoryUsage.max.toDouble()
 private val goalImageBytes = heapSizeBytes * GOAL_IMAGES_FRACTION_OF_HEAP
 private const val BYTES_PER_PIXEL = 4
 val nCpus: Int = Runtime.getRuntime().availableProcessors()
+/**
+ * The number of tasks per CPU we run when memory-constrained.
+ */
 private const val MIN_OUTPUT_TASKS_PER_CPU = 1
+/**
+ * The number of tasks per CPU we run when <em>not</em> memory-constrained.
+ */
 private const val MAX_OUTPUT_TASKS_PER_CPU = 2
 private val maxOutputTasks = nCpus * MAX_OUTPUT_TASKS_PER_CPU
 private val minOutputTasks = nCpus * MIN_OUTPUT_TASKS_PER_CPU
