@@ -42,7 +42,7 @@ private const val MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH = 32
 
 val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 
-private const val GOAL_IMAGES_FRACTION_OF_HEAP = 0.45
+private const val GOAL_IMAGES_FRACTION_OF_HEAP = 0.42
 private val memoryMxBean = ManagementFactory.getMemoryMXBean()
 private val heapSizeBytes = memoryMxBean.heapMemoryUsage.max.toDouble()
 private val goalImageBytes = heapSizeBytes * GOAL_IMAGES_FRACTION_OF_HEAP
