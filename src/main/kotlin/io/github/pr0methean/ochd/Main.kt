@@ -133,8 +133,9 @@ suspend fun main(args: Array<String>) {
         val connectedComponents = if (tasks.size > maxOutputTasks || dotOutputEnabled) {
 
             // Output tasks that are in different weakly-connected components don't share any dependencies, so we
-            // launch tasks from one component at a time. We start with the small ones so that they'll become
-            // unreachable by the time the largest component hits its peak cache size.
+            // launch tasks from one component at a time to keep the number of cached images manageable. We start
+            // with the small ones so that they'll become unreachable before the largest component hits its peak cache
+            // size, thus limiting the peak size of the live set and reducing the size of heap we need.
             val components = mutableListOf<MutableSet<PngOutputTask>>()
             sortTask@ for (task in tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks))
             ) {
