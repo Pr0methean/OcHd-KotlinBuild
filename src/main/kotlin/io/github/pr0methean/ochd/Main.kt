@@ -26,6 +26,7 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.Comparator.comparingInt
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentMap
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 import kotlin.text.Charsets.UTF_8
@@ -187,41 +188,21 @@ suspend fun main(args: Array<String>) {
                 }
             }
         }
-        val inProgressJobs = HashMap<PngOutputTask, Job>()
+        val inProgressJobs = ConcurrentHashMap<PngOutputTask, Job>()
         val finishedJobsChannel = Channel<PngOutputTask>(
             capacity = CAPACITY_PADDING_FACTOR * maxOutputTasks
         )
         dotFormatOutputJob?.join()
         for (connectedComponent in connectedComponents) {
-            var taskRemovedOutsideLoop = false
             logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
             while (connectedComponent.isNotEmpty()) {
-                var currentInProgressJobs = inProgressJobs.size
-                if (taskRemovedOutsideLoop || currentInProgressJobs > 0 || ioJobs.isNotEmpty()) {
-                    // Check for finished tasks before reevaluating the task graph or memory limit
-                    var cleared = 0
-                    do {
-                        val maybeReceive = finishedJobsChannel.tryReceive().getOrNull()
-                        if (maybeReceive != null) {
-                            cleared++
-                            inProgressJobs.remove(maybeReceive)
-                        }
-                    } while (maybeReceive != null)
-                    if (cleared > 0) {
-                        logger.info("Collected {} finished tasks non-blockingly", box(cleared))
-                    }
-                    if (taskRemovedOutsideLoop) {
-                        taskRemovedOutsideLoop = false
-                    }
-                    currentInProgressJobs -= cleared
-                }
+                val currentInProgressJobs = inProgressJobs.size
                 if (currentInProgressJobs >= maxOutputTasks) {
                     logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
                     val delay = measureNanoTime {
-                        inProgressJobs.remove(finishedJobsChannel.receive())
+                        finishedJobsChannel.receive()
                     }
                     logger.warn("Waited for tasks in progress to fall below limit for {} ns", box(delay))
-                    taskRemovedOutsideLoop = true
                     continue
                 } else if (currentInProgressJobs + connectedComponent.size <= maxOutputTasks) {
                     logger.info(
@@ -229,7 +210,14 @@ suspend fun main(args: Array<String>) {
                         box(currentInProgressJobs), box(connectedComponent.size), connectedComponent.asFormattable()
                     )
                     connectedComponent.forEach {
-                        inProgressJobs[it] = startTask(scope, it, finishedJobsChannel, ioJobs, prereqIoJobs)
+                        startTask(
+                            scope,
+                            it,
+                            finishedJobsChannel,
+                            ioJobs,
+                            prereqIoJobs,
+                            inProgressJobs
+                        )
                     }
                     connectedComponent.clear()
                 } else {
@@ -247,27 +235,29 @@ suspend fun main(args: Array<String>) {
                             logger.warn("{} tasks in progress and too many cached; waiting for one to finish",
                                     currentInProgressJobs)
                             val delay = measureNanoTime {
-                                inProgressJobs.remove(finishedJobsChannel.receive())
+                                finishedJobsChannel.receive()
                             }
                             logger.warn("Waited for a task to finish for {} ns", box(delay))
-                            taskRemovedOutsideLoop = true
                             continue
                         }
                     }
                     logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
-                    inProgressJobs[task] = startTask(scope, task, finishedJobsChannel, ioJobs, prereqIoJobs)
+                    startTask(
+                        scope,
+                        task,
+                        finishedJobsChannel,
+                        ioJobs,
+                        prereqIoJobs,
+                        inProgressJobs
+                    )
                     check(connectedComponent.remove(task)) { "Attempted to remove task more than once: $task" }
                 }
             }
         }
         logger.info("All jobs started; waiting for {} running jobs to finish", box(inProgressJobs.size))
-        while (inProgressJobs.isNotEmpty()) {
-            ioJobs.removeIf(Job::isCompleted)
-            inProgressJobs.remove(finishedJobsChannel.receive())
-        }
+        inProgressJobs.values.joinAll()
         logger.info("All jobs done; closing channel")
         finishedJobsChannel.close()
-        ioJobs.removeIf(Job::isCompleted)
         logger.info("Waiting for {} remaining IO jobs to finish", box(ioJobs.size))
         ioJobs.joinAll()
         logger.info("All IO jobs are finished")
@@ -286,30 +276,34 @@ private fun startTask(
     task: PngOutputTask,
     finishedJobsChannel: Channel<PngOutputTask>,
     ioJobs: MutableSet<in Job>,
-    prereqIoJobs: Collection<Job>
-) = scope.launch(CoroutineName(task.name)) {
-    try {
-        onTaskLaunched("PngOutputTask", task.name)
-        val awtImage = if (task.base is SvgToBitmapTask && !task.base.shouldRenderForCaching()) {
-            onTaskLaunched("SvgToBitmapTask", task.base.name)
-            task.base.getAwtImage().also { onTaskCompleted("SvgToBitmapTask", task.base.name) }
-        } else {
-            SwingFXUtils.fromFXImage(task.base.await(), null)
+    prereqIoJobs: Collection<Job>,
+    inProgressJobs: ConcurrentMap<PngOutputTask, Job>
+) {
+    inProgressJobs[task] = scope.launch(CoroutineName(task.name)) {
+        try {
+            onTaskLaunched("PngOutputTask", task.name)
+            val awtImage = if (task.base is SvgToBitmapTask && !task.base.shouldRenderForCaching()) {
+                onTaskLaunched("SvgToBitmapTask", task.base.name)
+                task.base.getAwtImage().also { onTaskCompleted("SvgToBitmapTask", task.base.name) }
+            } else {
+                SwingFXUtils.fromFXImage(task.base.await(), null)
+            }
+            task.base.removeDirectDependentTask(task)
+            val ioJob = Job()
+            val realIoJob = scope.launch(CoroutineName("File write for ${task.name}") + ioJob) {
+                prereqIoJobs.joinAll()
+                logger.info("Starting file write for {}", task.name)
+                task.writeToFiles(awtImage).join()
+                onTaskCompleted("PngOutputTask", task.name)
+                ioJobs.remove(ioJob.children.first())
+            }
+            ioJobs.add(realIoJob)
+            inProgressJobs.remove(task)
+            finishedJobsChannel.send(task)
+        } catch (t: Throwable) {
+            // Fail fast
+            logger.fatal("{} failed", task, t)
+            exitProcess(1)
         }
-        task.base.removeDirectDependentTask(task)
-        val ioJob = Job()
-        val realIoJob = scope.launch(CoroutineName("File write for ${task.name}") + ioJob) {
-            prereqIoJobs.joinAll()
-            logger.info("Starting file write for {}", task.name)
-            task.writeToFiles(awtImage).join()
-            onTaskCompleted("PngOutputTask", task.name)
-            ioJobs.remove(ioJob.children.first())
-        }
-        ioJobs.add(realIoJob)
-        finishedJobsChannel.send(task)
-    } catch (t: Throwable) {
-        // Fail fast
-        logger.fatal("{} failed", task, t)
-        exitProcess(1)
     }
 }
