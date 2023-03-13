@@ -290,15 +290,17 @@ private fun startTask(
                 SwingFXUtils.fromFXImage(task.base.await(), null)
             }
             task.base.removeDirectDependentTask(task)
-            val ioJob = Job()
-            val realIoJob = scope.launch(CoroutineName("File write for ${task.name}") + ioJob) {
+            val ioJob = scope.launch(CoroutineName("File write for ${task.name}")) {
                 prereqIoJobs.joinAll()
                 logger.info("Starting file write for {}", task.name)
                 task.writeToFiles(awtImage).join()
                 onTaskCompleted("PngOutputTask", task.name)
-                ioJobs.remove(ioJob.children.first())
             }
-            ioJobs.add(realIoJob)
+            scope.launch {
+                ioJob.join()
+                ioJobs.remove(ioJob)
+            }
+            ioJobs.add(ioJob)
             inProgressJobs.remove(task)
             finishedJobsChannel.send(task)
         } catch (t: Throwable) {
