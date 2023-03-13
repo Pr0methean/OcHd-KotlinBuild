@@ -200,23 +200,15 @@ suspend fun main(args: Array<String>) {
                 if (taskRemovedOutsideLoop || currentInProgressJobs > 0 || ioJobs.isNotEmpty()) {
                     // Check for finished tasks before reevaluating the task graph or memory limit
                     var cleared = 0
-                    var ioCleared = 0
                     do {
-                        val oldSize = ioJobs.size
-                        ioJobs.removeIf(Job::isCompleted)
-                        val ioClearedThisIteration = oldSize - ioJobs.size
-                        ioCleared += ioClearedThisIteration
                         val maybeReceive = finishedJobsChannel.tryReceive().getOrNull()
                         if (maybeReceive != null) {
                             cleared++
                             inProgressJobs.remove(maybeReceive)
                         }
-                    } while (ioClearedThisIteration > 0 || maybeReceive != null)
-                    if (ioCleared > 0 || cleared > 0) {
-                        logger.info(
-                            "Collected {} finished tasks and {} finished IO jobs non-blockingly",
-                            box(cleared), box(ioCleared)
-                        )
+                    } while (maybeReceive != null)
+                    if (cleared > 0) {
+                        logger.info("Collected {} finished tasks non-blockingly", box(cleared))
                     }
                     if (taskRemovedOutsideLoop) {
                         taskRemovedOutsideLoop = false
@@ -305,12 +297,15 @@ private fun startTask(
             SwingFXUtils.fromFXImage(task.base.await(), null)
         }
         task.base.removeDirectDependentTask(task)
-        ioJobs.add(scope.launch(CoroutineName("File write for ${task.name}")) {
+        val ioJob = Job()
+        val realIoJob = scope.launch(CoroutineName("File write for ${task.name}") + ioJob) {
             prereqIoJobs.joinAll()
             logger.info("Starting file write for {}", task.name)
             task.writeToFiles(awtImage).join()
             onTaskCompleted("PngOutputTask", task.name)
-        })
+            ioJobs.remove(ioJob.children.first())
+        }
+        ioJobs.add(realIoJob)
         finishedJobsChannel.send(task)
     } catch (t: Throwable) {
         // Fail fast
