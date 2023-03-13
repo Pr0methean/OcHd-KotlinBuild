@@ -271,6 +271,7 @@ suspend fun main(args: Array<String>) {
     exitProcess(0)
 }
 
+@Suppress("LongParameterList")
 private fun startTask(
     scope: CoroutineScope,
     task: PngOutputTask,
