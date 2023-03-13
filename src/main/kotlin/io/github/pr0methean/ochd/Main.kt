@@ -201,11 +201,9 @@ suspend fun main(args: Array<String>) {
                     var cleared = 0
                     var ioCleared = 0
                     do {
-                        var ioClearedThisIteration = 0
-                        ioJobs.removeIf { if (it.isCompleted) {
-                            ioClearedThisIteration++
-                            true
-                        } else false }
+                        val oldSize = ioJobs.size
+                        ioJobs.removeIf(Job::isCompleted)
+                        val ioClearedThisIteration = oldSize - ioJobs.size
                         ioCleared += ioClearedThisIteration
                         val maybeReceive = finishedJobsChannel.tryReceive().getOrNull()
                         if (maybeReceive != null) {
