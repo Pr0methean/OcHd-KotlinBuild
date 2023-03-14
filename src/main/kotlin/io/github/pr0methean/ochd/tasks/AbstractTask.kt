@@ -107,7 +107,7 @@ abstract class AbstractTask<out T>(
             || (cache.isEnabled() && directConsumers() >= 2)
             || isStartedOrAvailable()
 
-    suspend fun registerRecursiveDependencies() {
+    fun registerRecursiveDependencies() {
         if (dependenciesRegistered.compareAndSet(false, true)) {
             directDependencies.forEach {
                 it.addDirectDependentTask(this@AbstractTask)
