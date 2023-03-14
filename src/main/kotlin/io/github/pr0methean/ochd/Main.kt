@@ -137,7 +137,7 @@ suspend fun main(args: Array<String>) {
         // with the small ones so that they'll become unreachable before the largest component hits its peak cache
         // size, thus limiting the peak size of the live set and reducing the size of heap we need.
         val components = mutableListOf<MutableSet<PngOutputTask>>()
-        sortTask@ for (task in tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks))
+        sortTask@ for (task in tasks.sortedWith(comparingInt(PngOutputTask::newCacheEntries))
         ) {
             val matchingComponents = components.filter { it.any(task::overlapsWith) }
             logger.debug("{} is connected to: {}", task, matchingComponents.asFormattable())

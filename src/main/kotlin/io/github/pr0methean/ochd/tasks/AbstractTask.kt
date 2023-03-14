@@ -159,16 +159,8 @@ abstract class AbstractTask<out T>(
 
     private fun isStartedOrAvailable(): Boolean = cache.getNowAsync()?.run { isActive || isCompleted } ?: false
 
-    fun cacheableSubtasks(): Int {
-        var subtasks = if (cache.isEnabled()) 1 else 0
-        for (task in directDependencies) {
-            subtasks += task.cacheableSubtasks()
-        }
-        return subtasks
-    }
-
     /**
-     * How many new entries this task will cause to be added to the cache.
+     * How many new entries this task will cause to be added to the cache if we start it now.
      */
     fun newCacheEntries(): Int {
         if (isStartedOrAvailable()) {
