@@ -129,139 +129,137 @@ suspend fun main(args: Array<String>) {
     depsBuildTask.join()
     onTaskCompleted("Build task graph", "Build task graph")
     val dotOutputEnabled = tileSize <= MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH
-    withContext<Unit>(Dispatchers.Default) {
-        val ioJobs = ConcurrentHashMap.newKeySet<Job>()
-        val connectedComponents = if (tasks.size > maxOutputTasks || dotOutputEnabled) {
+    val ioJobs = ConcurrentHashMap.newKeySet<Job>()
+    val connectedComponents = if (tasks.size > maxOutputTasks || dotOutputEnabled) {
 
-            // Output tasks that are in different weakly-connected components don't share any dependencies, so we
-            // launch tasks from one component at a time to keep the number of cached images manageable. We start
-            // with the small ones so that they'll become unreachable before the largest component hits its peak cache
-            // size, thus limiting the peak size of the live set and reducing the size of heap we need.
-            val components = mutableListOf<MutableSet<PngOutputTask>>()
-            sortTask@ for (task in tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks))
-            ) {
-                val matchingComponents = components.filter { it.any(task::overlapsWith) }
-                logger.debug("{} is connected to: {}", task, matchingComponents.asFormattable())
-                if (matchingComponents.isEmpty()) {
-                    components.add(mutableSetOf(task))
-                } else {
-                    matchingComponents.first().add(task)
-                    for (component in matchingComponents.drop(1)) {
-                        // More than one match = need to merge components
-                        matchingComponents.first().addAll(component)
-                        check(components.remove(component)) {
-                            "Failed to remove $component after merging into ${matchingComponents.first()}"
-                        }
+        // Output tasks that are in different weakly-connected components don't share any dependencies, so we
+        // launch tasks from one component at a time to keep the number of cached images manageable. We start
+        // with the small ones so that they'll become unreachable before the largest component hits its peak cache
+        // size, thus limiting the peak size of the live set and reducing the size of heap we need.
+        val components = mutableListOf<MutableSet<PngOutputTask>>()
+        sortTask@ for (task in tasks.sortedWith(comparingInt(PngOutputTask::cacheableSubtasks))
+        ) {
+            val matchingComponents = components.filter { it.any(task::overlapsWith) }
+            logger.debug("{} is connected to: {}", task, matchingComponents.asFormattable())
+            if (matchingComponents.isEmpty()) {
+                components.add(mutableSetOf(task))
+            } else {
+                matchingComponents.first().add(task)
+                for (component in matchingComponents.drop(1)) {
+                    // More than one match = need to merge components
+                    matchingComponents.first().addAll(component)
+                    check(components.remove(component)) {
+                        "Failed to remove $component after merging into ${matchingComponents.first()}"
                     }
-                }
-            }
-            components.sortedBy(MutableSet<PngOutputTask>::size)
-        } else listOf(tasks)
-        var dotFormatOutputJob: Job? = null
-        if (dotOutputEnabled) {
-            // Output connected components in .dot format
-            dotFormatOutputJob = ioScope.launch {
-                @Suppress("BlockingMethodInNonBlockingContext")
-                Paths.get("out").toFile().mkdirs()
-                Paths.get("out", "graph.dot").toFile().printWriter(UTF_8).use { writer ->
-                    // Strict because multiedges are possible
-                    writer.println("strict digraph {")
-                    writer.println("\"OcHd\" [root=true]")
-                    connectedComponents.forEachIndexed { index, connectedComponent ->
-                        writer.print("subgraph cluster_")
-                        writer.print(index)
-                        writer.println('{')
-                        connectedComponent.forEach {
-                            it.printDependencies(writer)
-                        }
-                        writer.println('}')
-                    }
-                    connectedComponents.forEach { connectedComponent ->
-                        connectedComponent.forEach {
-                            writer.print("\"OcHd\" -> \"")
-                            it.appendForGraphPrinting(writer)
-                            writer.println("\"")
-                            it.printDependencies(writer)
-                        }
-                    }
-                    writer.println('}')
                 }
             }
         }
-        val inProgressJobs = ConcurrentHashMap<PngOutputTask, Job>()
-        val finishedJobsChannel = Channel<PngOutputTask>(
-            capacity = CAPACITY_PADDING_FACTOR * maxOutputTasks
-        )
-        dotFormatOutputJob?.join()
-        for (connectedComponent in connectedComponents) {
-            logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
-            while (connectedComponent.isNotEmpty()) {
-                val currentInProgressJobs = inProgressJobs.size
-                if (currentInProgressJobs >= maxOutputTasks) {
-                    logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
-                    val delay = measureNanoTime {
-                        finishedJobsChannel.receive()
-                    }
-                    logger.warn("Waited for tasks in progress to fall below limit for {} ns", box(delay))
-                    continue
-                } else if (currentInProgressJobs + connectedComponent.size <= maxOutputTasks) {
-                    logger.info(
-                        "{} tasks in progress; starting all {} currently eligible tasks: {}",
-                        box(currentInProgressJobs), box(connectedComponent.size), connectedComponent.asFormattable()
-                    )
+        components.sortedBy(MutableSet<PngOutputTask>::size)
+    } else listOf(tasks)
+    var dotFormatOutputJob: Job? = null
+    if (dotOutputEnabled) {
+        // Output connected components in .dot format
+        dotFormatOutputJob = ioScope.launch {
+            @Suppress("BlockingMethodInNonBlockingContext")
+            Paths.get("out").toFile().mkdirs()
+            Paths.get("out", "graph.dot").toFile().printWriter(UTF_8).use { writer ->
+                // Strict because multiedges are possible
+                writer.println("strict digraph {")
+                writer.println("\"OcHd\" [root=true]")
+                connectedComponents.forEachIndexed { index, connectedComponent ->
+                    writer.print("subgraph cluster_")
+                    writer.print(index)
+                    writer.println('{')
                     connectedComponent.forEach {
-                        startTask(
-                            scope,
-                            it,
-                            finishedJobsChannel,
-                            ioJobs,
-                            prereqIoJobs,
-                            inProgressJobs
-                        )
+                        it.printDependencies(writer)
                     }
-                    connectedComponent.clear()
-                } else {
-                    val task = connectedComponent.minWithOrNull(taskOrderComparator)
-                    checkNotNull(task) { "Error finding a new task to start" }
-                    if (currentInProgressJobs >= minOutputTasks) {
-                        val cachedTasks = cachedTasks()
-                        val newEntries = task.newCacheEntries()
-                        val impendingEntries = inProgressJobs.keys.sumOf(PngOutputTask::impendingCacheEntries)
-                        logger.info(
-                            "Cached tasks: {} current, {} impending, {} snapshots, {} when next task starts",
-                            box(cachedTasks), box(impendingEntries), box(pendingSnapshotTasks()), box(newEntries))
-                        val totalCacheWithThisTask = cachedTasks + impendingEntries + newEntries
-                        if (totalCacheWithThisTask >= goalHeapImages && newEntries > 0) {
-                            logger.warn("{} tasks in progress and too many cached; waiting for one to finish",
-                                    currentInProgressJobs)
-                            val delay = measureNanoTime {
-                                finishedJobsChannel.receive()
-                            }
-                            logger.warn("Waited for a task to finish for {} ns", box(delay))
-                            continue
-                        }
+                    writer.println('}')
+                }
+                connectedComponents.forEach { connectedComponent ->
+                    connectedComponent.forEach {
+                        writer.print("\"OcHd\" -> \"")
+                        it.appendForGraphPrinting(writer)
+                        writer.println("\"")
+                        it.printDependencies(writer)
                     }
-                    logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
+                }
+                writer.println('}')
+            }
+        }
+    }
+    val inProgressJobs = ConcurrentHashMap<PngOutputTask, Job>()
+    val finishedJobsChannel = Channel<PngOutputTask>(
+        capacity = CAPACITY_PADDING_FACTOR * maxOutputTasks
+    )
+    dotFormatOutputJob?.join()
+    for (connectedComponent in connectedComponents) {
+        logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
+        while (connectedComponent.isNotEmpty()) {
+            val currentInProgressJobs = inProgressJobs.size
+            if (currentInProgressJobs >= maxOutputTasks) {
+                logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
+                val delay = measureNanoTime {
+                    finishedJobsChannel.receive()
+                }
+                logger.warn("Waited for tasks in progress to fall below limit for {} ns", box(delay))
+                continue
+            } else if (currentInProgressJobs + connectedComponent.size <= maxOutputTasks) {
+                logger.info(
+                    "{} tasks in progress; starting all {} currently eligible tasks: {}",
+                    box(currentInProgressJobs), box(connectedComponent.size), connectedComponent.asFormattable()
+                )
+                connectedComponent.forEach {
                     startTask(
                         scope,
-                        task,
+                        it,
                         finishedJobsChannel,
                         ioJobs,
                         prereqIoJobs,
                         inProgressJobs
                     )
-                    check(connectedComponent.remove(task)) { "Attempted to remove task more than once: $task" }
                 }
+                connectedComponent.clear()
+            } else {
+                val task = connectedComponent.minWithOrNull(taskOrderComparator)
+                checkNotNull(task) { "Error finding a new task to start" }
+                if (currentInProgressJobs >= minOutputTasks) {
+                    val cachedTasks = cachedTasks()
+                    val newEntries = task.newCacheEntries()
+                    val impendingEntries = inProgressJobs.keys.sumOf(PngOutputTask::impendingCacheEntries)
+                    logger.info(
+                        "Cached tasks: {} current, {} impending, {} snapshots, {} when next task starts",
+                        box(cachedTasks), box(impendingEntries), box(pendingSnapshotTasks()), box(newEntries))
+                    val totalCacheWithThisTask = cachedTasks + impendingEntries + newEntries
+                    if (totalCacheWithThisTask >= goalHeapImages && newEntries > 0) {
+                        logger.warn("{} tasks in progress and too many cached; waiting for one to finish",
+                                currentInProgressJobs)
+                        val delay = measureNanoTime {
+                            finishedJobsChannel.receive()
+                        }
+                        logger.warn("Waited for a task to finish for {} ns", box(delay))
+                        continue
+                    }
+                }
+                logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
+                startTask(
+                    scope,
+                    task,
+                    finishedJobsChannel,
+                    ioJobs,
+                    prereqIoJobs,
+                    inProgressJobs
+                )
+                check(connectedComponent.remove(task)) { "Attempted to remove task more than once: $task" }
             }
         }
-        logger.info("All jobs started; waiting for {} running jobs to finish", box(inProgressJobs.size))
-        inProgressJobs.values.joinAll()
-        logger.info("All jobs done; closing channel")
-        finishedJobsChannel.close()
-        logger.info("Waiting for {} remaining IO jobs to finish", box(ioJobs.size))
-        ioJobs.joinAll()
-        logger.info("All IO jobs are finished")
     }
+    logger.info("All jobs started; waiting for {} running jobs to finish", box(inProgressJobs.size))
+    inProgressJobs.values.joinAll()
+    logger.info("All jobs done; closing channel")
+    finishedJobsChannel.close()
+    logger.info("Waiting for {} remaining IO jobs to finish", box(ioJobs.size))
+    ioJobs.joinAll()
+    logger.info("All IO jobs are finished")
     val runningTime = System.nanoTime() - startTime
     stopMonitoring()
     Platform.exit()
