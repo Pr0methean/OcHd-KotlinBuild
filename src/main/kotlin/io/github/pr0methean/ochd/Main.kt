@@ -296,10 +296,7 @@ private fun startTask(
                 task.writeToFiles(awtImage).join()
                 onTaskCompleted("PngOutputTask", task.name)
             }
-            scope.launch {
-                ioJob.join()
-                ioJobs.remove(ioJob)
-            }
+            ioJob.invokeOnCompletion { ioJobs.remove(ioJob) }
             ioJobs.add(ioJob)
             inProgressJobs.remove(task)
             finishedJobsChannel.send(task)
