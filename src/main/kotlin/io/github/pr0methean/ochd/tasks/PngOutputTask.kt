@@ -55,7 +55,7 @@ class PngOutputTask(
 
     override suspend fun perform(): Nothing = error("The output task is defined in Main.kt")
 
-    suspend fun writeToFiles(awtImage: BufferedImage): Job {
+    fun writeToFiles(awtImage: BufferedImage): Job {
         val firstFile = files[0]
         val firstFilePath = firstFile.absoluteFile.toPath()
         val writeFirstFile = ioScope.launch {
