@@ -15,6 +15,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.job
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -252,12 +253,7 @@ suspend fun main(args: Array<String>) {
         }
     }
     logger.info("All jobs started; waiting for {} running jobs to finish", box(inProgressJobs.size))
-    inProgressJobs.values.joinAll()
-    logger.info("All jobs done; closing channel")
-    finishedJobsChannel.close()
-    logger.info("Waiting for {} remaining IO jobs to finish", box(ioJobs.size))
-    ioJobs.joinAll()
-    logger.info("All IO jobs are finished")
+    scope.coroutineContext.job.join()
     val runningTime = System.nanoTime() - startTime
     stopMonitoring()
     Platform.exit()
