@@ -188,9 +188,7 @@ suspend fun main(args: Array<String>) {
         }
     }
     val inProgressJobs = ConcurrentHashMap<PngOutputTask, Job>()
-    val finishedJobsChannel = Channel<PngOutputTask>(
-        capacity = CAPACITY_PADDING_FACTOR * maxOutputTasks
-    )
+    val finishedJobsChannel = Channel<PngOutputTask>(capacity = CAPACITY_PADDING_FACTOR * maxOutputTasks)
     dotFormatOutputJob?.join()
     for (connectedComponent in connectedComponents) {
         logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))

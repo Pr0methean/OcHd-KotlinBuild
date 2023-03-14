@@ -157,12 +157,11 @@ object ImageProcessingStats {
     }
 
     fun onCachingDisabled(task: AbstractTask<*>) {
-        logger.info("Disabled caching for: {}: {}", task::class.simpleName, task.name)
         cacheableTasks.remove(task.name)
         cachedTasks.remove(task.name)
+        logger.info("Removed {} from cache. Currently cached tasks: {}:\n{}",
+            task.name, box(cachedTasks.size), cachedTasks.asFormattable(System.lineSeparator()))
         logger.info("Currently cacheable tasks: {}", box(cacheableTasks.size))
-        logger.info("Currently cached tasks: {}:\n{}",
-            box(cachedTasks.size), cachedTasks.asFormattable(System.lineSeparator()))
     }
 
     fun onCache(task: AbstractTask<*>) {
