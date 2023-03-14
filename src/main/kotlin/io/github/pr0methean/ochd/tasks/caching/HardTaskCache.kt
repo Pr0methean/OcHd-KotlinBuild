@@ -5,7 +5,8 @@ import kotlinx.coroutines.Deferred
 import java.util.concurrent.atomic.AtomicReference
 
 /**
- * A [DeferredTaskCache] that's backed by a strong reference.
+ * A [DeferredTaskCache] that's backed by a strong reference. Since the cached image won't be evicted while it's still
+ * needed, this is the preferred implementation for reusable tasks as long as sufficient memory is available.
  */
 @Suppress("unused")
 class HardTaskCache<T>(
