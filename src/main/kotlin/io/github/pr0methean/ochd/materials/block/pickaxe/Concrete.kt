@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd.materials.block.pickaxe
 
 import io.github.pr0methean.ochd.LayerListBuilder
-import io.github.pr0methean.ochd.OutputTaskBuilder
+import io.github.pr0methean.ochd.OutputTaskEmitter
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.tasks.AbstractImageTask
 import io.github.pr0methean.ochd.texturebase.DyedBlock
@@ -16,7 +16,7 @@ object Concrete: DyedBlock("concrete") {
         copy(sharedLayers)
     }
 
-    override fun createSharedLayersTask(ctx: OutputTaskBuilder): AbstractImageTask = ctx.layer(ctx.stack {
+    override fun createSharedLayersTask(ctx: OutputTaskEmitter): AbstractImageTask = ctx.layer(ctx.stack {
         layer("strokeBottomLeftTopRight", c(0x515151))
         layer("strokeTopLeftBottomRight", c(0x515151))
         layer("borderShortDashes", c(0xaaaaaa))

@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd.materials.block.indestructible
 
 import io.github.pr0methean.ochd.LayerListBuilder
-import io.github.pr0methean.ochd.OutputTaskBuilder
+import io.github.pr0methean.ochd.OutputTaskEmitter
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.tasks.AbstractImageTask
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
@@ -55,7 +55,7 @@ object StructureAndJigsaw: ShadowHighlightMaterial {
     override val color: Color = c(0xb493b4)
     override val shadow: Color = c(0x26002a)
     override val highlight: Color = c(0xd7c2d7)
-    override fun OutputTaskBuilder.outputTasks() {
+    override fun OutputTaskEmitter.outputTasks() {
         val backgroundAndBorder = stack {
             background(shadow)
             layer("borderDotted", color)

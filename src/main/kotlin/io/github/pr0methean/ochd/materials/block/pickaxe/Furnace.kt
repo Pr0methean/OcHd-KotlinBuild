@@ -1,12 +1,12 @@
 package io.github.pr0methean.ochd.materials.block.pickaxe
 
-import io.github.pr0methean.ochd.OutputTaskBuilder
+import io.github.pr0methean.ochd.OutputTaskEmitter
 import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.STONE
 import io.github.pr0methean.ochd.texturebase.Material
 import javafx.scene.paint.Color
 
 object Furnace: Material {
-    override fun OutputTaskBuilder.outputTasks() {
+    override fun OutputTaskEmitter.outputTasks() {
         val furnaceSide = stack {
             background(STONE.color)
             layer("bottomHalf", STONE.highlight)

@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd.materials.block.axe
 
 import io.github.pr0methean.ochd.LayerListBuilder
-import io.github.pr0methean.ochd.OutputTaskBuilder
+import io.github.pr0methean.ochd.OutputTaskEmitter
 import io.github.pr0methean.ochd.texturebase.Block
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
 import io.github.pr0methean.ochd.texturebase.SingleTextureMaterial
@@ -22,7 +22,7 @@ enum class SimpleAxeBlock(override val hasOutput: Boolean = true)
             layer("craftingSide", OverworldWood.DARK_OAK.color)
         }
 
-        override fun OutputTaskBuilder.outputTasks() {
+        override fun OutputTaskEmitter.outputTasks() {
             out("block/crafting_table_side", "block/crafting_table_front") {
                 createTextureLayers()
             }

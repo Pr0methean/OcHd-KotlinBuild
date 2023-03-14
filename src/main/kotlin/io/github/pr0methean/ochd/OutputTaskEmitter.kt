@@ -5,7 +5,7 @@ import io.github.pr0methean.ochd.tasks.PngOutputTask
 import javafx.scene.paint.Paint
 
 @OcHdDslMarker
-class OutputTaskBuilder(private val ctx: TaskPlanningContext, private inline val emit: (PngOutputTask) -> Unit) {
+class OutputTaskEmitter(private val ctx: TaskPlanningContext, private inline val emit: (PngOutputTask) -> Unit) {
     fun out(name: String, source: AbstractImageTask) {
         emit(ctx.out(name, source))
     }

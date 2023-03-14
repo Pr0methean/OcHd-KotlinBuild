@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd.texturebase
 
 import io.github.pr0methean.ochd.LayerListBuilder
-import io.github.pr0methean.ochd.OutputTaskBuilder
+import io.github.pr0methean.ochd.OutputTaskEmitter
 
 interface SingleTextureMaterial: Material {
     val directory: String
@@ -13,7 +13,7 @@ interface SingleTextureMaterial: Material {
     fun copyTo(dest: LayerListBuilder) {
         dest.apply {createTextureLayers()}
     }
-    override fun OutputTaskBuilder.outputTasks() {
+    override fun OutputTaskEmitter.outputTasks() {
         if (hasOutput) {
             out("$directory/${this@SingleTextureMaterial.name}") { createTextureLayers() }
         }

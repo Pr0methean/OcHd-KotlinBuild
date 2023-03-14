@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd.materials.block.pickaxe
 
 import io.github.pr0methean.ochd.LayerListBuilder
-import io.github.pr0methean.ochd.OutputTaskBuilder
+import io.github.pr0methean.ochd.OutputTaskEmitter
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.DEEPSLATE
 import io.github.pr0methean.ochd.materials.block.pickaxe.OreBase.NETHERRACK
@@ -33,7 +33,7 @@ enum class Ore(
         highlight = c(0x515151)
     ) {
         override fun oreBlock(
-            ctx: OutputTaskBuilder,
+            ctx: OutputTaskEmitter,
             oreBase: OreBase
         ): AbstractImageTask {
             if (oreBase == DEEPSLATE) {
@@ -79,7 +79,7 @@ enum class Ore(
             rawOre()
         }
 
-        override fun oreBlock(ctx: OutputTaskBuilder, oreBase: OreBase): AbstractImageTask {
+        override fun oreBlock(ctx: OutputTaskEmitter, oreBase: OreBase): AbstractImageTask {
             return if (oreBase == STONE) {
                 ctx.stack {
                     copy(STONE)
@@ -101,7 +101,7 @@ enum class Ore(
         highlight = Color.WHITE,
         substrates = netherOreBases
     ) {
-        override fun OutputTaskBuilder.outputTasks() {
+        override fun OutputTaskEmitter.outputTasks() {
             out("item/quartz") { ingot() }
             out("block/nether_quartz_ore") {
                 copy(NETHERRACK)
@@ -210,7 +210,7 @@ enum class Ore(
 
     open fun LayerListBuilder.itemForOutput(): Unit = item()
 
-    override fun OutputTaskBuilder.outputTasks() {
+    override fun OutputTaskEmitter.outputTasks() {
         substrates.forEach { oreBase ->
             out("block/${oreBase.orePrefix}${this@Ore.name}_ore", oreBlock(this@outputTasks, oreBase))
         }
@@ -225,7 +225,7 @@ enum class Ore(
     }
 
     protected open fun oreBlock(
-        ctx: OutputTaskBuilder,
+        ctx: OutputTaskEmitter,
         oreBase: OreBase
     ): AbstractImageTask = ctx.stack {
         copy(oreBase)

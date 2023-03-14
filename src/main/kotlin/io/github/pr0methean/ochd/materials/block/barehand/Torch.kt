@@ -1,12 +1,12 @@
 package io.github.pr0methean.ochd.materials.block.barehand
 
-import io.github.pr0methean.ochd.OutputTaskBuilder
+import io.github.pr0methean.ochd.OutputTaskEmitter
 import io.github.pr0methean.ochd.materials.block.axe.OverworldWood.OAK
 import io.github.pr0methean.ochd.materials.block.pickaxe.Ore.REDSTONE
 import io.github.pr0methean.ochd.texturebase.Material
 
 object Torch: Material {
-    override fun OutputTaskBuilder.outputTasks() {
+    override fun OutputTaskEmitter.outputTasks() {
         val torchBase = stack {
             layer("torchBase", OAK.highlight)
             layer("torchShadow", OAK.shadow)

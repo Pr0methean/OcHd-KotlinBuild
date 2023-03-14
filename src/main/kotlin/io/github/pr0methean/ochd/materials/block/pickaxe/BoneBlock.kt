@@ -1,6 +1,6 @@
 package io.github.pr0methean.ochd.materials.block.pickaxe
 
-import io.github.pr0methean.ochd.OutputTaskBuilder
+import io.github.pr0methean.ochd.OutputTaskEmitter
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.texturebase.Material
 import javafx.scene.paint.Color
@@ -9,7 +9,7 @@ object BoneBlock: Material {
     val color: Color = c(0xe1ddca)
     val shadow: Color = c(0xc3bfa1)
     val highlight: Color = c(0xEaEaD0)
-    override fun OutputTaskBuilder.outputTasks() {
+    override fun OutputTaskEmitter.outputTasks() {
         out("block/bone_block_top") {
             background(shadow)
             layer("borderSolid", highlight)

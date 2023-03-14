@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd.texturebase
 
 import io.github.pr0methean.ochd.LayerListBuilder
-import io.github.pr0methean.ochd.OutputTaskBuilder
+import io.github.pr0methean.ochd.OutputTaskEmitter
 
 interface DoubleTallBlock: Material {
     fun LayerListBuilder.createBottomLayers()
@@ -10,9 +10,9 @@ interface DoubleTallBlock: Material {
 
     val name: String
 
-    fun OutputTaskBuilder.extraOutputTasks() {}
+    fun OutputTaskEmitter.extraOutputTasks() {}
 
-    override fun OutputTaskBuilder.outputTasks() {
+    override fun OutputTaskEmitter.outputTasks() {
         out("block/${this@DoubleTallBlock.name}_bottom") { createBottomLayers() }
         out("block/${this@DoubleTallBlock.name}_top") { createTopLayers() }
         extraOutputTasks()

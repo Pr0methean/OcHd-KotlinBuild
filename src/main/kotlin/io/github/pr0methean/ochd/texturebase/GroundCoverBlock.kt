@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd.texturebase
 
 import io.github.pr0methean.ochd.LayerListBuilder
-import io.github.pr0methean.ochd.OutputTaskBuilder
+import io.github.pr0methean.ochd.OutputTaskEmitter
 
 interface GroundCoverBlock: Material {
     val base: SingleTextureMaterial
@@ -10,9 +10,9 @@ interface GroundCoverBlock: Material {
     fun LayerListBuilder.createCoverSideLayers()
     fun LayerListBuilder.createTopLayers()
 
-    fun OutputTaskBuilder.extraOutputTasks() {}
+    fun OutputTaskEmitter.extraOutputTasks() {}
 
-    override fun OutputTaskBuilder.outputTasks() {
+    override fun OutputTaskEmitter.outputTasks() {
         out("block/${this@GroundCoverBlock.name}_top") { createTopLayers() }
         out("block/${this@GroundCoverBlock.name}_side") {
             copy(base)

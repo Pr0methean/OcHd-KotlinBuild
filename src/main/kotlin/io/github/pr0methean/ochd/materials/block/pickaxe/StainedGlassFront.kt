@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd.materials.block.pickaxe
 
 import io.github.pr0methean.ochd.LayerListBuilder
-import io.github.pr0methean.ochd.OutputTaskBuilder
+import io.github.pr0methean.ochd.OutputTaskEmitter
 import io.github.pr0methean.ochd.tasks.AbstractImageTask
 import io.github.pr0methean.ochd.texturebase.DyedBlock
 import io.github.pr0methean.ochd.times
@@ -18,7 +18,7 @@ object StainedGlassFront: DyedBlock("stained_glass") {
         layer(sharedLayers, color)
     }
 
-    override fun createSharedLayersTask(ctx: OutputTaskBuilder): AbstractImageTask = ctx.stack {
+    override fun createSharedLayersTask(ctx: OutputTaskEmitter): AbstractImageTask = ctx.stack {
         background(Color.BLACK * 0.25)
         layer("borderSolid")
         layer("streaks")

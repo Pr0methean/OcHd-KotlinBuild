@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd.materials.block.barehand
 
 import io.github.pr0methean.ochd.LayerListBuilder
-import io.github.pr0methean.ochd.OutputTaskBuilder
+import io.github.pr0methean.ochd.OutputTaskEmitter
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.texturebase.DoubleTallBlock
 import javafx.scene.paint.Color
@@ -25,7 +25,7 @@ enum class DoubleTallFlower: DoubleTallBlock {
             layer("flowerStemBottomBorder", stemShadow)
         }
 
-        override fun OutputTaskBuilder.extraOutputTasks() {
+        override fun OutputTaskEmitter.extraOutputTasks() {
             out("block/sunflower_back", "sunflowerPetals")
             out("block/sunflower_front") {
                 layer("sunflowerPetals", Color.YELLOW)

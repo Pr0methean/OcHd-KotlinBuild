@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd.materials.block.barehand
 
 import io.github.pr0methean.ochd.LayerListBuilder
-import io.github.pr0methean.ochd.OutputTaskBuilder
+import io.github.pr0methean.ochd.OutputTaskEmitter
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.materials.block.axe.GiantMushroom
 import io.github.pr0methean.ochd.texturebase.Block
@@ -47,7 +47,7 @@ enum class SimpleBareHandBlock(
             layer("redstoneLine", color)
         }
 
-        override fun OutputTaskBuilder.outputTasks() {
+        override fun OutputTaskEmitter.outputTasks() {
             out("block/redstone_dust_line0", "block/redstone_dust_line1") {
                 createTextureLayers()
             }

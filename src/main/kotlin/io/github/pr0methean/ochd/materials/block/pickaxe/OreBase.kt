@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd.materials.block.pickaxe
 
 import io.github.pr0methean.ochd.LayerListBuilder
-import io.github.pr0methean.ochd.OutputTaskBuilder
+import io.github.pr0methean.ochd.OutputTaskEmitter
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.texturebase.Block
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
@@ -29,7 +29,7 @@ enum class OreBase(
             layer("diagonalChecksTopLeftBottomRight", DEEPSLATE.shadow)
         }
 
-        override fun OutputTaskBuilder.outputTasks() {
+        override fun OutputTaskEmitter.outputTasks() {
             val baseTexture = stack { createTextureLayers() }
             out("block/deepslate", baseTexture)
             out("block/deepslate_bricks") {

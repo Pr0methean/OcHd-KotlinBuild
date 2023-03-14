@@ -1,12 +1,12 @@
 package io.github.pr0methean.ochd.materials.block.pickaxe
 
-import io.github.pr0methean.ochd.OutputTaskBuilder
+import io.github.pr0methean.ochd.OutputTaskEmitter
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.texturebase.Material
 import javafx.scene.paint.Color
 
 object Glass: Material {
-    override fun OutputTaskBuilder.outputTasks() {
+    override fun OutputTaskEmitter.outputTasks() {
         out("block/glass_pane_top", layer("paneTop", c(0xa8d5d5)))
         out("block/glass") {
             layer("borderSolid", c(0x515151))

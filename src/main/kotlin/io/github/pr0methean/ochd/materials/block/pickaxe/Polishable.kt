@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd.materials.block.pickaxe
 
 import io.github.pr0methean.ochd.LayerListBuilder
-import io.github.pr0methean.ochd.OutputTaskBuilder
+import io.github.pr0methean.ochd.OutputTaskEmitter
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.materials.block.pickaxe.Ore.GOLD
 import io.github.pr0methean.ochd.texturebase.ShadowHighlightMaterial
@@ -43,7 +43,7 @@ enum class Polishable(
             layer("bigDotsBottomLeftTopRight", highlight)
             layer("bigDotsTopLeftBottomRight", color)
         }
-        override fun OutputTaskBuilder.outputTasks() {
+        override fun OutputTaskEmitter.outputTasks() {
             val base = stack { createTextureLayersBase() }
             out("block/blackstone", base)
             val polishedTextureTask = stack {
@@ -69,7 +69,7 @@ enum class Polishable(
         layer("borderSolidTopLeft", highlight)
     }
 
-    override fun OutputTaskBuilder.outputTasks() {
+    override fun OutputTaskEmitter.outputTasks() {
         val base = stack { createTextureLayersBase() }
         out("block/${this@Polishable.name}", base)
         out("block/polished_${this@Polishable.name}") {

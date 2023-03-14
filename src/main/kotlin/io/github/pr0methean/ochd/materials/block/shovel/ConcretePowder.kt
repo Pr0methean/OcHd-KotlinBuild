@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd.materials.block.shovel
 
 import io.github.pr0methean.ochd.LayerListBuilder
-import io.github.pr0methean.ochd.OutputTaskBuilder
+import io.github.pr0methean.ochd.OutputTaskEmitter
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.tasks.AbstractImageTask
 import io.github.pr0methean.ochd.texturebase.DyedBlock
@@ -16,7 +16,7 @@ object ConcretePowder: DyedBlock("concrete_powder") {
         copy(sharedLayers)
     }
 
-    override fun createSharedLayersTask(ctx: OutputTaskBuilder): AbstractImageTask =
+    override fun createSharedLayersTask(ctx: OutputTaskEmitter): AbstractImageTask =
         ctx.stack {
             layer("checksSmall", c(0x515151), 0.5)
             layer("checksSmall", c(0xaaaaaa), 0.5)

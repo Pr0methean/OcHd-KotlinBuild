@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd.texturebase
 
-import io.github.pr0methean.ochd.OutputTaskBuilder
+import io.github.pr0methean.ochd.OutputTaskEmitter
 
 interface Material {
-    fun OutputTaskBuilder.outputTasks()
+    fun OutputTaskEmitter.outputTasks()
 }

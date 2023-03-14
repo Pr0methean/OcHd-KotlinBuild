@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd.materials.block.barehand
 
 import io.github.pr0methean.ochd.LayerListBuilder
-import io.github.pr0methean.ochd.OutputTaskBuilder
+import io.github.pr0methean.ochd.OutputTaskEmitter
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.materials.block.axe.Fungus
 import io.github.pr0methean.ochd.texturebase.Material
@@ -43,7 +43,7 @@ enum class Crop(private val numStages: Int, val color: Paint): Material {
         }
     };
 
-    override fun OutputTaskBuilder.outputTasks() {
+    override fun OutputTaskEmitter.outputTasks() {
         for (stage in 0 until numStages) {
             out("block/${this@Crop.name}_stage${stage}") { createTextureForStage(stage) }
         }

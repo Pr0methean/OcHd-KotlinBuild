@@ -111,12 +111,12 @@ suspend fun main(args: Array<String>) {
     onTaskLaunched("Build task graph", "Build task graph")
     val dirs = mutableSetOf<File>()
     val tasks = mutableSetOf<PngOutputTask>()
-    val outputTaskBuilder = OutputTaskBuilder(ctx) {
+    val outputTaskEmitter = OutputTaskEmitter(ctx) {
         logger.debug("Emitting output task: {}", it)
         tasks.add(it)
         dirs.addAll(it.files.mapNotNull(File::parentFile))
     }
-    ALL_MATERIALS.run { outputTaskBuilder.outputTasks() }
+    ALL_MATERIALS.run { outputTaskEmitter.outputTasks() }
     val mkdirs = ioScope.launch {
         deleteOldOutputs.join()
         dirs.filter(mkdirsedPaths::add)

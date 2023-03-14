@@ -1,6 +1,6 @@
 package io.github.pr0methean.ochd.materials.block.pickaxe
 
-import io.github.pr0methean.ochd.OutputTaskBuilder
+import io.github.pr0methean.ochd.OutputTaskEmitter
 import io.github.pr0methean.ochd.materials.block.axe.OverworldWood.OAK
 import io.github.pr0methean.ochd.materials.block.pickaxe.Ore.GOLD
 import io.github.pr0methean.ochd.materials.block.pickaxe.Ore.IRON
@@ -8,7 +8,7 @@ import io.github.pr0methean.ochd.texturebase.Material
 import io.github.pr0methean.ochd.texturebase.redstoneOffAndOn
 
 object Rails: Material {
-    override fun OutputTaskBuilder.outputTasks() {
+    override fun OutputTaskEmitter.outputTasks() {
         out("block/rail") {
             layer("railTies", OAK.color)
             layer("rail", IRON.refinedShadow)

@@ -1,11 +1,11 @@
 package io.github.pr0methean.ochd.texturebase
 
-import io.github.pr0methean.ochd.OutputTaskBuilder
+import io.github.pr0methean.ochd.OutputTaskEmitter
 
 open class MaterialGroup(private val elements: Sequence<Material>): Material {
     constructor(vararg elements: Material): this(elements.asSequence())
 
-    override fun OutputTaskBuilder.outputTasks(): Unit = elements.forEach {
+    override fun OutputTaskEmitter.outputTasks(): Unit = elements.forEach {
         it.run { outputTasks() }
     }
 }

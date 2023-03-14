@@ -1,7 +1,7 @@
 package io.github.pr0methean.ochd.materials.block.shovel
 
 import io.github.pr0methean.ochd.LayerListBuilder
-import io.github.pr0methean.ochd.OutputTaskBuilder
+import io.github.pr0methean.ochd.OutputTaskEmitter
 import io.github.pr0methean.ochd.c
 import io.github.pr0methean.ochd.materials.block.shovel.SimpleSoftEarth.POWDER_SNOW
 import io.github.pr0methean.ochd.texturebase.GroundCoverBlock
@@ -37,7 +37,7 @@ enum class DirtGroundCover(
             layer("veesTop", grassItemShadow)
         }
 
-        override fun OutputTaskBuilder.extraOutputTasks() {
+        override fun OutputTaskEmitter.extraOutputTasks() {
             out("block/grass_block_side_overlay") {
                 layer("topPart", color)
                 layer("veesTop", shadow)
@@ -56,7 +56,7 @@ enum class DirtGroundCover(
             layer("borderDotted", shadow)
         }
 
-        override fun OutputTaskBuilder.outputTasks() {
+        override fun OutputTaskEmitter.outputTasks() {
             val top = stack { createTopLayers() }
             out("block/podzol_top", "block/composter_compost", source = top)
             out("block/composter_ready") {
@@ -91,7 +91,7 @@ enum class DirtGroundCover(
             layer("snowTopPart", shadow)
         }
 
-        override fun OutputTaskBuilder.outputTasks() {
+        override fun OutputTaskEmitter.outputTasks() {
             out("block/snow") { createTopLayers() }
             out("block/grass_block_snow") {
                 copy(base)
