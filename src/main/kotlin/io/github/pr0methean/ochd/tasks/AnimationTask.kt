@@ -63,12 +63,12 @@ class AnimationTask(
     override suspend fun asCanvas(): Canvas {
         ImageProcessingStats.onTaskLaunched("AnimationTask", name)
         val canvas = background.asCanvas()
-        background.removeDirectDependentTask(this)
         canvas.height = height.toDouble()
         val canvasCtx = canvas.graphicsContext2D
         for (index in frames.indices.drop(1)) {
             background.renderOnto({ canvasCtx }, 0.0, (frameHeight * index).toDouble())
         }
+        background.removeDirectDependentTask(this)
         val canvasMutex = Mutex()
         val frameTasks = frames.withIndex().map { (index, frameTask) ->
             coroutineScope.launch {
