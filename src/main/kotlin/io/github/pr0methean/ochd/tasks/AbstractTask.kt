@@ -57,15 +57,15 @@ abstract class AbstractTask<out T>(
      * Called once a dependent task has retrieved the output, so that we can disable caching and free up heap space once
      * all dependents have done so.
      */
-    fun removeDirectDependentTask(task: AbstractTask<*>) {
+    suspend fun removeDirectDependentTask(task: AbstractTask<*>) {
         mutex.withLock {
             if (directDependentTasks.remove(task)) {
                 abstractTaskLogger.info("Removed dependency of {} on {}", task.name, name)
-            }
-            if (directDependentTasks.isEmpty()) {
-                directDependencies.forEach { it.removeDirectDependentTask(this) }
-                if (cache.disable()) {
-                    ImageProcessingStats.onCachingDisabled(this)
+                if (directDependentTasks.isEmpty()) {
+                    directDependencies.forEach { it.removeDirectDependentTask(this) }
+                    if (cache.disable()) {
+                        ImageProcessingStats.onCachingDisabled(this)
+                    }
                 }
             }
         }
@@ -105,7 +105,7 @@ abstract class AbstractTask<out T>(
             || (cache.isEnabled() && mutex.withLock { directDependentTasks.size } > 1)
             || isStartedOrAvailable()
 
-    fun registerRecursiveDependencies() {
+    suspend fun registerRecursiveDependencies() {
         if (!dependenciesRegistered) {
             mutex.withLock {
                 if (!dependenciesRegistered) {
@@ -174,7 +174,7 @@ abstract class AbstractTask<out T>(
 
     fun removedCacheEntries(): Int {
         return directDependencies.sumOf(AbstractTask<*>::removedCacheEntries) +
-                if (cache.isEnabled() && directConsumers() <= 1) 1 else 0
+                if (cache.isEnabled() && directDependentTasks.size <= 1) 1 else 0
     }
 
     fun impendingCacheEntries(): Int {
