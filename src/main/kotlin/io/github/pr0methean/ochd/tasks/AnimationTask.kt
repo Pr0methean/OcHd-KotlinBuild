@@ -62,8 +62,8 @@ class AnimationTask(
 
     override suspend fun asCanvas(): Canvas {
         ImageProcessingStats.onTaskLaunched("AnimationTask", name)
-        background.removeDirectDependentTask(this)
         val canvas = background.asCanvas()
+        background.removeDirectDependentTask(this)
         canvas.height = height.toDouble()
         val canvasCtx = canvas.graphicsContext2D
         for (index in frames.indices.drop(1)) {
