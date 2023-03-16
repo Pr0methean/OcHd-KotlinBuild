@@ -4,7 +4,7 @@ import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.LayerList
 import io.github.pr0methean.ochd.isShallowCopyOf
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
-import javafx.scene.SnapshotParameters
+import javafx.scene.canvas.Canvas
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.image.Image
 import javafx.scene.paint.Color.BLACK
@@ -61,13 +61,14 @@ class ImageStackingTask(
     override val directDependencies: List<AbstractImageTask> = layers.layers
 
     @Suppress("DeferredResultUnused")
-    override suspend fun perform(): Image {
+    override suspend fun asCanvas(): Canvas {
         val canvas = createCanvas()
+        if (layers.background != TRANSPARENT) {
+            canvas.graphicsContext2D.fillRect(0.0, 0.0, width.toDouble(), height.toDouble())
+        }
         renderOntoInternal({ canvas.graphicsContext2D }, 0.0, 0.0, layers.layers)
         logger.debug("Taking snapshot of {}", name)
-        val params = SnapshotParameters()
-        params.fill = layers.background
-        return snapshotCanvas(canvas, params)
+        return canvas
     }
 
     private suspend fun renderOntoInternal(

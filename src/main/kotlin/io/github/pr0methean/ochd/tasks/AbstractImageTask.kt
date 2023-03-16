@@ -1,6 +1,7 @@
 package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.DEFAULT_SNAPSHOT_PARAMS
+import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import javafx.scene.SnapshotParameters
@@ -51,6 +52,12 @@ abstract class AbstractImageTask(
     open suspend fun renderOnto(contextSupplier: () -> GraphicsContext, x: Double, y: Double) {
         val image = await()
         contextSupplier().drawImage(image, x, y)
+    }
+
+    open suspend fun asCanvas(): Canvas {
+        val canvas = createCanvas()
+        renderOnto({ canvas.graphicsContext2D }, 0.0, 0.0)
+        return canvas
     }
 
     protected fun createCanvas(): Canvas {
@@ -120,6 +127,14 @@ abstract class AbstractImageTask(
      */
     open fun tryCombineWith(previousLayer: AbstractImageTask, ctx: TaskPlanningContext): List<AbstractImageTask>
             = listOf(previousLayer, this)
+
+    @Suppress("DeferredResultUnused")
+    override suspend fun perform(): Image {
+        val canvas = asCanvas()
+        val output = snapshotCanvas(canvas)
+        ImageProcessingStats.onTaskCompleted(javaClass.simpleName, name)
+        return output
+    }
 }
 
 fun pendingSnapshotTasks(): Long = pendingSnapshotTasks.get()

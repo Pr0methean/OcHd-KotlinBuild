@@ -81,6 +81,34 @@ abstract class AbstractTask<out T>(
         total
     }
     abstract val directDependencies: Iterable<AbstractTask<*>>
+
+    /**
+     * "The weighted length of a path p is the sum
+     * of its constituent edge latencies and the number of nodes in p, excluding the
+     * endpoints of p.
+     *
+     * "Let w‘( i, j) denote the weighted length of the longest path
+     * from node i to a successor j. In Figure 2, w+(il, iz) = w“F(il, i~) =
+     * w+(i~, i~) = 1, w+(iz, ii) = O, and w+(il, i~) = 3." Palem 1993, p. 638.
+     */
+    fun wPlusTo(transitiveDependency: AbstractTask<*>): Int? {
+        if (this == transitiveDependency) {
+            return 0
+        }
+        var longest = -1
+        for (directDependency in directDependencies) {
+            val weightedLengthFromDirectDepTo = directDependency.wPlusTo(transitiveDependency)
+            if (weightedLengthFromDirectDepTo != null) {
+                val pathLengthPlusLatency = weightedLengthFromDirectDepTo +
+                        if (directDependency.shouldRenderForCaching()) 2 else 1
+                if (pathLengthPlusLatency >= longest) {
+                    longest = pathLengthPlusLatency
+                }
+            }
+        }
+        return if (longest >= 0) longest else null
+    }
+
     private val hashCode: Int by lazy {
         abstractTaskLogger.debug("Computing hash code for {}", name)
         computeHashCode()

@@ -3,13 +3,14 @@ package io.github.pr0methean.ochd.tasks
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.isShallowCopyOf
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
+import javafx.scene.canvas.Canvas
 import javafx.scene.image.Image
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.apache.logging.log4j.LogManager
-import java.util.*
+import java.util.Objects
 import kotlin.coroutines.CoroutineContext
 
 private val logger = LogManager.getLogger("AnimationTask")
@@ -59,17 +60,16 @@ class AnimationTask(
         return super.mergeWithDuplicate(other)
     }
 
-    @Suppress("DeferredResultUnused")
-    override suspend fun perform(): Image {
+    override suspend fun asCanvas(): Canvas {
         ImageProcessingStats.onTaskLaunched("AnimationTask", name)
-        val backgroundImage = background.await()
         background.removeDirectDependentTask(this)
-        val canvasMutex = Mutex()
-        val canvas = createCanvas()
+        val canvas = background.asCanvas()
+        canvas.height = height.toDouble()
         val canvasCtx = canvas.graphicsContext2D
-        for (index in frames.indices) {
-            canvasCtx.drawImage(backgroundImage, 0.0, (frameHeight * index).toDouble())
+        for (index in frames.indices.drop(1)) {
+            background.renderOnto({ canvasCtx }, 0.0, (frameHeight * index).toDouble())
         }
+        val canvasMutex = Mutex()
         val frameTasks = frames.withIndex().map { (index, frameTask) ->
             coroutineScope.launch {
                 canvasMutex.withLock {
@@ -79,9 +79,7 @@ class AnimationTask(
             }
         }
         frameTasks.joinAll()
-        val output = snapshotCanvas(canvas)
-        ImageProcessingStats.onTaskCompleted("AnimationTask", name)
-        return output
+        return canvas
     }
 
     override val directDependencies: List<AbstractTask<Image>> = dependencies
