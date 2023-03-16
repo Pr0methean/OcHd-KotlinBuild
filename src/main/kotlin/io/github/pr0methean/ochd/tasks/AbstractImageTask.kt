@@ -1,7 +1,6 @@
 package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.DEFAULT_SNAPSHOT_PARAMS
-import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import javafx.scene.SnapshotParameters
@@ -132,7 +131,6 @@ abstract class AbstractImageTask(
     override suspend fun perform(): Image {
         val canvas = asCanvas()
         val output = snapshotCanvas(canvas)
-        ImageProcessingStats.onTaskCompleted(javaClass.simpleName, name)
         return output
     }
 }
