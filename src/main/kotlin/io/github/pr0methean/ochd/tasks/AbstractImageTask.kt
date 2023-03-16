@@ -57,7 +57,6 @@ abstract class AbstractImageTask(
     open suspend fun asCanvas(): Canvas {
         val canvas = createCanvas()
         renderOnto({ canvas.graphicsContext2D }, 0.0, 0.0)
-        ImageProcessingStats.onTaskCompleted(javaClass.simpleName, name)
         return canvas
     }
 
@@ -133,6 +132,7 @@ abstract class AbstractImageTask(
     override suspend fun perform(): Image {
         val canvas = asCanvas()
         val output = snapshotCanvas(canvas)
+        ImageProcessingStats.onTaskCompleted(javaClass.simpleName, name)
         return output
     }
 }
