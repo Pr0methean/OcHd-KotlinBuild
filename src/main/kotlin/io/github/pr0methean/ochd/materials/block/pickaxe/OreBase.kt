@@ -45,7 +45,7 @@ enum class OreBase(
             }
         }
     },
-    NETHERRACK(c(0x723232), c(0x410000), c(0x854242), "nether_") {
+    NETHERRACK(c(0x723232), c(0x500000), c(0x854242), "nether_") {
         override fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("diagonalChecksTopLeftBottomRight", shadow)
