@@ -64,6 +64,8 @@ private const val MAX_OUTPUT_TASKS_PER_CPU = 2
 private val maxOutputTasks = nCpus * MAX_OUTPUT_TASKS_PER_CPU
 private val minOutputTasks = nCpus * MIN_OUTPUT_TASKS_PER_CPU
 
+private const val BUILD_TASK_GRAPH_TASK_NAME = "Build task graph"
+
 @Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod", "ComplexMethod",
     "LoopWithTooManyJumpStatements")
 suspend fun main(args: Array<String>) {
@@ -108,7 +110,7 @@ suspend fun main(args: Array<String>) {
     }
     startMonitoring(scope)
     val startTime = System.nanoTime()
-    onTaskLaunched("Build task graph", "Build task graph")
+    onTaskLaunched(BUILD_TASK_GRAPH_TASK_NAME, BUILD_TASK_GRAPH_TASK_NAME)
     val dirs = mutableSetOf<File>()
     val tasks = mutableSetOf<PngOutputTask>()
     val outputTaskEmitter = OutputTaskEmitter(ctx) {
@@ -127,7 +129,7 @@ suspend fun main(args: Array<String>) {
     val depsBuildTask = scope.launch { tasks.forEach { it.registerRecursiveDependencies() } }
     logger.debug("Launched deps build task")
     depsBuildTask.join()
-    onTaskCompleted("Build task graph", "Build task graph")
+    onTaskCompleted(BUILD_TASK_GRAPH_TASK_NAME, BUILD_TASK_GRAPH_TASK_NAME)
     val dotOutputEnabled = tileSize <= MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH
     val ioJobs = ConcurrentHashMap.newKeySet<Job>()
     val connectedComponents = if (tasks.size > maxOutputTasks || dotOutputEnabled) {
