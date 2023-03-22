@@ -62,7 +62,9 @@ enum class CommandBlock(
         decorateBackground()
     }
 
-    open fun LayerListBuilder.decorateBackground() {}
+    open fun LayerListBuilder.decorateBackground() {
+        // No-op by default; extra background layer is added in an override if needed.
+    }
 
     override fun OutputTaskEmitter.outputTasks() {
         val background = stack { createBackground() }
