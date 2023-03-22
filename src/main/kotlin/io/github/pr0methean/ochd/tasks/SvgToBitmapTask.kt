@@ -76,7 +76,6 @@ private class ToImageTranscoder: SVGAbstractTranscoder() {
         // paint the SVG document using the bridge package
         // create the appropriate renderer
         renderer.updateOffScreen(w, h)
-        // curTxf.translate(0.5, 0.5);
         renderer.transform = curTxf
         renderer.tree = this.root
         this.root = null // We're done with it...

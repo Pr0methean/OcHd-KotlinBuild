@@ -66,10 +66,8 @@ abstract class AbstractTask<out T>(
             "Tried to remove more dependent tasks from $this than were added"
         }
         abstractTaskLogger.info("Removed dependency of {} on {}", task.name, name)
-        if (directConsumers() == 0) {
-            if (cache.disable()) {
-                ImageProcessingStats.onCachingDisabled(this)
-            }
+        if (directConsumers() == 0 && cache.disable()) {
+            ImageProcessingStats.onCachingDisabled(this)
         }
     }
 
