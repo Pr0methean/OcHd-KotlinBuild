@@ -66,7 +66,9 @@ abstract class AbstractTask<out T>(
             }
             abstractTaskLogger.info("Removed dependency of {} on {}", task.name, name, Throwable("Stack trace"))
             if (directDependentTasks.isEmpty() && cache.disable()) {
-                directDependencies.forEach { it.removeDirectDependentTask(this, expectNotAlreadyRemoved = false) }
+                directDependencies
+                    .filter { it.directDependentTasks.contains(this@AbstractTask) }
+                    .forEach { it.removeDirectDependentTask(this, expectNotAlreadyRemoved = false) }
                 ImageProcessingStats.onCachingDisabled(this)
             }
         }
