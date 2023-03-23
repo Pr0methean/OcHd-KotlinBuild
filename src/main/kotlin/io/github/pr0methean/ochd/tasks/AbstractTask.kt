@@ -63,11 +63,9 @@ abstract class AbstractTask<out T>(
                 "Attempted to remove dependency of $task on $this more than once!"
             }
             abstractTaskLogger.info("Removed dependency of {} on {}", task.name, name)
-            if (directDependentTasks.isEmpty()) {
+            if (directDependentTasks.isEmpty() && cache.disable()) {
                 directDependencies.forEach { it.removeDirectDependentTask(this) }
-                if (cache.disable()) {
-                    ImageProcessingStats.onCachingDisabled(this)
-                }
+                ImageProcessingStats.onCachingDisabled(this)
             }
         }
     }
