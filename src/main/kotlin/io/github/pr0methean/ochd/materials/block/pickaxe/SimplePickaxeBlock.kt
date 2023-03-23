@@ -313,7 +313,7 @@ enum class SimplePickaxeBlock(
             layer("borderDottedBottomRight", shadow)
         }
     },
-    RED_NETHER_BRICKS(c(0x440000),c(0x2e0000),c(0x730000)) {
+    RED_NETHER_BRICKS(c(0x500000),c(0x2e0000),c(0x730000)) {
         override fun LayerListBuilder.createTextureLayers() {
             background(color)
             layer("bricksSmall", shadow)

@@ -58,7 +58,7 @@ enum class SimpleBareHandBlock(
             layer("zigzagSolid", color)
         }
     },
-    WEEPING_VINES_PLANT(c(0x7b0000), c(0xff6500), c(0x5a0000)) {
+    WEEPING_VINES_PLANT(c(0x7b0000), c(0xff6500), c(0x500000)) {
         override fun LayerListBuilder.createTextureLayers() {
             layer("zigzagSolid", color)
         }

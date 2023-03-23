@@ -120,7 +120,7 @@ enum class Ore(
     },
     LAPIS(
         color = c(0x0055bd),
-        shadow = c(0x00009c),
+        shadow = c(0x0000aa),
         highlight = c(0x6995ff),
         itemNameOverride = "lapis_lazuli"
     ) {

@@ -10,7 +10,9 @@ interface GroundCoverBlock: Material {
     fun LayerListBuilder.createCoverSideLayers()
     fun LayerListBuilder.createTopLayers()
 
-    fun OutputTaskEmitter.extraOutputTasks() {}
+    fun OutputTaskEmitter.extraOutputTasks() {
+        // No-op by default. Overridden to add more output tasks when necessary.
+    }
 
     override fun OutputTaskEmitter.outputTasks() {
         out("block/${this@GroundCoverBlock.name}_top") { createTopLayers() }

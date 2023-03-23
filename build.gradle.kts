@@ -4,7 +4,8 @@ plugins {
     application
     kotlin("jvm") version "1.8.10"
     id("org.openjfx.javafxplugin") version "0.0.13"
-    id("io.gitlab.arturbosch.detekt").version("1.21.0")
+    id("io.gitlab.arturbosch.detekt") version "1.21.0"
+    id("org.sonarqube") version "4.0.0.2929"
 }
 
 group = "org.example"
@@ -95,4 +96,12 @@ java {
 buildScan {
     termsOfServiceUrl = "https://gradle.com/terms-of-service"
     termsOfServiceAgree = "yes"
+}
+
+sonarqube {
+    properties {
+        property("sonar.projectKey", "Pr0methean_OcHd-KotlinBuild")
+        property("sonar.organization", "pr0methean")
+        property("sonar.host.url", "https://sonarcloud.io")
+    }
 }

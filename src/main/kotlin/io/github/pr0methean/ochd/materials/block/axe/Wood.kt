@@ -250,7 +250,7 @@ enum class OverworldWood(
     MANGROVE(
         color = c(0x773636),
         highlight = c(0x8A593A),
-        shadow = c(0x5d0000),
+        shadow = c(0x500000),
         barkColor = c(0x583838),
         barkHighlight = c(0x624033),
         barkShadow = c(0x4a4a39)
@@ -449,7 +449,7 @@ enum class Fungus(
             barkShadow = c(0x442929),
             barkHighlight = c(0xb10000),
             leavesColor = c(0x7b0000),
-            leavesShadow = c(0x5a0000),
+            leavesShadow = c(0x500000),
             leavesHighlight = c(0xac2020),
         ) {
             override fun LayerListBuilder.doorCommonLayers(): Unit = copy(InvalidTask)

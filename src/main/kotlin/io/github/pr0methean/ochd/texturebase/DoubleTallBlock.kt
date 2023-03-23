@@ -10,7 +10,9 @@ interface DoubleTallBlock: Material {
 
     val name: String
 
-    fun OutputTaskEmitter.extraOutputTasks() {}
+    fun OutputTaskEmitter.extraOutputTasks() {
+        // No-op by default. Overridden to add more output tasks when necessary.
+    }
 
     override fun OutputTaskEmitter.outputTasks() {
         out("block/${this@DoubleTallBlock.name}_bottom") { createBottomLayers() }
