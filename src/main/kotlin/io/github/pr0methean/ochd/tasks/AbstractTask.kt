@@ -46,9 +46,11 @@ abstract class AbstractTask<out T>(
     @GuardedBy("mutex")
     val directDependentTasks: MutableSet<AbstractTask<*>> = newSetFromMap(WeakHashMap())
 
-    @Suppress("ComplexCondition")
     private suspend fun addDirectDependentTask(task: AbstractTask<*>) {
-        if (!directDependentTasks.contains(task) && mutex.withLock {
+        if (directDependentTasks.contains(task)) {
+            return
+        }
+        if (mutex.withLock {
                 directDependentTasks.add(task) && directDependentTasks.size >= 2 && cache.enable()
             }) {
             ImageProcessingStats.onCachingEnabled(this)
