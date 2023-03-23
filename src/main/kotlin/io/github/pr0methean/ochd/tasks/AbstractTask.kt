@@ -59,13 +59,14 @@ abstract class AbstractTask<out T>(
      */
     suspend fun removeDirectDependentTask(task: AbstractTask<*>) {
         mutex.withLock {
-            if (directDependentTasks.remove(task)) {
-                abstractTaskLogger.info("Removed dependency of {} on {}", task.name, name)
-                if (directDependentTasks.isEmpty()) {
-                    directDependencies.forEach { it.removeDirectDependentTask(this) }
-                    if (cache.disable()) {
-                        ImageProcessingStats.onCachingDisabled(this)
-                    }
+            check(directDependentTasks.remove(task)) {
+                "Attempted to remove dependency of $this on $task more than once!"
+            }
+            abstractTaskLogger.info("Removed dependency of {} on {}", task.name, name)
+            if (directDependentTasks.isEmpty()) {
+                directDependencies.forEach { it.removeDirectDependentTask(this) }
+                if (cache.disable()) {
+                    ImageProcessingStats.onCachingDisabled(this)
                 }
             }
         }
