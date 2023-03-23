@@ -44,7 +44,7 @@ jobs:
       - attach_workspace:
           at: build/libs
       - run: >
-          java -Dprism.maxvram=2560m -Dglass.platform=Monocle -Dmonocle.platform=Headless 
+          java -Dprism.maxvram=2048m -Dglass.platform=Monocle -Dmonocle.platform=Headless 
           -XX:+UseStringDeduplication -XX:StringDeduplicationAgeThreshold=1
           -XX:MetaspaceSize=128m -XX:MaxMetaspaceSize=128m
           -Xms7920m -Xmx7920m 
