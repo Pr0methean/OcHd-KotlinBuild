@@ -62,11 +62,14 @@ abstract class AbstractTask<out T>(
      */
     fun removeDirectDependentTask(task: AbstractTask<*>) {
         val counter = if (task is RepaintTask) directlyConsumingRepaintTasks else directlyConsumingNonRepaintTasks
-        check (counter.decrementAndGet() >= 0) {
+        val otherCounter = if (task is RepaintTask) directlyConsumingNonRepaintTasks else directlyConsumingRepaintTasks
+        val count = counter.decrementAndGet()
+        check (count >= 0) {
             "Tried to remove more dependent tasks from $this than were added"
         }
+        val otherCount = otherCounter.get()
         abstractTaskLogger.info("Removed dependency of {} on {}", task.name, name)
-        if (directConsumers() == 0 && cache.disable()) {
+        if (count == 0 && otherCount == 0 && cache.disable()) {
             ImageProcessingStats.onCachingDisabled(this)
         }
     }
