@@ -20,7 +20,7 @@ import java.util.WeakHashMap
 import javax.annotation.concurrent.GuardedBy
 import kotlin.coroutines.CoroutineContext
 
-val abstractTaskLogger: Logger = LogManager.getLogger("AbstractTask")
+private val logger: Logger = LogManager.getLogger("AbstractTask")
 
 /**
  * Unit of work that wraps its coroutine to support reuse (including under heap-constrained conditions).
@@ -65,7 +65,7 @@ abstract class AbstractTask<out T>(
             if (!directDependentTasks.remove(task)) {
                 return false
             }
-            abstractTaskLogger.info("Removed dependency of {} on {}", task.name, name)
+            logger.info("Removed dependency of {} on {}", task.name, name)
             if (directDependentTasks.isEmpty() && cache.disable()) {
                 ImageProcessingStats.onCachingDisabled(this)
                 directDependencies.forEach { it.removeDirectDependentTask(this) }
@@ -83,7 +83,7 @@ abstract class AbstractTask<out T>(
     }
     abstract val directDependencies: Iterable<AbstractTask<*>>
     private val hashCode: Int by lazy {
-        abstractTaskLogger.debug("Computing hash code for {}", name)
+        logger.debug("Computing hash code for {}", name)
         computeHashCode()
     }
 
@@ -138,7 +138,7 @@ abstract class AbstractTask<out T>(
 
     @Suppress("DeferredIsResult")
     fun start(): Deferred<T> = cache.computeIfAbsent {
-        abstractTaskLogger.debug("Creating a new coroutine for {}", name)
+        logger.debug("Creating a new coroutine for {}", name)
         coroutineScope.async(start = LAZY) {
             perform().also {
                 if (cache.isEnabled()) {
@@ -152,14 +152,14 @@ abstract class AbstractTask<out T>(
 
     @Suppress("UNCHECKED_CAST", "DeferredResultUnused")
     open fun mergeWithDuplicate(other: AbstractTask<*>): AbstractTask<T> {
-        abstractTaskLogger.debug("Merging {} with duplicate {}", name, other.name)
+        logger.debug("Merging {} with duplicate {}", name, other.name)
         if (other !== this && getNow() == null) {
             val otherCoroutine = other.cache.getNowAsync()
             if (otherCoroutine != null) {
                 cache.computeIfAbsent { otherCoroutine as Deferred<T> }
             }
         }
-        abstractTaskLogger.debug("Done merging {} with duplicate {}", name, other.name)
+        logger.debug("Done merging {} with duplicate {}", name, other.name)
         return this
     }
 
