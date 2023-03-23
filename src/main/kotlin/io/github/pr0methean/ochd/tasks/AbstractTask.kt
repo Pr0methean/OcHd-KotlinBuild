@@ -57,14 +57,16 @@ abstract class AbstractTask<out T>(
      * Called once a dependent task has retrieved the output, so that we can disable caching and free up heap space once
      * all dependents have done so.
      */
-    suspend fun removeDirectDependentTask(task: AbstractTask<*>) {
+    suspend fun removeDirectDependentTask(task: AbstractTask<*>, expectNotAlreadyRemoved: Boolean = true) {
         mutex.withLock {
-            check(directDependentTasks.remove(task)) {
-                "Attempted to remove dependency of $task on $this more than once!"
+            if (expectNotAlreadyRemoved) {
+                check(directDependentTasks.remove(task)) {
+                    "Attempted to remove dependency of $task on $this more than once!"
+                }
             }
-            abstractTaskLogger.info("Removed dependency of {} on {}", task.name, name)
+            abstractTaskLogger.info("Removed dependency of {} on {}", task.name, name, Throwable("Stack trace"))
             if (directDependentTasks.isEmpty() && cache.disable()) {
-                directDependencies.forEach { it.removeDirectDependentTask(this) }
+                directDependencies.forEach { it.removeDirectDependentTask(this, expectNotAlreadyRemoved = false) }
                 ImageProcessingStats.onCachingDisabled(this)
             }
         }
