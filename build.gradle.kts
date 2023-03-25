@@ -4,7 +4,7 @@ plugins {
     application
     kotlin("jvm") version "1.8.10"
     id("org.openjfx.javafxplugin") version "0.0.13"
-    id("io.gitlab.arturbosch.detekt") version "1.21.0"
+    id("io.gitlab.arturbosch.detekt") version "1.22.0"
     id("org.sonarqube") version "4.0.0.2929"
 }
 
