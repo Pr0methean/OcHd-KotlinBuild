@@ -233,15 +233,15 @@ suspend fun main(args: Array<String>) {
                 val task = connectedComponent.minWithOrNull(taskOrderComparator)
                 checkNotNull(task) { "Error finding a new task to start" }
                 if (currentInProgressJobs >= minOutputTasks) {
-                    val cachedTasks = cachedTiles()
-                    val newEntries = task.newCacheTiles()
-                    val impendingEntries = inProgressJobs.keys.sumOf(PngOutputTask::impendingCacheTiles)
+                    val cachedTiles = cachedTiles()
+                    val newTiles = task.newCacheTiles()
+                    val impendingTiles = inProgressJobs.keys.sumOf(PngOutputTask::impendingCacheTiles)
                     logger.info(
-                        "Cached tasks: {} current, {} impending, {} snapshots, {} when next task starts",
-                        box(cachedTasks), box(impendingEntries), box(pendingSnapshotTasks()), box(newEntries))
-                    val totalCacheWithThisTask = cachedTasks + impendingEntries + newEntries
-                    if (totalCacheWithThisTask >= goalHeapImages && newEntries > 0) {
-                        logger.warn("{} tasks in progress and too many cached; waiting for one to finish",
+                        "Cached tiles: {} current, {} impending, {} snapshots, {} when next task starts",
+                        box(cachedTiles), box(impendingTiles), box(pendingSnapshotTasks()), box(newTiles))
+                    val totalCacheWithThisTask = cachedTiles + impendingTiles + newTiles
+                    if (totalCacheWithThisTask >= goalHeapImages && newTiles > 0) {
+                        logger.warn("{} tasks in progress and too many tiles cached; waiting for one to finish",
                                 currentInProgressJobs)
                         val delay = measureNanoTime {
                             finishedJobsChannel.receive()
