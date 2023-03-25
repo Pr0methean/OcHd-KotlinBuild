@@ -146,7 +146,6 @@ suspend fun main(args: Array<String>) {
     depsBuildTask.join()
     onTaskCompleted(BUILD_TASK_GRAPH_TASK_NAME, BUILD_TASK_GRAPH_TASK_NAME)
     val dotOutputEnabled = tileSize <= MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH
-    val ioJobs = ConcurrentHashMap.newKeySet<Job>()
     val connectedComponents: List<MutableSet<PngOutputTask>> = if (tasks.size > maxOutputTasks || dotOutputEnabled) {
         // Output tasks that are in different weakly-connected components don't share any dependencies, so we
         // launch tasks from one component at a time to keep the number of cached images manageable. We start
@@ -220,7 +219,6 @@ suspend fun main(args: Array<String>) {
                         scope,
                         it,
                         finishedJobsChannel,
-                        ioJobs,
                         prereqIoJobs,
                         inProgressJobs,
                         ctx.graph
@@ -253,7 +251,6 @@ suspend fun main(args: Array<String>) {
                     scope,
                     task,
                     finishedJobsChannel,
-                    ioJobs,
                     prereqIoJobs,
                     inProgressJobs,
                     ctx.graph
@@ -275,9 +272,6 @@ suspend fun main(args: Array<String>) {
     }
     logger.info("All jobs done; closing channel")
     finishedJobsChannel.close()
-    logger.info("Waiting for {} remaining IO jobs to finish", box(ioJobs.size))
-    ioJobs.joinAll()
-    logger.info("All IO jobs are finished")
     val runningTime = System.nanoTime() - startTime
     stopMonitoring()
     ImageProcessingStats.finalChecks()
@@ -301,7 +295,6 @@ private fun startTask(
     scope: CoroutineScope,
     task: PngOutputTask,
     finishedJobsChannel: Channel<PngOutputTask>,
-    ioJobs: MutableSet<in Job>,
     prereqIoJobs: Collection<Job>,
     inProgressJobs: ConcurrentMap<PngOutputTask, Job>,
     graph: Graph<AbstractTask<*>, DefaultEdge>
@@ -315,16 +308,12 @@ private fun startTask(
             } else {
                 SwingFXUtils.fromFXImage(task.base.await(), null)
             }
-            val ioJob = scope.launch(CoroutineName("File write for ${task.name}")) {
-                prereqIoJobs.joinAll()
-                logger.info("Starting file write for {}", task.name)
-                task.writeToFiles(awtImage).join()
-                onTaskCompleted("PngOutputTask", task.name)
-            }
             task.base.removeDirectDependentTask(task)
             graph.removeVertex(task)
-            ioJob.invokeOnCompletion { ioJobs.remove(ioJob) }
-            ioJobs.add(ioJob)
+            prereqIoJobs.joinAll()
+            logger.info("Starting file write for {}", task.name)
+            task.writeToFiles(awtImage).join()
+            onTaskCompleted("PngOutputTask", task.name)
             inProgressJobs.remove(task)
             finishedJobsChannel.send(task)
         } catch (t: Throwable) {
