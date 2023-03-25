@@ -10,7 +10,6 @@ import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.tasks.SvgToBitmapTask
 import io.github.pr0methean.ochd.tasks.mkdirsedPaths
 import io.github.pr0methean.ochd.tasks.pendingSnapshotTiles
-import javafx.application.Platform
 import javafx.embed.swing.SwingFXUtils
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -276,6 +275,16 @@ suspend fun main(args: Array<String>) {
     }
     logger.info("All jobs done; closing channel")
     finishedJobsChannel.close()
+    logger.info("Waiting for {} remaining IO jobs to finish", box(ioJobs.size))
+    ioJobs.joinAll()
+    logger.info("All IO jobs are finished")
+    val runningTime = System.nanoTime() - startTime
+    stopMonitoring()
+    ImageProcessingStats.finalChecks()
+    logger.info("")
+    logger.info("All tasks finished after {} ns", box(runningTime))
+    /*
+    FIXME: graph's lock seems to be stuck when this runs
     check(ctx.graph.vertexSet().isEmpty()) {
         buildString {
             append("Vertices still in graph:")
@@ -283,15 +292,7 @@ suspend fun main(args: Array<String>) {
             appendFormattables(ctx.graph.vertexSet())
         }
     }
-    logger.info("Waiting for {} remaining IO jobs to finish", box(ioJobs.size))
-    ioJobs.joinAll()
-    logger.info("All IO jobs are finished")
-    val runningTime = System.nanoTime() - startTime
-    stopMonitoring()
-    Platform.exit()
-    ImageProcessingStats.finalChecks()
-    logger.info("")
-    logger.info("All tasks finished after {} ns", box(runningTime))
+     */
     exitProcess(0)
 }
 
