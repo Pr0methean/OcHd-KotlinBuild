@@ -21,9 +21,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox.box
-import org.jgrapht.Graph
 import org.jgrapht.alg.connectivity.ConnectivityInspector
-import org.jgrapht.graph.DefaultEdge
 import java.io.File
 import java.lang.management.ManagementFactory
 import java.nio.file.Files
@@ -130,7 +128,14 @@ suspend fun main(args: Array<String>) {
     }
     val prereqIoJobs = listOf(mkdirs, copyMetadata)
     logger.debug("Got deduplicated output tasks")
-    val depsBuildTask = scope.launch { tasks.forEach { it.registerRecursiveDependencies() } }
+    val depsBuildTask = scope.launch {
+        tasks.forEach { it.registerRecursiveDependencies() }
+        ctx.graph.vertexSet().forEach {
+            if (ctx.graph.inDegreeOf(it) > 1) {
+                it.cache.enable()
+            }
+        }
+    }
     logger.debug("Launched deps build task")
     depsBuildTask.join()
     onTaskCompleted(BUILD_TASK_GRAPH_TASK_NAME, BUILD_TASK_GRAPH_TASK_NAME)
@@ -143,7 +148,7 @@ suspend fun main(args: Array<String>) {
         // size, thus limiting the peak size of the live set and reducing the size of heap we need.
         ConnectivityInspector(ctx.graph)
             .connectedSets()
-            .sortedBy(Set<*>::size)
+            .sortedBy(Set<AbstractTask<*>>::size)
             .map { it.filterIsInstanceTo(mutableSetOf()) }
     } else listOf(tasks)
     var dotFormatOutputJob: Job? = null
@@ -203,8 +208,7 @@ suspend fun main(args: Array<String>) {
                         finishedJobsChannel,
                         ioJobs,
                         prereqIoJobs,
-                        inProgressJobs,
-                        ctx.graph
+                        inProgressJobs
                     )
                 }
                 connectedComponent.clear()
@@ -236,8 +240,7 @@ suspend fun main(args: Array<String>) {
                     finishedJobsChannel,
                     ioJobs,
                     prereqIoJobs,
-                    inProgressJobs,
-                    ctx.graph
+                    inProgressJobs
                 )
                 check(connectedComponent.remove(task)) { "Attempted to remove task more than once: $task" }
             }
@@ -266,8 +269,7 @@ private fun startTask(
     finishedJobsChannel: Channel<PngOutputTask>,
     ioJobs: MutableSet<in Job>,
     prereqIoJobs: Collection<Job>,
-    inProgressJobs: ConcurrentMap<PngOutputTask, Job>,
-    graph: Graph<AbstractTask<*>, DefaultEdge>
+    inProgressJobs: ConcurrentMap<PngOutputTask, Job>
 ) {
     inProgressJobs[task] = scope.launch(CoroutineName(task.name)) {
         try {
@@ -279,7 +281,6 @@ private fun startTask(
                 SwingFXUtils.fromFXImage(task.base.await(), null)
             }
             task.base.removeDirectDependentTask(task)
-            graph.removeVertex(task)
             val ioJob = scope.launch(CoroutineName("File write for ${task.name}")) {
                 prereqIoJobs.joinAll()
                 logger.info("Starting file write for {}", task.name)

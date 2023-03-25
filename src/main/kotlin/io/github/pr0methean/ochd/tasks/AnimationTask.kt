@@ -11,7 +11,7 @@ import kotlinx.coroutines.sync.withLock
 import org.apache.logging.log4j.LogManager
 import org.jgrapht.Graph
 import org.jgrapht.graph.DefaultEdge
-import java.util.*
+import java.util.Objects
 import kotlin.coroutines.CoroutineContext
 
 private val logger = LogManager.getLogger("AnimationTask")

@@ -9,16 +9,24 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
 import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import org.apache.logging.log4j.util.StringBuilderFormattable
 import org.jgrapht.Graph
 import org.jgrapht.graph.DefaultEdge
 import java.io.PrintWriter
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.coroutines.CoroutineContext
 
 private val logger: Logger = LogManager.getLogger("AbstractTask")
+
+fun <V> Graph<V,*>.inDegreeOfIfPresent(vertex: V): Int {
+    try {
+        return inDegreeOf(vertex)
+    } catch (ignored: IllegalArgumentException) {
+        return 0
+    }
+}
 
 /**
  * Unit of work that wraps its coroutine to support reuse (including under heap-constrained conditions).
@@ -34,7 +42,7 @@ abstract class AbstractTask<out T>(
     val coroutineScope: CoroutineScope by lazy {
         CoroutineScope(ctx.plus(CoroutineName(name)))
     }
-    @Volatile var dependenciesRegistered: Boolean = false
+    private val dependenciesRegistered = AtomicBoolean(false)
 
     open fun appendForGraphPrinting(appendable: Appendable) {
         appendable.append(name)
@@ -51,7 +59,7 @@ abstract class AbstractTask<out T>(
      */
     fun removeDirectDependentTask(task: AbstractTask<*>): Boolean {
         val removed = graph.removeEdge(task, this) != null
-        if (removed && graph.inDegreeOf(this) == 0) {
+        if (removed && graph.inDegreeOfIfPresent(this) == 0) {
             cache.disable()
             graph.removeVertex(this)
         }
@@ -59,8 +67,7 @@ abstract class AbstractTask<out T>(
     }
 
     val totalSubtasks: Int by lazy {
-        val directDeps = directDependencies.toList()
-        directDeps.size + directDeps.sumOf(AbstractTask<*>::totalSubtasks)
+        1 + directDependencies.sumOf(AbstractTask<*>::totalSubtasks)
     }
 
     abstract val directDependencies: Iterable<AbstractTask<*>>
@@ -86,17 +93,16 @@ abstract class AbstractTask<out T>(
      * True when this task should prepare to output an Image so that that Image can be cached, rather than rendering
      * onto a consuming task's canvas.
      */
-    suspend fun shouldRenderForCaching(): Boolean = isStartedOrAvailable()
-            || (cache.isEnabled() && mutex.withLock { directDependentTasks.size } > 1)
+    fun shouldRenderForCaching(): Boolean = isStartedOrAvailable()
+            || (cache.isEnabled() && directDependentTasks.size > 1)
             || isStartedOrAvailable()
 
     fun registerRecursiveDependencies() {
-        if (!dependenciesRegistered) {
+        if (dependenciesRegistered.compareAndSet(false, true)) {
             graph.addVertex(this)
             directDependencies.forEach { dependency ->
-                graph.addVertex(dependency)
-                graph.addEdge(this, dependency)
                 dependency.registerRecursiveDependencies()
+                graph.addEdge(this, dependency)
             }
         }
     }
@@ -156,7 +162,7 @@ abstract class AbstractTask<out T>(
 
     fun removedCacheEntries(): Int {
         return directDependencies.sumOf(AbstractTask<*>::removedCacheEntries) +
-                if (cache.isEnabled() && directDependentTasks.size <= 1) 1 else 0
+                if (cache.isEnabled() && graph.inDegreeOfIfPresent(this) <= 1) 1 else 0
     }
 
     fun impendingCacheEntries(): Int {

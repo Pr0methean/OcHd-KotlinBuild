@@ -11,7 +11,6 @@ import javafx.scene.image.Image
 import javafx.scene.paint.Color
 import javafx.scene.paint.Color.BLACK
 import javafx.scene.paint.Paint
-import kotlinx.coroutines.sync.withLock
 import org.apache.logging.log4j.LogManager
 import org.jgrapht.Graph
 import org.jgrapht.graph.DefaultEdge
@@ -101,7 +100,7 @@ class RepaintTask(
             super.perform()
         }
         if (paint is Color && paint.opacity == 1.0 && cache.isEnabled() && base.cache.isEnabled()
-                && base.mutex.withLock { base.directDependentTasks.all { it is RepaintTask } }) {
+                && base.directDependentTasks.all { it is RepaintTask }) {
             /*
              * Painting a black X blue or green has the same result as painting a red X blue or green.
              * Therefore, if the only impending uses of a black X are to repaint it blue and green, we can replace the

@@ -12,7 +12,6 @@ import javafx.scene.paint.Color.TRANSPARENT
 import org.apache.logging.log4j.LogManager
 import org.jgrapht.Graph
 import org.jgrapht.graph.DefaultEdge
-import java.util.*
 import kotlin.coroutines.CoroutineContext
 
 private val logger = LogManager.getLogger("ImageStackingTask")
