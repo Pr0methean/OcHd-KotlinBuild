@@ -33,6 +33,7 @@ import java.nio.file.Paths
 import java.util.Comparator.comparingInt
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
+import kotlin.math.roundToInt
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 import kotlin.text.Charsets.UTF_8
@@ -63,13 +64,13 @@ val nCpus: Int = Runtime.getRuntime().availableProcessors()
 /**
  * The number of tasks per CPU we run when memory-constrained.
  */
-private const val MIN_OUTPUT_TASKS_PER_CPU = 1
+private const val MIN_OUTPUT_TASKS_PER_CPU = 1.5
 /**
  * The number of tasks per CPU we run when <em>not</em> memory-constrained.
  */
 private const val MAX_OUTPUT_TASKS_PER_CPU = 2
 private val maxOutputTasks = nCpus * MAX_OUTPUT_TASKS_PER_CPU
-private val minOutputTasks = nCpus * MIN_OUTPUT_TASKS_PER_CPU
+private val minOutputTasks = (nCpus * MIN_OUTPUT_TASKS_PER_CPU).roundToInt()
 
 private const val BUILD_TASK_GRAPH_TASK_NAME = "Build task graph"
 
