@@ -63,7 +63,7 @@ val nCpus: Int = Runtime.getRuntime().availableProcessors()
 /**
  * The number of tasks per CPU we run when memory-constrained.
  */
-private const val MIN_OUTPUT_TASKS_PER_CPU = 1
+private const val MIN_OUTPUT_TASKS_PER_CPU = 1.25
 /**
  * The number of tasks per CPU we run when <em>not</em> memory-constrained.
  */
