@@ -99,6 +99,8 @@ class RepaintTask(
         } else {
             super.perform()
         }
+        /*
+        FIXME: This causes a ConcurrentModificationException
         if (paint is Color && paint.opacity == 1.0 && cache.isEnabled() && base.cache.isEnabled()
                 && base.directDependentTasks.all { it is RepaintTask }) {
             /*
@@ -109,6 +111,7 @@ class RepaintTask(
             logger.info("Using repaint {} to replace base image {}", name, base.name)
             base.cache.setValue(snapshot)
         }
+         */
         return snapshot
     }
 

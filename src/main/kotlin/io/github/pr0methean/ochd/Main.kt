@@ -1,6 +1,7 @@
 package io.github.pr0methean.ochd
 
 import io.github.pr0methean.ochd.ImageProcessingStats.cachedTasks
+import io.github.pr0methean.ochd.ImageProcessingStats.onCachingEnabled
 import io.github.pr0methean.ochd.ImageProcessingStats.onTaskCompleted
 import io.github.pr0methean.ochd.ImageProcessingStats.onTaskLaunched
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
@@ -132,6 +133,7 @@ suspend fun main(args: Array<String>) {
         tasks.forEach { it.registerRecursiveDependencies() }
         ctx.graph.vertexSet().forEach {
             if (ctx.graph.inDegreeOf(it) > 1) {
+                onCachingEnabled(it)
                 it.cache.enable()
             }
         }
@@ -248,6 +250,13 @@ suspend fun main(args: Array<String>) {
     }
     logger.info("All jobs started; waiting for {} running jobs to finish", box(inProgressJobs.size))
     inProgressJobs.values.joinAll()
+    check(ctx.graph.vertexSet().isEmpty()) {
+        buildString {
+            append("Vertices still in graph:")
+            append(System.lineSeparator())
+            appendFormattables(ctx.graph.vertexSet())
+        }
+    }
     logger.info("All jobs done; closing channel")
     finishedJobsChannel.close()
     logger.info("Waiting for {} remaining IO jobs to finish", box(ioJobs.size))

@@ -1,6 +1,7 @@
 package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.ImageProcessingStats.onCache
+import io.github.pr0methean.ochd.ImageProcessingStats.onCachingDisabled
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -50,9 +51,6 @@ abstract class AbstractTask<out T>(
 
     val mutex: Mutex = Mutex()
 
-    val directDependentTasks: List<AbstractTask<*>>
-        get() = graph.incomingEdgesOf(this).map(graph::getEdgeSource)
-
     /**
      * Called once a dependent task has retrieved the output, so that we can disable caching and free up heap space once
      * all dependents have done so.
@@ -60,6 +58,7 @@ abstract class AbstractTask<out T>(
     fun removeDirectDependentTask(task: AbstractTask<*>): Boolean {
         val removed = graph.removeEdge(task, this) != null
         if (removed && graph.inDegreeOfIfPresent(this) == 0) {
+            onCachingDisabled(this)
             cache.disable()
             graph.removeVertex(this)
         }
@@ -94,7 +93,7 @@ abstract class AbstractTask<out T>(
      * onto a consuming task's canvas.
      */
     fun shouldRenderForCaching(): Boolean = isStartedOrAvailable()
-            || (cache.isEnabled() && directDependentTasks.size > 1)
+            || (cache.isEnabled() && graph.inDegreeOfIfPresent(this) > 1)
             || isStartedOrAvailable()
 
     fun registerRecursiveDependencies() {
