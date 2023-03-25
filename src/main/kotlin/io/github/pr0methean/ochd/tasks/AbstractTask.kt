@@ -150,26 +150,28 @@ abstract class AbstractTask<out T>(
 
     private fun isStartedOrAvailable(): Boolean = cache.getNowAsync()?.run { isActive || isCompleted } ?: false
 
+    val tiles = if (name.contains("4x") || name.contains("command_block")) 4 else 1
+
     /**
      * How many new entries this task will cause to be added to the cache if we start it now.
      */
-    fun newCacheEntries(): Int {
+    fun newCacheTiles(): Int {
         if (isStartedOrAvailable()) {
             return 0
         }
-        return directDependencies.sumOf(AbstractTask<*>::newCacheEntries) + if (cache.isEnabled()) 1 else 0
+        return directDependencies.sumOf(AbstractTask<*>::newCacheTiles) + if (cache.isEnabled()) tiles else 0
     }
 
-    fun removedCacheEntries(): Int {
-        return directDependencies.sumOf(AbstractTask<*>::removedCacheEntries) +
-                if (cache.isEnabled() && graph.inDegreeOfIfPresent(this) <= 1) 1 else 0
+    fun removedCacheTiles(): Int {
+        return directDependencies.sumOf(AbstractTask<*>::removedCacheTiles) +
+                if (cache.isEnabled() && graph.inDegreeOfIfPresent(this) <= 1) tiles else 0
     }
 
-    fun impendingCacheEntries(): Int {
+    fun impendingCacheTiles(): Int {
         if (getNow() != null) {
             return 0
         }
-        return directDependencies.sumOf(AbstractTask<*>::impendingCacheEntries) + if (cache.isEnabled()) 1 else 0
+        return directDependencies.sumOf(AbstractTask<*>::impendingCacheTiles) + if (cache.isEnabled()) tiles else 0
     }
 
     /**

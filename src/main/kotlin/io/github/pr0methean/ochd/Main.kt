@@ -1,6 +1,6 @@
 package io.github.pr0methean.ochd
 
-import io.github.pr0methean.ochd.ImageProcessingStats.cachedTasks
+import io.github.pr0methean.ochd.ImageProcessingStats.cachedTiles
 import io.github.pr0methean.ochd.ImageProcessingStats.onCachingEnabled
 import io.github.pr0methean.ochd.ImageProcessingStats.onTaskCompleted
 import io.github.pr0methean.ochd.ImageProcessingStats.onTaskLaunched
@@ -40,8 +40,8 @@ import kotlin.text.Charsets.UTF_8
 import kotlin.time.Duration.Companion.seconds
 
 const val CAPACITY_PADDING_FACTOR: Int = 2
-private val taskOrderComparator = comparingInt<PngOutputTask> { if (it.newCacheEntries() > 0) 1 else 0 }
-.then(comparingInt(PngOutputTask::removedCacheEntries).reversed())
+private val taskOrderComparator = comparingInt<PngOutputTask> { if (it.newCacheTiles() > 0) 1 else 0 }
+.then(comparingInt(PngOutputTask::removedCacheTiles).reversed())
 .then(comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed())
 .then(comparingInt(PngOutputTask::totalSubtasks))
 
@@ -233,9 +233,9 @@ suspend fun main(args: Array<String>) {
                 val task = connectedComponent.minWithOrNull(taskOrderComparator)
                 checkNotNull(task) { "Error finding a new task to start" }
                 if (currentInProgressJobs >= minOutputTasks) {
-                    val cachedTasks = cachedTasks()
-                    val newEntries = task.newCacheEntries()
-                    val impendingEntries = inProgressJobs.keys.sumOf(PngOutputTask::impendingCacheEntries)
+                    val cachedTasks = cachedTiles()
+                    val newEntries = task.newCacheTiles()
+                    val impendingEntries = inProgressJobs.keys.sumOf(PngOutputTask::impendingCacheTiles)
                     logger.info(
                         "Cached tasks: {} current, {} impending, {} snapshots, {} when next task starts",
                         box(cachedTasks), box(impendingEntries), box(pendingSnapshotTasks()), box(newEntries))
