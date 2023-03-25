@@ -201,7 +201,7 @@ suspend fun main(args: Array<String>) {
                     if (finishedJob != null) {
                         inProgressJobs.remove(finishedJob)
                     }
-                } while (finishedJob != null)
+                } while (finishedJob != null && inProgressJobs.isNotEmpty())
             }
             val currentInProgressJobs = inProgressJobs.size
             if (currentInProgressJobs >= maxOutputTasks) {
