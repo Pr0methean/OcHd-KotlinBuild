@@ -9,7 +9,7 @@ import io.github.pr0methean.ochd.tasks.AbstractTask
 import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.tasks.SvgToBitmapTask
 import io.github.pr0methean.ochd.tasks.mkdirsedPaths
-import io.github.pr0methean.ochd.tasks.pendingSnapshotTasks
+import io.github.pr0methean.ochd.tasks.pendingSnapshotTiles
 import javafx.application.Platform
 import javafx.embed.swing.SwingFXUtils
 import kotlinx.coroutines.CoroutineName
@@ -238,7 +238,7 @@ suspend fun main(args: Array<String>) {
                     val impendingTiles = inProgressJobs.keys.sumOf(PngOutputTask::impendingCacheTiles)
                     logger.info(
                         "Cached tiles: {} current, {} impending, {} snapshots, {} when next task starts",
-                        box(cachedTiles), box(impendingTiles), box(pendingSnapshotTasks()), box(newTiles))
+                        box(cachedTiles), box(impendingTiles), box(pendingSnapshotTiles()), box(newTiles))
                     val totalCacheWithThisTask = cachedTiles + impendingTiles + newTiles
                     if (totalCacheWithThisTask >= goalHeapImages && newTiles > 0) {
                         logger.warn("{} tasks in progress and too many tiles cached; waiting for one to finish",

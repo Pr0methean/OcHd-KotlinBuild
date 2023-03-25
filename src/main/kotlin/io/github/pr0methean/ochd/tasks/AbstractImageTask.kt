@@ -36,7 +36,7 @@ private val defaultErrCharset: Charset = defaultErr.charset()
 private val errCatcher: ByteArrayOutputStream = ByteArrayOutputStream()
 private val errCatcherStream: PrintStream = PrintStream(errCatcher, false, defaultErrCharset)
 private val systemErrSwitched: AtomicBoolean = AtomicBoolean(false)
-private val pendingSnapshotTasks: AtomicLong = AtomicLong(0)
+private val pendingSnapshotTiles: AtomicLong = AtomicLong(0)
 
 /** Specialization of [AbstractTask]&lt;[Image]&gt;. */
 abstract class AbstractImageTask(
@@ -74,7 +74,7 @@ abstract class AbstractImageTask(
         val caughtStderr = AtomicReference<String?>(null)
         val output = createWritableImage()
         logger.info("Waiting to snapshot canvas for {}. Pending snapshot tasks: {}",
-                name, box(pendingSnapshotTasks.incrementAndGet()))
+                name, box(pendingSnapshotTiles.addAndGet(tiles.toLong())))
         val startWaitingTime = System.nanoTime()
         val snapshot = withContext(Dispatchers.Main.plus(CoroutineName("Snapshot of $name"))) {
             logger.info("Snapshotting canvas for {} after waiting {} ns", name,
@@ -85,7 +85,7 @@ abstract class AbstractImageTask(
                     snapshot = canvas.snapshot(params, output)
                 }
                 logger.info("Finished snapshotting canvas for {} after {} ns. Pending snapshot tasks: {}",
-                    name, box(ns), box(pendingSnapshotTasks.decrementAndGet()))
+                    name, box(ns), box(pendingSnapshotTiles.addAndGet(-tiles.toLong())))
                 return@withContext snapshot
             } finally {
                 errCatcherStream.flush()
@@ -125,7 +125,7 @@ abstract class AbstractImageTask(
             = listOf(previousLayer, this)
 }
 
-fun pendingSnapshotTasks(): Long = pendingSnapshotTasks.get()
+fun pendingSnapshotTiles(): Long = pendingSnapshotTiles.get()
 
 fun Paint.toOpaque(): Paint {
     if (this.isOpaque) {
