@@ -159,15 +159,14 @@ object ImageProcessingStats {
     fun onCachingDisabled(task: AbstractTask<*>) {
         cacheableTasks.remove(task.name)
         cachedTasks.remove(task.name)
-        logger.info("Removed {} from cache. Currently cached tasks: {}:\n{}",
-            task.name, box(cachedTasks.size), cachedTasks.asFormattable(System.lineSeparator()))
-        logger.info("Currently cacheable tasks: {}", box(cacheableTasks.size))
+        logger.info("Removed {} from cache. Cached tasks: {}. Cacheable tasks: {}",
+            task.name, box(cachedTasks.size), box(cacheableTasks.size))
     }
 
     fun onCache(task: AbstractTask<*>) {
         cachedTasks.add(task.name)
-        logger.info("Added {} to cache. Currently cached tasks: {}:\n{}",
-            task.name, box(cachedTasks.size), cachedTasks.asFormattable(System.lineSeparator()))
+        logger.info("Added {} to cache. Cached tasks: {}. Cacheable tasks: {}",
+            task.name, box(cachedTasks.size), box(cacheableTasks.size))
     }
 
     fun cachedTasks(): Int = cachedTasks.size
