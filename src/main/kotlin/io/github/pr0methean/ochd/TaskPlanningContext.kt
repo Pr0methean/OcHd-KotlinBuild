@@ -47,7 +47,6 @@ class TaskPlanningContext(
     private val taskDeduplicationMap = mutableMapOf<AbstractTask<*>, AbstractTask<*>>()
     private val dedupedSvgTasks = HashMultiset.create<String>()
     val graph: Graph<AbstractTask<*>, DefaultEdge> = AsSynchronizedGraph.Builder<AbstractTask<*>,DefaultEdge>()
-        .cacheEnable()
         .build(DirectedAcyclicGraph(DefaultEdge::class.java))
 
     init {
