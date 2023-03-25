@@ -315,14 +315,14 @@ private fun startTask(
             } else {
                 SwingFXUtils.fromFXImage(task.base.await(), null)
             }
-            task.base.removeDirectDependentTask(task)
-            graph.removeVertex(task)
             val ioJob = scope.launch(CoroutineName("File write for ${task.name}")) {
                 prereqIoJobs.joinAll()
                 logger.info("Starting file write for {}", task.name)
                 task.writeToFiles(awtImage).join()
                 onTaskCompleted("PngOutputTask", task.name)
             }
+            task.base.removeDirectDependentTask(task)
+            graph.removeVertex(task)
             ioJob.invokeOnCompletion { ioJobs.remove(ioJob) }
             ioJobs.add(ioJob)
             inProgressJobs.remove(task)
