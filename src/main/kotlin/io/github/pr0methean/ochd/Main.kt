@@ -192,6 +192,14 @@ suspend fun main(args: Array<String>) {
     for (connectedComponent in connectedComponents) {
         logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
         while (connectedComponent.isNotEmpty()) {
+            if (inProgressJobs.isNotEmpty()) {
+                do {
+                    val finishedJob = finishedJobsChannel.tryReceive().getOrNull()
+                    if (finishedJob != null) {
+                        inProgressJobs.remove(finishedJob)
+                    }
+                } while (finishedJob != null)
+            }
             val currentInProgressJobs = inProgressJobs.size
             if (currentInProgressJobs >= maxOutputTasks) {
                 logger.info("{} tasks in progress; waiting for one to finish", box(currentInProgressJobs))
