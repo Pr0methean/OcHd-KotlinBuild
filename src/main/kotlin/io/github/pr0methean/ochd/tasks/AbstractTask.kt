@@ -58,9 +58,9 @@ abstract class AbstractTask<out T>(
         if (graph.inDegreeOfIfPresent(this) == 0) {
             if (cache.disable()) {
                 onCachingDisabled(this)
-                if (containsVertex) {
-                    graph.removeVertex(this)
-                }
+            }
+            if (containsVertex) {
+                graph.removeVertex(this)
             }
         }
         return removed
