@@ -271,7 +271,7 @@ suspend fun main(args: Array<String>) {
             }
         }
     } catch (e: TimeoutCancellationException) {
-        logger.fatal("Jobs still not finished: {}", inProgressJobs.keys.asFormattable())
+        logger.fatal("Jobs still not finished: {}", inProgressJobs.keys.asFormattable(), e)
         exitProcess(1)
     }
     logger.info("All jobs done; closing channel")
