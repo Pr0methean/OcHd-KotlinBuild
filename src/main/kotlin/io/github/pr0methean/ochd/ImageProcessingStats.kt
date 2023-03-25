@@ -172,6 +172,4 @@ object ImageProcessingStats {
         logger.info("Added {} to cache. Cached tasks: {}. Cached tiles: {}. Cacheable tasks: {}",
             task.name, box(cached), box(tiles), box(cacheableTasks.get()))
     }
-
-    fun cachedTiles(): Long = cachedTiles.get()
 }

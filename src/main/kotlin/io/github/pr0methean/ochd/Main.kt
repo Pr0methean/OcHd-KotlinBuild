@@ -1,6 +1,5 @@
 package io.github.pr0methean.ochd
 
-import io.github.pr0methean.ochd.ImageProcessingStats.cachedTiles
 import io.github.pr0methean.ochd.ImageProcessingStats.onCachingEnabled
 import io.github.pr0methean.ochd.ImageProcessingStats.onTaskCompleted
 import io.github.pr0methean.ochd.ImageProcessingStats.onTaskLaunched
@@ -9,7 +8,6 @@ import io.github.pr0methean.ochd.tasks.AbstractTask
 import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.tasks.SvgToBitmapTask
 import io.github.pr0methean.ochd.tasks.mkdirsedPaths
-import io.github.pr0methean.ochd.tasks.pendingSnapshotTiles
 import javafx.embed.swing.SwingFXUtils
 import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
@@ -27,7 +25,6 @@ import org.jgrapht.Graph
 import org.jgrapht.alg.connectivity.ConnectivityInspector
 import org.jgrapht.graph.DefaultEdge
 import java.io.File
-import java.lang.management.ManagementFactory
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.Comparator.comparingInt
@@ -50,26 +47,12 @@ private const val MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH = 32
 
 val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
 
-/**
- * If the pixel array bodies for (images being generated + images in cache) exceed this fraction of the heap, we
- * throttle starting new output tasks.
- */
-private const val GOAL_IMAGES_FRACTION_OF_HEAP = 0.50
-private val memoryMxBean = ManagementFactory.getMemoryMXBean()
-private val heapSizeBytes = memoryMxBean.heapMemoryUsage.max.toDouble()
-private val goalImageBytes = heapSizeBytes * GOAL_IMAGES_FRACTION_OF_HEAP
-private const val BYTES_PER_PIXEL = 4
 val nCpus: Int = Runtime.getRuntime().availableProcessors()
 /**
- * The number of tasks per CPU we run when memory-constrained.
- */
-private const val MIN_OUTPUT_TASKS_PER_CPU = 1
-/**
- * The number of tasks per CPU we run when <em>not</em> memory-constrained.
+ * The number of tasks per CPU we run at once.
  */
 private const val MAX_OUTPUT_TASKS_PER_CPU = 2
 private val maxOutputTasks = nCpus * MAX_OUTPUT_TASKS_PER_CPU
-private val minOutputTasks = nCpus * MIN_OUTPUT_TASKS_PER_CPU
 
 private const val BUILD_TASK_GRAPH_TASK_NAME = "Build task graph"
 
@@ -82,9 +65,6 @@ suspend fun main(args: Array<String>) {
     }
     val tileSize = args[0].toInt()
     require(tileSize > 0) { "tileSize shouldn't be zero or negative but was ${args[0]}" }
-    val bytesPerTile = tileSize.toLong() * tileSize * BYTES_PER_PIXEL
-    val goalHeapTiles = goalImageBytes / bytesPerTile
-    logger.info("Will attempt to keep a maximum of {} images in cache", box(goalHeapTiles))
     val ioScope = CoroutineScope(Dispatchers.IO)
     val out = Paths.get("pngout").toAbsolutePath().toFile()
     val metadataDirectory = Paths.get("metadata").toAbsolutePath().toFile()
@@ -209,7 +189,7 @@ suspend fun main(args: Array<String>) {
                 }
                 logger.warn("Waited for tasks in progress to fall below limit for {} ns", box(delay))
                 continue
-            } else if (currentInProgressJobs + connectedComponent.size <= minOutputTasks) {
+            } else if (currentInProgressJobs + connectedComponent.size <= maxOutputTasks) {
                 logger.info(
                     "{} tasks in progress; starting all {} currently eligible tasks: {}",
                     box(currentInProgressJobs), box(connectedComponent.size), connectedComponent.asFormattable()
@@ -228,24 +208,6 @@ suspend fun main(args: Array<String>) {
             } else {
                 val task = connectedComponent.minWithOrNull(taskOrderComparator)
                 checkNotNull(task) { "Error finding a new task to start" }
-                if (currentInProgressJobs >= minOutputTasks) {
-                    val cachedTiles = cachedTiles()
-                    val newTiles = task.newCacheTiles()
-                    val impendingTiles = inProgressJobs.keys.sumOf(PngOutputTask::impendingCacheTiles)
-                    logger.info(
-                        "Cached tiles: {} current, {} impending, {} snapshots, {} when next task starts",
-                        box(cachedTiles), box(impendingTiles), box(pendingSnapshotTiles()), box(newTiles))
-                    val totalCacheWithThisTask = cachedTiles + impendingTiles + newTiles
-                    if (totalCacheWithThisTask >= goalHeapTiles && newTiles > 0) {
-                        logger.warn("{} tasks in progress and too many tiles cached; waiting for one to finish",
-                                currentInProgressJobs)
-                        val delay = measureNanoTime {
-                            finishedJobsChannel.receive()
-                        }
-                        logger.warn("Waited for a task to finish for {} ns", box(delay))
-                        continue
-                    }
-                }
                 logger.info("{} tasks in progress; starting {}", box(currentInProgressJobs), task)
                 startTask(
                     scope,
