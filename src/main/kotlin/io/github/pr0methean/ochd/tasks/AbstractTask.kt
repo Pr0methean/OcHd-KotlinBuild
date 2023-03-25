@@ -103,9 +103,7 @@ abstract class AbstractTask<out T>(
      * True when this task should prepare to output an Image so that that Image can be cached, rather than rendering
      * onto a consuming task's canvas.
      */
-    fun shouldRenderForCaching(): Boolean = isStartedOrAvailable()
-            || (cache.isEnabled() && graph.inDegreeOfIfPresent(this) > 1)
-            || isStartedOrAvailable()
+    fun shouldRenderForCaching(): Boolean = isStartedOrAvailable() || cache.isEnabled()
 
     fun registerRecursiveDependencies() {
         if (dependenciesRegistered.compareAndSet(false, true)) {
