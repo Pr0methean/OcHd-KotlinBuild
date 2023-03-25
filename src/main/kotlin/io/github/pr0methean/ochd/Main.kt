@@ -16,10 +16,12 @@ import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeout
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox.box
 import org.jgrapht.Graph
@@ -35,6 +37,7 @@ import java.util.concurrent.ConcurrentMap
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 import kotlin.text.Charsets.UTF_8
+import kotlin.time.Duration.Companion.seconds
 
 const val CAPACITY_PADDING_FACTOR: Int = 2
 private val taskOrderComparator = comparingInt<PngOutputTask> { if (it.newCacheEntries() > 0) 1 else 0 }
@@ -260,9 +263,16 @@ suspend fun main(args: Array<String>) {
             }
         }
     }
-    logger.info("All jobs started; waiting for {} running jobs to finish", box(inProgressJobs.size))
-    while (inProgressJobs.isNotEmpty()) {
-        inProgressJobs.remove(finishedJobsChannel.receive())
+    try {
+        withTimeout(10.seconds) {
+            logger.info("All jobs started; waiting for {} running jobs to finish", box(inProgressJobs.size))
+            while (inProgressJobs.isNotEmpty()) {
+                inProgressJobs.remove(finishedJobsChannel.receive())
+            }
+        }
+    } catch (e: TimeoutCancellationException) {
+        logger.fatal("Jobs still not finished: {}", inProgressJobs.keys.asFormattable())
+        exitProcess(1)
     }
     logger.info("All jobs done; closing channel")
     finishedJobsChannel.close()
