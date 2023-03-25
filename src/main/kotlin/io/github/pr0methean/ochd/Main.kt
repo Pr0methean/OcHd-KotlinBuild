@@ -24,13 +24,17 @@ import kotlinx.coroutines.withTimeout
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox.box
 import org.jgrapht.Graph
+import org.jgrapht.GraphPath
 import org.jgrapht.alg.connectivity.ConnectivityInspector
+import org.jgrapht.alg.shortestpath.DijkstraShortestPath
+import org.jgrapht.graph.AsSubgraph
 import org.jgrapht.graph.DefaultEdge
 import java.io.File
 import java.lang.management.ManagementFactory
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.Comparator.comparingInt
+import java.util.LinkedList
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
 import kotlin.system.exitProcess
@@ -39,10 +43,6 @@ import kotlin.text.Charsets.UTF_8
 import kotlin.time.Duration.Companion.seconds
 
 const val CAPACITY_PADDING_FACTOR: Int = 2
-private val taskOrderComparator = comparingInt<PngOutputTask> { if (it.newCacheTiles() > 0) 1 else 0 }
-.then(comparingInt(PngOutputTask::removedCacheTiles).reversed())
-.then(comparingInt(PngOutputTask::startedOrAvailableSubtasks).reversed())
-.then(comparingInt(PngOutputTask::totalSubtasks))
 
 private val logger = LogManager.getRootLogger()
 
@@ -72,6 +72,56 @@ private val maxOutputTasks = nCpus * MAX_OUTPUT_TASKS_PER_CPU
 private val minOutputTasks = nCpus * MIN_OUTPUT_TASKS_PER_CPU
 
 private const val BUILD_TASK_GRAPH_TASK_NAME = "Build task graph"
+
+private const val EDGE_LATENCY = 1
+
+/** Palem and Simons, p. 639 */
+private fun <V: Any, E: Any> weightedLength(path: GraphPath<V,E>): Int = path.length * (1 + EDGE_LATENCY) - 1
+
+/** Palem and Simons, p. 639 */
+private fun <V: Any, E: Any> rank(vertex: V, graph: Graph<V,E>): Int {
+    val huge = graph.vertexSet().size * (1 + EDGE_LATENCY)
+    val shortestPathFrom = mutableMapOf<V,GraphPath<V,E>>()
+    val vertices: Set<V> = graph.vertexSet() - vertex
+    for (otherVertex in vertices) {
+        val path = DijkstraShortestPath.findPathBetween(graph, otherVertex, vertex)
+        if (path != null) {
+            shortestPathFrom[otherVertex] = path
+        }
+    }
+    when (shortestPathFrom.size) {
+        0 -> return huge
+        1 -> {
+            val onlyConsumer = shortestPathFrom.keys.first()
+            return rank(onlyConsumer, graph) - 1 - weightedLength(shortestPathFrom[onlyConsumer]!!)
+        }
+        else -> {
+            val sortedConsumers = shortestPathFrom.toSortedMap(
+                    comparingInt<V> { consumer -> -weightedLength(shortestPathFrom[consumer]!!) }
+                    .thenComparingInt {consumer -> -rank(consumer, graph)})
+            val backwardSchedule = Array(huge) { Array<Any?>(nCpus) {null} }
+            var lowestRank = Int.MAX_VALUE
+            for (consumer in sortedConsumers.keys) {
+                var timeStep = rank(consumer, graph)
+                var scheduled = false
+                while (!scheduled) {
+                    for (index in backwardSchedule[timeStep].indices) {
+                        if (backwardSchedule[timeStep][index] == null) {
+                            backwardSchedule[timeStep][index] = consumer
+                            scheduled = true
+                            if (timeStep < lowestRank) {
+                                lowestRank = timeStep
+                            }
+                            break
+                        }
+                    }
+                    timeStep--
+                }
+            }
+            return lowestRank
+        }
+    }
+}
 
 @Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod", "ComplexMethod",
     "LoopWithTooManyJumpStatements")
@@ -146,7 +196,7 @@ suspend fun main(args: Array<String>) {
     depsBuildTask.join()
     onTaskCompleted(BUILD_TASK_GRAPH_TASK_NAME, BUILD_TASK_GRAPH_TASK_NAME)
     val dotOutputEnabled = tileSize <= MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH
-    val connectedComponents: List<MutableSet<PngOutputTask>> = if (tasks.size > maxOutputTasks || dotOutputEnabled) {
+    val connectedComponents: List<MutableSet<AbstractTask<*>>> = if (tasks.size > maxOutputTasks || dotOutputEnabled) {
         // Output tasks that are in different weakly-connected components don't share any dependencies, so we
         // launch tasks from one component at a time to keep the number of cached images manageable. We start
         // with the small ones so that they'll become unreachable before the largest component hits its peak cache
@@ -154,8 +204,7 @@ suspend fun main(args: Array<String>) {
         ConnectivityInspector(ctx.graph)
             .connectedSets()
             .sortedBy { it.sumOf(AbstractTask<*>::tiles) }
-            .map { it.filterIsInstanceTo(mutableSetOf()) }
-    } else listOf(tasks)
+    } else listOf(ctx.graph.vertexSet())
     var dotFormatOutputJob: Job? = null
     if (dotOutputEnabled) {
         // Output connected components in .dot format
@@ -192,7 +241,10 @@ suspend fun main(args: Array<String>) {
     dotFormatOutputJob?.join()
     for (connectedComponent in connectedComponents) {
         logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
-        while (connectedComponent.isNotEmpty()) {
+        val componentSubgraph = AsSubgraph(ctx.graph, connectedComponent)
+        val sortedConnectedComponent = LinkedList(
+                connectedComponent.filterIsInstance<PngOutputTask>().sortedBy { rank(it, componentSubgraph) })
+        while (sortedConnectedComponent.isNotEmpty()) {
             if (inProgressJobs.isNotEmpty()) {
                 do {
                     val finishedJob = finishedJobsChannel.tryReceive().getOrNull()
@@ -214,7 +266,7 @@ suspend fun main(args: Array<String>) {
                     "{} tasks in progress; starting all {} currently eligible tasks: {}",
                     box(currentInProgressJobs), box(connectedComponent.size), connectedComponent.asFormattable()
                 )
-                connectedComponent.forEach {
+                sortedConnectedComponent.forEach {
                     startTask(
                         scope,
                         it,
@@ -224,10 +276,9 @@ suspend fun main(args: Array<String>) {
                         ctx.graph
                     )
                 }
-                connectedComponent.clear()
+                sortedConnectedComponent.clear()
             } else {
-                val task = connectedComponent.minWithOrNull(taskOrderComparator)
-                checkNotNull(task) { "Error finding a new task to start" }
+                val task = sortedConnectedComponent.first()
                 if (currentInProgressJobs >= minOutputTasks) {
                     val cachedTiles = cachedTiles()
                     val newTiles = task.newCacheTiles()
@@ -257,7 +308,7 @@ suspend fun main(args: Array<String>) {
                     inProgressJobs,
                     ctx.graph
                 )
-                check(connectedComponent.remove(task)) { "Attempted to remove task more than once: $task" }
+                check(sortedConnectedComponent.remove(task)) { "Attempted to remove task more than once: $task" }
             }
         }
     }
