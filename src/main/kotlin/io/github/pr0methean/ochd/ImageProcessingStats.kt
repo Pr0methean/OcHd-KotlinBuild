@@ -21,7 +21,7 @@ import org.apache.logging.log4j.util.Unbox.box
 import java.lang.management.ManagementFactory
 import java.lang.management.ThreadInfo
 import java.lang.management.ThreadMXBean
-import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicLong
 import kotlin.system.exitProcess
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
@@ -98,8 +98,9 @@ object ImageProcessingStats {
     private val dedupeFailures: HashMultiset<String> = HashMultiset.create()
     private val dedupeFailuresByName = HashMultiset.create<Pair<String, String>>()
     private val tasksByRunCount = ConcurrentHashMultiset.create<String>()
-    private val cacheableTasks = ConcurrentHashMap.newKeySet<String>()
-    private val cachedTasks: MutableSet<AbstractTask<*>> = ConcurrentHashMap.newKeySet()
+    private val cacheableTasks = AtomicLong(0)
+    private val cachedTasks = AtomicLong(0)
+    private val cachedTiles = AtomicLong(0)
 
     init {
         dedupeFailures.add("Build task graph")
@@ -152,22 +153,24 @@ object ImageProcessingStats {
 
     fun onCachingEnabled(task: AbstractTask<*>) {
         logger.info("Enabled caching for: {}: {}", task::class.simpleName, task.name)
-        cacheableTasks.add(task.name)
-        logger.info("Currently cacheable tasks: {}", box(cacheableTasks.size))
+        val cacheable = cacheableTasks.incrementAndGet()
+        logger.info("Currently cacheable tasks: {}", box(cacheable))
     }
 
     fun onCachingDisabled(task: AbstractTask<*>) {
-        cacheableTasks.remove(task.name)
-        cachedTasks.remove(task)
-        logger.info("Removed {} from cache. Cached tasks: {}. Cacheable tasks: {}",
-            task.name, box(cachedTasks.size), box(cacheableTasks.size))
+        val cacheable = cacheableTasks.decrementAndGet()
+        val cached = cachedTasks.decrementAndGet()
+        val tiles = cachedTiles.addAndGet(-task.tiles.toLong())
+        logger.info("Removed {} from cache. Cached tasks: {}. Cached tiles: {}. Cacheable tasks: {}",
+            task.name, box(cached), box(tiles), box(cacheable))
     }
 
     fun onCache(task: AbstractTask<*>) {
-        cachedTasks.add(task)
-        logger.info("Added {} to cache. Cached tasks: {}. Cacheable tasks: {}",
-            task.name, box(cachedTasks.size), box(cacheableTasks.size))
+        val cached = cachedTasks.incrementAndGet()
+        val tiles = cachedTiles.addAndGet(task.tiles.toLong())
+        logger.info("Added {} to cache. Cached tasks: {}. Cached tiles: {}. Cacheable tasks: {}",
+            task.name, box(cached), box(tiles), box(cacheableTasks.get()))
     }
 
-    fun cachedTiles(): Int = cachedTasks.sumOf(AbstractTask<*>::tiles)
+    fun cachedTiles(): Long = cachedTiles.get()
 }

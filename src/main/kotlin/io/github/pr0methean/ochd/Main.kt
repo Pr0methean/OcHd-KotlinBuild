@@ -83,8 +83,8 @@ suspend fun main(args: Array<String>) {
     val tileSize = args[0].toInt()
     require(tileSize > 0) { "tileSize shouldn't be zero or negative but was ${args[0]}" }
     val bytesPerTile = tileSize.toLong() * tileSize * BYTES_PER_PIXEL
-    val goalHeapImages = goalImageBytes / bytesPerTile
-    logger.info("Will attempt to keep a maximum of {} images in cache", box(goalHeapImages))
+    val goalHeapTiles = goalImageBytes / bytesPerTile
+    logger.info("Will attempt to keep a maximum of {} images in cache", box(goalHeapTiles))
     val ioScope = CoroutineScope(Dispatchers.IO)
     val out = Paths.get("pngout").toAbsolutePath().toFile()
     val metadataDirectory = Paths.get("metadata").toAbsolutePath().toFile()
@@ -236,7 +236,7 @@ suspend fun main(args: Array<String>) {
                         "Cached tiles: {} current, {} impending, {} snapshots, {} when next task starts",
                         box(cachedTiles), box(impendingTiles), box(pendingSnapshotTiles()), box(newTiles))
                     val totalCacheWithThisTask = cachedTiles + impendingTiles + newTiles
-                    if (totalCacheWithThisTask >= goalHeapImages && newTiles > 0) {
+                    if (totalCacheWithThisTask >= goalHeapTiles && newTiles > 0) {
                         logger.warn("{} tasks in progress and too many tiles cached; waiting for one to finish",
                                 currentInProgressJobs)
                         val delay = measureNanoTime {
