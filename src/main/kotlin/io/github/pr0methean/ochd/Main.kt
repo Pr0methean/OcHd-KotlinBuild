@@ -329,9 +329,9 @@ private fun startTask(
                 ioJobs.add(writeExtraFiles)
                 writeExtraFiles.invokeOnCompletion { ioJobs.remove(writeExtraFiles) }
             }
-            inProgressJobs.remove(task)
             onTaskCompleted("PngOutputTask", task.name)
             finishedJobsChannel.send(task)
+            inProgressJobs.remove(task)
         } catch (t: Throwable) {
             // Fail fast
             logger.fatal("{} failed", task, t)
