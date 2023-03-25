@@ -39,7 +39,7 @@ private fun Multiset<*>.log() {
 }
 
 private val logger = LogManager.getLogger("ImageProcessingStats")
-private const val NEED_THREAD_MONITORING = true
+private const val NEED_THREAD_MONITORING = false
 private const val MAX_STACK_DEPTH = 20
 private val needCoroutineDebug = logger.isDebugEnabled
 private val reportingInterval: Duration = 1.minutes
