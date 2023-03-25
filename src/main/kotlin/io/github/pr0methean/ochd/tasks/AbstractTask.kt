@@ -59,7 +59,7 @@ abstract class AbstractTask<out T>(
     }
 
     val totalSubtasks: Int by lazy {
-        val directDeps = directDependentTasks
+        val directDeps = directDependencies.toList()
         directDeps.size + directDeps.sumOf(AbstractTask<*>::totalSubtasks)
     }
 
