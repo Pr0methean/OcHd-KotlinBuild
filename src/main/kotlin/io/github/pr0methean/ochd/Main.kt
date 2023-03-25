@@ -240,7 +240,7 @@ suspend fun main(args: Array<String>) {
                         "Cached tiles: {} current, {} impending, {} snapshots, {} when {} starts, {} total",
                         box(cachedTiles), box(impendingTiles), box(snapshotTiles), box(newTiles), task,
                         box(totalHeapTilesWithThisTask))
-                    if (totalHeapTilesWithThisTask >= goalHeapTiles && newTiles > 0) {
+                    if (totalHeapTilesWithThisTask >= goalHeapTiles) {
                         logger.warn("{} tasks in progress and too many tiles cached; waiting for one to finish",
                                 currentInProgressJobs)
                         val delay = measureNanoTime {
