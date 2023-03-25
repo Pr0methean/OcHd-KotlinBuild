@@ -13,6 +13,8 @@ import javafx.scene.paint.Color.BLACK
 import javafx.scene.paint.Paint
 import kotlinx.coroutines.sync.withLock
 import org.apache.logging.log4j.LogManager
+import org.jgrapht.Graph
+import org.jgrapht.graph.DefaultEdge
 import java.util.Objects
 import kotlin.coroutines.CoroutineContext
 import kotlin.math.roundToInt
@@ -33,23 +35,24 @@ private const val CHANNEL_MAX = 1.shl(ARGB_BITS_PER_CHANNEL) - 1
  */
 @Suppress("EqualsWithHashCodeExist", "EqualsOrHashCode")
 class RepaintTask(
-        name: String,
-        base: AbstractImageTask,
-        val paint: Paint,
-        cache: DeferredTaskCache<Image>,
-        ctx: CoroutineContext):
-    UnaryImageTransform<Double>(name, base, cache, ctx) {
+    name: String,
+    base: AbstractImageTask,
+    val paint: Paint,
+    cache: DeferredTaskCache<Image>,
+    ctx: CoroutineContext, graph: Graph<AbstractTask<*>, DefaultEdge>
+):
+    UnaryImageTransform<Double>(name, base, cache, ctx, graph) {
 
     constructor(base: AbstractImageTask, paint: Paint, cache: (String) -> DeferredTaskCache<Image>,
-                ctx: CoroutineContext):
-            this("{$base}@$paint", base, paint, cache, ctx)
+                ctx: CoroutineContext, graph: Graph<AbstractTask<*>, DefaultEdge>):
+            this("{$base}@$paint", base, paint, cache, ctx, graph)
 
     constructor(name: String,
                 base: AbstractImageTask,
                 paint: Paint,
                 cache: (String) -> DeferredTaskCache<Image>,
-                ctx: CoroutineContext):
-            this(name, base, paint, cache(name), ctx)
+                ctx: CoroutineContext, graph: Graph<AbstractTask<*>, DefaultEdge>):
+            this(name, base, paint, cache(name), ctx, graph)
 
     override fun appendForGraphPrinting(appendable: Appendable) {
         appendable.append('{')
@@ -129,7 +132,7 @@ class RepaintTask(
             logger.debug("Merging RepaintTask {} with duplicate {}", name, other.name)
             val newBase = base.mergeWithDuplicate(other.base)
             if (newBase !== base) {
-                return RepaintTask(name, newBase, paint, cache, ctx)
+                return RepaintTask(name, newBase, paint, cache, ctx, graph)
             }
         }
         return super.mergeWithDuplicate(other)

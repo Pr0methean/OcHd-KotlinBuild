@@ -5,6 +5,8 @@ import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.image.Image
 import org.apache.logging.log4j.LogManager
+import org.jgrapht.Graph
+import org.jgrapht.graph.DefaultEdge
 import java.util.Objects
 import kotlin.coroutines.CoroutineContext
 
@@ -15,8 +17,8 @@ abstract class UnaryImageTransform<TCanvasTeardownContext>(
     name: String,
     val base: AbstractImageTask,
     cache: DeferredTaskCache<Image>,
-    ctx: CoroutineContext
-) : AbstractImageTask(name, cache, ctx, base.width, base.width) {
+    ctx: CoroutineContext, graph: Graph<AbstractTask<*>, DefaultEdge>
+) : AbstractImageTask(name, cache, ctx, base.width, base.width, graph) {
     override val directDependencies: List<AbstractImageTask> = listOf(base)
     override suspend fun renderOnto(contextSupplier: () -> GraphicsContext, x: Double, y: Double) {
         if (shouldRenderForCaching()) {

@@ -10,6 +10,8 @@ import javafx.scene.image.Image
 import javafx.scene.paint.Color.BLACK
 import javafx.scene.paint.Color.TRANSPARENT
 import org.apache.logging.log4j.LogManager
+import org.jgrapht.Graph
+import org.jgrapht.graph.DefaultEdge
 import java.util.*
 import kotlin.coroutines.CoroutineContext
 
@@ -22,8 +24,8 @@ private val logger = LogManager.getLogger("ImageStackingTask")
 class ImageStackingTask(
     val layers: LayerList,
     cache: DeferredTaskCache<Image>,
-    ctx: CoroutineContext
-) : AbstractImageTask(layers.toString(), cache, ctx, layers.width, layers.height) {
+    ctx: CoroutineContext, graph: Graph<AbstractTask<*>, DefaultEdge>
+) : AbstractImageTask(layers.toString(), cache, ctx, layers.width, layers.height, graph) {
     @Suppress("MagicNumber")
     override fun computeHashCode(): Int = layers.hashCode() + 37
 
@@ -52,7 +54,7 @@ class ImageStackingTask(
             logger.debug("Merging ImageStackingTask {} with duplicate {}", name, other.name)
             val mergedLayers = layers.mergeWithDuplicate(other.layers)
             if (!mergedLayers.layers.isShallowCopyOf(layers.layers)) {
-                return ImageStackingTask(mergedLayers, cache, ctx)
+                return ImageStackingTask(mergedLayers, cache, ctx, graph)
             }
         }
         return super.mergeWithDuplicate(other)

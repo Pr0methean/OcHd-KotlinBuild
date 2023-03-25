@@ -8,6 +8,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
 import org.apache.logging.log4j.LogManager
+import org.jgrapht.Graph
+import org.jgrapht.graph.DefaultEdge
 import java.awt.image.BufferedImage
 import java.io.File
 import java.nio.file.Files
@@ -26,8 +28,8 @@ class PngOutputTask(
     name: String,
     val base: AbstractTask<Image>,
     val files: List<File>,
-    ctx: CoroutineContext,
-): AbstractTask<Nothing>(name, noopDeferredTaskCache(), ctx) {
+    ctx: CoroutineContext, graph: Graph<AbstractTask<*>, DefaultEdge>,
+): AbstractTask<Nothing>(name, noopDeferredTaskCache(), ctx, graph) {
     override val directDependencies: Iterable<AbstractTask<*>> = listOf(base)
     private val ioScope = coroutineScope.plus(Dispatchers.IO)
     override fun mergeWithDuplicate(other: AbstractTask<*>): AbstractTask<Nothing> {
@@ -39,7 +41,8 @@ class PngOutputTask(
                     name,
                     mergedBase,
                     files.union(other.files).toList(),
-                    ctx
+                    ctx,
+                    graph
                 )
             }
         }

@@ -9,6 +9,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import org.apache.logging.log4j.LogManager
+import org.jgrapht.Graph
+import org.jgrapht.graph.DefaultEdge
 import java.util.*
 import kotlin.coroutines.CoroutineContext
 
@@ -26,8 +28,8 @@ class AnimationTask(
     private val frameHeight: Int,
     name: String,
     cache: DeferredTaskCache<Image>,
-    ctx: CoroutineContext
-): AbstractImageTask(name, cache, ctx, width, frameHeight * frames.size) {
+    ctx: CoroutineContext, graph: Graph<AbstractTask<*>, DefaultEdge>
+): AbstractImageTask(name, cache, ctx, width, frameHeight * frames.size, graph) {
     private val dependencies = frames + background
 
     override fun computeHashCode(): Int = Objects.hash(background, frames, width, height)
@@ -52,7 +54,7 @@ class AnimationTask(
             if (mergedBackground !== background || !mergedFrames.isShallowCopyOf(frames)) {
                 return AnimationTask(
                     mergedBackground, mergedFrames,
-                    width, height, name, cache, ctx
+                    width, height, name, cache, ctx, graph
                 )
             }
         }

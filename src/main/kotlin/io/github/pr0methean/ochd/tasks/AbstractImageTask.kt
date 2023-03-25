@@ -15,6 +15,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox.box
+import org.jgrapht.Graph
+import org.jgrapht.graph.DefaultEdge
 import java.io.ByteArrayOutputStream
 import java.io.PrintStream
 import java.nio.charset.Charset
@@ -41,9 +43,10 @@ abstract class AbstractImageTask(
     name: String, cache: DeferredTaskCache<Image>,
     ctx: CoroutineContext,
     val width: Int,
-    val height: Int
+    val height: Int,
+    graph: Graph<AbstractTask<*>, DefaultEdge>
 )
-    : AbstractTask<Image>(name, cache, ctx) {
+    : AbstractTask<Image>(name, cache, ctx, graph) {
     override fun mergeWithDuplicate(other: AbstractTask<*>): AbstractImageTask {
         return super.mergeWithDuplicate(other) as AbstractImageTask
     }

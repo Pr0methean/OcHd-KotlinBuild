@@ -6,6 +6,8 @@ import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.image.Image
 import org.apache.logging.log4j.LogManager
+import org.jgrapht.Graph
+import org.jgrapht.graph.DefaultEdge
 import java.util.Objects
 import kotlin.coroutines.CoroutineContext
 import kotlin.math.roundToInt
@@ -18,12 +20,12 @@ class MakeSemitransparentTask(
     base: AbstractImageTask,
     val opacity: Double,
     cache: DeferredTaskCache<Image>,
-    ctx: CoroutineContext
-): UnaryImageTransform<Double>("$base@$opacity", base, cache, ctx) {
+    ctx: CoroutineContext, graph: Graph<AbstractTask<*>, DefaultEdge>
+): UnaryImageTransform<Double>("$base@$opacity", base, cache, ctx, graph) {
 
     constructor(base: AbstractImageTask, opacity: Double, cache: (String) -> DeferredTaskCache<Image>,
-                ctx: CoroutineContext):
-            this(base, opacity, cache("$base@$opacity"), ctx)
+                ctx: CoroutineContext, graph: Graph<AbstractTask<*>, DefaultEdge>):
+            this(base, opacity, cache("$base@$opacity"), ctx, graph)
 
     override suspend fun perform(): Image {
         ImageProcessingStats.onTaskLaunched("MakeSemitransparentTask", name)

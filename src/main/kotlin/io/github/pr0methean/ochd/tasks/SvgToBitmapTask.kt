@@ -11,6 +11,8 @@ import org.apache.batik.transcoder.SVGAbstractTranscoder
 import org.apache.batik.transcoder.TranscoderException
 import org.apache.batik.transcoder.TranscoderInput
 import org.apache.batik.transcoder.TranscoderOutput
+import org.jgrapht.Graph
+import org.jgrapht.graph.DefaultEdge
 import org.w3c.dom.Document
 import java.awt.Shape
 import java.awt.geom.Rectangle2D.Float
@@ -101,8 +103,8 @@ class SvgToBitmapTask(
     width: Int,
     private val file: File,
     cache: DeferredTaskCache<Image>,
-    ctx: CoroutineContext
-): AbstractImageTask(name, cache, ctx, width, getHeight(name, width)) {
+    ctx: CoroutineContext, graph: Graph<AbstractTask<*>, DefaultEdge>
+): AbstractImageTask(name, cache, ctx, width, getHeight(name, width), graph) {
 
     /** SVG import doesn't depend on any other tasks, so this returns an empty list. */
     override val directDependencies: List<AbstractTask<Nothing>> = listOf()

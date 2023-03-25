@@ -4,6 +4,7 @@ import io.github.pr0methean.ochd.ImageProcessingStats.cachedTasks
 import io.github.pr0methean.ochd.ImageProcessingStats.onTaskCompleted
 import io.github.pr0methean.ochd.ImageProcessingStats.onTaskLaunched
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
+import io.github.pr0methean.ochd.tasks.AbstractTask
 import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.tasks.SvgToBitmapTask
 import io.github.pr0methean.ochd.tasks.mkdirsedPaths
@@ -20,6 +21,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox.box
+import org.jgrapht.Graph
+import org.jgrapht.alg.connectivity.ConnectivityInspector
+import org.jgrapht.graph.DefaultEdge
 import java.io.File
 import java.lang.management.ManagementFactory
 import java.nio.file.Files
@@ -132,31 +136,15 @@ suspend fun main(args: Array<String>) {
     onTaskCompleted(BUILD_TASK_GRAPH_TASK_NAME, BUILD_TASK_GRAPH_TASK_NAME)
     val dotOutputEnabled = tileSize <= MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH
     val ioJobs = ConcurrentHashMap.newKeySet<Job>()
-    val connectedComponents = if (tasks.size > maxOutputTasks || dotOutputEnabled) {
-
+    val connectedComponents: List<MutableSet<PngOutputTask>> = if (tasks.size > maxOutputTasks || dotOutputEnabled) {
         // Output tasks that are in different weakly-connected components don't share any dependencies, so we
         // launch tasks from one component at a time to keep the number of cached images manageable. We start
         // with the small ones so that they'll become unreachable before the largest component hits its peak cache
         // size, thus limiting the peak size of the live set and reducing the size of heap we need.
-        val components = mutableListOf<MutableSet<PngOutputTask>>()
-        sortTask@ for (task in tasks.sortedWith(comparingInt(PngOutputTask::newCacheEntries))
-        ) {
-            val matchingComponents = components.filter { it.any(task::overlapsWith) }
-            logger.debug("{} is connected to: {}", task, matchingComponents.asFormattable())
-            if (matchingComponents.isEmpty()) {
-                components.add(mutableSetOf(task))
-            } else {
-                matchingComponents.first().add(task)
-                for (component in matchingComponents.drop(1)) {
-                    // More than one match = need to merge components
-                    matchingComponents.first().addAll(component)
-                    check(components.remove(component)) {
-                        "Failed to remove $component after merging into ${matchingComponents.first()}"
-                    }
-                }
-            }
-        }
-        components.sortedBy(MutableSet<PngOutputTask>::size)
+        ConnectivityInspector(ctx.graph)
+            .connectedSets()
+            .sortedBy(Set<*>::size)
+            .map { it.filterIsInstanceTo(mutableSetOf()) }
     } else listOf(tasks)
     var dotFormatOutputJob: Job? = null
     if (dotOutputEnabled) {
@@ -215,7 +203,8 @@ suspend fun main(args: Array<String>) {
                         finishedJobsChannel,
                         ioJobs,
                         prereqIoJobs,
-                        inProgressJobs
+                        inProgressJobs,
+                        ctx.graph
                     )
                 }
                 connectedComponent.clear()
@@ -247,7 +236,8 @@ suspend fun main(args: Array<String>) {
                     finishedJobsChannel,
                     ioJobs,
                     prereqIoJobs,
-                    inProgressJobs
+                    inProgressJobs,
+                    ctx.graph
                 )
                 check(connectedComponent.remove(task)) { "Attempted to remove task more than once: $task" }
             }
@@ -276,7 +266,8 @@ private fun startTask(
     finishedJobsChannel: Channel<PngOutputTask>,
     ioJobs: MutableSet<in Job>,
     prereqIoJobs: Collection<Job>,
-    inProgressJobs: ConcurrentMap<PngOutputTask, Job>
+    inProgressJobs: ConcurrentMap<PngOutputTask, Job>,
+    graph: Graph<AbstractTask<*>, DefaultEdge>
 ) {
     inProgressJobs[task] = scope.launch(CoroutineName(task.name)) {
         try {
@@ -288,6 +279,7 @@ private fun startTask(
                 SwingFXUtils.fromFXImage(task.base.await(), null)
             }
             task.base.removeDirectDependentTask(task)
+            graph.removeVertex(task)
             val ioJob = scope.launch(CoroutineName("File write for ${task.name}")) {
                 prereqIoJobs.joinAll()
                 logger.info("Starting file write for {}", task.name)

@@ -16,6 +16,10 @@ import javafx.scene.paint.Color
 import javafx.scene.paint.Color.BLACK
 import javafx.scene.paint.Paint
 import org.apache.logging.log4j.LogManager
+import org.jgrapht.Graph
+import org.jgrapht.graph.DefaultEdge
+import org.jgrapht.graph.DirectedAcyclicGraph
+import org.jgrapht.graph.concurrent.AsSynchronizedGraph
 import java.io.File
 import java.util.Locale
 import kotlin.coroutines.CoroutineContext
@@ -42,6 +46,10 @@ class TaskPlanningContext(
     private val svgTasks: Map<String, SvgToBitmapTask>
     private val taskDeduplicationMap = mutableMapOf<AbstractTask<*>, AbstractTask<*>>()
     private val dedupedSvgTasks = HashMultiset.create<String>()
+    val graph: Graph<AbstractTask<*>, DefaultEdge> = AsSynchronizedGraph.Builder<AbstractTask<*>,DefaultEdge>()
+        .setCopyless()
+        .cacheEnable()
+        .build(DirectedAcyclicGraph(DefaultEdge::class.java))
 
     init {
         val builder = mutableMapOf<String, SvgToBitmapTask>()
@@ -52,7 +60,8 @@ class TaskPlanningContext(
                 tileSize,
                 svgDirectory.resolve("$shortName.svg"),
                 HardTaskCache(shortName),
-                ctx
+                ctx,
+                graph
             )
         }
         svgTasks = builder.toMap()
@@ -82,7 +91,7 @@ class TaskPlanningContext(
             -> deduplicateInternal(if (task.paint.isOpaque) {
                     task.base
                 } else if (task.paint is Color) {
-                    RepaintTask(task.base, task.base.paint * task.paint.opacity, ::HardTaskCache, ctx)
+                    RepaintTask(task.base, task.base.paint * task.paint.opacity, ::HardTaskCache, ctx, graph)
                 } else task)
             task is ImageStackingTask
                     && task.layers.layers.size == 1
@@ -134,12 +143,12 @@ class TaskPlanningContext(
         logger.debug("layer({},{},{})", source, paint, alpha)
         if (paint != null) {
             return deduplicate(
-                RepaintTask(deduplicate(source), paint * alpha, ::HardTaskCache, ctx)
+                RepaintTask(deduplicate(source), paint * alpha, ::HardTaskCache, ctx, graph)
             )
         }
         if (alpha != 1.0) {
             return deduplicate(
-                MakeSemitransparentTask(deduplicate(source), alpha, ::HardTaskCache, ctx))
+                MakeSemitransparentTask(deduplicate(source), alpha, ::HardTaskCache, ctx, graph))
         }
         return deduplicate(source)
     }
@@ -154,7 +163,7 @@ class TaskPlanningContext(
         logger.debug("stack({})", layers)
         return deduplicate(
             ImageStackingTask(
-                layers, HardTaskCache(layers.toString()), ctx
+                layers, HardTaskCache(layers.toString()), ctx, graph
             )
         )
     }
@@ -175,7 +184,7 @@ class TaskPlanningContext(
             tileSize,
             frames.toString(),
             noopDeferredTaskCache(),
-            ctx
+            ctx, graph
         ))
     }
 
@@ -186,7 +195,7 @@ class TaskPlanningContext(
                 lowercaseNames[0],
                 deduplicate(source),
                 lowercaseNames.map { outTextureRoot.resolve("$it.png") },
-                ctx
+                ctx, graph
         )).also { logger.debug("Done creating output task: {}", it) } as PngOutputTask
     }
 

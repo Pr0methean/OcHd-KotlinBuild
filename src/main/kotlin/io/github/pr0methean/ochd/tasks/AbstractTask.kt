@@ -1,6 +1,5 @@
 package io.github.pr0methean.ochd.tasks
 
-import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.ImageProcessingStats.onCache
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import kotlinx.coroutines.CoroutineName
@@ -14,10 +13,9 @@ import kotlinx.coroutines.sync.withLock
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import org.apache.logging.log4j.util.StringBuilderFormattable
+import org.jgrapht.Graph
+import org.jgrapht.graph.DefaultEdge
 import java.io.PrintWriter
-import java.util.Collections.newSetFromMap
-import java.util.WeakHashMap
-import javax.annotation.concurrent.GuardedBy
 import kotlin.coroutines.CoroutineContext
 
 private val logger: Logger = LogManager.getLogger("AbstractTask")
@@ -30,7 +28,8 @@ private val logger: Logger = LogManager.getLogger("AbstractTask")
 abstract class AbstractTask<out T>(
     val name: String,
     val cache: DeferredTaskCache<@UnsafeVariance T>,
-    val ctx: CoroutineContext
+    val ctx: CoroutineContext,
+    val graph: Graph<AbstractTask<*>, DefaultEdge>
 ) : StringBuilderFormattable {
     val coroutineScope: CoroutineScope by lazy {
         CoroutineScope(ctx.plus(CoroutineName(name)))
@@ -43,48 +42,31 @@ abstract class AbstractTask<out T>(
 
     val mutex: Mutex = Mutex()
 
-    @GuardedBy("mutex")
-    val directDependentTasks: MutableSet<AbstractTask<*>> = newSetFromMap(WeakHashMap())
+    val directDependentTasks: List<AbstractTask<*>>
+        get() = graph.incomingEdgesOf(this).map(graph::getEdgeSource)
 
-    private suspend fun addDirectDependentTask(task: AbstractTask<*>) {
-        if (directDependentTasks.contains(task)) {
-            return
-        }
-        if (mutex.withLock {
-                directDependentTasks.add(task) && directDependentTasks.size >= 2 && cache.enable()
-            }) {
-            ImageProcessingStats.onCachingEnabled(this)
-        }
+    private fun addDirectDependentTask(task: AbstractTask<*>) {
+        graph.addEdge(task, this)
     }
 
     /**
      * Called once a dependent task has retrieved the output, so that we can disable caching and free up heap space once
      * all dependents have done so.
      */
-    suspend fun removeDirectDependentTask(task: AbstractTask<*>): Boolean {
-        if (!directDependentTasks.contains(task)) {
-            return false
+    fun removeDirectDependentTask(task: AbstractTask<*>): Boolean {
+        val removed = graph.removeEdge(task, this) != null
+        if (removed && graph.inDegreeOf(this) == 0) {
+            cache.disable()
+            graph.removeVertex(this)
         }
-        mutex.withLock {
-            if (!directDependentTasks.remove(task)) {
-                return false
-            }
-            logger.info("Removed dependency of {} on {}", task.name, name)
-            if (directDependentTasks.isEmpty() && cache.disable()) {
-                ImageProcessingStats.onCachingDisabled(this)
-                directDependencies.forEach { it.removeDirectDependentTask(this) }
-            }
-        }
-        return true
+        return removed
     }
 
     val totalSubtasks: Int by lazy {
-        var total = 1
-        for (task in directDependencies) {
-            total += task.totalSubtasks
-        }
-        total
+        val directDeps = directDependentTasks
+        directDeps.size + directDeps.sumOf(AbstractTask<*>::totalSubtasks)
     }
+
     abstract val directDependencies: Iterable<AbstractTask<*>>
     private val hashCode: Int by lazy {
         logger.debug("Computing hash code for {}", name)
@@ -112,16 +94,13 @@ abstract class AbstractTask<out T>(
             || (cache.isEnabled() && mutex.withLock { directDependentTasks.size } > 1)
             || isStartedOrAvailable()
 
-    suspend fun registerRecursiveDependencies() {
+    fun registerRecursiveDependencies() {
         if (!dependenciesRegistered) {
-            mutex.withLock {
-                if (!dependenciesRegistered) {
-                    directDependencies.forEach {
-                        it.addDirectDependentTask(this@AbstractTask)
-                        it.registerRecursiveDependencies()
-                    }
-                    dependenciesRegistered = true
-                }
+            graph.addVertex(this)
+            directDependencies.forEach { dependency ->
+                graph.addVertex(dependency)
+                graph.addEdge(this, dependency)
+                dependency.registerRecursiveDependencies()
             }
         }
     }
