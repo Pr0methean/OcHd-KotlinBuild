@@ -237,8 +237,8 @@ suspend fun main(args: Array<String>) {
                     val snapshotTiles = pendingSnapshotTiles()
                     val totalHeapTilesWithThisTask = cachedTiles + impendingTiles + newTiles + snapshotTiles
                     logger.info(
-                        "Cached tiles: {} current, {} impending, {} snapshots, {} when next task starts, {} total",
-                        box(cachedTiles), box(impendingTiles), box(snapshotTiles), box(newTiles),
+                        "Cached tiles: {} current, {} impending, {} snapshots, {} when {} starts, {} total",
+                        box(cachedTiles), box(impendingTiles), box(snapshotTiles), box(newTiles), task,
                         box(totalHeapTilesWithThisTask))
                     if (totalHeapTilesWithThisTask >= goalHeapTiles && newTiles > 0) {
                         logger.warn("{} tasks in progress and too many tiles cached; waiting for one to finish",
