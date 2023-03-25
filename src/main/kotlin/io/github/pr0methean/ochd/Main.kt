@@ -79,6 +79,7 @@ private const val EDGE_LATENCY = 1
 private fun <V: Any, E: Any> weightedLength(path: GraphPath<V,E>): Int = path.length * (1 + EDGE_LATENCY) - 1
 
 /** Palem and Simons, p. 639 */
+@Suppress("NestedBlockDepth")
 private fun <V: Any, E: Any> rank(vertex: V, graph: Graph<V,E>): Int {
     val huge = graph.vertexSet().size * (1 + EDGE_LATENCY)
     val shortestPathFrom = mutableMapOf<V,GraphPath<V,E>>()
