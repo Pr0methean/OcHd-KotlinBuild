@@ -354,7 +354,11 @@ private fun startTask(
     graph: Graph<AbstractTask<*>, DefaultEdge>
 ) {
     if (task !is PngOutputTask) {
-        task.start()
+        if (task.shouldRenderForCaching()) {
+            task.start()
+        } else {
+            graph.incomingEdgesOf(task).map {graph.getEdgeSource(it)}.forEach(AbstractTask<*>::start)
+        }
         return
     }
     val prereqsDone = prereqIoJobs.all(Job::isCompleted)
