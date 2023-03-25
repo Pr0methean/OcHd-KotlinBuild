@@ -131,7 +131,7 @@ suspend fun main(args: Array<String>) {
         dirs.filter(mkdirsedPaths::add)
             .forEach(File::mkdirs)
     }
-    val prereqIoJobs = listOf(mkdirs, copyMetadata)
+    val prereqIoJobs = mutableListOf(mkdirs, copyMetadata)
     logger.debug("Got deduplicated output tasks")
     val depsBuildTask = scope.launch {
         tasks.forEach { it.registerRecursiveDependencies() }
@@ -304,7 +304,7 @@ private fun startTask(
     task: PngOutputTask,
     finishedJobsChannel: Channel<PngOutputTask>,
     ioJobs: MutableSet<in Job>,
-    prereqIoJobs: Collection<Job>,
+    prereqIoJobs: MutableCollection<Job>,
     inProgressJobs: ConcurrentMap<PngOutputTask, Job>,
     graph: Graph<AbstractTask<*>, DefaultEdge>
 ) {
@@ -320,6 +320,7 @@ private fun startTask(
             task.base.removeDirectDependentTask(task)
             graph.removeVertex(task)
             prereqIoJobs.joinAll()
+            prereqIoJobs.clear()
             logger.info("Starting file write for {}", task.name)
             val writeExtraFiles = task.writeToFiles(awtImage)
             inProgressJobs.remove(task)
