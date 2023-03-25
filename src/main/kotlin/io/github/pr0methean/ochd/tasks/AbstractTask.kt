@@ -56,12 +56,21 @@ abstract class AbstractTask<out T>(
      * all dependents have done so.
      */
     fun removeDirectDependentTask(task: AbstractTask<*>): Boolean {
-        val removed = graph.removeEdge(task, this) != null
-        if (graph.inDegreeOfIfPresent(this) == 0) {
+        val inDegree = graph.inDegreeOfIfPresent(this)
+        var removed = false
+        var canDisable = inDegree == 0
+        if (inDegree == 1) {
+            removed = graph.removeEdge(task, this) != null
+            canDisable = removed
+        }
+        if (canDisable) {
             if (cache.disable()) {
                 onCachingDisabled(this)
             }
             graph.removeVertex(this)
+        }
+        if (inDegree > 0 && !removed) {
+            removed = graph.removeEdge(task, this) != null
         }
         return removed
     }
