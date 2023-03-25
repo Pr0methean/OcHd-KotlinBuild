@@ -308,6 +308,9 @@ private fun startTask(
     inProgressJobs: ConcurrentMap<PngOutputTask, Job>,
     graph: Graph<AbstractTask<*>, DefaultEdge>
 ) {
+    if (prereqIoJobs.all(Job::isCompleted)) {
+        prereqIoJobs.clear()
+    }
     inProgressJobs[task] = scope.launch(CoroutineName(task.name)) {
         try {
             onTaskLaunched("PngOutputTask", task.name)
@@ -320,7 +323,6 @@ private fun startTask(
             task.base.removeDirectDependentTask(task)
             graph.removeVertex(task)
             prereqIoJobs.joinAll()
-            prereqIoJobs.clear()
             logger.info("Starting file write for {}", task.name)
             val writeExtraFiles = task.writeToFiles(awtImage)
             inProgressJobs.remove(task)
