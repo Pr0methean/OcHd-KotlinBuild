@@ -244,7 +244,7 @@ suspend fun main(args: Array<String>) {
         logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
         val componentSubgraph = AsSubgraph(ctx.graph, connectedComponent)
         val sortedConnectedComponent = LinkedList(
-                connectedComponent.filterIsInstance<PngOutputTask>().sortedBy { rank(it, componentSubgraph) })
+                connectedComponent.sortedBy { rank(it, componentSubgraph) })
         while (sortedConnectedComponent.isNotEmpty()) {
             if (inProgressJobs.isNotEmpty()) {
                 do {
@@ -344,15 +344,19 @@ suspend fun main(args: Array<String>) {
     exitProcess(0)
 }
 
-@Suppress("LongParameterList","TooGenericExceptionCaught")
+@Suppress("LongParameterList","TooGenericExceptionCaught", "DeferredResultUnused")
 private fun startTask(
     scope: CoroutineScope,
-    task: PngOutputTask,
+    task: AbstractTask<*>,
     finishedJobsChannel: Channel<PngOutputTask>,
     prereqIoJobs: MutableCollection<Job>,
     inProgressJobs: ConcurrentMap<PngOutputTask, Job>,
     graph: Graph<AbstractTask<*>, DefaultEdge>
 ) {
+    if (task !is PngOutputTask) {
+        task.start()
+        return
+    }
     val prereqsDone = prereqIoJobs.all(Job::isCompleted)
     if (prereqsDone && prereqIoJobs.isNotEmpty()) {
         prereqIoJobs.clear()
