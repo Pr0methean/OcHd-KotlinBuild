@@ -155,7 +155,7 @@ suspend fun main(args: Array<String>) {
         // size, thus limiting the peak size of the live set and reducing the size of heap we need.
         ConnectivityInspector(ctx.graph)
             .connectedSets()
-            .sortedBy(Set<AbstractTask<*>>::size)
+            .sortedBy { it.sumOf(AbstractTask<*>::tiles) }
             .map { it.filterIsInstanceTo(mutableSetOf()) }
     } else listOf(tasks)
     var dotFormatOutputJob: Job? = null
