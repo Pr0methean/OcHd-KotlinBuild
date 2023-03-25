@@ -63,8 +63,8 @@ class PngOutputTask(
         val firstFilePath = firstFile.absoluteFile.toPath()
         ImageIO.write(awtImage, "PNG", firstFile)
         return if (files.size > 1) {
+            val remainingFiles = files.subList(1, files.size)
             ioScope.launch(CoroutineName("Copy $name to additional output files")) {
-                val remainingFiles = files.subList(1, files.size)
                 for (file in remainingFiles) {
                     Files.createLink(file.absoluteFile.toPath(), firstFilePath)
                 }
