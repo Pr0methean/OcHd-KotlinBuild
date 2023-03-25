@@ -54,7 +54,7 @@ val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
  * If the pixel array bodies for (images being generated + images in cache) exceed this fraction of the heap, we
  * throttle starting new output tasks.
  */
-private const val GOAL_IMAGES_FRACTION_OF_HEAP = 0.48
+private const val GOAL_IMAGES_FRACTION_OF_HEAP = 0.45
 private val memoryMxBean = ManagementFactory.getMemoryMXBean()
 private val heapSizeBytes = memoryMxBean.heapMemoryUsage.max.toDouble()
 private val goalImageBytes = heapSizeBytes * GOAL_IMAGES_FRACTION_OF_HEAP
