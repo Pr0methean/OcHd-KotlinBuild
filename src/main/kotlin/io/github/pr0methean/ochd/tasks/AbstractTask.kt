@@ -9,7 +9,6 @@ import kotlinx.coroutines.CoroutineStart.LAZY
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.async
-import kotlinx.coroutines.sync.Mutex
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.Logger
 import org.apache.logging.log4j.util.StringBuilderFormattable
@@ -48,8 +47,6 @@ abstract class AbstractTask<out T>(
     open fun appendForGraphPrinting(appendable: Appendable) {
         appendable.append(name)
     }
-
-    val mutex: Mutex = Mutex()
 
     /**
      * Called once a dependent task has retrieved the output, so that we can disable caching and free up heap space once
