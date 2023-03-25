@@ -39,7 +39,7 @@ private fun Multiset<*>.log() {
 }
 
 private val logger = LogManager.getLogger("ImageProcessingStats")
-private const val NEED_THREAD_MONITORING = false
+private const val NEED_THREAD_MONITORING = true
 private const val MAX_STACK_DEPTH = 20
 private val needCoroutineDebug = logger.isDebugEnabled
 private val reportingInterval: Duration = 1.minutes
@@ -56,6 +56,9 @@ fun startMonitoring(scope: CoroutineScope) {
             delay(reportingInterval)
             logger.info("Completed tasks:")
             ImageProcessingStats.taskCompletions.log()
+            if (needCoroutineDebug) {
+                DebugProbes.dumpCoroutines(loggerStream)
+            }
             if (NEED_THREAD_MONITORING) {
                 val threadMxBean: ThreadMXBean = ManagementFactory.getThreadMXBean()
                 val deadlocks = threadMxBean.findDeadlockedThreads()
@@ -66,16 +69,14 @@ fun startMonitoring(scope: CoroutineScope) {
                             logThread(Level.INFO, id, threadInfo)
                         }
                 } else {
-                    logger.error("Deadlocked threads found!")
+                    logger.fatal("Deadlocked threads found!")
                     deadlocks.map {
                         it to threadMxBean.getThreadInfo(it, MAX_STACK_DEPTH)
                     }.forEach { (id, threadInfo) ->
-                        logThread(Level.ERROR, id, threadInfo)
+                        logThread(Level.FATAL, id, threadInfo)
                     }
+                    exitProcess(1)
                 }
-            }
-            if (needCoroutineDebug) {
-                DebugProbes.dumpCoroutines(loggerStream)
             }
         }
     }
