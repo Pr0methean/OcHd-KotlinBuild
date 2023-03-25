@@ -325,6 +325,7 @@ private fun startTask(
             inProgressJobs.remove(task)
             if (writeExtraFiles != null) {
                 ioJobs.add(writeExtraFiles)
+                writeExtraFiles.invokeOnCompletion { ioJobs.remove(writeExtraFiles) }
             }
             onTaskCompleted("PngOutputTask", task.name)
             finishedJobsChannel.send(task)
