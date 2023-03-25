@@ -24,7 +24,8 @@ import kotlin.math.roundToInt
 private val batikTranscoder: ThreadLocal<ToImageTranscoder> = ThreadLocal.withInitial { ToImageTranscoder() }
 private const val FRAMES_PER_COMMAND_BLOCK_TEXTURE = 4
 
-private fun getHeight(name: String, width: Int): Int = if (name.contains("commandBlock") || name.contains("4x")) {
+private fun isCommandBlock(name: String) = name.startsWith("commandBlock") || name.endsWith("4x")
+private fun getHeight(name: String, width: Int): Int = if (isCommandBlock(name)) {
     FRAMES_PER_COMMAND_BLOCK_TEXTURE * width
 } else width
 
@@ -132,8 +133,7 @@ class SvgToBitmapTask(
         return image
     }
 
-    override val tiles: Int = if (name.contains("4x") || name.contains("commandBlock"))
-            FRAMES_PER_COMMAND_BLOCK_TEXTURE else 1
+    override val tiles: Int = if (isCommandBlock(name)) FRAMES_PER_COMMAND_BLOCK_TEXTURE else 1
 
     suspend fun getAwtImage(): BufferedImage = withContext(batikTranscoder.asContextElement()) {
         val transcoder = batikTranscoder.get()
