@@ -156,7 +156,6 @@ suspend fun main(args: Array<String>) {
         ConnectivityInspector(ctx.graph)
             .connectedSets()
             .sortedBy(Set<AbstractTask<*>>::size)
-            .sortedBy { component -> if(component.any { it.name.contains("command_block") }) 0 else 1 }
             .map { it.filterIsInstanceTo(mutableSetOf()) }
     } else listOf(tasks)
     var dotFormatOutputJob: Job? = null
