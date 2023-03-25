@@ -212,7 +212,7 @@ suspend fun main(args: Array<String>) {
                 }
                 logger.warn("Waited for tasks in progress to fall below limit for {} ns", box(delay))
                 continue
-            } else if (currentInProgressJobs + connectedComponent.size <= maxOutputTasks) {
+            } else if (currentInProgressJobs + connectedComponent.size <= minOutputTasks) {
                 logger.info(
                     "{} tasks in progress; starting all {} currently eligible tasks: {}",
                     box(currentInProgressJobs), box(connectedComponent.size), connectedComponent.asFormattable()
