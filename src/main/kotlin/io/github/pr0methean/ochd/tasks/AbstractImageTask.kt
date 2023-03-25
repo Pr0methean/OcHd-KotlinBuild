@@ -73,7 +73,7 @@ abstract class AbstractImageTask(
         }
         val caughtStderr = AtomicReference<String?>(null)
         val output = createWritableImage()
-        logger.info("Waiting to snapshot canvas for {}. Pending snapshot tasks: {}",
+        logger.info("Waiting to snapshot canvas for {}. Pending snapshot tiles: {}",
                 name, box(pendingSnapshotTiles.addAndGet(tiles.toLong())))
         val startWaitingTime = System.nanoTime()
         val snapshot = withContext(Dispatchers.Main.plus(CoroutineName("Snapshot of $name"))) {
@@ -84,7 +84,7 @@ abstract class AbstractImageTask(
                 val ns = measureNanoTime {
                     snapshot = canvas.snapshot(params, output)
                 }
-                logger.info("Finished snapshotting canvas for {} after {} ns. Pending snapshot tasks: {}",
+                logger.info("Finished snapshotting canvas for {} after {} ns. Pending snapshot tiles: {}",
                     name, box(ns), box(pendingSnapshotTiles.addAndGet(-tiles.toLong())))
                 return@withContext snapshot
             } finally {
