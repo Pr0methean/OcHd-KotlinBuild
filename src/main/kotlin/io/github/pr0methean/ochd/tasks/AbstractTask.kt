@@ -59,18 +59,19 @@ abstract class AbstractTask<out T>(
         val inDegree = graph.inDegreeOfIfPresent(this)
         var removed = false
         var canDisable = inDegree == 0
-        if (inDegree == 1) {
-            removed = graph.removeEdge(task, this) != null
-            canDisable = removed
+        when (inDegree) {
+            0 -> canDisable = true
+            1 -> {
+                removed = graph.removeEdge(task, this) != null
+                canDisable = removed
+            }
+            else -> removed = graph.removeEdge(task, this) != null
         }
         if (canDisable) {
             if (cache.disable()) {
                 onCachingDisabled(this)
             }
             graph.removeVertex(this)
-        }
-        if (inDegree > 0 && !removed) {
-            removed = graph.removeEdge(task, this) != null
         }
         return removed
     }
