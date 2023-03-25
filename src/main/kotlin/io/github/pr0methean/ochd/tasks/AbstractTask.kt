@@ -29,8 +29,6 @@ fun <V> Graph<V,*>.inDegreeOfIfPresent(vertex: V): Int {
     }
 }
 
-private const val COMMAND_BLOCK_TILES = 4
-
 /**
  * Unit of work that wraps its coroutine to support reuse (including under heap-constrained conditions).
  */
@@ -152,7 +150,7 @@ abstract class AbstractTask<out T>(
 
     private fun isStartedOrAvailable(): Boolean = cache.getNowAsync()?.run { isActive || isCompleted } ?: false
 
-    val tiles = if (name.contains("4x") || name.contains("command_block")) COMMAND_BLOCK_TILES else 1
+    open val tiles: Int by lazy { directDependencies.maxOf(AbstractTask<*>::tiles) }
 
     /**
      * How many new entries this task will cause to be added to the cache if we start it now.

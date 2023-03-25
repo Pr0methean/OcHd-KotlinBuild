@@ -31,6 +31,7 @@ class AnimationTask(
     ctx: CoroutineContext, graph: Graph<AbstractTask<*>, DefaultEdge>
 ): AbstractImageTask(name, cache, ctx, width, frameHeight * frames.size, graph) {
     private val dependencies = frames + background
+    override val tiles: Int = frames.size
 
     override fun computeHashCode(): Int = Objects.hash(background, frames, width, height)
 

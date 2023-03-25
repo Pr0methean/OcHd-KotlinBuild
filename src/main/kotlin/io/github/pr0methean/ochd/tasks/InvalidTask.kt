@@ -13,7 +13,7 @@ private val emptyGraph = DefaultDirectedGraph<AbstractTask<*>,DefaultEdge>(Defau
 object InvalidTask: AbstractImageTask("InvalidTask", noopDeferredTaskCache(), Dispatchers.Unconfined, 0, 0,
     emptyGraph) {
     override fun hasColor(): Boolean = false
-
+    override val tiles: Int = 0
     override val directDependencies: Iterable<AbstractTask<*>> = listOf()
 
     override fun computeHashCode(): Int = 0xDEADBEEF.toInt()

@@ -132,6 +132,9 @@ class SvgToBitmapTask(
         return image
     }
 
+    override val tiles: Int = if (name.contains("4x") || name.contains("command_block"))
+            FRAMES_PER_COMMAND_BLOCK_TEXTURE else 1
+
     suspend fun getAwtImage(): BufferedImage = withContext(batikTranscoder.asContextElement()) {
         val transcoder = batikTranscoder.get()
         transcoder.setTranscodingHints(mapOf(SVGAbstractTranscoder.KEY_WIDTH to width.toFloat()))
