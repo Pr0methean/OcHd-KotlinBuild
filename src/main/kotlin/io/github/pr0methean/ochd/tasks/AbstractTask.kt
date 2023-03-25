@@ -70,8 +70,8 @@ abstract class AbstractTask<out T>(
         if (canDisable) {
             if (cache.disable()) {
                 onCachingDisabled(this)
+                graph.removeVertex(this)
             }
-            graph.removeVertex(this)
         }
         return removed
     }
