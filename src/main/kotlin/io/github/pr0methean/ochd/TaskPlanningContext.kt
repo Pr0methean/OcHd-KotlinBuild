@@ -75,7 +75,7 @@ class TaskPlanningContext(
         return other
     }
 
-    @Suppress("UNCHECKED_CAST")
+    @Suppress("UNCHECKED_CAST","ComplexMethod")
     private tailrec fun <T, TTask : AbstractTask<T>> deduplicateInternal(task: AbstractTask<T>): TTask {
         return when {
             task is SvgToBitmapTask

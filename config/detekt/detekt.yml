@@ -42,7 +42,7 @@ console-reports:
 
 output-reports:
   active: true
-  # exclude:
+  exclude:
   # - 'TxtOutputReport'
   # - 'XmlOutputReport'
   # - 'HtmlOutputReport'
@@ -97,7 +97,7 @@ complexity:
     includePrivateDeclarations: false
   ComplexMethod:
     active: true
-    threshold: 25
+    threshold: 15
     ignoreSingleWhenExpression: false
     ignoreSimpleWhenEntries: false
     ignoreNestingFunctions: false
@@ -119,12 +119,12 @@ complexity:
     threshold: 600
   LongMethod:
     active: true
-    threshold: 75
+    threshold: 60
   LongParameterList:
     active: true
     functionThreshold: 6
-    constructorThreshold: 15
-    ignoreDefaultParameters: true
+    constructorThreshold: 10
+    ignoreDefaultParameters: false
     ignoreDataClasses: true
     ignoreAnnotatedParameter: []
   MethodOverloading:
@@ -158,11 +158,11 @@ complexity:
   TooManyFunctions:
     active: true
     excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/jsTest/**', '**/iosTest/**']
-    thresholdInFiles: 16
-    thresholdInClasses: 16
-    thresholdInInterfaces: 16
-    thresholdInObjects: 16
-    thresholdInEnums: 16
+    thresholdInFiles: 13
+    thresholdInClasses: 13
+    thresholdInInterfaces: 13
+    thresholdInObjects: 13
+    thresholdInEnums: 11
     ignoreDeprecated: false
     ignorePrivate: false
     ignoreOverridden: false
@@ -205,7 +205,7 @@ empty-blocks:
     active: true
   EmptyFunctionBlock:
     active: true
-    ignoreOverridden: true
+    ignoreOverridden: false
   EmptyIfBlock:
     active: true
   EmptyInitBlock:
@@ -272,7 +272,7 @@ exceptions:
   ThrowingNewInstanceOfSameException:
     active: true
   TooGenericExceptionCaught:
-    active: false
+    active: true
     excludes: ['**/test/**', '**/androidTest/**', '**/commonTest/**', '**/jvmTest/**', '**/jsTest/**', '**/iosTest/**']
     exceptionNames:
       - 'ArrayIndexOutOfBoundsException'
@@ -550,7 +550,7 @@ style:
     active: true
     ignoreOverridableFunction: true
     ignoreActualFunction: true
-    # excludedFunctions: ''
+    excludedFunctions: ''
   LibraryCodeMustSpecifyReturnType:
     active: true
     excludes: ['**']

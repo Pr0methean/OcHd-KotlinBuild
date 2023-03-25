@@ -259,7 +259,7 @@ suspend fun main(args: Array<String>) {
     exitProcess(0)
 }
 
-@Suppress("LongParameterList")
+@Suppress("LongParameterList","TooGenericExceptionCaught")
 private fun startTask(
     scope: CoroutineScope,
     task: PngOutputTask,

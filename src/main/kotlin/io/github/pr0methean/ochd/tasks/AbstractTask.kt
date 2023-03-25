@@ -45,10 +45,6 @@ abstract class AbstractTask<out T>(
     val directDependentTasks: List<AbstractTask<*>>
         get() = graph.incomingEdgesOf(this).map(graph::getEdgeSource)
 
-    private fun addDirectDependentTask(task: AbstractTask<*>) {
-        graph.addEdge(task, this)
-    }
-
     /**
      * Called once a dependent task has retrieved the output, so that we can disable caching and free up heap space once
      * all dependents have done so.
