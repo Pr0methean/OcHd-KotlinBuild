@@ -146,7 +146,6 @@ suspend fun main(args: Array<String>) {
     depsBuildTask.join()
     onTaskCompleted(BUILD_TASK_GRAPH_TASK_NAME, BUILD_TASK_GRAPH_TASK_NAME)
     val dotOutputEnabled = tileSize <= MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH
-    val lowMemoryIoJobs = ConcurrentHashMap.newKeySet<Job>()
     val connectedComponents: List<MutableSet<PngOutputTask>> = if (tasks.size > maxOutputTasks || dotOutputEnabled) {
         // Output tasks that are in different weakly-connected components don't share any dependencies, so we
         // launch tasks from one component at a time to keep the number of cached images manageable. We start
@@ -190,6 +189,7 @@ suspend fun main(args: Array<String>) {
     }
     val inProgressJobs = ConcurrentHashMap<PngOutputTask, Job>()
     val finishedJobsChannel = Channel<PngOutputTask>(capacity = CAPACITY_PADDING_FACTOR * maxOutputTasks)
+    val ioJobs = ConcurrentHashMap.newKeySet<Job>()
     dotFormatOutputJob?.join()
     for (connectedComponent in connectedComponents) {
         logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
@@ -220,7 +220,7 @@ suspend fun main(args: Array<String>) {
                         scope,
                         it,
                         finishedJobsChannel,
-                        lowMemoryIoJobs,
+                        ioJobs,
                         prereqIoJobs,
                         inProgressJobs,
                         ctx.graph
@@ -253,7 +253,7 @@ suspend fun main(args: Array<String>) {
                     scope,
                     task,
                     finishedJobsChannel,
-                    lowMemoryIoJobs,
+                    ioJobs,
                     prereqIoJobs,
                     inProgressJobs,
                     ctx.graph
@@ -275,8 +275,8 @@ suspend fun main(args: Array<String>) {
     }
     logger.info("All jobs done; closing channel")
     finishedJobsChannel.close()
-    logger.info("Waiting for {} remaining IO jobs to finish", box(lowMemoryIoJobs.size))
-    lowMemoryIoJobs.joinAll()
+    logger.info("Waiting for {} remaining IO jobs to finish", box(ioJobs.size))
+    ioJobs.joinAll()
     logger.info("All IO jobs are finished")
     val runningTime = System.nanoTime() - startTime
     stopMonitoring()
@@ -320,9 +320,7 @@ private fun startTask(
             prereqIoJobs.joinAll()
             logger.info("Starting file write for {}", task.name)
             val writeExtraFiles = task.writeToFiles(awtImage)
-            if (writeExtraFiles != null) {
-                ioJobs.add(writeExtraFiles)
-            }
+            ioJobs.add(writeExtraFiles)
             onTaskCompleted("PngOutputTask", task.name)
             inProgressJobs.remove(task)
             finishedJobsChannel.send(task)
