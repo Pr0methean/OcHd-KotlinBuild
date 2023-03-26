@@ -189,6 +189,7 @@ suspend fun main(args: Array<String>) {
     }
     val inProgressJobs = ConcurrentHashMap<PngOutputTask, Job>()
     val finishedJobsChannel = Channel<PngOutputTask>(capacity = CAPACITY_PADDING_FACTOR * maxOutputTasks)
+    val ioJobs = ConcurrentHashMap.newKeySet<Job>()
     dotFormatOutputJob?.join()
     for (connectedComponent in connectedComponents) {
         logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
@@ -219,6 +220,7 @@ suspend fun main(args: Array<String>) {
                         scope,
                         it,
                         finishedJobsChannel,
+                        ioJobs,
                         prereqIoJobs,
                         inProgressJobs,
                         ctx.graph
@@ -253,6 +255,7 @@ suspend fun main(args: Array<String>) {
                     scope,
                     task,
                     finishedJobsChannel,
+                    ioJobs,
                     prereqIoJobs,
                     inProgressJobs,
                     ctx.graph
@@ -274,6 +277,9 @@ suspend fun main(args: Array<String>) {
     }
     logger.info("All jobs done; closing channel")
     finishedJobsChannel.close()
+    logger.info("Waiting for {} remaining IO jobs to finish", box(ioJobs.size))
+    ioJobs.joinAll()
+    logger.info("All IO jobs are finished")
     val runningTime = System.nanoTime() - startTime
     stopMonitoring()
     ImageProcessingStats.finalChecks()
@@ -297,6 +303,7 @@ private fun startTask(
     scope: CoroutineScope,
     task: PngOutputTask,
     finishedJobsChannel: Channel<PngOutputTask>,
+    ioJobs: MutableSet<in Job>,
     prereqIoJobs: MutableCollection<Job>,
     inProgressJobs: ConcurrentMap<PngOutputTask, Job>,
     graph: Graph<AbstractTask<*>, DefaultEdge>
@@ -320,8 +327,11 @@ private fun startTask(
                 prereqIoJobs.joinAll()
             }
             logger.info("Starting file write for {}", task.name)
-            task.writeToFiles(awtImage).join()
+            val writeExtraFiles = task.writeToFiles(awtImage)
             onTaskCompleted("PngOutputTask", task.name)
+            if (writeExtraFiles != null) {
+                ioJobs.add(writeExtraFiles)
+            }
             inProgressJobs.remove(task)
             finishedJobsChannel.send(task)
         } catch (t: Throwable) {
