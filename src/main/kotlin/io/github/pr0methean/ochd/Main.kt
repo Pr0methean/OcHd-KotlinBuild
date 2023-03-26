@@ -27,7 +27,7 @@ import org.apache.logging.log4j.util.Unbox.box
 import org.jgrapht.Graph
 import org.jgrapht.GraphPath
 import org.jgrapht.alg.connectivity.ConnectivityInspector
-import org.jgrapht.alg.shortestpath.DijkstraShortestPath
+import org.jgrapht.alg.shortestpath.AllDirectedPaths
 import org.jgrapht.graph.AsSubgraph
 import org.jgrapht.graph.DefaultEdge
 import java.io.File
@@ -80,23 +80,20 @@ private const val EDGE_LATENCY = 1
 private fun <V: Any, E: Any> weightedLength(path: GraphPath<V,E>): Int = path.length * (1 + EDGE_LATENCY) - 1
 
 /** Palem and Simons, p. 639 */
-@Suppress("NestedBlockDepth", "UnstableApiUsage")
+@Suppress("NestedBlockDepth", "UnstableApiUsage", "LongMethod", "ComplexMethod")
 private fun <V: Any, E: Any> ranked(graph: Graph<V,E>): List<V> {
     val vertices: Set<V> = graph.vertexSet()
     if (vertices.size <= 1) {
         return vertices.toList()
     }
-    val huge = graph.vertexSet().size * (1 + EDGE_LATENCY)
-
+    val huge = vertices.size * (1 + EDGE_LATENCY)
+    val shortestPaths = AllDirectedPaths(graph).getAllPaths(vertices, vertices, true, null)
     val shortestPathWeightedLength = ArrayTable.create<V,V,Int>(vertices, vertices)
-    for (consumer in vertices) {
-        for (dependency in vertices) {
-            if (consumer != dependency) {
-                val path = DijkstraShortestPath.findPathBetween(graph, consumer, dependency)
-                if (path != null) {
-                    shortestPathWeightedLength.put(consumer, dependency, weightedLength(path))
-                }
-            }
+    for (path in shortestPaths) {
+        val consumer = path.startVertex
+        val dependency = path.endVertex
+        if (consumer != dependency) {
+            shortestPathWeightedLength.put(consumer, dependency, weightedLength(path))
         }
     }
     val unrankedVertices = vertices.toMutableSet()
@@ -273,7 +270,9 @@ suspend fun main(args: Array<String>) {
     for (connectedComponent in connectedComponents) {
         logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
         val componentSubgraph = AsSubgraph(ctx.graph, connectedComponent)
-        val sortedConnectedComponent = LinkedList(ranked(componentSubgraph))
+        val sortedConnectedComponent = if(connectedComponent.size <= 1) {
+            connectedComponent.toMutableList()
+        } else LinkedList(ranked(componentSubgraph))
         while (sortedConnectedComponent.isNotEmpty()) {
             if (inProgressJobs.isNotEmpty()) {
                 do {
