@@ -21,6 +21,7 @@ import org.apache.logging.log4j.util.Unbox.box
 import java.lang.management.ManagementFactory
 import java.lang.management.ThreadInfo
 import java.lang.management.ThreadMXBean
+import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicLong
 import kotlin.system.exitProcess
 import kotlin.time.Duration
@@ -32,10 +33,10 @@ private fun Multiset<*>.log() {
         if (it.toString() != InvalidTask::class.simpleName) {
             val count = count(it)
             total += count
-            logger.info("{}: {}", it, box(count))
+            logger.printf(Level.INFO, "%-25s: %4d", it, count)
         }
     }
-    logger.info("Total: {}", box(total))
+    logger.printf(Level.INFO, "%-25s: %4d", "Total", total)
 }
 
 private val logger = LogManager.getLogger("ImageProcessingStats")
@@ -102,6 +103,8 @@ object ImageProcessingStats {
     private val cacheableTasks = AtomicLong(0)
     private val cachedTasks = AtomicLong(0)
     private val cachedTiles = AtomicLong(0)
+    private val startNanoTimes = ConcurrentHashMap<Pair<String, String>, Long>()
+    private val totalDurationsByType = ConcurrentHashMap<String, AtomicLong>()
 
     init {
         dedupeFailures.add("Build task graph")
@@ -131,9 +134,17 @@ object ImageProcessingStats {
         logger.info("")
         logger.info("Tasks that would run with unlimited cache but no deduplication:")
         Multisets.sum(dedupeFailures, dedupeSuccesses).log()
+        logger.info("")
+        logger.info("Average task durations:")
+        dedupeFailures.forEachEntry { type, count ->
+            val averageDuration = (totalDurationsByType[type] ?: return@forEachEntry).toDouble() / count
+            logger.printf(Level.INFO, "%-25s: %,20.2f", type, averageDuration)
+        }
     }
 
     fun onTaskLaunched(typeName: String, name: String) {
+        val startTime = System.nanoTime()
+        startNanoTimes[typeName to name] = startTime
         logger.info("Launched: {}: {}", typeName, name)
         if (!tasksByRunCount.add(name)) {
             logger.fatal("Task {} launched twice!", name)
@@ -143,7 +154,13 @@ object ImageProcessingStats {
     }
 
     fun onTaskCompleted(typeName: String, name: String) {
-        logger.info("Completed: {}: {}", typeName, name)
+        val finishTime = System.nanoTime()
+        val startTime = checkNotNull(startNanoTimes[typeName to name]) {
+            "Recorded $typeName: $name as completed before it launched!"
+        }
+        val duration = finishTime - startTime
+        totalDurationsByType.computeIfAbsent(typeName) {AtomicLong(0)}.getAndAdd(duration)
+        logger.info("Completed: {}: {} ({} ns)", typeName, name, box(duration))
         taskCompletions.add(typeName)
     }
 
