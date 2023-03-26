@@ -81,10 +81,10 @@ private fun <V: Any, E: Any> weightedLength(path: GraphPath<V,E>): Int = path.le
 
 /** Palem and Simons, p. 639 */
 @Suppress("NestedBlockDepth", "UnstableApiUsage", "LongMethod", "ComplexMethod")
-private fun <V: Any, E: Any> ranked(graph: Graph<V,E>): List<V> {
+private fun <V: Any, E: Any> ranked(graph: Graph<V,E>): LinkedList<V> {
     val vertices: Set<V> = graph.vertexSet()
     if (vertices.size <= 1) {
-        return vertices.toList()
+        return LinkedList(vertices)
     }
     val huge = vertices.size * (1 + EDGE_LATENCY)
     val shortestPaths = AllDirectedPaths(graph).getAllPaths(vertices, vertices, true, null)
@@ -148,7 +148,7 @@ private fun <V: Any, E: Any> ranked(graph: Graph<V,E>): List<V> {
             }
         }
     }
-    return vertices.sortedBy { vertex -> ranks[vertex]!! }
+    return LinkedList(vertices.sortedBy { vertex -> ranks[vertex]!! })
 }
 
 @Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod", "ComplexMethod",
@@ -270,9 +270,7 @@ suspend fun main(args: Array<String>) {
     for (connectedComponent in connectedComponents) {
         logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
         val componentSubgraph = AsSubgraph(ctx.graph, connectedComponent)
-        val sortedConnectedComponent = if(connectedComponent.size <= 1) {
-            connectedComponent.toMutableList()
-        } else LinkedList(ranked(componentSubgraph))
+        val sortedConnectedComponent = ranked(componentSubgraph)
         while (sortedConnectedComponent.isNotEmpty()) {
             if (inProgressJobs.isNotEmpty()) {
                 do {
