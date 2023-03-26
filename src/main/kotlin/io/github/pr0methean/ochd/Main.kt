@@ -232,11 +232,13 @@ suspend fun main(args: Array<String>) {
                     val cachedTiles = cachedTiles()
                     val newTiles = task.newCacheTiles()
                     val impendingTiles = inProgressJobs.keys.sumOf(PngOutputTask::impendingCacheTiles)
+                    val snapshotTiles = pendingSnapshotTiles()
+                    val totalHeapTilesWithThisTask = cachedTiles + impendingTiles + newTiles + snapshotTiles
                     logger.info(
-                        "Cached tiles: {} current, {} impending, {} snapshots, {} when next task starts",
-                        box(cachedTiles), box(impendingTiles), box(pendingSnapshotTiles()), box(newTiles))
-                    val totalCacheWithThisTask = cachedTiles + impendingTiles + newTiles
-                    if (totalCacheWithThisTask >= goalHeapTiles && newTiles > 0) {
+                        "Cached tiles: {} current, {} impending, {} snapshots, {} when next task starts, {} total",
+                        box(cachedTiles), box(impendingTiles), box(snapshotTiles), box(newTiles),
+                        box(totalHeapTilesWithThisTask))
+                    if (totalHeapTilesWithThisTask >= goalHeapTiles && newTiles > 0) {
                         logger.warn("{} tasks in progress and too many tiles cached; waiting for one to finish",
                                 currentInProgressJobs)
                         val delay = measureNanoTime {
