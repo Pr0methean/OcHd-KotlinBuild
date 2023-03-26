@@ -310,6 +310,8 @@ private fun startTask(
 ) {
     val prereqsDone = prereqIoJobs.all(Job::isCompleted)
     if (prereqsDone) {
+    val prereqsDone = prereqIoJobs.all(Job::isCompleted)
+    if (prereqsDone && prereqIoJobs.isNotEmpty()) {
         prereqIoJobs.clear()
     }
     inProgressJobs[task] = scope.launch(CoroutineName(task.name)) {
