@@ -38,6 +38,7 @@ import java.util.Comparator.comparingInt
 import java.util.LinkedList
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
+import kotlin.math.min
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 import kotlin.text.Charsets.UTF_8
@@ -81,7 +82,7 @@ private fun <V: Any, E: Any> weightedLength(path: GraphPath<V,E>): Int = path.le
 
 /** Palem and Simons, p. 639 */
 @Suppress("NestedBlockDepth", "UnstableApiUsage", "LongMethod", "ComplexMethod")
-private fun <V: Any, E: Any> ranked(graph: Graph<V,E>): LinkedList<V> {
+private fun <V: AbstractTask<*>, E: Any> ranked(graph: Graph<V,E>): LinkedList<V> {
     val vertices: Set<V> = graph.vertexSet()
     if (vertices.size <= 1) {
         return LinkedList(vertices)
@@ -145,6 +146,14 @@ private fun <V: Any, E: Any> ranked(graph: Graph<V,E>): LinkedList<V> {
                         unrankedVertices.remove(vertex)
                     }
                 }
+            }
+        }
+    }
+    for (vertex in vertices) {
+        if (!vertex.shouldRenderForCaching()) {
+            for (edge in graph.incomingEdgesOf(vertex)) {
+                val consumer = graph.getEdgeSource(edge)
+                ranks[consumer] = min(ranks[vertex]!!, ranks[consumer]!!)
             }
         }
     }
