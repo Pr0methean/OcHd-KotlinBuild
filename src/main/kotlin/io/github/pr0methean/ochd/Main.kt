@@ -1,5 +1,6 @@
 package io.github.pr0methean.ochd
 
+import com.google.common.collect.ArrayTable
 import io.github.pr0methean.ochd.ImageProcessingStats.cachedTiles
 import io.github.pr0methean.ochd.ImageProcessingStats.onCachingEnabled
 import io.github.pr0methean.ochd.ImageProcessingStats.onTaskCompleted
@@ -79,49 +80,78 @@ private const val EDGE_LATENCY = 1
 private fun <V: Any, E: Any> weightedLength(path: GraphPath<V,E>): Int = path.length * (1 + EDGE_LATENCY) - 1
 
 /** Palem and Simons, p. 639 */
-@Suppress("NestedBlockDepth")
-private fun <V: Any, E: Any> rank(vertex: V, graph: Graph<V,E>): Int {
-    val huge = graph.vertexSet().size * (1 + EDGE_LATENCY)
-    val shortestPathFrom = mutableMapOf<V,GraphPath<V,E>>()
-    val vertices: Set<V> = graph.vertexSet() - vertex
-    for (otherVertex in vertices) {
-        val path = DijkstraShortestPath.findPathBetween(graph, otherVertex, vertex)
-        if (path != null) {
-            shortestPathFrom[otherVertex] = path
-        }
+@Suppress("NestedBlockDepth", "UnstableApiUsage")
+private fun <V: Any, E: Any> ranked(graph: Graph<V,E>): List<V> {
+    val vertices: Set<V> = graph.vertexSet()
+    if (vertices.size <= 1) {
+        return vertices.toList()
     }
-    when (shortestPathFrom.size) {
-        0 -> return huge
-        1 -> {
-            val onlyConsumer = shortestPathFrom.keys.first()
-            return rank(onlyConsumer, graph) - 1 - weightedLength(shortestPathFrom[onlyConsumer]!!)
-        }
-        else -> {
-            val sortedConsumers = shortestPathFrom.toSortedMap(
-                    comparingInt<V> { consumer -> -weightedLength(shortestPathFrom[consumer]!!) }
-                    .thenComparingInt {consumer -> -rank(consumer, graph)})
-            val backwardSchedule = Array(huge) { Array<Any?>(nCpus) {null} }
-            var lowestRank = Int.MAX_VALUE
-            for (consumer in sortedConsumers.keys) {
-                var timeStep = rank(consumer, graph)
-                var scheduled = false
-                while (!scheduled) {
-                    for (index in backwardSchedule[timeStep].indices) {
-                        if (backwardSchedule[timeStep][index] == null) {
-                            backwardSchedule[timeStep][index] = consumer
-                            scheduled = true
-                            if (timeStep < lowestRank) {
-                                lowestRank = timeStep
-                            }
-                            break
-                        }
-                    }
-                    timeStep--
+    val huge = graph.vertexSet().size * (1 + EDGE_LATENCY)
+
+    val shortestPathWeightedLength = ArrayTable.create<V,V,Int>(vertices, vertices)
+    for (consumer in vertices) {
+        for (dependency in vertices) {
+            if (consumer != dependency) {
+                val path = DijkstraShortestPath.findPathBetween(graph, consumer, dependency)
+                if (path != null) {
+                    shortestPathWeightedLength.put(consumer, dependency, weightedLength(path))
                 }
             }
-            return lowestRank
         }
     }
+    val unrankedVertices = vertices.toMutableSet()
+    val ranks = mutableMapOf<V,Int>()
+    while (unrankedVertices.isNotEmpty()) {
+        for (vertex in unrankedVertices.toList()) {
+            val pathsFromConsumers = shortestPathWeightedLength.column(vertex).filterValues { it != null }
+            when (pathsFromConsumers.size) {
+                0 -> {
+                    ranks[vertex] = huge
+                    unrankedVertices.remove(vertex)
+                }
+
+                1 -> {
+                    val onlyConsumer: V = pathsFromConsumers.keys.first()
+                    if (ranks[onlyConsumer] != null) {
+                        ranks[vertex] =
+                            ranks[onlyConsumer]!! - 1 - shortestPathWeightedLength.get(onlyConsumer, vertex)!!
+                        unrankedVertices.remove(vertex)
+                    }
+                }
+
+                else -> {
+                    val consumers: Set<V> = pathsFromConsumers.keys
+                    if (ranks.keys.containsAll(consumers)) {
+                        val sortedConsumers = consumers.sortedWith(
+                            comparingInt<V> { consumer -> -shortestPathWeightedLength.get(consumer, vertex)!! }
+                                .thenComparingInt { consumer -> -ranks[consumer]!! })
+                        val backwardSchedule = Array(huge + 1) { Array<Any?>(nCpus) { null } }
+                        var lowestRank = Int.MAX_VALUE
+                        for (consumer in sortedConsumers) {
+                            var timeStep = ranks[consumer]!!
+                            var scheduled = false
+                            while (!scheduled) {
+                                for (index in backwardSchedule[timeStep].indices) {
+                                    if (backwardSchedule[timeStep][index] == null) {
+                                        backwardSchedule[timeStep][index] = consumer
+                                        scheduled = true
+                                        if (timeStep < lowestRank) {
+                                            lowestRank = timeStep
+                                        }
+                                        break
+                                    }
+                                }
+                                timeStep--
+                            }
+                        }
+                        ranks[vertex] = lowestRank
+                        unrankedVertices.remove(vertex)
+                    }
+                }
+            }
+        }
+    }
+    return vertices.sortedBy { vertex -> ranks[vertex]!! }
 }
 
 @Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod", "ComplexMethod",
@@ -243,8 +273,7 @@ suspend fun main(args: Array<String>) {
     for (connectedComponent in connectedComponents) {
         logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
         val componentSubgraph = AsSubgraph(ctx.graph, connectedComponent)
-        val sortedConnectedComponent = LinkedList(
-                connectedComponent.sortedBy { rank(it, componentSubgraph) })
+        val sortedConnectedComponent = LinkedList(ranked(componentSubgraph))
         while (sortedConnectedComponent.isNotEmpty()) {
             if (inProgressJobs.isNotEmpty()) {
                 do {
@@ -356,8 +385,6 @@ private fun startTask(
     if (task !is PngOutputTask) {
         if (task.shouldRenderForCaching()) {
             task.start()
-        } else {
-            graph.incomingEdgesOf(task).map {graph.getEdgeSource(it)}.forEach(AbstractTask<*>::start)
         }
         return
     }
