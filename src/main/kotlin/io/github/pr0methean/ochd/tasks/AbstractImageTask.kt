@@ -84,8 +84,8 @@ abstract class AbstractImageTask(
                 val ns = measureNanoTime {
                     snapshot = canvas.snapshot(params, output)
                 }
-                logger.info("Finished snapshotting canvas for {} after {} ns.",
-                    name, box(ns))
+                logger.info("Finished snapshotting canvas for {} after {} ns. Pending snapshot tiles: {}",
+                    name, box(ns), box(pendingSnapshotTiles.addAndGet(-tiles.toLong())))
                 return@withContext snapshot
             } finally {
                 errCatcherStream.flush()
@@ -105,8 +105,7 @@ abstract class AbstractImageTask(
                 defaultErr.print(interceptedStderr)
             }
         }
-        logger.info("Collected snapshot for {}. Pending snapshot tiles: {}", name,
-            box(pendingSnapshotTiles.addAndGet(-tiles.toLong())))
+        logger.info("Collected snapshot for {}", name)
         if (snapshot.isError) {
             throw output.exception
         }
