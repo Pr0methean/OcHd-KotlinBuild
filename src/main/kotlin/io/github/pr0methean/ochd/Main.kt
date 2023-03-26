@@ -54,7 +54,7 @@ val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
  * If the pixel array bodies for (images being generated + images in cache) exceed this fraction of the heap, we
  * throttle starting new output tasks.
  */
-private const val GOAL_IMAGES_FRACTION_OF_HEAP = 0.43
+private const val GOAL_IMAGES_FRACTION_OF_HEAP = 0.48
 private val memoryMxBean = ManagementFactory.getMemoryMXBean()
 private val heapSizeBytes = memoryMxBean.heapMemoryUsage.max.toDouble()
 private val goalImageBytes = heapSizeBytes * GOAL_IMAGES_FRACTION_OF_HEAP
@@ -131,7 +131,7 @@ suspend fun main(args: Array<String>) {
         dirs.filter(mkdirsedPaths::add)
             .forEach(File::mkdirs)
     }
-    val prereqIoJobs = mutableListOf(mkdirs, copyMetadata)
+    val prereqIoJobs = listOf(mkdirs, copyMetadata)
     logger.debug("Got deduplicated output tasks")
     val depsBuildTask = scope.launch {
         tasks.forEach { it.registerRecursiveDependencies() }
@@ -146,7 +146,6 @@ suspend fun main(args: Array<String>) {
     depsBuildTask.join()
     onTaskCompleted(BUILD_TASK_GRAPH_TASK_NAME, BUILD_TASK_GRAPH_TASK_NAME)
     val dotOutputEnabled = tileSize <= MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH
-    val lowMemoryIoJobs = ConcurrentHashMap.newKeySet<Job>()
     val connectedComponents: List<MutableSet<PngOutputTask>> = if (tasks.size > maxOutputTasks || dotOutputEnabled) {
         // Output tasks that are in different weakly-connected components don't share any dependencies, so we
         // launch tasks from one component at a time to keep the number of cached images manageable. We start
@@ -220,7 +219,6 @@ suspend fun main(args: Array<String>) {
                         scope,
                         it,
                         finishedJobsChannel,
-                        lowMemoryIoJobs,
                         prereqIoJobs,
                         inProgressJobs,
                         ctx.graph
@@ -234,13 +232,11 @@ suspend fun main(args: Array<String>) {
                     val cachedTiles = cachedTiles()
                     val newTiles = task.newCacheTiles()
                     val impendingTiles = inProgressJobs.keys.sumOf(PngOutputTask::impendingCacheTiles)
-                    val snapshotTiles = pendingSnapshotTiles()
-                    val totalHeapTilesWithThisTask = cachedTiles + impendingTiles + newTiles + snapshotTiles
                     logger.info(
-                        "Cached tiles: {} current, {} impending, {} snapshots, {} when {} starts, {} total",
-                        box(cachedTiles), box(impendingTiles), box(snapshotTiles), box(newTiles), task,
-                        box(totalHeapTilesWithThisTask))
-                    if (totalHeapTilesWithThisTask >= goalHeapTiles && (newTiles > 0 || task.tiles > 1)) {
+                        "Cached tiles: {} current, {} impending, {} snapshots, {} when next task starts",
+                        box(cachedTiles), box(impendingTiles), box(pendingSnapshotTiles()), box(newTiles))
+                    val totalCacheWithThisTask = cachedTiles + impendingTiles + newTiles
+                    if (totalCacheWithThisTask >= goalHeapTiles && newTiles > 0) {
                         logger.warn("{} tasks in progress and too many tiles cached; waiting for one to finish",
                                 currentInProgressJobs)
                         val delay = measureNanoTime {
@@ -255,7 +251,6 @@ suspend fun main(args: Array<String>) {
                     scope,
                     task,
                     finishedJobsChannel,
-                    lowMemoryIoJobs,
                     prereqIoJobs,
                     inProgressJobs,
                     ctx.graph
@@ -277,9 +272,6 @@ suspend fun main(args: Array<String>) {
     }
     logger.info("All jobs done; closing channel")
     finishedJobsChannel.close()
-    logger.info("Waiting for {} remaining IO jobs to finish", box(lowMemoryIoJobs.size))
-    lowMemoryIoJobs.joinAll()
-    logger.info("All IO jobs are finished")
     val runningTime = System.nanoTime() - startTime
     stopMonitoring()
     ImageProcessingStats.finalChecks()
@@ -303,15 +295,10 @@ private fun startTask(
     scope: CoroutineScope,
     task: PngOutputTask,
     finishedJobsChannel: Channel<PngOutputTask>,
-    ioJobs: MutableSet<in Job>,
-    prereqIoJobs: MutableCollection<Job>,
+    prereqIoJobs: Collection<Job>,
     inProgressJobs: ConcurrentMap<PngOutputTask, Job>,
     graph: Graph<AbstractTask<*>, DefaultEdge>
 ) {
-    val prereqsDone = prereqIoJobs.all(Job::isCompleted)
-    if (prereqsDone) {
-        prereqIoJobs.clear()
-    }
     inProgressJobs[task] = scope.launch(CoroutineName(task.name)) {
         try {
             onTaskLaunched("PngOutputTask", task.name)
@@ -323,18 +310,12 @@ private fun startTask(
             }
             task.base.removeDirectDependentTask(task)
             graph.removeVertex(task)
-            if (!prereqsDone) {
-                prereqIoJobs.joinAll()
-            }
+            prereqIoJobs.joinAll()
             logger.info("Starting file write for {}", task.name)
-            val writeExtraFiles = task.writeToFiles(awtImage)
-            if (writeExtraFiles != null) {
-                ioJobs.add(writeExtraFiles)
-                writeExtraFiles.invokeOnCompletion { ioJobs.remove(writeExtraFiles) }
-            }
+            task.writeToFiles(awtImage)?.join()
             onTaskCompleted("PngOutputTask", task.name)
-            finishedJobsChannel.send(task)
             inProgressJobs.remove(task)
+            finishedJobsChannel.send(task)
         } catch (t: Throwable) {
             // Fail fast
             logger.fatal("{} failed", task, t)

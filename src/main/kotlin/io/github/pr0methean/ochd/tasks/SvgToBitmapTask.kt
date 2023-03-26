@@ -24,12 +24,6 @@ import kotlin.math.roundToInt
 private val batikTranscoder: ThreadLocal<ToImageTranscoder> = ThreadLocal.withInitial { ToImageTranscoder() }
 private const val FRAMES_PER_COMMAND_BLOCK_TEXTURE = 4
 
-/**
- * For some reason, command blocks on the heap cause OOMEs more easily than other textures; this penalty compensates for
- * that.
- */
-private const val COMMAND_BLOCK_PENALTY_TILES = 1
-
 private fun isCommandBlock(name: String) = name.startsWith("commandBlock") || name.endsWith("4x")
 private fun getHeight(name: String, width: Int): Int = if (isCommandBlock(name)) {
     FRAMES_PER_COMMAND_BLOCK_TEXTURE * width
@@ -139,8 +133,7 @@ class SvgToBitmapTask(
         return image
     }
 
-    override val tiles: Int =
-        if (isCommandBlock(name)) FRAMES_PER_COMMAND_BLOCK_TEXTURE + COMMAND_BLOCK_PENALTY_TILES else 1
+    override val tiles: Int = if (isCommandBlock(name)) FRAMES_PER_COMMAND_BLOCK_TEXTURE else 1
 
     suspend fun getAwtImage(): BufferedImage = withContext(batikTranscoder.asContextElement()) {
         val transcoder = batikTranscoder.get()
