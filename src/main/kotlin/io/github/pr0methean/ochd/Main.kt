@@ -309,8 +309,6 @@ private fun startTask(
     graph: Graph<AbstractTask<*>, DefaultEdge>
 ) {
     val prereqsDone = prereqIoJobs.all(Job::isCompleted)
-    if (prereqsDone) {
-    val prereqsDone = prereqIoJobs.all(Job::isCompleted)
     if (prereqsDone && prereqIoJobs.isNotEmpty()) {
         prereqIoJobs.clear()
     }
