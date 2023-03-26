@@ -75,7 +75,7 @@ private val minOutputTasks = nCpus * MIN_OUTPUT_TASKS_PER_CPU
 
 private const val BUILD_TASK_GRAPH_TASK_NAME = "Build task graph"
 
-private const val EDGE_LATENCY = 1
+private const val EDGE_LATENCY = 0
 
 /** Palem and Simons, p. 639 */
 private fun <V: Any, E: Any> weightedLength(path: GraphPath<V,E>): Int = path.length * (1 + EDGE_LATENCY) - 1
