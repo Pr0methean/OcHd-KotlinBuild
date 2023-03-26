@@ -81,7 +81,7 @@ private fun <V: Any, E: Any> weightedLength(path: GraphPath<V,E>): Int = path.le
 
 /** Palem and Simons, p. 639 */
 @Suppress("NestedBlockDepth", "UnstableApiUsage", "LongMethod", "ComplexMethod")
-private fun <V: Any, E: Any> ranked(graph: Graph<V,E>): LinkedList<V> {
+private fun <V: AbstractTask<*>, E: Any> ranked(graph: Graph<V,E>): LinkedList<V> {
     val vertices: Set<V> = graph.vertexSet()
     if (vertices.size <= 1) {
         return LinkedList(vertices)
@@ -148,7 +148,17 @@ private fun <V: Any, E: Any> ranked(graph: Graph<V,E>): LinkedList<V> {
             }
         }
     }
-    return LinkedList(vertices.sortedBy { vertex -> ranks[vertex]!! })
+    for (vertex in vertices) {
+        if (vertex !is PngOutputTask && !vertex.shouldRenderForCaching()) {
+            val consumerEdges = graph.incomingEdgesOf(vertex)
+            val consumerEdgeCount = consumerEdges.size
+            check (consumerEdgeCount == 1) { "Vertex $vertex is not shouldRenderForCaching or PngOutputTask " +
+                    "but has $consumerEdgeCount consuming edges"}
+            ranks[graph.getEdgeSource(consumerEdges.first())] = ranks[vertex]!!
+            ranks.remove(vertex)
+        }
+    }
+    return LinkedList(ranks.keys.sortedBy { vertex -> ranks[vertex]!! })
 }
 
 @Suppress("UnstableApiUsage", "DeferredResultUnused", "NestedBlockDepth", "LongMethod", "ComplexMethod",
@@ -380,9 +390,7 @@ private fun startTask(
     graph: Graph<AbstractTask<*>, DefaultEdge>
 ) {
     if (task !is PngOutputTask) {
-        if (task.shouldRenderForCaching()) {
-            task.start()
-        }
+        task.start()
         return
     }
     val prereqsDone = prereqIoJobs.all(Job::isCompleted)
