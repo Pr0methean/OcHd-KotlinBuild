@@ -131,7 +131,7 @@ suspend fun main(args: Array<String>) {
         dirs.filter(mkdirsedPaths::add)
             .forEach(File::mkdirs)
     }
-    val prereqIoJobs = listOf(mkdirs, copyMetadata)
+    val prereqIoJobs = mutableListOf(mkdirs, copyMetadata)
     logger.debug("Got deduplicated output tasks")
     val depsBuildTask = scope.launch {
         tasks.forEach { it.registerRecursiveDependencies() }
@@ -297,10 +297,13 @@ private fun startTask(
     scope: CoroutineScope,
     task: PngOutputTask,
     finishedJobsChannel: Channel<PngOutputTask>,
-    prereqIoJobs: Collection<Job>,
+    prereqIoJobs: MutableCollection<Job>,
     inProgressJobs: ConcurrentMap<PngOutputTask, Job>,
     graph: Graph<AbstractTask<*>, DefaultEdge>
 ) {
+    if (prereqIoJobs.all(Job::isCompleted)) {
+        prereqIoJobs.clear()
+    }
     inProgressJobs[task] = scope.launch(CoroutineName(task.name)) {
         try {
             onTaskLaunched("PngOutputTask", task.name)
