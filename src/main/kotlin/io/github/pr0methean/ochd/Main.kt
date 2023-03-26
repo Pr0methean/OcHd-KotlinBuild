@@ -320,7 +320,7 @@ private fun startTask(
                 prereqIoJobs.joinAll()
             }
             logger.info("Starting file write for {}", task.name)
-            task.writeToFiles(awtImage).join()
+            task.writeToFiles(awtImage)?.join()
             onTaskCompleted("PngOutputTask", task.name)
             inProgressJobs.remove(task)
             finishedJobsChannel.send(task)
