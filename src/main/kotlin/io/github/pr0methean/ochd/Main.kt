@@ -1,6 +1,5 @@
 package io.github.pr0methean.ochd
 
-import com.sun.imageio.plugins.png.PNGImageWriter
 import io.github.pr0methean.ochd.ImageProcessingStats.cachedTiles
 import io.github.pr0methean.ochd.ImageProcessingStats.onCachingEnabled
 import io.github.pr0methean.ochd.ImageProcessingStats.onTaskCompleted
@@ -17,7 +16,6 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.asContextElement
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
@@ -35,7 +33,6 @@ import java.nio.file.Paths
 import java.util.Comparator.comparingInt
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
-import javax.imageio.stream.FileImageOutputStream
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 import kotlin.text.Charsets.UTF_8
@@ -52,7 +49,6 @@ private val logger = LogManager.getRootLogger()
 private const val MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH = 32
 
 val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
-private val pngImageWriter = ThreadLocal.withInitial { PNGImageWriter(null) }
 
 /**
  * If the pixel array bodies for (images being generated + images in cache) exceed this fraction of the heap, we
@@ -193,7 +189,6 @@ suspend fun main(args: Array<String>) {
     }
     val inProgressJobs = ConcurrentHashMap<PngOutputTask, Job>()
     val finishedJobsChannel = Channel<PngOutputTask>(capacity = CAPACITY_PADDING_FACTOR * maxOutputTasks)
-    val lowMemoryIoJobs = ConcurrentHashMap.newKeySet<Job>()
     dotFormatOutputJob?.join()
     for (connectedComponent in connectedComponents) {
         logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
@@ -225,7 +220,6 @@ suspend fun main(args: Array<String>) {
                         it,
                         finishedJobsChannel,
                         prereqIoJobs,
-                        lowMemoryIoJobs,
                         inProgressJobs,
                         ctx.graph
                     )
@@ -260,7 +254,6 @@ suspend fun main(args: Array<String>) {
                     task,
                     finishedJobsChannel,
                     prereqIoJobs,
-                    lowMemoryIoJobs,
                     inProgressJobs,
                     ctx.graph
                 )
@@ -299,13 +292,12 @@ suspend fun main(args: Array<String>) {
     exitProcess(0)
 }
 
-@Suppress("LongParameterList","TooGenericExceptionCaught", "BlockingMethodInNonBlockingContext")
+@Suppress("LongParameterList","TooGenericExceptionCaught")
 private fun startTask(
     scope: CoroutineScope,
     task: PngOutputTask,
     finishedJobsChannel: Channel<PngOutputTask>,
     prereqIoJobs: MutableCollection<Job>,
-    lowMemoryIoJobs: MutableSet<Job>,
     inProgressJobs: ConcurrentMap<PngOutputTask, Job>,
     graph: Graph<AbstractTask<*>, DefaultEdge>
 ) {
@@ -328,24 +320,7 @@ private fun startTask(
                 prereqIoJobs.joinAll()
             }
             logger.info("Starting file write for {}", task.name)
-            val firstFile = task.files[0]
-            val firstFilePath = firstFile.absoluteFile.toPath()
-            withContext(Dispatchers.IO.plus(pngImageWriter.asContextElement())) {
-                val writer = pngImageWriter.get()
-                FileImageOutputStream(firstFile).use {
-                    writer.output = it
-                    writer.write(awtImage)
-                }
-            }
-            if (task.files.size > 1) {
-                val remainingFiles = task.files.subList(1, task.files.size)
-                lowMemoryIoJobs.add(scope.launch(
-                        Dispatchers.IO.plus(CoroutineName("Copy ${task.name} to additional output files"))) {
-                    for (file in remainingFiles) {
-                        Files.createLink(file.absoluteFile.toPath(), firstFilePath)
-                    }
-                })
-            }
+            task.writeToFiles(awtImage).join()
             onTaskCompleted("PngOutputTask", task.name)
             inProgressJobs.remove(task)
             finishedJobsChannel.send(task)
