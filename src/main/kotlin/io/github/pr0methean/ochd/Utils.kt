@@ -65,4 +65,4 @@ fun Array<out CharSequence>.asFormattable(delim: String = ", "): StringBuilderFo
 fun Collection<CharSequence>.asFormattable(delim: String = ", "): StringBuilderFormattable =
     StringBuilderFormattable { buffer -> buffer.appendStrings(this@asFormattable, delim) }
 
-val emptyIntArray = IntArray(0)
+val emptyIntArray: IntArray = IntArray(0)
