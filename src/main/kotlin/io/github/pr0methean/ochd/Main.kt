@@ -2,6 +2,7 @@
 
 package io.github.pr0methean.ochd
 
+import com.sun.imageio.plugins.png.PNGImageWriter
 import io.github.pr0methean.ochd.ImageProcessingStats.cachedTiles
 import io.github.pr0methean.ochd.ImageProcessingStats.onCachingEnabled
 import io.github.pr0methean.ochd.ImageProcessingStats.onTaskCompleted
@@ -18,6 +19,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.asContextElement
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
@@ -35,7 +37,7 @@ import java.nio.file.Paths
 import java.util.Comparator.comparingInt
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
-import javax.imageio.ImageIO
+import javax.imageio.stream.FileImageOutputStream
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 import kotlin.text.Charsets.UTF_8
@@ -52,6 +54,7 @@ private val logger = LogManager.getRootLogger()
 private const val MAX_TILE_SIZE_FOR_PRINT_DEPENDENCY_GRAPH = 32
 
 val scope: CoroutineScope = CoroutineScope(Dispatchers.Default)
+private val pngImageWriter = ThreadLocal.withInitial { PNGImageWriter(null) }
 
 /**
  * If the pixel array bodies for (images being generated + images in cache) exceed this fraction of the heap, we
@@ -329,7 +332,11 @@ private fun startTask(
             logger.info("Starting file write for {}", task.name)
             val firstFile = task.files[0]
             val firstFilePath = firstFile.absoluteFile.toPath()
-            ImageIO.write(awtImage, "PNG", firstFile)
+            withContext(pngImageWriter.asContextElement()) {
+                val writer = pngImageWriter.get()
+                writer.output = FileImageOutputStream(firstFile)
+                writer.write(awtImage)
+            }
             if (task.files.size > 1) {
                 val remainingFiles = task.files.subList(1, task.files.size)
                 lowMemoryIoJobs.add(task.ioScope.launch(CoroutineName("Copy ${task.name} to additional output files")) {
