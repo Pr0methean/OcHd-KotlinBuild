@@ -20,8 +20,6 @@ import kotlin.math.roundToInt
 
 private val logger = LogManager.getLogger("RepaintTask")
 
-private const val CHANNEL_MAX = 1.shl(ARGB_BITS_PER_CHANNEL) - 1
-
 /**
  * Task that recolors the input [Image] and/or makes it semitransparent. Has one special optimization:
  * <ul>
@@ -65,9 +63,7 @@ class RepaintTask(
             ImageProcessingStats.onTaskLaunched("RepaintTask", name)
 
             // paint's RGB channels as part of an ARGB int
-            val rgb = (paint.red * CHANNEL_MAX).toInt().shl(ARGB_BITS_PER_CHANNEL * 2)
-                .or((paint.green * CHANNEL_MAX).toInt().shl(ARGB_BITS_PER_CHANNEL))
-                .or((paint.blue * CHANNEL_MAX).toInt())
+            val rgb = toRgb(paint)
 
             // repaintedForInputAlpha[it] = paint * (it / CHANNEL_MAX)
             val repaintedForInputAlpha = IntArray(1.shl(ARGB_BITS_PER_CHANNEL)) {

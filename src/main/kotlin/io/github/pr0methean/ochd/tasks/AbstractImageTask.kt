@@ -136,3 +136,8 @@ fun Paint.toOpaque(): Paint {
     }
     error("Can't convert $this to opaque")
 }
+
+private const val CHANNEL_MAX = 1.shl(ARGB_BITS_PER_CHANNEL) - 1
+fun toRgb(paint: Color): Int = (paint.red * CHANNEL_MAX).toInt().shl(ARGB_BITS_PER_CHANNEL * 2)
+    .or((paint.green * CHANNEL_MAX).toInt().shl(ARGB_BITS_PER_CHANNEL))
+    .or((paint.blue * CHANNEL_MAX).toInt())

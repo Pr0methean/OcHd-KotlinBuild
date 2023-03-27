@@ -5,6 +5,7 @@ import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.image.Image
+import javafx.scene.paint.Color
 import org.apache.logging.log4j.LogManager
 import org.jgrapht.Graph
 import org.jgrapht.graph.DefaultEdge
@@ -30,9 +31,23 @@ class MakeSemitransparentTask(
     override suspend fun perform(): Image {
         ImageProcessingStats.onTaskLaunched("MakeSemitransparentTask", name)
 
+        val solidColorMode: Boolean
+        val solidColorRgb: Int
+
+        if (base is SvgToBitmapTask && !base.hasColor()) {
+            solidColorMode = true
+            solidColorRgb = 0
+        } else if (base is RepaintTask && base.paint is Color) {
+            solidColorMode = true
+            solidColorRgb = toRgb(base.paint)
+        } else {
+            solidColorMode = false
+            solidColorRgb = 0
+        }
+
         // repaintedForInputAlpha[it] = it * opacity
         val repaintedForInputAlpha = IntArray(1.shl(Byte.SIZE_BITS)) {
-            (it * opacity).roundToInt().shl(ARGB_ALPHA_BIT_SHIFT)
+            (it * opacity).roundToInt().shl(ARGB_ALPHA_BIT_SHIFT) + solidColorRgb
         }
 
         /*
@@ -54,7 +69,7 @@ class MakeSemitransparentTask(
                 val inputPixel = reader.getArgb(x, y)
                 val inputAlpha = inputPixel.toUInt().shr(ARGB_ALPHA_BIT_SHIFT).toInt()
                 val inputRgb = inputPixel.and(ARGB_RGB_MASK)
-                writer.setArgb(x, y, repaintedForInputAlpha[inputAlpha].or(inputRgb))
+                writer.setArgb(x, y, repaintedForInputAlpha[inputAlpha].or(if (solidColorMode) 0 else inputRgb))
             }
         }
         ImageProcessingStats.onTaskCompleted("MakeSemitransparentTask", name)
