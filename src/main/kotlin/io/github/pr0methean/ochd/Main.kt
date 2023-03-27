@@ -1,3 +1,5 @@
+@file:Suppress("BlockingMethodInNonBlockingContext")
+
 package io.github.pr0methean.ochd
 
 import io.github.pr0methean.ochd.ImageProcessingStats.cachedTiles
@@ -33,6 +35,7 @@ import java.nio.file.Paths
 import java.util.Comparator.comparingInt
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
+import javax.imageio.ImageIO
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 import kotlin.text.Charsets.UTF_8
@@ -189,6 +192,7 @@ suspend fun main(args: Array<String>) {
     }
     val inProgressJobs = ConcurrentHashMap<PngOutputTask, Job>()
     val finishedJobsChannel = Channel<PngOutputTask>(capacity = CAPACITY_PADDING_FACTOR * maxOutputTasks)
+    val lowMemoryIoJobs = ConcurrentHashMap.newKeySet<Job>()
     dotFormatOutputJob?.join()
     for (connectedComponent in connectedComponents) {
         logger.info("Starting a new connected component of {} output tasks", box(connectedComponent.size))
@@ -220,6 +224,7 @@ suspend fun main(args: Array<String>) {
                         it,
                         finishedJobsChannel,
                         prereqIoJobs,
+                        lowMemoryIoJobs,
                         inProgressJobs,
                         ctx.graph
                     )
@@ -254,6 +259,7 @@ suspend fun main(args: Array<String>) {
                     task,
                     finishedJobsChannel,
                     prereqIoJobs,
+                    lowMemoryIoJobs,
                     inProgressJobs,
                     ctx.graph
                 )
@@ -298,6 +304,7 @@ private fun startTask(
     task: PngOutputTask,
     finishedJobsChannel: Channel<PngOutputTask>,
     prereqIoJobs: MutableCollection<Job>,
+    lowMemoryIoJobs: MutableSet<Job>,
     inProgressJobs: ConcurrentMap<PngOutputTask, Job>,
     graph: Graph<AbstractTask<*>, DefaultEdge>
 ) {
@@ -320,7 +327,17 @@ private fun startTask(
                 prereqIoJobs.joinAll()
             }
             logger.info("Starting file write for {}", task.name)
-            task.writeToFiles(awtImage)?.join()
+            val firstFile = task.files[0]
+            val firstFilePath = firstFile.absoluteFile.toPath()
+            ImageIO.write(awtImage, "PNG", firstFile)
+            if (task.files.size > 1) {
+                val remainingFiles = task.files.subList(1, task.files.size)
+                lowMemoryIoJobs.add(task.ioScope.launch(CoroutineName("Copy ${task.name} to additional output files")) {
+                    for (file in remainingFiles) {
+                        Files.createLink(file.absoluteFile.toPath(), firstFilePath)
+                    }
+                })
+            }
             onTaskCompleted("PngOutputTask", task.name)
             inProgressJobs.remove(task)
             finishedJobsChannel.send(task)
