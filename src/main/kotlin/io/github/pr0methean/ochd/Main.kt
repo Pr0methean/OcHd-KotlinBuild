@@ -19,6 +19,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.async
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.joinAll
 import kotlinx.coroutines.launch
@@ -316,14 +317,17 @@ private fun startTask(
     if (prereqsDone && prereqIoJobs.isNotEmpty()) {
         prereqIoJobs.clear()
     }
-    inProgressJobs[task] = scope.launch(CoroutineName(task.name)) {
+    val getAwtImage = scope.async(CoroutineName(task.name)) {
+        return@async if (task.base is SvgToBitmapTask && !task.base.shouldRenderForCaching()) {
+            onTaskLaunched("SvgToBitmapTask", task.base.name)
+            task.base.getAwtImage().also { onTaskCompleted("SvgToBitmapTask", task.base.name) }
+        } else {
+            SwingFXUtils.fromFXImage(task.base.await(), null)
+        }
+    }
+    inProgressJobs[task] = scope.launch {
         try {
-            val awtImage = if (task.base is SvgToBitmapTask && !task.base.shouldRenderForCaching()) {
-                onTaskLaunched("SvgToBitmapTask", task.base.name)
-                task.base.getAwtImage().also { onTaskCompleted("SvgToBitmapTask", task.base.name) }
-            } else {
-                SwingFXUtils.fromFXImage(task.base.await(), null)
-            }
+            val awtImage = getAwtImage.await()
             onTaskLaunched("PngOutputTask", task.name)
             task.base.removeDirectDependentTask(task)
             graph.removeVertex(task)
