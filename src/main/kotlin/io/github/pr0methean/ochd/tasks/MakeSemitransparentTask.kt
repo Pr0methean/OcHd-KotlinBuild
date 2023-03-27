@@ -1,5 +1,6 @@
 package io.github.pr0methean.ochd.tasks
 
+import com.google.common.collect.MapMaker
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
@@ -10,14 +11,13 @@ import org.apache.logging.log4j.LogManager
 import org.jgrapht.Graph
 import org.jgrapht.graph.DefaultEdge
 import java.util.Objects
-import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.CoroutineContext
 import kotlin.math.roundToInt
 
 private val logger = LogManager.getLogger("UnaryImageTransform")
 private const val ARGB_RGB_MASK = 1.shl(ARGB_ALPHA_BIT_SHIFT) - 1
 
-private val makeSemitransparentArrayCache = ConcurrentHashMap<Int, IntArray>()
+private val makeSemitransparentArrayCache = MapMaker().weakValues().makeMap<Int, IntArray>()
 
 @Suppress("EqualsWithHashCodeExist", "EqualsOrHashCode")
 class MakeSemitransparentTask(

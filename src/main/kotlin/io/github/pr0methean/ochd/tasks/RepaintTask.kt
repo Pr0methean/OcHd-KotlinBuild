@@ -1,5 +1,6 @@
 package io.github.pr0methean.ochd.tasks
 
+import com.google.common.collect.MapMaker
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.TaskPlanningContext
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
@@ -15,12 +16,11 @@ import org.apache.logging.log4j.LogManager
 import org.jgrapht.Graph
 import org.jgrapht.graph.DefaultEdge
 import java.util.Objects
-import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.CoroutineContext
 import kotlin.math.roundToInt
 
 private val logger = LogManager.getLogger("RepaintTask")
-private val repaintedArrayCache = ConcurrentHashMap<Int, IntArray>()
+private val repaintedArrayCache = MapMaker().weakValues().makeMap<Int, IntArray>()
 
 /**
  * Task that recolors the input [Image] and/or makes it semitransparent. Has one special optimization:
