@@ -10,11 +10,14 @@ import org.apache.logging.log4j.LogManager
 import org.jgrapht.Graph
 import org.jgrapht.graph.DefaultEdge
 import java.util.Objects
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.CoroutineContext
 import kotlin.math.roundToInt
 
 private val logger = LogManager.getLogger("UnaryImageTransform")
 private const val ARGB_RGB_MASK = 1.shl(ARGB_ALPHA_BIT_SHIFT) - 1
+
+private val makeSemitransparentArrayCache = ConcurrentHashMap<Int, IntArray>()
 
 @Suppress("EqualsWithHashCodeExist", "EqualsOrHashCode")
 class MakeSemitransparentTask(
@@ -27,13 +30,10 @@ class MakeSemitransparentTask(
     constructor(base: AbstractImageTask, opacity: Double, cache: (String) -> DeferredTaskCache<Image>,
                 ctx: CoroutineContext, graph: Graph<AbstractTask<*>, DefaultEdge>):
             this(base, opacity, cache("$base@$opacity"), ctx, graph)
+    val solidColorMode: Boolean
+    val solidColorRgb: Int
 
-    override suspend fun perform(): Image {
-        ImageProcessingStats.onTaskLaunched("MakeSemitransparentTask", name)
-
-        val solidColorMode: Boolean
-        val solidColorRgb: Int
-
+    init {
         if (base is SvgToBitmapTask && !base.hasColor()) {
             solidColorMode = true
             solidColorRgb = 0
@@ -44,11 +44,16 @@ class MakeSemitransparentTask(
             solidColorMode = false
             solidColorRgb = 0
         }
+    }
 
-        // repaintedForInputAlpha[it] = it * opacity
-        val repaintedForInputAlpha = IntArray(1.shl(Byte.SIZE_BITS)) {
+    // repaintedForInputAlpha[it] = it * opacity
+    private val repaintedForInputAlpha = makeSemitransparentArrayCache.computeIfAbsent(solidColorRgb) {
+        IntArray(1.shl(Byte.SIZE_BITS)) {
             (it * opacity).roundToInt().shl(ARGB_ALPHA_BIT_SHIFT) + solidColorRgb
         }
+    }
+    override suspend fun perform(): Image {
+        ImageProcessingStats.onTaskLaunched("MakeSemitransparentTask", name)
 
         /*
          * By doing the transformation ourselves rather than using JavaFX, we avoid allocating a Canvas and

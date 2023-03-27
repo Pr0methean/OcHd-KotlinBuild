@@ -15,10 +15,12 @@ import org.apache.logging.log4j.LogManager
 import org.jgrapht.Graph
 import org.jgrapht.graph.DefaultEdge
 import java.util.Objects
+import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.CoroutineContext
 import kotlin.math.roundToInt
 
 private val logger = LogManager.getLogger("RepaintTask")
+private val repaintedArrayCache = ConcurrentHashMap<Int, IntArray>()
 
 /**
  * Task that recolors the input [Image] and/or makes it semitransparent. Has one special optimization:
@@ -66,8 +68,10 @@ class RepaintTask(
             val rgb = toRgb(paint)
 
             // repaintedForInputAlpha[it] = paint * (it / CHANNEL_MAX)
-            val repaintedForInputAlpha = IntArray(1.shl(ARGB_BITS_PER_CHANNEL)) {
-                (it * paint.opacity()).roundToInt().shl(ARGB_ALPHA_BIT_SHIFT).or(rgb)
+            val repaintedForInputAlpha = repaintedArrayCache.computeIfAbsent(paint.hashCode()) {
+                IntArray(1.shl(ARGB_BITS_PER_CHANNEL)) {
+                    (it * paint.opacity()).roundToInt().shl(ARGB_ALPHA_BIT_SHIFT).or(rgb)
+                }
             }
 
             /*
