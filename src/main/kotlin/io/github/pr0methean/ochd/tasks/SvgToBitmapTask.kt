@@ -22,7 +22,7 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.math.roundToInt
 
 private val batikTranscoder: ThreadLocal<ToImageTranscoder> = ThreadLocal.withInitial { ToImageTranscoder() }
-private const val FRAMES_PER_COMMAND_BLOCK_TEXTURE = 4
+const val FRAMES_PER_COMMAND_BLOCK_TEXTURE: Int = 4
 
 private fun isCommandBlock(name: String) = name.startsWith("commandBlock") || name.endsWith("4x")
 private fun getHeight(name: String, width: Int): Int = if (isCommandBlock(name)) {
