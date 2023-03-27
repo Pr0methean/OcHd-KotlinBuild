@@ -25,17 +25,19 @@ import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
 import org.apache.logging.log4j.LogManager
 import org.apache.logging.log4j.util.Unbox.box
+import org.apache.xmlgraphics.image.codec.png.PNGImageEncoder
 import org.jgrapht.Graph
 import org.jgrapht.alg.connectivity.ConnectivityInspector
 import org.jgrapht.graph.DefaultEdge
+import java.io.BufferedOutputStream
 import java.io.File
+import java.io.FileOutputStream
 import java.lang.management.ManagementFactory
 import java.nio.file.Files
 import java.nio.file.Paths
 import java.util.Comparator.comparingInt
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentMap
-import javax.imageio.ImageIO
 import kotlin.system.exitProcess
 import kotlin.system.measureNanoTime
 import kotlin.text.Charsets.UTF_8
@@ -329,7 +331,9 @@ private fun startTask(
             logger.info("Starting file write for {}", task.name)
             val firstFile = task.files[0]
             val firstFilePath = firstFile.absoluteFile.toPath()
-            ImageIO.write(awtImage, "PNG", firstFile)
+            BufferedOutputStream(FileOutputStream(firstFile)).use {
+                PNGImageEncoder(it, null).encode(awtImage)
+            }
             if (task.files.size > 1) {
                 val remainingFiles = task.files.subList(1, task.files.size)
                 lowMemoryIoJobs.add(task.ioScope.launch(CoroutineName("Copy ${task.name} to additional output files")) {
