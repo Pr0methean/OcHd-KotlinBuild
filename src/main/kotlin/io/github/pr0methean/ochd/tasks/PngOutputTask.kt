@@ -58,22 +58,19 @@ class PngOutputTask(
 
     override suspend fun perform(): Nothing = error("The output task is defined in Main.kt")
 
-    fun writeToFiles(awtImage: BufferedImage): Job {
+    fun writeToFiles(awtImage: BufferedImage): Job? {
         val firstFile = files[0]
         val firstFilePath = firstFile.absoluteFile.toPath()
-        val writeFirstFile = ioScope.launch {
-            ImageIO.write(awtImage, "PNG", firstFile)
-        }
+        ImageIO.write(awtImage, "PNG", firstFile)
         return if (files.size > 1) {
             val remainingFiles = files.subList(1, files.size)
             ioScope.launch(CoroutineName("Copy $name to additional output files")) {
-                writeFirstFile.join()
                 for (file in remainingFiles) {
                     Files.createLink(file.absoluteFile.toPath(), firstFilePath)
                 }
             }
         } else {
-            writeFirstFile
+            null
         }
     }
 
