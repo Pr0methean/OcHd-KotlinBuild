@@ -335,9 +335,11 @@ private fun startTask(
             val firstFile = task.files[0]
             val firstFilePath = firstFile.absoluteFile.toPath()
             withContext(pngImageWriter.asContextElement()) {
-                val writer = pngImageWriter.get()
-                writer.output = FileImageOutputStream(firstFile)
-                writer.write(awtImage)
+                FileImageOutputStream(firstFile).use {
+                    val writer = pngImageWriter.get()
+                    writer.output = it
+                    writer.write(awtImage)
+                }
             }
             if (task.files.size > 1) {
                 val remainingFiles = task.files.subList(1, task.files.size)
