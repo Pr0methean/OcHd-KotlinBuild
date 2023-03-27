@@ -336,6 +336,7 @@ private fun startTask(
                     writer.output = it
                     writer.write(awtImage)
                 }
+                writer.reset()
             }
             if (task.files.size > 1) {
                 val remainingFiles = task.files.subList(1, task.files.size)
