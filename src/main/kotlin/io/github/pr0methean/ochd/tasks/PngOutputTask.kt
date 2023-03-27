@@ -11,7 +11,9 @@ import org.apache.logging.log4j.LogManager
 import org.jgrapht.Graph
 import org.jgrapht.graph.DefaultEdge
 import java.awt.image.BufferedImage
+import java.io.BufferedOutputStream
 import java.io.File
+import java.io.FileOutputStream
 import java.nio.file.Files
 import java.util.concurrent.ConcurrentHashMap
 import javax.imageio.ImageIO
@@ -62,7 +64,9 @@ class PngOutputTask(
         val firstFile = files[0]
         val firstFilePath = firstFile.absoluteFile.toPath()
         val writeFirstFile = ioScope.launch {
-            ImageIO.write(awtImage, "PNG", firstFile)
+            BufferedOutputStream(FileOutputStream(firstFile)).use { stream ->
+                ImageIO.write(awtImage, "PNG", stream)
+            }
         }
         return if (files.size > 1) {
             val remainingFiles = files.subList(1, files.size)
