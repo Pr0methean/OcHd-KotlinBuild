@@ -68,8 +68,8 @@ class MakeSemitransparentTask(
                 // output pixel = input pixel * opacity
                 val inputPixel = reader.getArgb(x, y)
                 val inputAlpha = inputPixel.toUInt().shr(ARGB_ALPHA_BIT_SHIFT).toInt()
-                val inputRgb = inputPixel.and(ARGB_RGB_MASK)
-                writer.setArgb(x, y, repaintedForInputAlpha[inputAlpha].or(if (solidColorMode) 0 else inputRgb))
+                writer.setArgb(x, y, repaintedForInputAlpha[inputAlpha].or(
+                    if (solidColorMode) 0 else inputPixel.and(ARGB_RGB_MASK)))
             }
         }
         ImageProcessingStats.onTaskCompleted("MakeSemitransparentTask", name)
