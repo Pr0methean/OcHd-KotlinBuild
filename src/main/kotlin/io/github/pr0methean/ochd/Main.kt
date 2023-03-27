@@ -283,6 +283,8 @@ suspend fun main(args: Array<String>) {
     }
     logger.info("All jobs done; closing channel")
     finishedJobsChannel.close()
+    logger.info("Joining {} low-memory IO jobs", lowMemoryIoJobs.size)
+    lowMemoryIoJobs.joinAll()
     val runningTime = System.nanoTime() - startTime
     stopMonitoring()
     ImageProcessingStats.finalChecks()
