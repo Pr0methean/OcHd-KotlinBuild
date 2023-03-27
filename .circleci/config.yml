@@ -55,7 +55,6 @@ jobs:
           -XX:+PrintFlagsFinal 
           --enable-preview -XX:+UnlockExperimentalVMOptions 
           -Dlog4j2.contextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector
-          --add-exports java.desktop/com.sun.imageio.plugins.png=ALL-UNNAMED
           -jar build/libs/OcHd-KotlinBuild-1.0-SNAPSHOT.jar << parameters.size >>
       - run: cd pngout && zip -9 -r OcHD-<< parameters.size >>x<< parameters.size >>.zip *
       - store_artifacts:
