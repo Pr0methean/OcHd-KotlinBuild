@@ -6,6 +6,7 @@ import io.github.pr0methean.ochd.ImageProcessingStats.onTaskCompleted
 import io.github.pr0methean.ochd.ImageProcessingStats.onTaskLaunched
 import io.github.pr0methean.ochd.materials.ALL_MATERIALS
 import io.github.pr0methean.ochd.tasks.AbstractTask
+import io.github.pr0methean.ochd.tasks.FRAMES_PER_COMMAND_BLOCK_TEXTURE
 import io.github.pr0methean.ochd.tasks.PngOutputTask
 import io.github.pr0methean.ochd.tasks.SvgToBitmapTask
 import io.github.pr0methean.ochd.tasks.mkdirsedPaths
@@ -154,6 +155,7 @@ suspend fun main(args: Array<String>) {
         ConnectivityInspector(ctx.graph)
             .connectedSets()
             .sortedBy { it.sumOf(AbstractTask<*>::tiles) }
+            .sortedBy { if (it.any { it.tiles >= FRAMES_PER_COMMAND_BLOCK_TEXTURE }) 0 else 1 }
             .map { it.filterIsInstanceTo(mutableSetOf()) }
     } else listOf(tasks)
     var dotFormatOutputJob: Job? = null
