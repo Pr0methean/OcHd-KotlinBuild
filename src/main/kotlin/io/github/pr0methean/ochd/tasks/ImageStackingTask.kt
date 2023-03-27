@@ -77,14 +77,18 @@ class ImageStackingTask(
         y: Double,
         layers: List<AbstractImageTask>
     ) {
-        ImageProcessingStats.onTaskLaunched("ImageStackingTask", name)
         if (this.layers.background != TRANSPARENT) {
             val context = canvasCtxSupplier()
             context.fill = this.layers.background
             context.fillRect(0.0, 0.0, context.canvas.width, context.canvas.height)
         }
+        var launchLogged = false
         layers.forEach {
             it.renderOnto(canvasCtxSupplier, x, y)
+            if (!launchLogged) {
+                ImageProcessingStats.onTaskLaunched("ImageStackingTask", name)
+                launchLogged = true
+            }
             it.removeDirectDependentTask(this@ImageStackingTask)
         }
         ImageProcessingStats.onTaskCompleted("ImageStackingTask", name)

@@ -307,13 +307,13 @@ private fun startTask(
     }
     inProgressJobs[task] = scope.launch(CoroutineName(task.name)) {
         try {
-            onTaskLaunched("PngOutputTask", task.name)
             val awtImage = if (task.base is SvgToBitmapTask && !task.base.shouldRenderForCaching()) {
                 onTaskLaunched("SvgToBitmapTask", task.base.name)
                 task.base.getAwtImage().also { onTaskCompleted("SvgToBitmapTask", task.base.name) }
             } else {
                 SwingFXUtils.fromFXImage(task.base.await(), null)
             }
+            onTaskLaunched("PngOutputTask", task.name)
             task.base.removeDirectDependentTask(task)
             graph.removeVertex(task)
             if (!prereqsDone) {

@@ -42,11 +42,11 @@ abstract class UnaryImageTransform<TCanvasTeardownContext>(
     }
 
     private suspend fun renderOntoInternal(context: () -> GraphicsContext, x: Double, y: Double) {
-        ImageProcessingStats.onTaskLaunched(javaClass.simpleName, name)
         val ctx = context()
         try {
             val teardownContext = prepareContext(ctx)
             base.renderOnto({ ctx }, x, y)
+            ImageProcessingStats.onTaskLaunched(javaClass.simpleName, name)
             base.removeDirectDependentTask(this)
             unprepareContext(ctx, teardownContext)
         } catch (e: IllegalStateException) {

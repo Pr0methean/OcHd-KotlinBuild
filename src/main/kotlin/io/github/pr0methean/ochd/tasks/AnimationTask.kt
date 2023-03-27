@@ -64,8 +64,8 @@ class AnimationTask(
 
     @Suppress("DeferredResultUnused")
     override suspend fun perform(): Image {
-        ImageProcessingStats.onTaskLaunched("AnimationTask", name)
         val backgroundImage = background.await()
+        ImageProcessingStats.onTaskLaunched("AnimationTask", name)
         background.removeDirectDependentTask(this)
         val canvasMutex = Mutex()
         val canvas = createCanvas()

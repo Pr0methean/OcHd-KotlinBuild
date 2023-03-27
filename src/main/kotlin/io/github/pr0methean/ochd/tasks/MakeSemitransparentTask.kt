@@ -53,13 +53,12 @@ class MakeSemitransparentTask(
         }
     }
     override suspend fun perform(): Image {
-        ImageProcessingStats.onTaskLaunched("MakeSemitransparentTask", name)
-
         /*
          * By doing the transformation ourselves rather than using JavaFX, we avoid allocating a Canvas and
          * waiting for the JavaFX renderer thread.
          */
         val input = base.await()
+        ImageProcessingStats.onTaskLaunched("MakeSemitransparentTask", name)
         base.removeDirectDependentTask(this)
         val reader = input.pixelReader
         logger.info("Allocating a WritableImage for Canvas-free transform of {} for {}", base.name, name)

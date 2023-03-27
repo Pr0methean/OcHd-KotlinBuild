@@ -3,6 +3,7 @@ package io.github.pr0methean.ochd.tasks
 import com.google.common.collect.MapMaker
 import io.github.pr0methean.ochd.ImageProcessingStats
 import io.github.pr0methean.ochd.TaskPlanningContext
+import io.github.pr0methean.ochd.emptyIntArray
 import io.github.pr0methean.ochd.tasks.caching.DeferredTaskCache
 import javafx.scene.canvas.GraphicsContext
 import javafx.scene.effect.Blend
@@ -59,26 +60,27 @@ class RepaintTask(
         appendable.append("}@").append(this.paint.toString())
     }
 
+    // repaintedForInputAlpha[it] = paint * (it / CHANNEL_MAX)
+    private val repaintedForInputAlpha: IntArray = if (paint is Color) {
+        repaintedArrayCache.computeIfAbsent(paint.hashCode())
+        {
+            // paint's RGB channels as part of an ARGB int
+            val rgb = toRgb(paint)
+            IntArray(1.shl(ARGB_BITS_PER_CHANNEL)) {
+                (it * paint.opacity()).roundToInt().shl(ARGB_ALPHA_BIT_SHIFT).or(rgb)
+            }
+        }
+    } else emptyIntArray
+
     @Suppress("DeferredResultUnused", "ComplexCondition")
     override suspend fun perform(): Image {
         val snapshot = if (paint is Color) {
-            ImageProcessingStats.onTaskLaunched("RepaintTask", name)
-
-            // paint's RGB channels as part of an ARGB int
-            val rgb = toRgb(paint)
-
-            // repaintedForInputAlpha[it] = paint * (it / CHANNEL_MAX)
-            val repaintedForInputAlpha = repaintedArrayCache.computeIfAbsent(paint.hashCode()) {
-                IntArray(1.shl(ARGB_BITS_PER_CHANNEL)) {
-                    (it * paint.opacity()).roundToInt().shl(ARGB_ALPHA_BIT_SHIFT).or(rgb)
-                }
-            }
-
             /*
              * By doing the transformation ourselves rather than using JavaFX, we avoid allocating a Canvas and
              * waiting for the JavaFX renderer thread.
              */
             val input = base.await()
+            ImageProcessingStats.onTaskLaunched("RepaintTask", name)
             base.removeDirectDependentTask(this)
             val reader = input.pixelReader
             logger.info("Allocating a WritableImage for Canvas-free transform of {} for {}", base.name, name)

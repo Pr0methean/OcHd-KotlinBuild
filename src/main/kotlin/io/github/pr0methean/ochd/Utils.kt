@@ -58,11 +58,6 @@ fun StringBuilder.appendStrings(
 fun Collection<StringBuilderFormattable>.asFormattable(delim: String = ", "): StringBuilderFormattable
     = StringBuilderFormattable { buffer -> buffer.appendFormattables(this@asFormattable, delim) }
 
-@JvmName("flattenedTwiceAsFormattable")
-fun Collection<Collection<StringBuilderFormattable>>.asFormattable(delim: String = ", "): StringBuilderFormattable
-    = StringBuilderFormattable { buffer -> buffer.appendFormattables(
-        this@asFormattable.map(Collection<StringBuilderFormattable>::asFormattable), delim) }
-
 fun Array<out CharSequence>.asFormattable(delim: String = ", "): StringBuilderFormattable
     = toList().asFormattable(delim)
 
@@ -70,3 +65,4 @@ fun Array<out CharSequence>.asFormattable(delim: String = ", "): StringBuilderFo
 fun Collection<CharSequence>.asFormattable(delim: String = ", "): StringBuilderFormattable =
     StringBuilderFormattable { buffer -> buffer.appendStrings(this@asFormattable, delim) }
 
+val emptyIntArray = IntArray(0)
