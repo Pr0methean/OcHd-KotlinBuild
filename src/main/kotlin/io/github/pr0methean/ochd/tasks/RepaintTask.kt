@@ -74,7 +74,7 @@ class RepaintTask(
 
     @Suppress("DeferredResultUnused", "ComplexCondition")
     override suspend fun perform(): Image {
-        val snapshot = if (paint is Color) {
+        val snapshot = if (paint is Color && pendingSnapshotTiles() > 0) {
             /*
              * By doing the transformation ourselves rather than using JavaFX, we avoid allocating a Canvas and
              * waiting for the JavaFX renderer thread.

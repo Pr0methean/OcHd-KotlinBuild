@@ -53,6 +53,9 @@ class MakeSemitransparentTask(
         }
     }
     override suspend fun perform(): Image {
+        if (pendingSnapshotTiles() == 0L) {
+            return super.perform()
+        }
         /*
          * By doing the transformation ourselves rather than using JavaFX, we avoid allocating a Canvas and
          * waiting for the JavaFX renderer thread.
