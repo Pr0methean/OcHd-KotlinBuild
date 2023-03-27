@@ -2,20 +2,12 @@ package io.github.pr0methean.ochd.tasks
 
 import io.github.pr0methean.ochd.tasks.caching.noopDeferredTaskCache
 import javafx.scene.image.Image
-import kotlinx.coroutines.CoroutineName
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.plus
 import org.apache.logging.log4j.LogManager
-import org.apache.xmlgraphics.image.codec.png.PNGImageEncoder
 import org.jgrapht.Graph
 import org.jgrapht.graph.DefaultEdge
-import java.awt.image.BufferedImage
-import java.io.BufferedOutputStream
 import java.io.File
-import java.io.FileOutputStream
-import java.nio.file.Files
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.coroutines.CoroutineContext
 
@@ -33,7 +25,7 @@ class PngOutputTask(
     ctx: CoroutineContext, graph: Graph<AbstractTask<*>, DefaultEdge>,
 ): AbstractTask<Nothing>(name, noopDeferredTaskCache(), ctx, graph) {
     override val directDependencies: Iterable<AbstractTask<*>> = listOf(base)
-    private val ioScope = coroutineScope.plus(Dispatchers.IO)
+    val ioScope = coroutineScope.plus(Dispatchers.IO)
     override fun mergeWithDuplicate(other: AbstractTask<*>): AbstractTask<Nothing> {
         if (other is PngOutputTask && other !== this && other.base !== base) {
             logger.debug("Merging PngOutputTask {} with duplicate {}", name, other.name)
@@ -59,24 +51,6 @@ class PngOutputTask(
     }
 
     override suspend fun perform(): Nothing = error("The output task is defined in Main.kt")
-
-    fun writeToFiles(awtImage: BufferedImage): Job? {
-        val firstFile = files[0]
-        val firstFilePath = firstFile.absoluteFile.toPath()
-        BufferedOutputStream(FileOutputStream(firstFile)).use {
-            PNGImageEncoder(it, null).encode(awtImage)
-        }
-        return if (files.size > 1) {
-            val remainingFiles = files.subList(1, files.size)
-            ioScope.launch(CoroutineName("Copy $name to additional output files")) {
-                for (file in remainingFiles) {
-                    Files.createLink(file.absoluteFile.toPath(), firstFilePath)
-                }
-            }
-        } else {
-            null
-        }
-    }
 
     init {
         check(files.isNotEmpty()) { "PngOutputTask $name has no destination files" }
